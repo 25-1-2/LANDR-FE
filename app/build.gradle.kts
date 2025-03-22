@@ -126,4 +126,11 @@ dependencies {
     // bottom navigation
     implementation(libs.androidx.material)
     implementation(libs.navigation.compose)
+
+    // firebase
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.auth)
+    implementation(libs.androidx.credentials)
+    implementation(libs.androidx.credentials.play.services.auth)
+    implementation(libs.identity.googleid)
 }
