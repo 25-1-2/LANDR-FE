@@ -7,17 +7,17 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:441389992846:android:b1d7aa7095b257f01672df",
+        "mobilesdk_app_id": "1:441389992846:android:981ff961926f1f341672df",
         "android_client_info": {
-          "package_name": "com.capston"
+          "package_name": "com.example.capston"
         }
       },
       "oauth_client": [
         {
-          "client_id": "441389992846-hrufl30aqls21r3v10b3ke94f0cjc1t8.apps.googleusercontent.com",
+          "client_id": "441389992846-d26jjsoijv5cko7mk8ie69ca6hhcn2j1.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
-            "package_name": "com.capston",
+            "package_name": "com.example.capston",
             "certificate_hash": "8464c9ce9720eaddb53d128a2638d41bc7e319ee"
           }
         },
