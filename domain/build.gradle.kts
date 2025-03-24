@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.jetbrains.kotlin.jvm)
+    id("kotlin-kapt")
 }
 java {
     sourceCompatibility = JavaVersion.VERSION_11
@@ -27,4 +28,7 @@ dependencies {
     implementation(libs.gson)
     // coroutines
     implementation(libs.kotlinx.coroutines.android)
+
+    implementation("com.google.dagger:dagger:2.50")
+    kapt("com.google.dagger:dagger-compiler:2.50")
 }
