@@ -53,7 +53,7 @@ fun InfiniteScrollList() {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .fillMaxHeight().padding(top = 100.dp, bottom = 100.dp, start = 20.dp)
+                .fillMaxHeight().padding(top = 20.dp, bottom = 20.dp, start = 40.dp)
         ) {
             LazyColumn(
                 state = rememberLazyListState(),

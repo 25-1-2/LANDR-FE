@@ -97,14 +97,11 @@ fun HomeScreen() {
     val modalBottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     Scaffold(
-        modifier = Modifier
-            .fillMaxSize()
-            .offset(y = 66.dp),
-    ) { innerPadding ->
+        modifier = Modifier.fillMaxSize()
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
         ) {
 
             Box(
@@ -112,7 +109,6 @@ fun HomeScreen() {
                     .fillMaxWidth()
                     .border(width = 2.dp, color = LightGray4)
                     .background(LightGray3)
-                    .padding(vertical = 16.dp)
             ) {
                 Column(
                     modifier = Modifier

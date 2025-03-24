@@ -45,18 +45,14 @@ import com.capston.presentation.ui.BottomBar
 fun CalenderScreen() {
     var calendarHeight by remember { mutableStateOf(400) } // 달력의 초기 높이
     var lessonListHeight by remember { mutableStateOf(250) } // 할일 목록의 초기 높이
-    val bottomBarHeight = 100.dp
 
 
     Scaffold(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(top = 100.dp)
+        modifier = Modifier.fillMaxSize()
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(bottom = bottomBarHeight) // 바텀 바를 위해 하단 여백을 설정
         ) {
 
             Calendar(calendarHeight) { delta ->
