@@ -1,4 +1,4 @@
-package com.capston.data.base
+package com.capston.domain.base
 
 enum class BaseLoadingState {
     IDLE,       // 초기 상태 또는 로딩 전

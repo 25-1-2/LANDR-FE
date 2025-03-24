@@ -1,4 +1,4 @@
-package com.capston.data.repository.remote.response
+package com.capston.domain.response
 
 data class TodayScheduleResponse(
     val date: String = "",
