@@ -44,6 +44,7 @@ pagingCommonAndroid = "3.3.4"
 jetbrainsKotlinJvm = "1.9.24"
 ksp = "1.9.24-1.0.20"
 material3 = "1.1.0"
+rxjava = "2.2.21"
 
 [libraries]
 androidx-compose-material3 = { module = "androidx.compose.material3:material3", version.ref = "material3" }
@@ -100,6 +101,7 @@ androidx-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-toolin
 androidx-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
+rxjava_adapter = { module = "com.squareup.retrofit2:adapter-rxjava2", version.ref = "retrofit" }
 
 # Gradle
 android-gradlePlugin = { group = "com.android.tools.build", name = "gradle", version.ref = "agp" }

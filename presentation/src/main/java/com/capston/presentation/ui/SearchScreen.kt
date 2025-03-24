@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,8 +16,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.OutlinedTextField
+import androidx.compose.material.Surface
+import androidx.compose.material.TextFieldDefaults
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -35,12 +43,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role.Companion.Image
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.capston.presentation.theme.CapstonTheme
 import com.capston.presentation.theme.LightGray40
+import com.capston.presentation.theme.LightGray60
+import com.capston.presentation.theme.MainBlue
 import com.capston.presentation.theme.MainPurple
 import kotlinx.coroutines.delay
 
@@ -53,23 +64,35 @@ fun SearchScreen() {
                 .padding(innerPadding)
         ) {
             // 검색 버튼을 상단에 배치
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(end = 20.dp),
-                contentAlignment = Alignment.TopEnd
-            ) {
-                IconButton(onClick = {}) {
-                    Icon(
-                        imageVector = Icons.Default.Search,
-                        contentDescription = "Search",
-                        tint = Color.Black
-                    )
+            Box {
+                Row(
+                    modifier = Modifier.padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = {
+                    }) {
+                        Image(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = null
+                        )
+                    }
+
+                    SearchBar()
+
+                    IconButton(onClick = {
+
+                    }) {
+                        Image(
+                            imageVector = Icons.Default.Search,
+                            contentDescription = null
+                        )
+                    }
                 }
             }
 
             // 리스트 표시
             InfiniteScrollList()
+
         }
     }
 }
@@ -149,6 +172,36 @@ fun SearchLectureItem(title: String) {
             )
         }
     }
+}
+
+@Composable
+fun SearchBar() {
+    OutlinedTextField(
+        value = "검색",
+        onValueChange = { it },
+        colors = TextFieldDefaults.outlinedTextFieldColors(
+            focusedBorderColor = Color.Red, // 포커스 되었을 때 테두리 색상
+            unfocusedBorderColor = MainPurple, // 기본(포커스 안 된) 상태의 테두리 색상
+            textColor = LightGray60
+        ),
+        textStyle = TextStyle(
+            fontSize = 20.sp
+        ),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 20.dp)
+    )
+
+    IconButton(
+        onClick = {},
+    ) {
+        Icon(
+            imageVector = Icons.Default.Search,
+            contentDescription = "Search",
+            tint = Color.Black
+        )
+    }
+
 }
 
 @Preview(showBackground = true)

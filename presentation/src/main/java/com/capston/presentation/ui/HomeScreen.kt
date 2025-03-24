@@ -287,13 +287,16 @@ fun LectureList(modalBottomSheetState: SheetState) {
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .padding(vertical = 8.dp)
-                    .height(50.dp)
+                    .height(60.dp),
             ) {
                 CheckBox()
 
                 if (isEditing) {
                     Column(modifier = Modifier.fillMaxWidth()) {
-                        Row(modifier = Modifier.fillMaxWidth()) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
                             OutlinedTextField(
                                 value = lectureTitle,
                                 onValueChange = { lectureTitle = it },
@@ -310,9 +313,7 @@ fun LectureList(modalBottomSheetState: SheetState) {
                                     unfocusedBorderColor = MainBlue, // 기본(포커스 안 된) 상태의 테두리 색상
                                     textColor = LightGray60
                                 ),
-                                textStyle = TextStyle(
-                                    fontSize = 10.sp
-                                )
+                                textStyle = TextStyle(fontSize = 14.sp)
                             )
 
                             // 완료 버튼
@@ -328,17 +329,16 @@ fun LectureList(modalBottomSheetState: SheetState) {
                                 ),
                                 modifier = Modifier
                                     .padding(start = 16.dp),
-                                shape = RoundedCornerShape(12.dp)  // 둥근 모서리 설정
+                                shape = RoundedCornerShape(12.dp)
                             ) {
                                 Text(
                                     text = "완료",
-                                    fontSize = 10.sp
+                                    fontSize = 14.sp
                                 )
                             }
-
                         }
 
-                        // 강의 별칭 텍스트
+                        // 강의 제목 텍스트가 OutlinedTextField 아래에 보이도록
                         Spacer(modifier = Modifier.height(8.dp)) // 버튼과 텍스트 간격 추가
                         Text(
                             text = lecture.first, // 강의 첫 번째 텍스트

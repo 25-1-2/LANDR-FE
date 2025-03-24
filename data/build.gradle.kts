@@ -1,7 +1,7 @@
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
-
+    id("kotlin-kapt")
 }
 
 android {
@@ -42,4 +42,23 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+    implementation(libs.hilt)
+    kapt(libs.hilt.compiler)
+
+    // okHttp
+    implementation(libs.okhttp)
+    implementation(platform(libs.okhttp.bom))
+    implementation (libs.logging.interceptor)
+    implementation (libs.okhttp.urlconnection)
+
+    // retrofit
+    implementation(libs.retrofit)
+    implementation(libs.converter.gson)
+    implementation(libs.rxjava.adapter)
+
+    // gson
+    implementation(libs.gson)
+
+    // coroutines
+    implementation(libs.kotlinx.coroutines.android)
 }
