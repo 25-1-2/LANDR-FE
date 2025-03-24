@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- 로그인 관련 -->
+    <string name="google_client_id">441389992846-sqijfp1cvh0i94b0ubuk8vut8n0tn5eh.apps.googleusercontent.com</string>
+
     <!-- 홈 관련 -->
     <string name="home">홈</string>
     <string name="calender">캘린더</string>
