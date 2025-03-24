@@ -29,6 +29,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.TextFieldDefaults
@@ -251,7 +252,7 @@ fun CustomBottomSheetDialog(
                 }
             },
             colors = ButtonDefaults.buttonColors(
-                containerColor = Purple40,
+                containerColor = MainBlue,
                 contentColor = Color.White,
                 disabledContainerColor = Purple40,
                 disabledContentColor = Color.White,
@@ -284,36 +285,66 @@ fun LectureList(modalBottomSheetState: SheetState) {
 
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(vertical = 8.dp)
+                modifier = Modifier
+                    .padding(vertical = 8.dp)
+                    .height(50.dp)
             ) {
                 CheckBox()
 
-                // 수정 모드일 때 TextField 보여주기
                 if (isEditing) {
-                    OutlinedTextField(
-                        value = lectureTitle,
-                        onValueChange = { lectureTitle = it },
-                        label = { Text("강의 별칭") },
-                        modifier = Modifier.weight(1f),
-                        colors = TextFieldDefaults.outlinedTextFieldColors(
-                            focusedBorderColor = Color.Red, // 포커스 되었을 때 테두리 색상
-                            unfocusedBorderColor = MainBlue // 기본(포커스 안 된) 상태의 테두리 색상
-                        )
-                    )
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        Row(modifier = Modifier.fillMaxWidth()) {
+                            OutlinedTextField(
+                                value = lectureTitle,
+                                onValueChange = { lectureTitle = it },
+                                label = {
+                                    Text(
+                                        text = "강의 별칭",
+                                        fontSize = 10.sp,
+                                        color = MainBlue
+                                    )
+                                },
+                                modifier = Modifier.weight(1f),
+                                colors = TextFieldDefaults.outlinedTextFieldColors(
+                                    focusedBorderColor = Color.Red, // 포커스 되었을 때 테두리 색상
+                                    unfocusedBorderColor = MainBlue, // 기본(포커스 안 된) 상태의 테두리 색상
+                                    textColor = LightGray60
+                                ),
+                                textStyle = TextStyle(
+                                    fontSize = 10.sp
+                                )
+                            )
 
-                    Button(
-                        onClick = {
-                            // 확인 버튼 클릭 시 수정된 내용 적용
-                            lectures[index] = lectures[index].first to lectureTitle
-                            isEditing = false  // 수정 모드 종료
-                        },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Purple40,
-                            contentColor = Color.White,
-                        ),
-                        modifier = Modifier.padding(start = 16.dp)
-                    ) {
-                        Text("확인")
+                            // 완료 버튼
+                            Button(
+                                onClick = {
+                                    // 완료 버튼 클릭 시 수정된 내용 적용
+                                    lectures[index] = lectures[index].first to lectureTitle
+                                    isEditing = false  // 수정 모드 종료
+                                },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MainBlue,
+                                    contentColor = Color.White,
+                                ),
+                                modifier = Modifier
+                                    .padding(start = 16.dp),
+                                shape = RoundedCornerShape(12.dp)  // 둥근 모서리 설정
+                            ) {
+                                Text(
+                                    text = "완료",
+                                    fontSize = 10.sp
+                                )
+                            }
+
+                        }
+
+                        // 강의 별칭 텍스트
+                        Spacer(modifier = Modifier.height(8.dp)) // 버튼과 텍스트 간격 추가
+                        Text(
+                            text = lecture.first, // 강의 첫 번째 텍스트
+                            fontSize = 12.sp,
+                            modifier = Modifier.padding(start = 16.dp)
+                        )
                     }
                 } else {
                     // 수정 모드가 아닐 때는 기존 강의 제목을 그대로 표시
