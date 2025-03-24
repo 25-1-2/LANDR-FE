@@ -14,10 +14,6 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
-@Qualifier
-@Retention(AnnotationRetention.BINARY)
-annotation class MainRetrofit
-
 @Module
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
