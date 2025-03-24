@@ -22,7 +22,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBars
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -66,12 +65,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.capston.domain.base.BaseLoadingState
 import com.capston.presentation.R
-import com.capston.presentation.theme.CapstonTheme
 import com.capston.presentation.theme.LightGray40
 import com.capston.presentation.theme.LightGray3
 import com.capston.presentation.theme.LightGray4
@@ -80,6 +78,7 @@ import com.capston.presentation.theme.MainBlue
 import com.capston.presentation.theme.MainPurple
 import com.capston.presentation.theme.Purple40
 import com.capston.presentation.viewmodel.HomeViewModel
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 val lectures = listOf(
@@ -93,17 +92,33 @@ val lectures = listOf(
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
-@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter", "StateFlowValueCalledInComposition")
+@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter", "StateFlowValueCalledInComposition",
+    "CoroutineCreationDuringComposition"
+)
 @Composable
 fun HomeScreen(homeViewModel: HomeViewModel) {
+    val scope = rememberCoroutineScope()
 
     // Collecting state from ViewModel
-    val distinctHomeState by homeViewModel.getDistinctHome.collectAsState()
-    Log.d("home state", distinctHomeState.result.message)
+    val homeState = homeViewModel.getDistinctHome.collectAsState()
+
+    LaunchedEffect(homeState) {
+        when (homeState.value.status) {
+            BaseLoadingState.LOADING -> {
+                Log.d("HomeScreen", "로딩 중...")
+            }
+            BaseLoadingState.SUCCESS -> {
+                Log.d("HomeScreen", "성공적으로 데이터를 가져왔습니다!")
+            }
+            BaseLoadingState.ERROR -> {
+                Log.d("HomeScreen", "에러 발생!")
+            }
+            else -> {}
+        }
+    }
 
     // ModalBottomSheet의 boolean 상태를 기억
     var isBottomSheetVisible by remember { mutableStateOf(false) }
-    val scope = rememberCoroutineScope()
     val modalBottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     Scaffold(

@@ -3,7 +3,6 @@ package com.capston.presentation.ui
 import android.annotation.SuppressLint
 import android.os.Build
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -20,8 +19,9 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -32,6 +32,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
@@ -43,33 +45,31 @@ import com.capston.presentation.theme.MainPurple
 import com.capston.presentation.viewmodel.HomeViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
-private lateinit var homeViewModel: HomeViewModel
-
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    @SuppressLint("CoroutineCreationDuringComposition")
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
+            val homeViewModel = viewModel<HomeViewModel>()
+            LaunchedEffect(Unit) {
+                homeViewModel.getDistinctHome()
+            }
+
             CapstonTheme {
-                InitViewModel()
-                SettingTopBottomBar()
+                SettingTopBottomBar(homeViewModel)
             }
         }
     }
 }
 
-@Composable
-fun InitViewModel() {
-    homeViewModel = viewModel()
-}
-
 @RequiresApi(Build.VERSION_CODES.O)
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
-fun SettingTopBottomBar(modifier: Modifier = Modifier) {
-    var bottomNavState by rememberSaveable { mutableStateOf(0) }
+fun SettingTopBottomBar(homeViewModel: HomeViewModel) {
+    var bottomNavState by rememberSaveable { mutableIntStateOf(0) }
     val navController = rememberNavController()
 
     Scaffold(
