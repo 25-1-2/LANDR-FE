@@ -1,8 +1,12 @@
 package com.capston.presentation.ui
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -11,7 +15,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -25,19 +33,42 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.Role.Companion.Image
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.capston.presentation.theme.CapstonTheme
+import com.capston.presentation.theme.LightGray40
 import com.capston.presentation.theme.MainPurple
 import kotlinx.coroutines.delay
 
 @Composable
 fun SearchScreen() {
     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding),
-            contentAlignment = Alignment.Center // 정중앙에 배치
+                .padding(innerPadding)
         ) {
+            // 검색 버튼을 상단에 배치
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(end = 20.dp),
+                contentAlignment = Alignment.TopEnd
+            ) {
+                IconButton(onClick = {}) {
+                    Icon(
+                        imageVector = Icons.Default.Search,
+                        contentDescription = "Search",
+                        tint = Color.Black
+                    )
+                }
+            }
+
+            // 리스트 표시
             InfiniteScrollList()
         }
     }
@@ -45,15 +76,17 @@ fun SearchScreen() {
 
 @Composable
 fun InfiniteScrollList() {
-    var items by remember { mutableStateOf(List(1000) { "Item #$it" }) }
+    var items by remember { mutableStateOf(List(1000) {
+        "2026 현우진의 수분감 - 수학I (공통)"
+    }) }
     var loading by remember { mutableStateOf(false) }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        // 상하단 100dp의 영역을 제한
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .fillMaxHeight().padding(top = 20.dp, bottom = 20.dp, start = 40.dp)
+                .fillMaxHeight()
+                .padding(top = 20.dp, bottom = 20.dp, start = 40.dp)
         ) {
             LazyColumn(
                 state = rememberLazyListState(),
@@ -61,26 +94,23 @@ fun InfiniteScrollList() {
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(items) { item ->
-                    Text(text = item, )
+                    SearchLectureItem(title = item) // 새롭게 분리한 Composable 사용
                 }
 
-                // 무한 스크롤 감지: 마지막 아이템에 도달하면 데이터 로딩
                 if (!loading) {
                     item {
                         val listState = rememberLazyListState()
 
-                        // 리스트 끝에 도달했을 때 새 데이터 로드
                         LaunchedEffect(remember { derivedStateOf { listState.firstVisibleItemIndex } }) {
                             if (listState.firstVisibleItemIndex == items.size - 1) {
                                 loading = true
-                                delay(1500) // 데이터 로드 대기 시간 시뮬레이션
+                                delay(1500)
                                 val newItems = List(20) { "New Item #$it" }
                                 items = items + newItems
                                 loading = false
                             }
                         }
 
-                        // 로딩 상태 표시
                         if (loading) {
                             CircularProgressIndicator(
                                 modifier = Modifier.fillMaxWidth().padding(16.dp),
@@ -92,5 +122,39 @@ fun InfiniteScrollList() {
                 }
             }
         }
+    }
+}
+
+@Composable
+fun SearchLectureItem(title: String) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp) // 아이템 간격 추가
+    ) {
+        Column {
+            Text(
+                text = "메가스터디",
+                color = MainPurple,
+                fontSize = 14.sp)
+            Text(
+                text = title,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold
+            ) // title을 전달받아 표시
+            Text(
+                text = "현우진 · [고3·2·N수] 수능 (문제풀이) · 50강",
+                color = LightGray40,
+                fontSize = 14.sp
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun GreetingPreview() {
+    CapstonTheme {
+        SearchScreen()
     }
 }

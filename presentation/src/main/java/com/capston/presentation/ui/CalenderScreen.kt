@@ -263,11 +263,3 @@ fun CustomCalendar(
         }
     }
 }
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    CapstonTheme {
-        CalenderScreen()
-    }
-}
