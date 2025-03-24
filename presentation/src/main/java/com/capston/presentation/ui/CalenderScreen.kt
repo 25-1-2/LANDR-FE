@@ -45,18 +45,14 @@ import com.capston.presentation.ui.BottomBar
 fun CalenderScreen() {
     var calendarHeight by remember { mutableStateOf(400) } // 달력의 초기 높이
     var lessonListHeight by remember { mutableStateOf(250) } // 할일 목록의 초기 높이
-    val bottomBarHeight = 100.dp
 
 
     Scaffold(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(top = 100.dp)
+        modifier = Modifier.fillMaxSize()
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(bottom = bottomBarHeight) // 바텀 바를 위해 하단 여백을 설정
         ) {
 
             Calendar(calendarHeight) { delta ->
@@ -131,13 +127,13 @@ fun Calendar(calendarHeight: Int, onDrag: (Float) -> Unit) {
 
 fun getKoreanDayOfWeek(dayOfWeek: Int): String {
     return when (dayOfWeek) {
-        1 -> "일" // Sunday
-        2 -> "월" // Monday
-        3 -> "화" // Tuesday
-        4 -> "수" // Wednesday
-        5 -> "목" // Thursday
-        6 -> "금" // Friday
-        7 -> "토" // Saturday
+        1 -> "월" // Sunday
+        2 -> "화" // Monday
+        3 -> "수" // Tuesday
+        4 -> "목" // Wednesday
+        5 -> "금" // Thursday
+        6 -> "토" // Friday
+        7 -> "일" // Saturday
         else -> ""
     }
 }
@@ -265,13 +261,5 @@ fun CustomCalendar(
                     .padding(top = 10.dp)
             )
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    CapstonTheme {
-        CalenderScreen()
     }
 }

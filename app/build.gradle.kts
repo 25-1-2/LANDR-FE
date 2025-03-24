@@ -96,6 +96,7 @@ dependencies {
     // retrofit
     implementation(libs.retrofit)
     implementation(libs.converter.gson)
+    implementation(libs.rxjava.adapter)
 
     // gson
     implementation(libs.gson)

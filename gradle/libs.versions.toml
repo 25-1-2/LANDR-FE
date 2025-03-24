@@ -51,6 +51,7 @@ firebaseAuthKtx = "23.2.0"
 playServicesAuth = "21.3.0"
 googleApiClient = "1.32.1"
 googleHttpClient = "1.32.1"
+rxjava = "2.2.21"
 
 [libraries]
 androidx-compose-material3 = { module = "androidx.compose.material3:material3", version.ref = "material3" }
@@ -114,6 +115,7 @@ firebase-analytics = { module = "com.google.firebase:firebase-analytics" }
 identity-googleid = { module = "com.google.android.libraries.identity.googleid:googleid", version.ref = "identityGoogleid" }
 gms-play-services-auth = { module = "com.google.android.gms:play-services-auth", version.ref = "playServicesAuth" }
 firebase-auth-ktx = { group = "com.google.firebase", name = "firebase-auth-ktx", version.ref = "firebaseAuthKtx" }
+rxjava_adapter = { module = "com.squareup.retrofit2:adapter-rxjava2", version.ref = "retrofit" }
 
 # Gradle
 android-gradlePlugin = { group = "com.android.tools.build", name = "gradle", version.ref = "agp" }
