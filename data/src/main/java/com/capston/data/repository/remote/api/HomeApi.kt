@@ -1,5 +1,7 @@
 package com.capston.data.repository.remote.api
 
+import com.capston.data.repository.remote.response.BaseResponse
+import com.capston.data.repository.remote.response.DistinctHomeIdResponse
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
