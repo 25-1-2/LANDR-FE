@@ -9,6 +9,12 @@ sealed class Screen(
     val selectedIcon: Any,
     val unselectedIcon: Any
 ) {
+    data object Login: Screen(
+        title = "Login",
+        selectedIcon = R.drawable.activity_main_home_iv_on,
+        unselectedIcon = R.drawable.activity_main_home_iv,
+    )
+
     data object Home: Screen(
         title = "home",
         selectedIcon = R.drawable.activity_main_home_iv_on,
