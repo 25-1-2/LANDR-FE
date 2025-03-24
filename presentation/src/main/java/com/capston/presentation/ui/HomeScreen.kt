@@ -1,6 +1,7 @@
 package com.capston.presentation.ui
 
 import android.annotation.SuppressLint
+import android.util.Log
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
@@ -45,6 +46,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -67,6 +69,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.capston.presentation.R
 import com.capston.presentation.theme.CapstonTheme
 import com.capston.presentation.theme.LightGray40
@@ -76,6 +79,7 @@ import com.capston.presentation.theme.LightGray60
 import com.capston.presentation.theme.MainBlue
 import com.capston.presentation.theme.MainPurple
 import com.capston.presentation.theme.Purple40
+import com.capston.presentation.viewmodel.HomeViewModel
 import kotlinx.coroutines.launch
 
 val lectures = listOf(
@@ -89,9 +93,14 @@ val lectures = listOf(
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
-@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
+@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter", "StateFlowValueCalledInComposition")
 @Composable
-fun HomeScreen() {
+fun HomeScreen(homeViewModel: HomeViewModel) {
+
+    // Collecting state from ViewModel
+    val distinctHomeState by homeViewModel.getDistinctHome.collectAsState()
+    Log.d("home state", distinctHomeState.result.message)
+
     // ModalBottomSheet의 boolean 상태를 기억
     var isBottomSheetVisible by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
