@@ -1,10 +1,12 @@
 package com.capston.presentation.ui
 
 import android.annotation.SuppressLint
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -39,6 +41,7 @@ import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -50,24 +53,33 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun SettingTopBottomBar(modifier: Modifier = Modifier) {
     var bottomNavState by rememberSaveable { mutableStateOf(0) }
     val navController = rememberNavController()
+
     Scaffold(
         topBar = { TopBar(true) },
-        bottomBar = { BottomBar(navController, bottomNavState, { index -> bottomNavState = index }) },
-    ) { contentPadding ->
-        NavHost(
-            navController = navController,
-            startDestination = Screen.Home.title
+        bottomBar = { BottomBar(navController, bottomNavState, { index -> bottomNavState = index }) }
+    ) { contentPadding -> // topBar와 bottomBar를 고려한 padding
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(contentPadding) // topBar, bottomBar 높이만큼 padding 적용
         ) {
-            composable(Screen.Home.title) { HomeScreen() }
-            composable(Screen.Calender.title) { CalenderScreen() }
-            composable(Screen.Search.title){ SearchScreen() }
-            composable(Screen.LectureList.title) { LectureListScreen() }
-            composable(Screen.Profile.title) { ProfileScreen() }
+            NavHost(
+                navController = navController,
+                startDestination = Screen.Home.title,
+                modifier = Modifier.weight(1f) // NavHost가 남은 영역을 모두 차지하도록 설정
+            ) {
+                composable(Screen.Home.title) { HomeScreen() }
+                composable(Screen.Calender.title) { CalenderScreen() }
+                composable(Screen.Search.title) { SearchScreen() }
+                composable(Screen.LectureList.title) { LectureListScreen() }
+                composable(Screen.Profile.title) { ProfileScreen() }
+            }
         }
     }
 }
