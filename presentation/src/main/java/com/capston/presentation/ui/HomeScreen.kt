@@ -95,6 +95,8 @@ val lectures = listOf(
 private var lessonCnt = 0
 private var todayTotalLesson = 0
 private var todayTotalDuration = 0
+private var totalCompletedLessons = 0 // 누적 완강 개수
+private var totalLessons = 0 // 누적 강의 개수
 
 @OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter", "StateFlowValueCalledInComposition",
@@ -103,8 +105,14 @@ private var todayTotalDuration = 0
 @Composable
 fun HomeScreen(homeViewModel: HomeViewModel) {
     val scope = rememberCoroutineScope()
-
-    GetHomeStatus(homeViewModel)
+    val homeState by homeViewModel.getDistinctHome.collectAsState()
+    totalCompletedLessons = homeState.userProgress.totalCompletedLessons // 누적 완강 개수
+    totalLessons = homeState.userProgress.totalLessons // 누적 강의 개수
+    val lectureProgressList = homeState.userProgress.lectureProgress // 전체 강의 목록
+    // 리스트 데이터를 로그에 출력
+    lectureProgressList.forEach {
+        Log.d("HomeViewModel", "Lecture ID: ${it.lectureId}, Name: ${it.lectureName}, Completed: ${it.completedLessons}, Total: ${it.totalLessons}")
+    }
 
     // ModalBottomSheet의 boolean 상태를 기억
     var isBottomSheetVisible by remember { mutableStateOf(false) }
@@ -158,12 +166,15 @@ fun HomeScreen(homeViewModel: HomeViewModel) {
                             .fillMaxWidth()
                             .padding(16.dp)
                     ) {
-                        items(3) { index -> // TODO 개수 나중에 API로 받아서 수정
-                            CircleGraph("전체")
+                        item {
+                            CircleGraph("전체", totalCompletedLessons, totalLessons)
+                        }
+
+                        items(lectureProgressList) { item ->
                             Spacer(modifier = Modifier.width(16.dp)) // 그래프 간격 추가
-                            CircleGraph("수분감")
-                            Spacer(modifier = Modifier.width(16.dp))
-                            CircleGraph("믿어봐")
+
+                            // 처음 8글자만 뽑아오기
+                            CircleGraph(item.lectureName.take(8), item.completedLessons,item.totalLessons)
                         }
                     }
                 }
@@ -199,18 +210,6 @@ fun HomeScreen(homeViewModel: HomeViewModel) {
         }
     }
 
-}
-
-@Composable
-fun GetHomeStatus(homeViewModel: HomeViewModel) {
-    // Collecting state from ViewModel
-    val homeState = homeViewModel.getDistinctHome.collectAsState()
-
-    LaunchedEffect(homeState) {
-        Log.d("dsfkjsk", homeState.value.toString())
-        Log.d("user progress", homeState.value.userProgress.toString())
-        Log.d("today schedule", homeState.value.todaySchedule.toString())
-    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -464,13 +463,20 @@ fun LessonList(maxHeight: Int) {
 }
 
 @Composable
-fun CircleGraph(name: String) {
+fun CircleGraph(name: String, cleared: Int, total: Int) {
     val animatedValue = remember { Animatable(0f) }
+
+    // 비율에 맞게 애니메이션의 목표값 설정
+    val targetValue = if (total > 0) {
+        (cleared.toFloat() / total.toFloat()) * 360f
+    } else {
+        0f // 강의가 없으면 0으로 설정
+    }
 
     // 특정 값으로 색을 채우는 Animation
     LaunchedEffect(Unit) {
         animatedValue.animateTo(
-            targetValue = 100F,
+            targetValue = targetValue,
             animationSpec = tween(durationMillis = 1000, easing = LinearEasing),
         )
     }
@@ -520,7 +526,7 @@ fun CircleGraph(name: String) {
         )
 
         drawContext.canvas.nativeCanvas.drawText(
-            "1/50",  // 텍스트 내용
+            "${cleared}/${total}",  // 텍스트 내용
             size.width / 2,  // X 위치
             size.height / 2 + 70,  // Y 위치
             android.graphics.Paint().apply {
