@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.capston.domain.base.BaseLoadingState
 import com.capston.domain.response.BaseResponse
 import com.capston.domain.response.DistinctHomeIdResponse
+import com.capston.domain.response.TodayScheduleResponse
 import com.capston.domain.usecase.home.GetDistinctHomeUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -27,7 +28,12 @@ class HomeViewModel @Inject constructor(
             //_getDistinctHome.value = _getDistinctHome.value.copy(status = BaseLoadingState.LOADING)
             try {
                 getDistinctHomeUseCase().collect { response ->
-                    _getDistinctHome.value = response
+                    // todaySchedule이 null일 경우 빈 객체로 처리
+                    val safeTodaySchedule = response.todaySchedule ?: TodayScheduleResponse()
+
+                    // userProgress와 todaySchedule을 포함한 응답을 MutableStateFlow에 업데이트
+                    _getDistinctHome.value = response.copy(todaySchedule = safeTodaySchedule)
+
                 }
             } catch (e: Exception) {
                 Log.e("getDistinctHome", "에러: ${e.message}", e)
