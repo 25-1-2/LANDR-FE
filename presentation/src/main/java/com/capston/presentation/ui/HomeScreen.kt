@@ -207,6 +207,7 @@ fun GetHomeStatus(homeViewModel: HomeViewModel) {
     val homeState = homeViewModel.getDistinctHome.collectAsState()
 
     LaunchedEffect(homeState) {
+        Log.d("dsfkjsk", homeState.value.toString())
         Log.d("user progress", homeState.value.userProgress.toString())
         Log.d("today schedule", homeState.value.todaySchedule.toString())
     }

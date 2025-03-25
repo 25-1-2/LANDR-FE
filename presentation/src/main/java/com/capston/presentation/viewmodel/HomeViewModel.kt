@@ -27,8 +27,7 @@ class HomeViewModel @Inject constructor(
             //_getDistinctHome.value = _getDistinctHome.value.copy(status = BaseLoadingState.LOADING)
             try {
                 getDistinctHomeUseCase().collect { response ->
-                    response.userProgress
-                    response.todaySchedule
+                    _getDistinctHome.value = response
                 }
             } catch (e: Exception) {
                 Log.e("getDistinctHome", "에러: ${e.message}", e)
