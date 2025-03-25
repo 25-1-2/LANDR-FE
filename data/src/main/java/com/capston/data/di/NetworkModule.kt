@@ -1,6 +1,8 @@
 package com.capston.data.di
 
 import android.util.Log
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -27,6 +29,12 @@ object NetworkModule {
         }
     }
 
+    @Singleton
+    @Provides
+    fun provideGson(): Gson {
+        return GsonBuilder().setLenient().create() // setLenient() 추가
+    }
+
 //    @Singleton
 //    @Provides
 //    fun provideAccessTokenInterceptor(tokenManager: TokenManager): AccessTokenInterceptor {
@@ -45,9 +53,9 @@ object NetworkModule {
 //        accessTokenInterceptor: AccessTokenInterceptor,
     ): OkHttpClient {
         return OkHttpClient.Builder()
-            .connectTimeout(30, TimeUnit.SECONDS)
-            .readTimeout(30, TimeUnit.SECONDS)
-            .writeTimeout(30, TimeUnit.SECONDS)
+            .connectTimeout(150, TimeUnit.SECONDS)
+            .readTimeout(150, TimeUnit.SECONDS)
+            .writeTimeout(150, TimeUnit.SECONDS)
             .addInterceptor(httpLoggingInterceptor)
             .addInterceptor{ chain ->
                 val request = chain.request()

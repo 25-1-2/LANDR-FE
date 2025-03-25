@@ -12,6 +12,8 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Capston"
         android:name="example.capston.App"
+        tools:targetApi="31"
+        android:usesCleartextTraffic="true">
         tools:targetApi="31">
 
         <!-- 로그인 액티비티를 시작 액티비티로 설정 -->
@@ -33,4 +35,5 @@
             android:launchMode="singleTop"
             android:exported="true" />
     </application>
+
 </manifest>

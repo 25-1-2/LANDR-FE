@@ -109,9 +109,11 @@ fun HomeScreen(homeViewModel: HomeViewModel) {
             }
             BaseLoadingState.SUCCESS -> {
                 Log.d("HomeScreen", "성공적으로 데이터를 가져왔습니다!")
+                Log.d("home data", homeState.value.toString())
             }
             BaseLoadingState.ERROR -> {
                 Log.d("HomeScreen", "에러 발생!")
+                Log.d("home data", homeState.value.toString())
             }
             else -> {}
         }

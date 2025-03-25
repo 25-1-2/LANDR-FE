@@ -7,6 +7,8 @@ import com.capston.domain.datasource.HomeDataSource
 import com.capston.domain.response.BaseResponse
 import com.capston.domain.response.DistinctHomeIdResponse
 import com.capston.domain.response.Result
+import com.capston.domain.response.TodayScheduleResponse
+import com.capston.domain.response.UserProgressResponse
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
@@ -21,8 +23,35 @@ class HomeDataSourceImpl @Inject constructor(
 
     override suspend fun getDistinctHome(): Flow<BaseResponse<DistinctHomeIdResponse>> = flow {
         val result = homeApi.getDistinctHome()
+        Log.d("HomeDataSource", "서버 응답: $result")
+        if (result.payload == null) {
+            // payload가 null일 때 기본값을 제공
+            val defaultPayload = DistinctHomeIdResponse(
+                userProgress = UserProgressResponse(), // 빈 데이터로 기본값 설정
+                todaySchedule = TodayScheduleResponse() // 빈 객체로 기본값 설정
+            )
+            result.payload = defaultPayload
+        }
+
         emit(result) // 정상적으로 응답이 왔을 때 emit
     }.catch { e ->
+        // 예외 발생 시 메시지를 출력하도록 처리
+        val errorMessage = e.message ?: "알 수 없는 오류 발생"
+        Log.e("getDistinctHome", "예외 발생: $errorMessage")
+
+        // JSON 파싱 함수 호출
+        val parsedMessage = parseErrorMessage(errorMessage)
+        val errorResponse = Result(code = 5000, message = parsedMessage)
+
+        // BaseResponse로 감싸서 오류 상태를 emit
+        val response = BaseResponse<DistinctHomeIdResponse>(
+            result = errorResponse,
+            payload = null,
+            status = BaseLoadingState.ERROR
+        )
+
+        emit(response)
+
         if (e is HttpException && e.code() == 404) {
             val errorResponse = BaseResponse<DistinctHomeIdResponse>(
                 result = Result(
@@ -40,13 +69,27 @@ class HomeDataSourceImpl @Inject constructor(
         }
     }
 
-    // JSON 파싱 함수
     private fun parseErrorMessage(json: String): String {
         return try {
             val jsonObject = JSONObject(json)
-            jsonObject.getJSONObject("result").getString("message")
+            if (jsonObject.has("result")) {
+                val resultObject = jsonObject.getJSONObject("result")
+                resultObject.optString("message", "서버에서 메시지를 제공하지 않았습니다.")
+            } else {
+                "서버 응답 형식이 다릅니다."
+            }
         } catch (ex: JSONException) {
-            "파싱 오류"
+            "JSON 파싱 오류: ${ex.message}"
         }
     }
+
+//    // JSON 파싱 함수
+//    private fun parseErrorMessage(json: String): String {
+//        return try {
+//            val jsonObject = JSONObject(json)
+//            jsonObject.getJSONObject("result").getString("message")
+//        } catch (ex: JSONException) {
+//            "파싱 오류"
+//        }
+//    }
 }
