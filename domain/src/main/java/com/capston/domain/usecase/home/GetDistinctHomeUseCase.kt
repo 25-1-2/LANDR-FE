@@ -9,5 +9,7 @@ import javax.inject.Inject
 class GetDistinctHomeUseCase @Inject constructor(
     private val homeRepository: HomeRepository
 ) {
-    suspend operator fun invoke(): Flow<BaseResponse<DistinctHomeIdResponse>> = homeRepository.getDistinctHome()
+    suspend operator fun invoke(): Flow<DistinctHomeIdResponse> {
+        return homeRepository.getDistinctHome()
+    }
 }

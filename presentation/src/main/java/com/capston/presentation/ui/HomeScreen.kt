@@ -80,6 +80,7 @@ import com.capston.presentation.theme.Purple40
 import com.capston.presentation.viewmodel.HomeViewModel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import kotlin.properties.Delegates
 
 val lectures = listOf(
     Pair("1. 함수의 극한과 연속①","2026 현우진의 수분감 - 수학I (공통) 약 14분"),
@@ -91,6 +92,10 @@ val lectures = listOf(
     Pair( "7. 함수의 극한과 연속①","2026 현우진의 수분감 - 수학I (공통) 약 14분"),
 )
 
+private var lessonCnt = 0
+private var todayTotalLesson = 0
+private var todayTotalDuration = 0
+
 @OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter", "StateFlowValueCalledInComposition",
     "CoroutineCreationDuringComposition"
@@ -99,25 +104,7 @@ val lectures = listOf(
 fun HomeScreen(homeViewModel: HomeViewModel) {
     val scope = rememberCoroutineScope()
 
-    // Collecting state from ViewModel
-    val homeState = homeViewModel.getDistinctHome.collectAsState()
-
-    LaunchedEffect(homeState) {
-        when (homeState.value.status) {
-            BaseLoadingState.LOADING -> {
-                Log.d("HomeScreen", "로딩 중...")
-            }
-            BaseLoadingState.SUCCESS -> {
-                Log.d("HomeScreen", "성공적으로 데이터를 가져왔습니다!")
-                Log.d("home data", homeState.value.toString())
-            }
-            BaseLoadingState.ERROR -> {
-                Log.d("HomeScreen", "에러 발생!")
-                Log.d("home data", homeState.value.toString())
-            }
-            else -> {}
-        }
-    }
+    GetHomeStatus(homeViewModel)
 
     // ModalBottomSheet의 boolean 상태를 기억
     var isBottomSheetVisible by remember { mutableStateOf(false) }
@@ -185,7 +172,7 @@ fun HomeScreen(homeViewModel: HomeViewModel) {
             Spacer(modifier = Modifier.height(30.dp)) // 🌟 그래프와 강의 목록 사이 간격 추가
 
             Text(
-                text = "⭐ 오늘의 강의 (총 ${lectures.size}강, 약 42분)",
+                text = "⭐ 오늘의 강의 (총 ${todayTotalLesson}강, 약 ${todayTotalDuration}분)",
                 style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.Bold,
                 fontSize = 20.sp,
@@ -212,6 +199,17 @@ fun HomeScreen(homeViewModel: HomeViewModel) {
         }
     }
 
+}
+
+@Composable
+fun GetHomeStatus(homeViewModel: HomeViewModel) {
+    // Collecting state from ViewModel
+    val homeState = homeViewModel.getDistinctHome.collectAsState()
+
+    LaunchedEffect(homeState) {
+        Log.d("user progress", homeState.value.userProgress.toString())
+        Log.d("today schedule", homeState.value.todaySchedule.toString())
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

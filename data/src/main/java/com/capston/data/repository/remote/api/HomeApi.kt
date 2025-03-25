@@ -9,5 +9,5 @@ interface HomeApi {
     //홈 단 건 조회
     @GET("/v1/home")
     suspend fun getDistinctHome(
-    ): BaseResponse<DistinctHomeIdResponse>
+    ): DistinctHomeIdResponse
 }

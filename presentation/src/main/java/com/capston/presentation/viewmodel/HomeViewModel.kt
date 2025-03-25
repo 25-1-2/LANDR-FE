@@ -18,27 +18,23 @@ class HomeViewModel @Inject constructor(
     private val getDistinctHomeUseCase: GetDistinctHomeUseCase,
 ) : ViewModel() {
 
-    private val _getDistinctHome = MutableStateFlow(BaseResponse<DistinctHomeIdResponse>())
-    val getDistinctHome: StateFlow<BaseResponse<DistinctHomeIdResponse>> = _getDistinctHome
+    private val _getDistinctHome = MutableStateFlow(DistinctHomeIdResponse())
+    val getDistinctHome: StateFlow<DistinctHomeIdResponse> = _getDistinctHome
 
     fun getDistinctHome() {
         viewModelScope.launch {
             // 로딩 상태로 초기화
-            _getDistinctHome.value = _getDistinctHome.value.copy(status = BaseLoadingState.LOADING)
+            //_getDistinctHome.value = _getDistinctHome.value.copy(status = BaseLoadingState.LOADING)
             try {
                 getDistinctHomeUseCase().collect { response ->
-                    // 성공 상태로 업데이트
-                    _getDistinctHome.value = _getDistinctHome.value.copy(
-                        result = response.result,
-                        payload = response.payload,
-                        status = BaseLoadingState.SUCCESS
-                    )
+                    response.userProgress
+                    response.todaySchedule
                 }
             } catch (e: Exception) {
                 Log.e("getDistinctHome", "에러: ${e.message}", e)
                 // 에러 상태로 업데이트
-                _getDistinctHome.value =
-                    _getDistinctHome.value.copy(status = BaseLoadingState.ERROR)
+//                _getDistinctHome.value =
+//                    _getDistinctHome.value.copy()
             }
         }
     }

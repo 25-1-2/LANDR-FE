@@ -21,16 +21,16 @@ class HomeDataSourceImpl @Inject constructor(
     private val homeApi: HomeApi
 ) : HomeDataSource {
 
-    override suspend fun getDistinctHome(): Flow<BaseResponse<DistinctHomeIdResponse>> = flow {
-        val result = homeApi.getDistinctHome()
-        Log.d("HomeDataSource", "서버 응답: $result")
-        if (result.payload == null) {
+    override suspend fun getDistinctHome(): Flow<DistinctHomeIdResponse> = flow {
+        var result = homeApi.getDistinctHome()
+        Log.d("HomeDataSourceImpl", "서버 응답: $result")
+        if (result == null) {
             // payload가 null일 때 기본값을 제공
             val defaultPayload = DistinctHomeIdResponse(
                 userProgress = UserProgressResponse(), // 빈 데이터로 기본값 설정
                 todaySchedule = TodayScheduleResponse() // 빈 객체로 기본값 설정
             )
-            result.payload = defaultPayload
+            result = defaultPayload
         }
 
         emit(result) // 정상적으로 응답이 왔을 때 emit
@@ -50,7 +50,7 @@ class HomeDataSourceImpl @Inject constructor(
             status = BaseLoadingState.ERROR
         )
 
-        emit(response)
+//        emit(response)
 
         if (e is HttpException && e.code() == 404) {
             val errorResponse = BaseResponse<DistinctHomeIdResponse>(
@@ -62,7 +62,7 @@ class HomeDataSourceImpl @Inject constructor(
                 status = BaseLoadingState.ERROR // 상태를 ERROR로 설정
             )
             Log.e("getDistinctHome", "HTTP 404: ${errorResponse.result.message}")
-            emit(errorResponse) // 404 응답을 Flow로 emit
+//            emit(errorResponse) // 404 응답을 Flow로 emit
         } else {
             Log.e("getDistinctHome", "예외 발생: ${e.message}")
             throw e // 기타 예외는 재throw
