@@ -69,6 +69,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.capston.domain.base.BaseLoadingState
+import com.capston.domain.response.LectureProgressResponse
 import com.capston.presentation.R
 import com.capston.presentation.theme.LightGray40
 import com.capston.presentation.theme.LightGray3
@@ -82,7 +83,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlin.properties.Delegates
 
-val lectures = listOf(
+val lessons = listOf(
     Pair("1. 함수의 극한과 연속①","2026 현우진의 수분감 - 수학I (공통) 약 14분"),
     Pair("2. 함수의 극한과 연속①","2026 현우진의 수분감 - 수학I (공통) 약 14분"),
     Pair( "3. 함수의 극한과 연속①","2026 현우진의 수분감 - 수학I (공통) 약 14분"),
@@ -92,27 +93,22 @@ val lectures = listOf(
     Pair( "7. 함수의 극한과 연속①","2026 현우진의 수분감 - 수학I (공통) 약 14분"),
 )
 
-private var lessonCnt = 0
-private var todayTotalLesson = 0
-private var todayTotalDuration = 0
-private var totalCompletedLessons = 0 // 누적 완강 개수
-private var totalLessons = 0 // 누적 강의 개수
-
 @OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter", "StateFlowValueCalledInComposition",
     "CoroutineCreationDuringComposition"
 )
 @Composable
 fun HomeScreen(homeViewModel: HomeViewModel) {
+    var lessonCnt by remember { mutableStateOf(0) }
+    var todayTotalLesson by remember { mutableStateOf(0) }
+    var todayTotalDuration by remember { mutableStateOf(0) }
     val scope = rememberCoroutineScope()
     val homeState by homeViewModel.getDistinctHome.collectAsState()
-    totalCompletedLessons = homeState.userProgress.totalCompletedLessons // 누적 완강 개수
-    totalLessons = homeState.userProgress.totalLessons // 누적 강의 개수
+    val totalCompletedLessons by remember { mutableStateOf(homeState.userProgress.totalCompletedLessons) } // 들은 강의 개수
+    val totalLessons by remember { mutableStateOf(homeState.userProgress.totalLessons) } // 전체 강의 개수
+
     val lectureProgressList = homeState.userProgress.lectureProgress // 전체 강의 목록
-    // 리스트 데이터를 로그에 출력
-    lectureProgressList.forEach {
-        Log.d("HomeViewModel", "Lecture ID: ${it.lectureId}, Name: ${it.lectureName}, Completed: ${it.completedLessons}, Total: ${it.totalLessons}")
-    }
+    var lectureNicknames by remember { mutableStateOf(lectureProgressList.map { it.lectureName.take(8) }) }
 
     // ModalBottomSheet의 boolean 상태를 기억
     var isBottomSheetVisible by remember { mutableStateOf(false) }
@@ -173,8 +169,17 @@ fun HomeScreen(homeViewModel: HomeViewModel) {
                         items(lectureProgressList) { item ->
                             Spacer(modifier = Modifier.width(16.dp)) // 그래프 간격 추가
 
-                            // 처음 8글자만 뽑아오기
-                            CircleGraph(item.lectureName.take(8), item.completedLessons,item.totalLessons)
+                            val nickname = if (lectureNicknames.isNotEmpty()) {
+                                lectureNicknames[lectureProgressList.indexOf(item)]
+                            } else {
+                                item.lectureName.take(8) // Fallback to the original lecture name if nicknames are empty
+                            }
+
+                            CircleGraph(
+                                name = nickname,
+                                cleared = item.completedLessons,
+                                total = item.totalLessons
+                            )
                         }
                     }
                 }
@@ -205,7 +210,10 @@ fun HomeScreen(homeViewModel: HomeViewModel) {
                 title = "강의 목록",
                 description = "수강 중인 강의를 선택하세요.",
                 modalBottomSheetState = modalBottomSheetState,
-                onDismiss = { isBottomSheetVisible = false }
+                onDismiss = { isBottomSheetVisible = false },
+                lectureProgressList = lectureProgressList,
+                lectureNicknames = lectureNicknames,
+                onNicknamesUpdated = { updatedNicknames -> lectureNicknames = updatedNicknames }
             )
         }
     }
@@ -218,7 +226,10 @@ fun CustomBottomSheetDialog(
     title: String,
     description: String,
     modalBottomSheetState: SheetState,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    lectureProgressList: List<LectureProgressResponse>,
+    lectureNicknames: List<String>,
+    onNicknamesUpdated: (List<String>) -> Unit
 ) {
     val scope = rememberCoroutineScope()
     val bottomPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
@@ -261,8 +272,11 @@ fun CustomBottomSheetDialog(
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // modalBottomSheetState를 LectureList에 전달
-            LectureList(modalBottomSheetState)
+            LectureList(
+                lectureProgressList = lectureProgressList,
+                lectureNicknames = lectureNicknames,
+                onUpdateNickName = onNicknamesUpdated
+            )
         }
 
         Spacer(modifier = Modifier.height(10.dp))
@@ -287,24 +301,19 @@ fun CustomBottomSheetDialog(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LectureList(modalBottomSheetState: SheetState) {
+fun LectureList(
+    lectureProgressList: List<LectureProgressResponse>,
+    lectureNicknames: List<String>,
+    onUpdateNickName: (List<String>) -> Unit
+) {
     // 강의 리스트 데이터
-    val lectures = remember {
-        mutableStateListOf(
-            Pair("2026 현우진의 수분감 - 수학I (공통)", "2026 현우진"),
-            Pair("2026 현우진의 수분감 - 수학II (공통)", "2026 현우진"),
-            Pair("2026 현우진의 수분감 - 수학III (공통)", "2026 현우진"),
-        )
-    }
-
-    // 강의 체크박스 상태 관리
-    val checkedStates = remember { mutableStateListOf<Boolean>(false, false, false) }
+    val checkedStates = remember { mutableStateListOf<Boolean>().apply { repeat(lectureProgressList.size) { add(false) } } }
+    var updatedNicknames by remember { mutableStateOf(lectureNicknames.toMutableList()) }
 
     Column {
-        lectures.forEachIndexed { index, lecture ->
-            var lectureTitle by remember { mutableStateOf(lecture.second) } // 강의 제목을 수정할 변수
+        lectureProgressList.forEachIndexed { index, lecture ->
+            var lectureTitle by remember { mutableStateOf(updatedNicknames[index]) } // 수정된 강의 별칭을 관리
             var isEditing by remember { mutableStateOf(false) } // 수정 모드 여부
 
             Row(
@@ -344,8 +353,9 @@ fun LectureList(modalBottomSheetState: SheetState) {
                             Button(
                                 onClick = {
                                     // 완료 버튼 클릭 시 수정된 내용 적용
-                                    lectures[index] = lectures[index].first to lectureTitle
+                                    updatedNicknames[index] = lectureTitle
                                     isEditing = false  // 수정 모드 종료
+                                    onUpdateNickName(updatedNicknames)
                                 },
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = MainBlue,
@@ -365,7 +375,7 @@ fun LectureList(modalBottomSheetState: SheetState) {
                         // 강의 제목 텍스트가 OutlinedTextField 아래에 보이도록
                         Spacer(modifier = Modifier.height(8.dp)) // 버튼과 텍스트 간격 추가
                         Text(
-                            text = lecture.first, // 강의 첫 번째 텍스트
+                            text = lecture.lectureName, // 강의 첫 번째 텍스트
                             fontSize = 12.sp,
                             modifier = Modifier.padding(start = 16.dp)
                         )
@@ -375,7 +385,7 @@ fun LectureList(modalBottomSheetState: SheetState) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(text = lectureTitle, style = MaterialTheme.typography.bodyLarge)
                         Text(
-                            text = lecture.first,
+                            text = lecture.lectureName,
                             style = MaterialTheme.typography.bodyMedium,
                             color = LightGray60
                         )
@@ -401,7 +411,7 @@ fun LectureList(modalBottomSheetState: SheetState) {
 
 @Composable
 fun CheckBox() {
-    var imageState by remember { mutableStateOf(true) }
+    var imageState by remember { mutableStateOf(false) }
 
     IconButton(
         onClick = {
@@ -412,7 +422,7 @@ fun CheckBox() {
             .padding(end = 16.dp) // 이미지와 텍스트 간의 간격 설정
     ) {
         // 상태에 따라 이미지 변경
-        val imageRes = if (imageState) {
+        val imageRes = if (!imageState) {
             R.drawable.home_screen_check_off // 기본 이미지
         } else {
             R.drawable.home_screen_check_on // 클릭된 이미지
@@ -432,7 +442,7 @@ fun LessonList(maxHeight: Int) {
     ) {
 
         // 강의가 없을 경우
-        if (lectures.isEmpty()) {
+        if (lessons.isEmpty()) {
             item {
                 Spacer(modifier = Modifier.height(30.dp))
                 Text("오늘 강의가 없어요 \uD83D\uDE0A\n" +
@@ -440,7 +450,7 @@ fun LessonList(maxHeight: Int) {
             }
         } else {
             // 강의가 있을 경우
-            items(lectures) { lecture ->
+            items(lessons) { lecture ->
                 Row(
                     verticalAlignment = Alignment.CenterVertically, // 세로로 중앙 정렬
                     modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp)
