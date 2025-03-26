@@ -198,7 +198,15 @@ fun HomeScreen(homeViewModel: HomeViewModel) {
 
             if (todayLessonList != null) {
                 LessonList(330, todayLessonList!!)
+            } else {
+                Column(modifier = Modifier.padding(start = 20.dp)) {
+                    Spacer(modifier = Modifier.height(30.dp))
+                    Text(
+                        "오늘 강의가 없어요 \uD83D\uDE0A\n푹 쉬고 내일 다시 달려보아요 \uD83C\uDFC3",
+                    )
+                }
             }
+
         }
     }
 
@@ -465,37 +473,28 @@ fun LessonList(maxHeight: Int, todayLessonList: List<LessonScheduleResponse>) {
     ) {
 
         // 강의가 없을 경우
-        if (todayLessonList.isEmpty()) {
-            item {
-                Spacer(modifier = Modifier.height(30.dp))
-                Text("오늘 강의가 없어요 \uD83D\uDE0A\n" +
-                        "푹 쉬고 내일 다시 달려보아요 \uD83C\uDFC3")
-            }
-        } else {
-            // 강의가 있을 경우
-            items(todayLessonList) { lecture ->
-                Row(
-                    verticalAlignment = Alignment.CenterVertically, // 세로로 중앙 정렬
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp)
-                ) {
+        items(todayLessonList) { lecture ->
+            Row(
+                verticalAlignment = Alignment.CenterVertically, // 세로로 중앙 정렬
+                modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp)
+            ) {
 
-                    CheckBox(state = lecture.completed)
-                    Column {
-                        Text(
-                            text = lecture.lessonTitle,
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontSize = 16.sp
-                        )
-                        Text(
-                            text = lecture.lectureName + " · 약 " + lecture.adjustedDuration + "분",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = LightGray60,
-                            fontSize = 14.sp
-                        )
-                    }
+                CheckBox(state = lecture.completed)
+                Column {
+                    Text(
+                        text = lecture.lessonTitle,
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontSize = 16.sp
+                    )
+                    Text(
+                        text = lecture.lectureName + " · 약 " + lecture.adjustedDuration + "분",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = LightGray60,
+                        fontSize = 14.sp
+                    )
                 }
-                Spacer(modifier = Modifier.height(20.dp))
             }
+            Spacer(modifier = Modifier.height(20.dp))
         }
     }
 }
