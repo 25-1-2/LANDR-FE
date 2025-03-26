@@ -1,6 +1,6 @@
-package com.capston.data.repository.remote.response
+package com.capston.domain.response
 
-import com.capston.data.base.BaseLoadingState
+import com.capston.domain.base.BaseLoadingState
 
 data class BaseResponse<T>(
     var result: Result = Result(),

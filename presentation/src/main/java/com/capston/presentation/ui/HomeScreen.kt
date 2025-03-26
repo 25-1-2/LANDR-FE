@@ -1,6 +1,7 @@
 package com.capston.presentation.ui
 
 import android.annotation.SuppressLint
+import android.util.Log
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
@@ -21,7 +22,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBars
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -33,6 +33,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.TextFieldDefaults
+import androidx.compose.material.TextFieldDefaults.outlinedTextFieldColors
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -45,6 +46,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -64,11 +66,14 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.capston.domain.base.BaseLoadingState
+import com.capston.domain.response.LectureProgressResponse
+import com.capston.domain.response.LessonScheduleResponse
+import com.capston.domain.response.TodayScheduleResponse
 import com.capston.presentation.R
-import com.capston.presentation.theme.CapstonTheme
 import com.capston.presentation.theme.LightGray40
 import com.capston.presentation.theme.LightGray3
 import com.capston.presentation.theme.LightGray4
@@ -76,25 +81,37 @@ import com.capston.presentation.theme.LightGray60
 import com.capston.presentation.theme.MainBlue
 import com.capston.presentation.theme.MainPurple
 import com.capston.presentation.theme.Purple40
+import com.capston.presentation.viewmodel.HomeViewModel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import kotlin.properties.Delegates
 
-val lectures = listOf(
-    Pair("1. 함수의 극한과 연속①","2026 현우진의 수분감 - 수학I (공통) 약 14분"),
-    Pair("2. 함수의 극한과 연속①","2026 현우진의 수분감 - 수학I (공통) 약 14분"),
-    Pair( "3. 함수의 극한과 연속①","2026 현우진의 수분감 - 수학I (공통) 약 14분"),
-    Pair( "4. 함수의 극한과 연속①","2026 현우진의 수분감 - 수학I (공통) 약 14분"),
-    Pair( "5. 함수의 극한과 연속①","2026 현우진의 수분감 - 수학I (공통) 약 14분"),
-    Pair( "6. 함수의 극한과 연속①","2026 현우진의 수분감 - 수학I (공통) 약 14분"),
-    Pair( "7. 함수의 극한과 연속①","2026 현우진의 수분감 - 수학I (공통) 약 14분"),
-)
+
 
 @OptIn(ExperimentalMaterial3Api::class)
-@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
+@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter", "StateFlowValueCalledInComposition",
+    "CoroutineCreationDuringComposition"
+)
 @Composable
-fun HomeScreen() {
+fun HomeScreen(homeViewModel: HomeViewModel) {
+    val scope = rememberCoroutineScope()
+    val homeState by homeViewModel.getDistinctHome.collectAsState()
+
+    // 나의 학습 현황
+    val totalCompletedLessons by remember { mutableStateOf(homeState.userProgress.totalCompletedLessons) } // 들은 강의 개수
+    val totalLessons by remember { mutableStateOf(homeState.userProgress.totalLessons) } // 전체 강의 개수
+
+    // 오늘의 강의
+    var todayLessonList by remember { mutableStateOf(homeState.todaySchedule.lessonSchedules) }
+    var todayTotalLesson by remember { mutableStateOf(homeState.todaySchedule.totalLessons) }
+    var todayTotalDuration by remember { mutableStateOf(homeState.todaySchedule.totalDuration) }
+
+    val lectureProgressList = homeState.userProgress.lectureProgress // 전체 강의 목록
+    var lectureNicknames by remember { mutableStateOf(lectureProgressList.map { it.lectureName.take(8) }) }
+
     // ModalBottomSheet의 boolean 상태를 기억
     var isBottomSheetVisible by remember { mutableStateOf(false) }
-    val scope = rememberCoroutineScope()
     val modalBottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     Scaffold(
@@ -145,12 +162,24 @@ fun HomeScreen() {
                             .fillMaxWidth()
                             .padding(16.dp)
                     ) {
-                        items(3) { index -> // TODO 개수 나중에 API로 받아서 수정
-                            CircleGraph("전체")
+                        item {
+                            CircleGraph("전체", totalCompletedLessons, totalLessons)
+                        }
+
+                        items(lectureProgressList) { item ->
                             Spacer(modifier = Modifier.width(16.dp)) // 그래프 간격 추가
-                            CircleGraph("수분감")
-                            Spacer(modifier = Modifier.width(16.dp))
-                            CircleGraph("믿어봐")
+
+                            val nickname = if (lectureNicknames.isNotEmpty()) {
+                                lectureNicknames[lectureProgressList.indexOf(item)]
+                            } else {
+                                item.lectureName.take(8) // Fallback to the original lecture name if nicknames are empty
+                            }
+
+                            CircleGraph(
+                                name = nickname,
+                                cleared = item.completedLessons,
+                                total = item.totalLessons
+                            )
                         }
                     }
                 }
@@ -159,7 +188,7 @@ fun HomeScreen() {
             Spacer(modifier = Modifier.height(30.dp)) // 🌟 그래프와 강의 목록 사이 간격 추가
 
             Text(
-                text = "⭐ 오늘의 강의 (총 ${lectures.size}강, 약 42분)",
+                text = "⭐ 오늘의 강의 (총 ${todayTotalLesson}강, 약 ${todayTotalDuration}분)",
                 style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.Bold,
                 fontSize = 20.sp,
@@ -167,7 +196,17 @@ fun HomeScreen() {
             )
             Spacer(modifier = Modifier.height(20.dp))
 
-            LessonList(330)
+            if (todayLessonList != null) {
+                LessonList(330, todayLessonList!!)
+            } else {
+                Column(modifier = Modifier.padding(start = 20.dp)) {
+                    Spacer(modifier = Modifier.height(30.dp))
+                    Text(
+                        "오늘 강의가 없어요 \uD83D\uDE0A\n푹 쉬고 내일 다시 달려보아요 \uD83C\uDFC3",
+                    )
+                }
+            }
+
         }
     }
 
@@ -181,7 +220,10 @@ fun HomeScreen() {
                 title = "강의 목록",
                 description = "수강 중인 강의를 선택하세요.",
                 modalBottomSheetState = modalBottomSheetState,
-                onDismiss = { isBottomSheetVisible = false }
+                onDismiss = { isBottomSheetVisible = false },
+                lectureProgressList = lectureProgressList,
+                lectureNicknames = lectureNicknames,
+                onNicknamesUpdated = { updatedNicknames -> lectureNicknames = updatedNicknames }
             )
         }
     }
@@ -194,10 +236,16 @@ fun CustomBottomSheetDialog(
     title: String,
     description: String,
     modalBottomSheetState: SheetState,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    lectureProgressList: List<LectureProgressResponse>,
+    lectureNicknames: List<String>,
+    onNicknamesUpdated: (List<String>) -> Unit
 ) {
     val scope = rememberCoroutineScope()
     val bottomPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+
+    var errorMessage by remember { mutableStateOf("") } // 오류 메시지 상태
+    var vibrationTrigger by remember { mutableStateOf(false) } // 진동 트리거 상태
 
     Column(
         modifier = Modifier
@@ -237,8 +285,11 @@ fun CustomBottomSheetDialog(
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // modalBottomSheetState를 LectureList에 전달
-            LectureList(modalBottomSheetState)
+            LectureList(
+                lectureProgressList = lectureProgressList,
+                lectureNicknames = lectureNicknames,
+                onUpdateNickName = onNicknamesUpdated
+            )
         }
 
         Spacer(modifier = Modifier.height(10.dp))
@@ -263,25 +314,21 @@ fun CustomBottomSheetDialog(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LectureList(modalBottomSheetState: SheetState) {
-    // 강의 리스트 데이터
-    val lectures = remember {
-        mutableStateListOf(
-            Pair("2026 현우진의 수분감 - 수학I (공통)", "2026 현우진"),
-            Pair("2026 현우진의 수분감 - 수학II (공통)", "2026 현우진"),
-            Pair("2026 현우진의 수분감 - 수학III (공통)", "2026 현우진"),
-        )
-    }
-
-    // 강의 체크박스 상태 관리
-    val checkedStates = remember { mutableStateListOf<Boolean>(false, false, false) }
+fun LectureList(
+    lectureProgressList: List<LectureProgressResponse>,
+    lectureNicknames: List<String>,
+    onUpdateNickName: (List<String>) -> Unit
+) {
+    val checkedStates = remember { mutableStateListOf<Boolean>().apply { repeat(lectureProgressList.size) { add(false) } } }
+    var updatedNicknames by remember { mutableStateOf(lectureNicknames.toMutableList()) }
 
     Column {
-        lectures.forEachIndexed { index, lecture ->
-            var lectureTitle by remember { mutableStateOf(lecture.second) } // 강의 제목을 수정할 변수
+        lectureProgressList.forEachIndexed { index, lecture ->
+            var lectureTitle by remember { mutableStateOf(updatedNicknames[index]) } // 수정된 강의 별칭을 관리
             var isEditing by remember { mutableStateOf(false) } // 수정 모드 여부
+            var errorMessage by remember { mutableStateOf("") } // 오류 메시지 상태
+            var showError by remember { mutableStateOf(false) }  // 오류 메시지를 표시할지 여부를 관리하는 상태
 
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -289,51 +336,71 @@ fun LectureList(modalBottomSheetState: SheetState) {
                     .padding(vertical = 8.dp)
                     .height(60.dp),
             ) {
-                CheckBox()
+                CheckBox(false) // TODO 수정
 
                 if (isEditing) {
                     Column(modifier = Modifier.fillMaxWidth()) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically
+                        Box(
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            OutlinedTextField(
-                                value = lectureTitle,
-                                onValueChange = { lectureTitle = it },
-                                label = {
-                                    Text(
-                                        text = "강의 별칭",
-                                        fontSize = 10.sp,
-                                        color = MainBlue
-                                    )
-                                },
-                                modifier = Modifier.weight(1f),
-                                colors = TextFieldDefaults.outlinedTextFieldColors(
-                                    focusedBorderColor = Color.Red, // 포커스 되었을 때 테두리 색상
-                                    unfocusedBorderColor = MainBlue, // 기본(포커스 안 된) 상태의 테두리 색상
-                                    textColor = LightGray60
-                                ),
-                                textStyle = TextStyle(fontSize = 14.sp)
-                            )
-
-                            // 완료 버튼
-                            Button(
-                                onClick = {
-                                    // 완료 버튼 클릭 시 수정된 내용 적용
-                                    lectures[index] = lectures[index].first to lectureTitle
-                                    isEditing = false  // 수정 모드 종료
-                                },
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = MainBlue,
-                                    contentColor = Color.White,
-                                ),
-                                modifier = Modifier
-                                    .padding(start = 16.dp),
-                                shape = RoundedCornerShape(12.dp)
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
+                                OutlinedTextField(
+                                    value = lectureTitle,
+                                    onValueChange = { newValue ->
+                                        // 8자 이하로 입력할 수 있도록 제한
+                                        if (newValue.length <= 8) {
+                                            lectureTitle = newValue
+                                            errorMessage = "" // 오류 메시지 초기화
+                                            showError = false  // 오류 숨기기
+                                        } else {
+                                            errorMessage = "8글자 이하로 입력해주세요."
+                                            showError = true  // 오류 메시지 표시
+                                        }
+                                    },
+                                    colors = TextFieldDefaults.outlinedTextFieldColors(
+                                        focusedBorderColor = if (showError) Color.Red else MainBlue, // 오류 시 빨간색
+                                        unfocusedBorderColor = if (showError) Color.Red else MainBlue, // 오류 시 빨간색
+                                        textColor = LightGray60
+                                    ),
+                                    textStyle = TextStyle(fontSize = 14.sp),
+                                    modifier = Modifier.weight(1f) // OutlinedTextField이 가능한 공간을 다 차지하도록
+                                )
+
+                                // 완료 버튼
+                                Button(
+                                    onClick = {
+                                        // 완료 버튼 클릭 시 수정된 내용 적용
+                                        updatedNicknames[index] = lectureTitle
+                                        isEditing = false  // 수정 모드 종료
+                                        onUpdateNickName(updatedNicknames)
+                                    },
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = MainBlue,
+                                        contentColor = Color.White,
+                                    ),
+                                    modifier = Modifier
+                                        .padding(start = 16.dp),
+                                    shape = RoundedCornerShape(12.dp)
+                                ) {
+                                    Text(
+                                        text = "완료",
+                                        fontSize = 14.sp
+                                    )
+                                }
+                            }
+
+                            // 오류 메시지 표시
+                            if (showError) {
                                 Text(
-                                    text = "완료",
-                                    fontSize = 14.sp
+                                    text = errorMessage,
+                                    color = Color.Red,
+                                    fontSize = 8.sp,
+                                    modifier = Modifier
+                                        .padding(start = 16.dp)
+                                        .align(Alignment.BottomStart) // 오류 메시지를 OutlinedTextField 아래에 위치시킴
                                 )
                             }
                         }
@@ -341,7 +408,7 @@ fun LectureList(modalBottomSheetState: SheetState) {
                         // 강의 제목 텍스트가 OutlinedTextField 아래에 보이도록
                         Spacer(modifier = Modifier.height(8.dp)) // 버튼과 텍스트 간격 추가
                         Text(
-                            text = lecture.first, // 강의 첫 번째 텍스트
+                            text = lecture.lectureName, // 강의 첫 번째 텍스트
                             fontSize = 12.sp,
                             modifier = Modifier.padding(start = 16.dp)
                         )
@@ -351,7 +418,7 @@ fun LectureList(modalBottomSheetState: SheetState) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(text = lectureTitle, style = MaterialTheme.typography.bodyLarge)
                         Text(
-                            text = lecture.first,
+                            text = lecture.lectureName,
                             style = MaterialTheme.typography.bodyMedium,
                             color = LightGray60
                         )
@@ -376,19 +443,17 @@ fun LectureList(modalBottomSheetState: SheetState) {
 }
 
 @Composable
-fun CheckBox() {
-    var imageState by remember { mutableStateOf(true) }
-
+fun CheckBox(state: Boolean) {
     IconButton(
         onClick = {
-            imageState = !imageState
+//            state = !state TODO 서버에 POST하도록 수정
         },
         modifier = Modifier
             .size(40.dp) // 이미지 버튼 크기 설정
             .padding(end = 16.dp) // 이미지와 텍스트 간의 간격 설정
     ) {
         // 상태에 따라 이미지 변경
-        val imageRes = if (imageState) {
+        val imageRes = if (!state) {
             R.drawable.home_screen_check_off // 기본 이미지
         } else {
             R.drawable.home_screen_check_on // 클릭된 이미지
@@ -402,50 +467,53 @@ fun CheckBox() {
 }
 
 @Composable
-fun LessonList(maxHeight: Int) {
+fun LessonList(maxHeight: Int, todayLessonList: List<LessonScheduleResponse>) {
     LazyColumn(
         modifier = Modifier.padding(start = 30.dp).heightIn(max = maxHeight.dp) // 최대 높이를 설정하여 스크롤 범위를 제한
     ) {
 
         // 강의가 없을 경우
-        if (lectures.isEmpty()) {
-            item {
-                Spacer(modifier = Modifier.height(30.dp))
-                Text("오늘 강의가 없어요 \uD83D\uDE0A\n" +
-                        "푹 쉬고 내일 다시 달려보아요 \uD83C\uDFC3")
-            }
-        } else {
-            // 강의가 있을 경우
-            items(lectures) { lecture ->
-                Row(
-                    verticalAlignment = Alignment.CenterVertically, // 세로로 중앙 정렬
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp)
-                ) {
+        items(todayLessonList) { lecture ->
+            Row(
+                verticalAlignment = Alignment.CenterVertically, // 세로로 중앙 정렬
+                modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp)
+            ) {
 
-                    CheckBox()
-                    Column {
-                        Text(lecture.first, style = MaterialTheme.typography.bodyLarge)
-                        Text(
-                            text = lecture.second,
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = LightGray60
-                        )
-                    }
+                CheckBox(state = lecture.completed)
+                Column {
+                    Text(
+                        text = lecture.lessonTitle,
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontSize = 16.sp
+                    )
+                    Text(
+                        text = lecture.lectureName + " · 약 " + lecture.adjustedDuration + "분",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = LightGray60,
+                        fontSize = 14.sp
+                    )
                 }
-                Spacer(modifier = Modifier.height(20.dp))
             }
+            Spacer(modifier = Modifier.height(20.dp))
         }
     }
 }
 
 @Composable
-fun CircleGraph(name: String) {
+fun CircleGraph(name: String, cleared: Int, total: Int) {
     val animatedValue = remember { Animatable(0f) }
+
+    // 비율에 맞게 애니메이션의 목표값 설정
+    val targetValue = if (total > 0) {
+        (cleared.toFloat() / total.toFloat()) * 360f
+    } else {
+        0f // 강의가 없으면 0으로 설정
+    }
 
     // 특정 값으로 색을 채우는 Animation
     LaunchedEffect(Unit) {
         animatedValue.animateTo(
-            targetValue = 100F,
+            targetValue = targetValue,
             animationSpec = tween(durationMillis = 1000, easing = LinearEasing),
         )
     }
@@ -495,7 +563,7 @@ fun CircleGraph(name: String) {
         )
 
         drawContext.canvas.nativeCanvas.drawText(
-            "1/50",  // 텍스트 내용
+            "${cleared}/${total}",  // 텍스트 내용
             size.width / 2,  // X 위치
             size.height / 2 + 70,  // Y 위치
             android.graphics.Paint().apply {

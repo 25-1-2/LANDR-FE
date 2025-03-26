@@ -1,4 +1,4 @@
-package com.capston.data.base
+package com.capston.domain.base
 
 data class Result(
     val code : Int = 0,
