@@ -62,9 +62,9 @@ fun CalenderScreen() {
             }
 
             // 할일 목록을 크기 조정 가능하게 만드는 부분
-            Box(modifier = Modifier.weight(1f)) {
-                LessonList(lessonListHeight) // LessonList가 바텀 바 아래로 내려가지 않음
-            }
+//            Box(modifier = Modifier.weight(1f)) {
+//                LessonList(lessonListHeight, todayLessonList) // LessonList가 바텀 바 아래로 내려가지 않음
+//            }
         }
     }
 }
