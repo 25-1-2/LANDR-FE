@@ -312,8 +312,9 @@ fun CustomBottomSheetDialog(
 fun LectureList(
     lectureProgressList: List<LectureProgressResponse>,
     lectureNicknames: List<String>,
-    onUpdateNickName: (List<String>) -> Unit
+    onUpdateNickName: (Int, String) -> Unit
 ) {
+    val scope = rememberCoroutineScope()
     val checkedStates = remember { mutableStateListOf<Boolean>().apply { repeat(lectureProgressList.size) { add(false) } } }
     var updatedNicknames by remember { mutableStateOf(lectureNicknames.toMutableList()) }
 
@@ -367,9 +368,11 @@ fun LectureList(
                                 Button(
                                     onClick = {
                                         // 완료 버튼 클릭 시 수정된 내용 적용
+                                        scope.launch {
+                                            onUpdateNickName(lecture.lectureId, lectureTitle) // API 호출
+                                        }
                                         updatedNicknames[index] = lectureTitle
-                                        isEditing = false  // 수정 모드 종료
-                                        onUpdateNickName(updatedNicknames)
+                                        isEditing = false
                                     },
                                     colors = ButtonDefaults.buttonColors(
                                         containerColor = MainBlue,

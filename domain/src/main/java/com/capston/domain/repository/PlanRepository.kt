@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.Flow
 interface PlanRepository {
     //강의 별명 수정
     suspend fun patchPlanName(
-        planId: Int
-    ): Flow<PatchPlanDto>
+        planId: Int,
+        patchPlanDto: PatchPlanDto
+    ): Flow<BaseResponse<Any>>
 }
