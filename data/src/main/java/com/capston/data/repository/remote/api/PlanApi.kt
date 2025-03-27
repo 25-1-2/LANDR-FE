@@ -12,5 +12,5 @@ interface PlanApi {
     suspend fun patchPlanName(
         @Path("planId") planId: Int,
         @Body patchPlanDto: PatchPlanDto
-    ): BaseResponse<Any>
+    ): String
 }

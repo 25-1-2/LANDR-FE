@@ -9,5 +9,5 @@ interface PlanDataSource {
     suspend fun patchPlanName(
         planId: Int,
         patchPlanDto: PatchPlanDto
-    ): Flow<BaseResponse<Any>>
+    ): Flow<String>
 }

@@ -12,5 +12,5 @@ class PatchPlanNameUseCase @Inject constructor(
     suspend operator fun invoke(
         planId: Int,
         patchPlanDto: PatchPlanDto
-    ): Flow<BaseResponse<Any>> = planRepository.patchPlanName(planId, patchPlanDto)
+    ): Flow<String> = planRepository.patchPlanName(planId, patchPlanDto)
 }

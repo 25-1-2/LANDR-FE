@@ -16,7 +16,7 @@ class PlanDataSourceImpl @Inject constructor(
     override suspend fun patchPlanName(
         planId: Int,
         patchPlanDto: PatchPlanDto
-    ): Flow<BaseResponse<Any>> = flow {
+    ): Flow<String> = flow {
         val result = planApi.patchPlanName(planId, patchPlanDto)
         emit(result)
     }.catch { e ->

@@ -16,8 +16,8 @@ import javax.inject.Inject
 class PlanViewModel @Inject constructor(
     private val patchPlanNameUseCase: PatchPlanNameUseCase
 ) : ViewModel() {
-    private val _patchPlanName = MutableStateFlow(BaseResponse<Any>())
-    val patchPlanName: StateFlow<BaseResponse<Any>> = _patchPlanName
+    private val _patchPlanName = MutableStateFlow(String())
+    val patchPlanName: StateFlow<String> = _patchPlanName
 
     fun patchPlanName(
         planId: Int,

@@ -13,5 +13,5 @@ class PlanRepositoryImpl @Inject constructor(
     override suspend fun patchPlanName(
         planId: Int,
         patchPlanDto: PatchPlanDto
-    ): Flow<BaseResponse<Any>> = planDataSource.patchPlanName(planId, patchPlanDto)
+    ): Flow<String> = planDataSource.patchPlanName(planId, patchPlanDto)
 }
