@@ -3,9 +3,12 @@ package com.capston.presentation.viewmodel
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.capston.domain.request.PatchPlanDto
+import com.capston.domain.response.BaseResponse
 import com.capston.domain.response.home.DistinctHomeIdResponse
 import com.capston.domain.response.home.TodayScheduleResponse
 import com.capston.domain.usecase.home.GetDistinctHomeUseCase
+import com.capston.domain.usecase.home.PatchLessonSchedulesCheckToggleUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -15,10 +18,14 @@ import javax.inject.Inject
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val getDistinctHomeUseCase: GetDistinctHomeUseCase,
+    private val patchLessonSchedulesCheckToggleUseCase: PatchLessonSchedulesCheckToggleUseCase
 ) : ViewModel() {
 
     private val _getDistinctHome = MutableStateFlow(DistinctHomeIdResponse())
+    private val _patchLessonSchedulesCheckToggle = MutableStateFlow(BaseResponse<Any>())
+
     val getDistinctHome: StateFlow<DistinctHomeIdResponse> = _getDistinctHome
+    val patchLessonSchedulesCheckToggle = _patchLessonSchedulesCheckToggle
 
     fun getDistinctHome() {
         viewModelScope.launch {
@@ -38,6 +45,20 @@ class HomeViewModel @Inject constructor(
                 // 에러 상태로 업데이트
 //                _getDistinctHome.value =
 //                    _getDistinctHome.value.copy()
+            }
+        }
+    }
+
+    fun patchLessonSchedulesCheckToggle(
+        lessonScheduleId: Int
+    ) {
+        viewModelScope.launch {
+            try {
+                patchLessonSchedulesCheckToggleUseCase(lessonScheduleId).collect {
+                    _patchLessonSchedulesCheckToggle.value = it
+                }
+            } catch (e: Exception) {
+                Log.e("patch lesson schedule toggle 에러", e.message.toString())
             }
         }
     }

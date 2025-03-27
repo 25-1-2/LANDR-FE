@@ -169,10 +169,15 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
                             }
 
                             CircleGraph(
-                                name = nickname,
+                                name = item.lectureName,
                                 cleared = item.completedLessons,
                                 total = item.totalLessons
                             )
+
+//                            LaunchedEffect(Unit) {
+//                                // 서버로 PATCH 요청을 보내고, 응답을 받아서 name 업데이트
+//                                val updatedName = planViewModel.patchPlanName  // 서버에서 새로운 name을 받아오는 함수
+//                            }
                         }
                     }
                 }
