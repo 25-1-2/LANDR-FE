@@ -182,7 +182,7 @@ fun CustomCalendar(
             .height(calendarHeight.dp)
             .pointerInput(Unit) {
                 detectDragGestures { _, dragAmount ->
-                    onDrag(dragAmount.y) // 위아래 드래그 시 크기 변화
+                    onDrag(-dragAmount.y) // 위아래 드래그 시 크기 변화
                 }
             }
     ) {

@@ -1,4 +1,4 @@
-package com.capston.domain.response
+package com.capston.domain.response.home
 
 data class DistinctHomeIdResponse(
     val userProgress: UserProgressResponse = UserProgressResponse(),

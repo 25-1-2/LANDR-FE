@@ -1,7 +1,6 @@
 package com.capston.domain.datasource
 
-import com.capston.domain.response.BaseResponse
-import com.capston.domain.response.DistinctHomeIdResponse
+import com.capston.domain.response.home.DistinctHomeIdResponse
 import kotlinx.coroutines.flow.Flow
 
 interface HomeDataSource {

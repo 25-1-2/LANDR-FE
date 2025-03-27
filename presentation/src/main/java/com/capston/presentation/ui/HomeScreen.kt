@@ -1,7 +1,6 @@
 package com.capston.presentation.ui
 
 import android.annotation.SuppressLint
-import android.util.Log
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
@@ -33,7 +32,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.TextFieldDefaults
-import androidx.compose.material.TextFieldDefaults.outlinedTextFieldColors
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -68,11 +66,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.capston.domain.base.BaseLoadingState
-import com.capston.domain.response.LectureProgressResponse
-import com.capston.domain.response.LessonScheduleResponse
-import com.capston.domain.response.TodayScheduleResponse
+import com.capston.domain.response.home.LectureProgressResponse
+import com.capston.domain.response.home.LessonScheduleResponse
 import com.capston.presentation.R
 import com.capston.presentation.theme.LightGray40
 import com.capston.presentation.theme.LightGray3
@@ -82,11 +77,8 @@ import com.capston.presentation.theme.MainBlue
 import com.capston.presentation.theme.MainPurple
 import com.capston.presentation.theme.Purple40
 import com.capston.presentation.viewmodel.HomeViewModel
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.collectLatest
+import com.capston.presentation.viewmodel.PlanViewModel
 import kotlinx.coroutines.launch
-import kotlin.properties.Delegates
-
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -94,7 +86,7 @@ import kotlin.properties.Delegates
     "CoroutineCreationDuringComposition"
 )
 @Composable
-fun HomeScreen(homeViewModel: HomeViewModel) {
+fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
     val scope = rememberCoroutineScope()
     val homeState by homeViewModel.getDistinctHome.collectAsState()
 
@@ -223,7 +215,9 @@ fun HomeScreen(homeViewModel: HomeViewModel) {
                 onDismiss = { isBottomSheetVisible = false },
                 lectureProgressList = lectureProgressList,
                 lectureNicknames = lectureNicknames,
-                onNicknamesUpdated = { updatedNicknames -> lectureNicknames = updatedNicknames }
+                onNicknamesUpdated = {
+                    updatedNicknames -> lectureNicknames = updatedNicknames
+                }
             )
         }
     }

@@ -1,8 +1,7 @@
 package com.capston.domain.usecase.home
 
 import com.capston.domain.repository.HomeRepository
-import com.capston.domain.response.BaseResponse
-import com.capston.domain.response.DistinctHomeIdResponse
+import com.capston.domain.response.home.DistinctHomeIdResponse
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 

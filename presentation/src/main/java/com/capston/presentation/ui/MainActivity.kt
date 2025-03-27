@@ -6,6 +6,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -43,6 +44,7 @@ import com.capston.presentation.theme.CapstonTheme
 import com.capston.presentation.theme.LightGray2
 import com.capston.presentation.theme.MainPurple
 import com.capston.presentation.viewmodel.HomeViewModel
+import com.capston.presentation.viewmodel.PlanViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -53,9 +55,11 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            val homeViewModel = viewModel<HomeViewModel>()
+            val homeViewModel: HomeViewModel by viewModels()
+            val planViewModel: PlanViewModel by viewModels()
             LaunchedEffect(Unit) {
                 homeViewModel.getDistinctHome()
+                planViewModel.patchPlanName(0)
             }
 
             CapstonTheme {
@@ -68,7 +72,7 @@ class MainActivity : ComponentActivity() {
 @RequiresApi(Build.VERSION_CODES.O)
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
-fun SettingTopBottomBar(homeViewModel: HomeViewModel) {
+fun SettingTopBottomBar(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
     var bottomNavState by rememberSaveable { mutableIntStateOf(0) }
     val navController = rememberNavController()
 
@@ -86,7 +90,7 @@ fun SettingTopBottomBar(homeViewModel: HomeViewModel) {
                 startDestination = Screen.Home.title,
                 modifier = Modifier.weight(1f) // NavHost가 남은 영역을 모두 차지하도록 설정
             ) {
-                composable(Screen.Home.title) { HomeScreen(homeViewModel) }
+                composable(Screen.Home.title) { HomeScreen(homeViewModel, planViewModel) }
                 composable(Screen.Calender.title) { CalenderScreen() }
                 composable(Screen.Search.title) { SearchScreen() }
                 composable(Screen.LectureList.title) { LectureListScreen() }
