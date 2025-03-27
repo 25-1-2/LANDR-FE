@@ -99,13 +99,13 @@ fun HomeScreen(homeViewModel: HomeViewModel) {
     val homeState by homeViewModel.getDistinctHome.collectAsState()
 
     // 나의 학습 현황
-    val totalCompletedLessons by remember { mutableStateOf(homeState.userProgress.totalCompletedLessons) } // 들은 강의 개수
-    val totalLessons by remember { mutableStateOf(homeState.userProgress.totalLessons) } // 전체 강의 개수
+    val totalCompletedLessons = homeState.userProgress.totalCompletedLessons // 들은 강의 개수
+    val totalLessons = homeState.userProgress.totalLessons // 전체 강의 개수
 
     // 오늘의 강의
-    var todayLessonList by remember { mutableStateOf(homeState.todaySchedule.lessonSchedules) }
-    var todayTotalLesson by remember { mutableStateOf(homeState.todaySchedule.totalLessons) }
-    var todayTotalDuration by remember { mutableStateOf(homeState.todaySchedule.totalDuration) }
+    var todayLessonList = homeState.todaySchedule.lessonSchedules
+    var todayTotalLesson = homeState.todaySchedule.totalLessons
+    var todayTotalDuration = homeState.todaySchedule.totalDuration
 
     val lectureProgressList = homeState.userProgress.lectureProgress // 전체 강의 목록
     var lectureNicknames by remember { mutableStateOf(lectureProgressList.map { it.lectureName.take(8) }) }
@@ -511,7 +511,8 @@ fun CircleGraph(name: String, cleared: Int, total: Int) {
     }
 
     // 특정 값으로 색을 채우는 Animation
-    LaunchedEffect(Unit) {
+    LaunchedEffect(targetValue) {
+        animatedValue.snapTo(0f) // 애니메이션을 처음부터 시작
         animatedValue.animateTo(
             targetValue = targetValue,
             animationSpec = tween(durationMillis = 1000, easing = LinearEasing),

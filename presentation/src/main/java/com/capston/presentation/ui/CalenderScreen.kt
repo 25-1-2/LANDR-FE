@@ -29,6 +29,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.window.Dialog
 import com.capston.presentation.R
 import com.capston.presentation.theme.CapstonTheme
 import com.capston.presentation.theme.LightGray3
@@ -77,6 +78,8 @@ fun Calendar(calendarHeight: Int, onDrag: (Float) -> Unit) {
     var currentMonth by remember { mutableStateOf(LocalDate.now().monthValue) }
     val today = LocalDate.now()
 
+    var showDatePickerDialog by remember { mutableStateOf(false) } // 다이얼로그 표시 여부
+
     fun updateMonth(year: Int, month: Int) {
         var newYear = year
         var newMonth = month
@@ -104,7 +107,8 @@ fun Calendar(calendarHeight: Int, onDrag: (Float) -> Unit) {
             onDateSelected = { selectedDate = it },
             onMonthChanged = { newYear, newMonth -> updateMonth(newYear, newMonth) },
             onDrag = onDrag,
-            calendarHeight = calendarHeight
+            calendarHeight = calendarHeight,
+            onDatePickerClick = { showDatePickerDialog = true }
         )
 
         // 선택된 날짜 표시
@@ -121,6 +125,15 @@ fun Calendar(calendarHeight: Int, onDrag: (Float) -> Unit) {
                 Text("${it.year}년 ${it.monthValue}월 ${it.dayOfMonth}일 (${koreanDayOfWeek})",
                     Modifier.padding(start = 20.dp, top = 10.dp), fontSize = 20.sp)
             }
+        }
+
+        // DatePickerDialog 다이얼로그
+        if (showDatePickerDialog) {
+            DatePickerDialog(year = currentYear, month = currentMonth, onDateSelected = { year, month ->
+                currentYear = year
+                currentMonth = month
+                showDatePickerDialog = false
+            })
         }
     }
 }
@@ -147,7 +160,8 @@ fun CustomCalendar(
     onDateSelected: (LocalDate) -> Unit,
     onMonthChanged: (Int, Int) -> Unit,
     onDrag: (Float) -> Unit,
-    calendarHeight: Int
+    calendarHeight: Int,
+    onDatePickerClick: () -> Unit
 ) {
     val today = LocalDate.now()
     val firstDayOfMonth = LocalDate.of(year, month, 1)
@@ -184,7 +198,8 @@ fun CustomCalendar(
                 Text(
                     text = "${year}년 ${month}월",
                     fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.clickable { onDatePickerClick() }
                 )
                 IconButton(onClick = { onMonthChanged(year, month + 1) }) {
                     Icon(Icons.Default.ArrowForward, contentDescription = "다음 달")
@@ -260,6 +275,54 @@ fun CustomCalendar(
                     .height(40.dp) // 이미지 크기 고정
                     .padding(top = 10.dp)
             )
+        }
+
+    }
+}
+
+@Composable
+fun DatePickerDialog(year: Int, month: Int, onDateSelected: (Int, Int) -> Unit) {
+    var selectedYear by remember { mutableStateOf(year) }
+    var selectedMonth by remember { mutableStateOf(month) }
+
+    Dialog(onDismissRequest = { /* Handle dismiss */ }) {
+        Surface(
+            modifier = Modifier.padding(16.dp),
+            shape = RoundedCornerShape(16.dp),
+            color = Color.White
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text("이동하려는 연도와 날짜를 선택하세요", style = MaterialTheme.typography.bodyMedium)
+
+                // 연도 선택
+                Text("연도: $selectedYear")
+                Slider(
+                    value = selectedYear.toFloat(),
+                    onValueChange = { selectedYear = it.toInt() },
+                    valueRange = 2024f..2050f,
+                    steps = 100
+                )
+
+                // 월 선택
+                Text("월: $selectedMonth")
+                Slider(
+                    value = selectedMonth.toFloat(),
+                    onValueChange = { selectedMonth = it.toInt() },
+                    valueRange = 1f..12f,
+                    steps = 10,
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Button(
+                    onClick = {
+                        onDateSelected(selectedYear, selectedMonth)
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("이동")
+                }
+            }
         }
     }
 }
