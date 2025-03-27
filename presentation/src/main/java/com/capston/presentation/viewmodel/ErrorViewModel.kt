@@ -4,7 +4,10 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.capston.domain.base.Result
+import com.capston.domain.response.DistinctHomeIdResponse
+import com.capston.domain.response.TodayScheduleResponse
 import com.capston.domain.usecase.error.GetExceptionApiUseCase
+import com.capston.domain.usecase.home.GetDistinctHomeUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

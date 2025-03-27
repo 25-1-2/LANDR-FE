@@ -3,8 +3,10 @@ package com.capston.presentation.viewmodel
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.capston.domain.response.home.DistinctHomeIdResponse
-import com.capston.domain.response.home.TodayScheduleResponse
+import com.capston.domain.base.BaseLoadingState
+import com.capston.domain.response.BaseResponse
+import com.capston.domain.response.DistinctHomeIdResponse
+import com.capston.domain.response.TodayScheduleResponse
 import com.capston.domain.usecase.home.GetDistinctHomeUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow

@@ -5,10 +5,10 @@ import com.capston.domain.base.BaseLoadingState
 import com.capston.data.repository.remote.api.HomeApi
 import com.capston.domain.datasource.HomeDataSource
 import com.capston.domain.response.BaseResponse
-import com.capston.domain.response.home.DistinctHomeIdResponse
+import com.capston.domain.response.DistinctHomeIdResponse
 import com.capston.domain.response.Result
-import com.capston.domain.response.home.TodayScheduleResponse
-import com.capston.domain.response.home.UserProgressResponse
+import com.capston.domain.response.TodayScheduleResponse
+import com.capston.domain.response.UserProgressResponse
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow

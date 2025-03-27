@@ -1,4 +1,4 @@
-package com.capston.domain.response.home
+package com.capston.domain.response
 
 import com.capston.domain.response.enum_class.Day
 
