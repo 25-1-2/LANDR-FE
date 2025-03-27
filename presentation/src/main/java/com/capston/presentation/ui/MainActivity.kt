@@ -59,11 +59,10 @@ class MainActivity : ComponentActivity() {
             val planViewModel: PlanViewModel by viewModels()
             LaunchedEffect(Unit) {
                 homeViewModel.getDistinctHome()
-                planViewModel.patchPlanName(0)
             }
 
             CapstonTheme {
-                SettingTopBottomBar(homeViewModel)
+                SettingTopBottomBar(homeViewModel, planViewModel)
             }
         }
     }

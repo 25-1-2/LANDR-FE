@@ -66,6 +66,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.capston.domain.request.PatchPlanDto
 import com.capston.domain.response.home.LectureProgressResponse
 import com.capston.domain.response.home.LessonScheduleResponse
 import com.capston.presentation.R
@@ -217,7 +218,8 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
                 lectureNicknames = lectureNicknames,
                 onNicknamesUpdated = {
                     updatedNicknames -> lectureNicknames = updatedNicknames
-                }
+                },
+                planViewModel = planViewModel
             )
         }
     }
@@ -233,7 +235,8 @@ fun CustomBottomSheetDialog(
     onDismiss: () -> Unit,
     lectureProgressList: List<LectureProgressResponse>,
     lectureNicknames: List<String>,
-    onNicknamesUpdated: (List<String>) -> Unit
+    onNicknamesUpdated: (List<String>) -> Unit,
+    planViewModel: PlanViewModel
 ) {
     val scope = rememberCoroutineScope()
     val bottomPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
@@ -282,6 +285,7 @@ fun CustomBottomSheetDialog(
             LectureList(
                 lectureProgressList = lectureProgressList,
                 lectureNicknames = lectureNicknames,
+                planViewModel = planViewModel,
                 onUpdateNickName = onNicknamesUpdated
             )
         }
@@ -312,9 +316,9 @@ fun CustomBottomSheetDialog(
 fun LectureList(
     lectureProgressList: List<LectureProgressResponse>,
     lectureNicknames: List<String>,
-    onUpdateNickName: (Int, String) -> Unit
+    planViewModel: PlanViewModel,
+    onUpdateNickName: (List<String>) -> Unit
 ) {
-    val scope = rememberCoroutineScope()
     val checkedStates = remember { mutableStateListOf<Boolean>().apply { repeat(lectureProgressList.size) { add(false) } } }
     var updatedNicknames by remember { mutableStateOf(lectureNicknames.toMutableList()) }
 
@@ -368,11 +372,9 @@ fun LectureList(
                                 Button(
                                     onClick = {
                                         // 완료 버튼 클릭 시 수정된 내용 적용
-                                        scope.launch {
-                                            onUpdateNickName(lecture.lectureId, lectureTitle) // API 호출
-                                        }
                                         updatedNicknames[index] = lectureTitle
-                                        isEditing = false
+                                        isEditing = false  // 수정 모드 종료
+                                        planViewModel.patchPlanName(lecture.planId, PatchPlanDto(lectureAlias = lectureTitle))
                                     },
                                     colors = ButtonDefaults.buttonColors(
                                         containerColor = MainBlue,
