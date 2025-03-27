@@ -4,8 +4,8 @@ import com.capston.data.repository.remote.api.ErrorApi
 import com.capston.data.repository.remote.api.HomeApi
 import com.capston.data.repository.remote.datasourcelmpl.ErrorDataSourceImpl
 import com.capston.data.repository.remote.datasourcelmpl.HomeDataSourceImpl
-import com.capston.data.repository.remote.repository.ErrorRepositoryImpl
-import com.capston.data.repository.remote.repository.HomeRepositoryImpl
+import com.capston.data.repository.remote.repositoryImpl.ErrorRepositoryImpl
+import com.capston.data.repository.remote.repositoryImpl.HomeRepositoryImpl
 import com.capston.domain.datasource.ErrorDataSource
 import com.capston.domain.datasource.HomeDataSource
 import com.capston.domain.repository.ErrorRepository

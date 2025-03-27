@@ -1,7 +1,6 @@
 package com.capston.data.repository.remote.api
 
-import com.capston.domain.response.BaseResponse
-import com.capston.domain.response.DistinctHomeIdResponse
+import com.capston.domain.response.home.DistinctHomeIdResponse
 import retrofit2.http.GET
 
 interface HomeApi {

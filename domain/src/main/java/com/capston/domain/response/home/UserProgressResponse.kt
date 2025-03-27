@@ -1,4 +1,4 @@
-package com.capston.domain.response
+package com.capston.domain.response.home
 
 data class UserProgressResponse(
     var lectureProgress: List<LectureProgressResponse> = emptyList(),

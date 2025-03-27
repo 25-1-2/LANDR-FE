@@ -1,4 +1,4 @@
-package com.capston.data.repository.remote.repository
+package com.capston.data.repository.remote.repositoryImpl
 
 import com.capston.domain.base.Result
 import com.capston.domain.datasource.ErrorDataSource

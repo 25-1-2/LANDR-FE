@@ -80,6 +80,14 @@ fun SearchScreen() {
                     SearchBar()
 
                     IconButton(onClick = {
+                    }) {
+                        Image(
+                            imageVector = Icons.Default.Search,
+                            contentDescription = null
+                        )
+                    }
+
+                    IconButton(onClick = {
 
                     }) {
                         Image(
@@ -176,32 +184,38 @@ fun SearchLectureItem(title: String) {
 
 @Composable
 fun SearchBar() {
-    OutlinedTextField(
-        value = "검색",
-        onValueChange = { it },
-        colors = TextFieldDefaults.outlinedTextFieldColors(
-            focusedBorderColor = Color.Red, // 포커스 되었을 때 테두리 색상
-            unfocusedBorderColor = MainPurple, // 기본(포커스 안 된) 상태의 테두리 색상
-            textColor = LightGray60
-        ),
-        textStyle = TextStyle(
-            fontSize = 20.sp
-        ),
+    var textState by remember { mutableStateOf("") } // 상태 저장
+    Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(start = 20.dp)
-    )
-
-    IconButton(
-        onClick = {},
+            .padding(start = 20.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(
-            imageVector = Icons.Default.Search,
-            contentDescription = "Search",
-            tint = Color.Black
+        OutlinedTextField(
+            value = textState,
+            onValueChange = { textState = it },
+            colors = TextFieldDefaults.outlinedTextFieldColors(
+                focusedBorderColor = Color.Red,
+                unfocusedBorderColor = MainPurple,
+                textColor = LightGray60
+            ),
+            textStyle = TextStyle(
+                fontSize = 20.sp
+            ),
+            modifier = Modifier
+                .weight(1f) // OutlinedTextField가 남는 공간을 차지하도록 설정
         )
-    }
 
+        IconButton(
+            onClick = { /* TODO: 검색 버튼 클릭 로직 */ },
+        ) {
+            Icon(
+                imageVector = Icons.Default.Search,
+                contentDescription = "Search",
+                tint = Color.Black
+            )
+        }
+    }
 }
 
 @Preview(showBackground = true)
