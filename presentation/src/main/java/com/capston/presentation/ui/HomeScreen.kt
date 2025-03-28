@@ -194,7 +194,7 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
             Spacer(modifier = Modifier.height(20.dp))
 
             if (todayLessonList != null) {
-                LessonList(330, todayLessonList!!)
+                LessonList(homeViewModel, 330, todayLessonList!!)
             } else {
                 Column(modifier = Modifier.padding(start = 20.dp)) {
                     Spacer(modifier = Modifier.height(30.dp))
@@ -314,7 +314,6 @@ fun LectureList(
     lectureProgressList: List<LectureProgressResponse>,
     planViewModel: PlanViewModel,
 ) {
-    val checkedStates = remember { mutableStateListOf<Boolean>().apply { repeat(lectureProgressList.size) { add(false) } } }
 
     Column {
         lectureProgressList.forEachIndexed { index, lecture ->
@@ -329,8 +328,7 @@ fun LectureList(
                     .padding(vertical = 8.dp)
                     .height(60.dp),
             ) {
-                CheckBox(false) // TODO 수정
-
+                //CheckBox(lecture.planId,false) // TODO 수정
                 if (isEditing) {
                     Column(modifier = Modifier.fillMaxWidth()) {
                         Box(
@@ -432,51 +430,54 @@ fun LectureList(
 }
 
 @Composable
-fun CheckBox(state: Boolean) {
+fun CheckBox(isCheck: Boolean, homeViewModel: HomeViewModel, id: Int) {
+    var isChecked by remember { mutableStateOf(isCheck) }
     IconButton(
         onClick = {
-//            state = !state TODO 서버에 POST하도록 수정
+            // PATCH 서버에 체크 박스 여부 보내기
+            homeViewModel.patchLessonSchedulesCheckToggle(id)
+            isChecked = !isChecked
         },
         modifier = Modifier
             .size(40.dp) // 이미지 버튼 크기 설정
             .padding(end = 16.dp) // 이미지와 텍스트 간의 간격 설정
     ) {
-        // 상태에 따라 이미지 변경
-        val imageRes = if (!state) {
-            R.drawable.home_screen_check_off // 기본 이미지
-        } else {
-            R.drawable.home_screen_check_on // 클릭된 이미지
-        }
+
+        val imageRes = if (isChecked) R.drawable.home_screen_check_on
+        else R.drawable.home_screen_check_off
 
         Image(
-            painter = painterResource(id = imageRes), // 상태에 따른 이미지 리소스 설정
+            painter = painterResource(id = imageRes),
             contentDescription = "Lecture Icon"
         )
     }
 }
 
 @Composable
-fun LessonList(maxHeight: Int, todayLessonList: List<LessonScheduleResponse>) {
+fun LessonList(homeViewModel: HomeViewModel, maxHeight: Int, todayLessonList: List<LessonScheduleResponse>) {
     LazyColumn(
         modifier = Modifier.padding(start = 30.dp).heightIn(max = maxHeight.dp) // 최대 높이를 설정하여 스크롤 범위를 제한
     ) {
-
         // 강의가 없을 경우
-        items(todayLessonList) { lecture ->
+        items(todayLessonList) { lesson ->
             Row(
                 verticalAlignment = Alignment.CenterVertically, // 세로로 중앙 정렬
                 modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp)
             ) {
 
-                CheckBox(state = lecture.completed)
+                CheckBox(
+                    isCheck = lesson.completed,
+                    homeViewModel = homeViewModel,
+                    id = lesson.id
+                )
                 Column {
                     Text(
-                        text = lecture.lessonTitle,
+                        text = lesson.lessonTitle,
                         style = MaterialTheme.typography.bodyLarge,
                         fontSize = 16.sp
                     )
                     Text(
-                        text = lecture.lectureName + " · 약 " + lecture.adjustedDuration + "분",
+                        text = lesson.lectureName + " · 약 " + lesson.adjustedDuration + "분",
                         style = MaterialTheme.typography.bodyLarge,
                         color = LightGray60,
                         fontSize = 14.sp

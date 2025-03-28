@@ -3,8 +3,7 @@ package com.capston.presentation.viewmodel
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.capston.domain.request.PatchPlanDto
-import com.capston.domain.response.BaseResponse
+import com.capston.domain.response.CheckResponse
 import com.capston.domain.response.home.DistinctHomeIdResponse
 import com.capston.domain.response.home.TodayScheduleResponse
 import com.capston.domain.response.home.UserProgressResponse
@@ -23,7 +22,7 @@ class HomeViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val _getDistinctHome = MutableStateFlow(DistinctHomeIdResponse())
-    private val _patchLessonSchedulesCheckToggle = MutableStateFlow(BaseResponse<Any>())
+    private val _patchLessonSchedulesCheckToggle = MutableStateFlow(CheckResponse())
 
     val getDistinctHome: StateFlow<DistinctHomeIdResponse> = _getDistinctHome
     val patchLessonSchedulesCheckToggle = _patchLessonSchedulesCheckToggle

@@ -6,6 +6,7 @@ import com.capston.data.repository.remote.api.HomeApi
 import com.capston.domain.datasource.HomeDataSource
 import com.capston.domain.request.PatchPlanDto
 import com.capston.domain.response.BaseResponse
+import com.capston.domain.response.CheckResponse
 import com.capston.domain.response.home.DistinctHomeIdResponse
 import com.capston.domain.response.Result
 import com.capston.domain.response.home.TodayScheduleResponse
@@ -70,7 +71,7 @@ class HomeDataSourceImpl @Inject constructor(
         }
     }
 
-    override suspend fun patchLessonSchedulesCheckToggle(lessonScheduleId: Int): Flow<BaseResponse<Any>>
+    override suspend fun patchLessonSchedulesCheckToggle(lessonScheduleId: Int): Flow<CheckResponse>
     = flow {
         val result = homeApi.patchLessonSchedulesCheckToggle(lessonScheduleId)
         emit(result)

@@ -1,8 +1,7 @@
 package com.capston.domain.usecase.home
 
 import com.capston.domain.repository.HomeRepository
-import com.capston.domain.response.BaseResponse
-import com.capston.domain.response.home.DistinctHomeIdResponse
+import com.capston.domain.response.CheckResponse
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
@@ -11,7 +10,7 @@ class PatchLessonSchedulesCheckToggleUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(
         lessonScheduleId: Int
-    ): Flow<BaseResponse<Any>> {
+    ): Flow<CheckResponse> {
         return homeRepository.patchLessonSchedulesCheckToggle(lessonScheduleId)
     }
 }
