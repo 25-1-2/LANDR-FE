@@ -1,6 +1,7 @@
 package com.capston.presentation.ui
 
 import android.annotation.SuppressLint
+import android.util.Log
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
@@ -34,6 +35,7 @@ import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.TextFieldDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -50,6 +52,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -67,6 +70,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.capston.domain.request.PatchPlanDto
+import com.capston.domain.response.home.DistinctHomeIdResponse
 import com.capston.domain.response.home.LectureProgressResponse
 import com.capston.domain.response.home.LessonScheduleResponse
 import com.capston.presentation.R
@@ -89,6 +93,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
     val scope = rememberCoroutineScope()
+
     val homeState by homeViewModel.getDistinctHome.collectAsState()
 
     // 나의 학습 현황
@@ -100,11 +105,11 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
     var todayTotalLesson = homeState.todaySchedule.totalLessons
     var todayTotalDuration = homeState.todaySchedule.totalDuration
 
-    val lectureProgressList = homeState.userProgress.lectureProgress // 전체 강의 목록
-    var lectureNicknames by remember { mutableStateOf(lectureProgressList.map { it.lectureName.take(8) }) }
+    val lectureProgressList = homeState.userProgress.lectureProgress
+    val patchData by planViewModel.patchPlanName.collectAsState()
 
     // ModalBottomSheet의 boolean 상태를 기억
-    var isBottomSheetVisible by remember { mutableStateOf(false) }
+    var isBottomSheetVisible by rememberSaveable { mutableStateOf(false) }
     val modalBottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     Scaffold(
@@ -137,7 +142,6 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
                             modifier = Modifier
                                 .padding(top = 10.dp)
                         )
-
                         Text(
                             text = stringResource(R.string.home_edit),
                             color = LightGray40, // 원하는 색상으로 설정
@@ -162,22 +166,17 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
                         items(lectureProgressList) { item ->
                             Spacer(modifier = Modifier.width(16.dp)) // 그래프 간격 추가
 
-                            val nickname = if (lectureNicknames.isNotEmpty()) {
-                                lectureNicknames[lectureProgressList.indexOf(item)]
-                            } else {
-                                item.lectureName.take(8) // Fallback to the original lecture name if nicknames are empty
-                            }
-
+                            // 서버로 PATCH 요청을 보내고, 응답을 받아서 name 업데이트
+//                            val currentLectureName = if (patchData != "" && item.planId == patchData.id) {
+//                                patchData.name
+//                            } else {
+//                                item.lectureName // patchData로 업데이트
+//                            }
                             CircleGraph(
-                                name = item.lectureName,
+                                name = item.lectureAlias,
                                 cleared = item.completedLessons,
                                 total = item.totalLessons
                             )
-
-//                            LaunchedEffect(Unit) {
-//                                // 서버로 PATCH 요청을 보내고, 응답을 받아서 name 업데이트
-//                                val updatedName = planViewModel.patchPlanName  // 서버에서 새로운 name을 받아오는 함수
-//                            }
                         }
                     }
                 }
@@ -210,6 +209,7 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
 
     // 바텀 시트
     if (isBottomSheetVisible) {
+
         ModalBottomSheet(
             sheetState = modalBottomSheetState,
             onDismissRequest = { isBottomSheetVisible = false }
@@ -219,12 +219,8 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
                 description = "수강 중인 강의를 선택하세요.",
                 modalBottomSheetState = modalBottomSheetState,
                 onDismiss = { isBottomSheetVisible = false },
-                lectureProgressList = lectureProgressList,
-                lectureNicknames = lectureNicknames,
-                onNicknamesUpdated = {
-                    updatedNicknames -> lectureNicknames = updatedNicknames
-                },
-                planViewModel = planViewModel
+                lectureProgressList = lectureProgressList?: emptyList(),
+                planViewModel = planViewModel,
             )
         }
     }
@@ -239,9 +235,7 @@ fun CustomBottomSheetDialog(
     modalBottomSheetState: SheetState,
     onDismiss: () -> Unit,
     lectureProgressList: List<LectureProgressResponse>,
-    lectureNicknames: List<String>,
-    onNicknamesUpdated: (List<String>) -> Unit,
-    planViewModel: PlanViewModel
+    planViewModel: PlanViewModel,
 ) {
     val scope = rememberCoroutineScope()
     val bottomPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
@@ -289,9 +283,7 @@ fun CustomBottomSheetDialog(
         ) {
             LectureList(
                 lectureProgressList = lectureProgressList,
-                lectureNicknames = lectureNicknames,
                 planViewModel = planViewModel,
-                onUpdateNickName = onNicknamesUpdated
             )
         }
 
@@ -320,16 +312,12 @@ fun CustomBottomSheetDialog(
 @Composable
 fun LectureList(
     lectureProgressList: List<LectureProgressResponse>,
-    lectureNicknames: List<String>,
     planViewModel: PlanViewModel,
-    onUpdateNickName: (List<String>) -> Unit
 ) {
     val checkedStates = remember { mutableStateListOf<Boolean>().apply { repeat(lectureProgressList.size) { add(false) } } }
-    var updatedNicknames by remember { mutableStateOf(lectureNicknames.toMutableList()) }
 
     Column {
         lectureProgressList.forEachIndexed { index, lecture ->
-            var lectureTitle by remember { mutableStateOf(updatedNicknames[index]) } // 수정된 강의 별칭을 관리
             var isEditing by remember { mutableStateOf(false) } // 수정 모드 여부
             var errorMessage by remember { mutableStateOf("") } // 오류 메시지 상태
             var showError by remember { mutableStateOf(false) }  // 오류 메시지를 표시할지 여부를 관리하는 상태
@@ -352,11 +340,11 @@ fun LectureList(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 OutlinedTextField(
-                                    value = lectureTitle,
+                                    value = lecture.lectureAlias,
                                     onValueChange = { newValue ->
                                         // 8자 이하로 입력할 수 있도록 제한
                                         if (newValue.length <= 8) {
-                                            lectureTitle = newValue
+                                            lecture.lectureAlias = newValue
                                             errorMessage = "" // 오류 메시지 초기화
                                             showError = false  // 오류 숨기기
                                         } else {
@@ -377,9 +365,8 @@ fun LectureList(
                                 Button(
                                     onClick = {
                                         // 완료 버튼 클릭 시 수정된 내용 적용
-                                        updatedNicknames[index] = lectureTitle
                                         isEditing = false  // 수정 모드 종료
-                                        planViewModel.patchPlanName(lecture.planId, PatchPlanDto(lectureAlias = lectureTitle))
+                                        planViewModel.patchPlanName(lecture.planId, PatchPlanDto(lectureAlias = lecture.lectureAlias))
                                     },
                                     colors = ButtonDefaults.buttonColors(
                                         containerColor = MainBlue,
@@ -412,7 +399,7 @@ fun LectureList(
                         // 강의 제목 텍스트가 OutlinedTextField 아래에 보이도록
                         Spacer(modifier = Modifier.height(8.dp)) // 버튼과 텍스트 간격 추가
                         Text(
-                            text = lecture.lectureName, // 강의 첫 번째 텍스트
+                            text = lecture.lectureAlias, // 강의 첫 번째 텍스트
                             fontSize = 12.sp,
                             modifier = Modifier.padding(start = 16.dp)
                         )
@@ -420,7 +407,7 @@ fun LectureList(
                 } else {
                     // 수정 모드가 아닐 때는 기존 강의 제목을 그대로 표시
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(text = lectureTitle, style = MaterialTheme.typography.bodyLarge)
+                        Text(text = lecture.lectureAlias, style = MaterialTheme.typography.bodyLarge)
                         Text(
                             text = lecture.lectureName,
                             style = MaterialTheme.typography.bodyMedium,

@@ -4,22 +4,19 @@ import android.util.Log
 import com.capston.data.repository.remote.api.PlanApi
 import com.capston.domain.datasource.PlanDataSource
 import com.capston.domain.request.PatchPlanDto
-import com.capston.domain.response.BaseResponse
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 
 class PlanDataSourceImpl @Inject constructor(
     private val planApi: PlanApi
-) : PlanDataSource  {
-    override suspend fun patchPlanName(
-        planId: Int,
-        patchPlanDto: PatchPlanDto
-    ): Flow<String> = flow {
-        val result = planApi.patchPlanName(planId, patchPlanDto)
-        emit(result)
-    }.catch { e ->
-        Log.e("patchPlanEdit 에러", e.message.toString())
+) : PlanDataSource {
+
+    override suspend fun patchPlanName(planId: Int, patchPlanDto: PatchPlanDto): String {
+        return try {
+            val response = planApi.patchPlanName(planId, patchPlanDto)
+            response.trim() // 🔥 `ResponseBody` -> `String` 변환 후 공백 제거
+        } catch (e: Exception) {
+            Log.e("PlanDataSourceImpl", "PATCH 요청 실패: ${e.message}")
+            throw e  // 예외 다시 던지기 (ViewModel에서 처리 가능)
+        }
     }
 }

@@ -9,5 +9,5 @@ interface PlanRepository {
     suspend fun patchPlanName(
         planId: Int,
         patchPlanDto: PatchPlanDto
-    ): Flow<String>
+    ): String
 }

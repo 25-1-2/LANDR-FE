@@ -7,6 +7,7 @@ import com.capston.domain.request.PatchPlanDto
 import com.capston.domain.response.BaseResponse
 import com.capston.domain.response.home.DistinctHomeIdResponse
 import com.capston.domain.response.home.TodayScheduleResponse
+import com.capston.domain.response.home.UserProgressResponse
 import com.capston.domain.usecase.home.GetDistinctHomeUseCase
 import com.capston.domain.usecase.home.PatchLessonSchedulesCheckToggleUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -35,9 +36,10 @@ class HomeViewModel @Inject constructor(
                 getDistinctHomeUseCase().collect { response ->
                     // todaySchedule이 null일 경우 빈 객체로 처리
                     val safeTodaySchedule = response.todaySchedule ?: TodayScheduleResponse()
+                    val safeUserProgress = response.userProgress ?: UserProgressResponse()
 
                     // userProgress와 todaySchedule을 포함한 응답을 MutableStateFlow에 업데이트
-                    _getDistinctHome.value = response.copy(todaySchedule = safeTodaySchedule)
+                    _getDistinctHome.value = response.copy(todaySchedule = safeTodaySchedule, userProgress = safeUserProgress)
 
                 }
             } catch (e: Exception) {
