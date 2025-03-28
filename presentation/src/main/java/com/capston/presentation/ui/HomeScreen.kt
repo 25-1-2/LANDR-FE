@@ -325,88 +325,96 @@ fun LectureList(
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
-                    .padding(vertical = 8.dp)
-                    .height(60.dp),
+                    .fillMaxWidth()
             ) {
-                //CheckBox(lecture.planId,false) // TODO 수정
                 if (isEditing) {
-                    Column(modifier = Modifier.fillMaxWidth()) {
-                        Box(
-                            modifier = Modifier.fillMaxWidth()
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                OutlinedTextField(
-                                    value = aliasState, //
-                                    onValueChange = { newValue ->
-                                        if (newValue.length <= 8) {
-                                            aliasState = newValue //
-                                            errorMessage = "" // 오류 메시지 초기화
-                                            showError = false  // 오류 숨기기
-                                        } else {
-                                            errorMessage = "8글자 이하로 입력해주세요."
-                                            showError = true  // 오류 메시지 표시
-                                        }
-                                    },
-                                    colors = TextFieldDefaults.outlinedTextFieldColors(
-                                        focusedBorderColor = if (showError) Color.Red else MainBlue,
-                                        unfocusedBorderColor = if (showError) Color.Red else MainBlue,
-                                        textColor = LightGray60
-                                    ),
-                                    textStyle = TextStyle(fontSize = 14.sp),
-                                    modifier = Modifier.weight(1f)
-                                )
+                            OutlinedTextField(
+                                value = aliasState,
+                                onValueChange = { newValue ->
+                                    if (newValue.length <= 8) {
+                                        aliasState = newValue
+                                        showError = false
+                                    } else {
+                                        showError = true
+                                    }
+                                },
+                                colors = TextFieldDefaults.outlinedTextFieldColors(
+                                    focusedBorderColor = if (showError) Color.Red else MainBlue,
+                                    unfocusedBorderColor = if (showError) Color.Red else MainBlue,
+                                    textColor = LightGray60
+                                ),
+                                textStyle = TextStyle(fontSize = 14.sp),
+                                modifier = Modifier
+                                    .weight(1f) // 👉 버튼과 균형 맞추기
+                                    .padding(end = 8.dp)
+                            )
 
-                                // 완료 버튼
-                                Button(
-                                    onClick = {
-                                        isEditing = false  // 수정 모드 종료
-                                        planViewModel.patchPlanName(lecture.planId, PatchPlanDto(lectureAlias = aliasState))
-                                        lecture.lectureAlias = aliasState
-                                    },
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = MainBlue,
-                                        contentColor = Color.White,
-                                    ),
-                                    modifier = Modifier
-                                        .padding(start = 16.dp),
-                                    shape = RoundedCornerShape(12.dp)
-                                ) {
-                                    Text(
-                                        text = "완료",
-                                        fontSize = 14.sp
+                            Button(
+                                onClick = {
+                                    isEditing = false
+                                    planViewModel.patchPlanName(
+                                        lecture.planId,
+                                        PatchPlanDto(lectureAlias = aliasState)
                                     )
-                                }
-                            }
-
-                            // 오류 메시지 표시
-                            if (showError) {
-                                Text(
-                                    text = errorMessage,
-                                    color = Color.Red,
-                                    fontSize = 8.sp,
-                                    modifier = Modifier
-                                        .padding(start = 16.dp)
-                                        .align(Alignment.BottomStart)
-                                )
+                                    lecture.lectureAlias = aliasState
+                                },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MainBlue,
+                                    contentColor = Color.White
+                                ),
+                                shape = RoundedCornerShape(12.dp),
+                                modifier = Modifier
+                            ) {
+                                Text(text = "완료", fontSize = 14.sp)
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = aliasState,
-                            fontSize = 12.sp,
-                            modifier = Modifier.padding(start = 16.dp)
-                        )
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalAlignment = Alignment.Start
+                        ) {
+                            // 글자 수 표시
+                            Text(
+                                text = "${aliasState.length} / 8(자)",
+                                color = if (showError) Color.Red else Color.Gray,
+                                fontSize = 12.sp,
+                                modifier = Modifier.padding(start = 10.dp)
+                            )
+
+                            // 강의명 표시
+                            Text(
+                                text = lecture.lectureName,
+                                color = LightGray60,
+                                fontSize = 12.sp,
+                                modifier = Modifier.padding(start = 10.dp)
+                            )
+
+//                            // 오류 메시지 표시
+//                            if (showError) {
+//                                Text(
+//                                    text = "8글자 이하로 입력해주세요.",
+//                                    color = Color.Red,
+//                                    fontSize = 12.sp,
+//                                    modifier = Modifier.padding(start = 10.dp)
+//                                )
+//                            }
+                        }
                     }
                 } else {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(text = aliasState, style = MaterialTheme.typography.bodyLarge)
+                        Text(text = aliasState)
                         Text(
                             text = lecture.lectureName,
-                            style = MaterialTheme.typography.bodyMedium,
+                            fontSize = 12.sp,
                             color = LightGray60
                         )
                     }
@@ -425,6 +433,7 @@ fun LectureList(
                     }
                 }
             }
+
         }
     }
 }
