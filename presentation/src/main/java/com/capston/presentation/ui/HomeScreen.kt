@@ -166,14 +166,14 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
                         items(lectureProgressList) { item ->
                             Spacer(modifier = Modifier.width(16.dp)) // 그래프 간격 추가
 
-                            // 서버로 PATCH 요청을 보내고, 응답을 받아서 name 업데이트
-//                            val currentLectureName = if (patchData != "" && item.planId == patchData.id) {
-//                                patchData.name
-//                            } else {
-//                                item.lectureName // patchData로 업데이트
-//                            }
+                            // PATCH 요청 응답을 받아서 name 업데이트
+                            val currentLectureName = if (item.planId == patchData.planId) {
+                                patchData.lectureAlias
+                            } else {
+                                item.lectureAlias
+                            }
                             CircleGraph(
-                                name = item.lectureAlias,
+                                name = currentLectureName,
                                 cleared = item.completedLessons,
                                 total = item.totalLessons
                             )
@@ -320,7 +320,8 @@ fun LectureList(
         lectureProgressList.forEachIndexed { index, lecture ->
             var isEditing by remember { mutableStateOf(false) } // 수정 모드 여부
             var errorMessage by remember { mutableStateOf("") } // 오류 메시지 상태
-            var showError by remember { mutableStateOf(false) }  // 오류 메시지를 표시할지 여부를 관리하는 상태
+            var showError by remember { mutableStateOf(false) }  // 오류 메시지를 표시할지 여부
+            var aliasState by remember { mutableStateOf(lecture.lectureAlias) } // 강의 별칭 상태
 
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -340,11 +341,10 @@ fun LectureList(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 OutlinedTextField(
-                                    value = lecture.lectureAlias,
+                                    value = aliasState, //
                                     onValueChange = { newValue ->
-                                        // 8자 이하로 입력할 수 있도록 제한
                                         if (newValue.length <= 8) {
-                                            lecture.lectureAlias = newValue
+                                            aliasState = newValue //
                                             errorMessage = "" // 오류 메시지 초기화
                                             showError = false  // 오류 숨기기
                                         } else {
@@ -353,20 +353,20 @@ fun LectureList(
                                         }
                                     },
                                     colors = TextFieldDefaults.outlinedTextFieldColors(
-                                        focusedBorderColor = if (showError) Color.Red else MainBlue, // 오류 시 빨간색
-                                        unfocusedBorderColor = if (showError) Color.Red else MainBlue, // 오류 시 빨간색
+                                        focusedBorderColor = if (showError) Color.Red else MainBlue,
+                                        unfocusedBorderColor = if (showError) Color.Red else MainBlue,
                                         textColor = LightGray60
                                     ),
                                     textStyle = TextStyle(fontSize = 14.sp),
-                                    modifier = Modifier.weight(1f) // OutlinedTextField이 가능한 공간을 다 차지하도록
+                                    modifier = Modifier.weight(1f)
                                 )
 
                                 // 완료 버튼
                                 Button(
                                     onClick = {
-                                        // 완료 버튼 클릭 시 수정된 내용 적용
                                         isEditing = false  // 수정 모드 종료
-                                        planViewModel.patchPlanName(lecture.planId, PatchPlanDto(lectureAlias = lecture.lectureAlias))
+                                        planViewModel.patchPlanName(lecture.planId, PatchPlanDto(lectureAlias = aliasState))
+                                        lecture.lectureAlias = aliasState
                                     },
                                     colors = ButtonDefaults.buttonColors(
                                         containerColor = MainBlue,
@@ -391,23 +391,21 @@ fun LectureList(
                                     fontSize = 8.sp,
                                     modifier = Modifier
                                         .padding(start = 16.dp)
-                                        .align(Alignment.BottomStart) // 오류 메시지를 OutlinedTextField 아래에 위치시킴
+                                        .align(Alignment.BottomStart)
                                 )
                             }
                         }
 
-                        // 강의 제목 텍스트가 OutlinedTextField 아래에 보이도록
-                        Spacer(modifier = Modifier.height(8.dp)) // 버튼과 텍스트 간격 추가
+                        Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = lecture.lectureAlias, // 강의 첫 번째 텍스트
+                            text = aliasState,
                             fontSize = 12.sp,
                             modifier = Modifier.padding(start = 16.dp)
                         )
                     }
                 } else {
-                    // 수정 모드가 아닐 때는 기존 강의 제목을 그대로 표시
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(text = lecture.lectureAlias, style = MaterialTheme.typography.bodyLarge)
+                        Text(text = aliasState, style = MaterialTheme.typography.bodyLarge)
                         Text(
                             text = lecture.lectureName,
                             style = MaterialTheme.typography.bodyMedium,
