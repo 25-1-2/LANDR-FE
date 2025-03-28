@@ -314,11 +314,9 @@ fun LectureList(
     lectureProgressList: List<LectureProgressResponse>,
     planViewModel: PlanViewModel,
 ) {
-
     Column {
         lectureProgressList.forEachIndexed { index, lecture ->
             var isEditing by remember { mutableStateOf(false) } // 수정 모드 여부
-            var errorMessage by remember { mutableStateOf("") } // 오류 메시지 상태
             var showError by remember { mutableStateOf(false) }  // 오류 메시지를 표시할지 여부
             var aliasState by remember { mutableStateOf(lecture.lectureAlias) } // 강의 별칭 상태
 
@@ -341,20 +339,21 @@ fun LectureList(
                                 value = aliasState,
                                 onValueChange = { newValue ->
                                     if (newValue.length <= 8) {
+                                        showError = false // 오류 숨기기
                                         aliasState = newValue
-                                        showError = false
+
                                     } else {
-                                        showError = true
+                                        showError = true // 오류 표시
                                     }
                                 },
                                 colors = TextFieldDefaults.outlinedTextFieldColors(
-                                    focusedBorderColor = if (showError) Color.Red else MainBlue,
+                                    focusedBorderColor = if (aliasState.length == 8) Color.Red else MainBlue,
                                     unfocusedBorderColor = if (showError) Color.Red else MainBlue,
-                                    textColor = LightGray60
+                                    textColor = LightGray60,
                                 ),
                                 textStyle = TextStyle(fontSize = 14.sp),
                                 modifier = Modifier
-                                    .weight(1f) // 👉 버튼과 균형 맞추기
+                                    .weight(1f)
                                     .padding(end = 8.dp)
                             )
 
@@ -385,7 +384,7 @@ fun LectureList(
                             // 글자 수 표시
                             Text(
                                 text = "${aliasState.length} / 8(자)",
-                                color = if (showError) Color.Red else Color.Gray,
+                                color = if (aliasState.length == 8) Color.Red else Color.Gray,
                                 fontSize = 12.sp,
                                 modifier = Modifier.padding(start = 10.dp)
                             )
@@ -397,16 +396,6 @@ fun LectureList(
                                 fontSize = 12.sp,
                                 modifier = Modifier.padding(start = 10.dp)
                             )
-
-//                            // 오류 메시지 표시
-//                            if (showError) {
-//                                Text(
-//                                    text = "8글자 이하로 입력해주세요.",
-//                                    color = Color.Red,
-//                                    fontSize = 12.sp,
-//                                    modifier = Modifier.padding(start = 10.dp)
-//                                )
-//                            }
                         }
                     }
                 } else {
@@ -433,7 +422,6 @@ fun LectureList(
                     }
                 }
             }
-
         }
     }
 }
