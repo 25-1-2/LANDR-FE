@@ -86,7 +86,7 @@ fun SettingTopBottomBar(homeViewModel: HomeViewModel, planViewModel: PlanViewMod
                 modifier = Modifier.weight(1f) // NavHost가 남은 영역을 모두 차지하도록 설정
             ) {
                 composable(Screen.Home.title) { HomeScreen(homeViewModel, planViewModel) }
-                composable(Screen.Calender.title) { CalenderScreen() }
+                composable(Screen.Calender.title) { CalenderScreen(homeViewModel) }
                 composable(Screen.Search.title) { SearchScreen() }
                 composable(Screen.LectureList.title) { LectureListScreen() }
                 composable(Screen.Profile.title) { ProfileScreen() }
