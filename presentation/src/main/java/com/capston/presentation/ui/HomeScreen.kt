@@ -67,6 +67,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.capston.domain.request.PatchPlanDto
@@ -427,19 +428,13 @@ fun LectureList(
 }
 
 @Composable
-fun CheckBox(isCheck: Boolean, homeViewModel: HomeViewModel, id: Int) {
-    var isChecked by remember { mutableStateOf(isCheck) }
+fun CheckBox(isChecked: Boolean, onCheckedChange: () -> Unit) {
     IconButton(
-        onClick = {
-            // PATCH 서버에 체크 박스 여부 보내기
-            homeViewModel.patchLessonSchedulesCheckToggle(id)
-            isChecked = !isChecked
-        },
+        onClick = onCheckedChange,
         modifier = Modifier
             .size(40.dp) // 이미지 버튼 크기 설정
             .padding(end = 16.dp) // 이미지와 텍스트 간의 간격 설정
     ) {
-
         val imageRes = if (isChecked) R.drawable.home_screen_check_on
         else R.drawable.home_screen_check_off
 
@@ -453,28 +448,36 @@ fun CheckBox(isCheck: Boolean, homeViewModel: HomeViewModel, id: Int) {
 @Composable
 fun LessonList(homeViewModel: HomeViewModel, maxHeight: Int, todayLessonList: List<LessonScheduleResponse>) {
     LazyColumn(
-        modifier = Modifier.padding(start = 30.dp).heightIn(max = maxHeight.dp) // 최대 높이를 설정하여 스크롤 범위를 제한
+        modifier = Modifier
+            .padding(start = 30.dp)
+            .heightIn(max = maxHeight.dp) // 최대 높이를 설정하여 스크롤 범위를 제한
     ) {
-        // 강의가 없을 경우
         items(todayLessonList) { lesson ->
+            var isChecked by remember { mutableStateOf(lesson.completed) }
+
             Row(
                 verticalAlignment = Alignment.CenterVertically, // 세로로 중앙 정렬
-                modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 10.dp)
             ) {
-
                 CheckBox(
-                    isCheck = lesson.completed,
-                    homeViewModel = homeViewModel,
-                    id = lesson.id
+                    isChecked = isChecked,
+                    onCheckedChange = {
+                        homeViewModel.patchLessonSchedulesCheckToggle(lesson.id)
+                        isChecked = !isChecked
+                    }
                 )
                 Column {
                     Text(
                         text = lesson.lessonTitle,
+                        textDecoration = if (isChecked) TextDecoration.LineThrough else TextDecoration.None,
                         style = MaterialTheme.typography.bodyLarge,
                         fontSize = 16.sp
                     )
                     Text(
-                        text = lesson.lectureName + " · 약 " + lesson.adjustedDuration + "분",
+                        text = "${lesson.lectureName} · 약 ${lesson.adjustedDuration}분",
+                        textDecoration = if (isChecked) TextDecoration.LineThrough else TextDecoration.None,
                         style = MaterialTheme.typography.bodyLarge,
                         color = LightGray60,
                         fontSize = 14.sp
