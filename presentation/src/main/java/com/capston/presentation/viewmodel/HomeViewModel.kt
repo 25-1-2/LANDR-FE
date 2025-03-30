@@ -57,6 +57,7 @@ class HomeViewModel @Inject constructor(
             try {
                 patchLessonSchedulesCheckToggleUseCase(lessonScheduleId).collect {
                     _patchLessonSchedulesCheckToggle.value = it
+                    getDistinctHome()
                 }
             } catch (e: Exception) {
                 Log.e("patch lesson schedule toggle 에러", e.message.toString())
