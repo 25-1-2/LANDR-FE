@@ -10,6 +10,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
+import com.capston.presentation.theme.CapstonTheme
+import com.capston.presentation.theme.MainPurple
 
 @Composable
 fun PlanScreen() {
@@ -30,6 +32,10 @@ fun PlanScreen() {
             .fillMaxSize()
             .padding(16.dp)
     ) {
+        Text(
+            text = "메가스터디",
+            color = MainPurple,
+        )
         // 상단 강의 정보
         Text(
             text = "2026 현우진의 수분감 - 수학 (공통)",
@@ -44,14 +50,28 @@ fun PlanScreen() {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // "기간으로 계획하기" 버튼
-        Button(
-            onClick = { /* 기간으로 계획하기 클릭 시 로직 */ },
-            shape = RoundedCornerShape(8.dp),
-            modifier = Modifier.align(Alignment.End)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text("기간으로 계획하기")
+// "기간으로 계획하기" 버튼
+            Button(
+                onClick = { /* 기간으로 계획하기 클릭 시 로직 */ },
+                shape = RoundedCornerShape(8.dp),
+//            modifier = Modifier.align(Alignment.End)
+            ) {
+                Text("기간으로 계획하기")
+            }
+            Button(
+                onClick = { /* 기간으로 계획하기 클릭 시 로직 */ },
+                shape = RoundedCornerShape(8.dp),
+//            modifier = Modifier.align(Alignment.End)
+            ) {
+                Text("시간으로 계획하기")
+            }
         }
+
+
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -184,7 +204,7 @@ fun PlanScreen() {
 @Preview(showBackground = true)
 @Composable
 fun PlanScreenPreview() {
-    MaterialTheme {
+    CapstonTheme {
         PlanScreen()
     }
 }
