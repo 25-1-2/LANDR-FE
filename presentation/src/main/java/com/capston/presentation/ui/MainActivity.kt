@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.Notifications
@@ -65,25 +66,35 @@ class MainActivity : ComponentActivity() {
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
-@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun SettingTopBottomBar(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
     var bottomNavState by rememberSaveable { mutableIntStateOf(0) }
     val navController = rememberNavController()
 
+    val currentDestination = navController.currentBackStackEntryFlow.collectAsState(initial = null).value?.destination?.route
+
     Scaffold(
-        topBar = { TopBar(true) },
-        bottomBar = { BottomBar(navController, bottomNavState, { index -> bottomNavState = index }) }
-    ) { contentPadding -> // topBar와 bottomBar를 고려한 padding
+        topBar = {
+            when (currentDestination) {
+                Screen.Search.title -> SearchTopBar(navController) // SearchScreen일 때 검색용 TopBar 표시
+                else -> TopBar(true) // 기본 TopBar
+            }
+        },
+        bottomBar = {
+            if (currentDestination != Screen.Search.title) {
+                BottomBar(navController, bottomNavState, { index -> bottomNavState = index }) // SearchScreen이 아닐 때만 표시
+            }
+        }
+    ) { contentPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(contentPadding) // topBar, bottomBar 높이만큼 padding 적용
+                .padding(contentPadding)
         ) {
             NavHost(
                 navController = navController,
                 startDestination = Screen.Home.title,
-                modifier = Modifier.weight(1f) // NavHost가 남은 영역을 모두 차지하도록 설정
+                modifier = Modifier.weight(1f)
             ) {
                 composable(Screen.Home.title) { HomeScreen(homeViewModel, planViewModel) }
                 composable(Screen.Calender.title) { CalenderScreen(homeViewModel) }
@@ -94,6 +105,33 @@ fun SettingTopBottomBar(homeViewModel: HomeViewModel, planViewModel: PlanViewMod
         }
     }
 }
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SearchTopBar(navController: NavController) {
+    TopAppBar(
+        title = {
+            SearchBar() // 검색창을 TopBar에 추가
+        },
+        navigationIcon = {
+            IconButton(onClick = { navController.popBackStack() }) {
+                Icon(
+                    imageVector = Icons.Default.ArrowBack,
+                    contentDescription = "뒤로 가기"
+                )
+            }
+        },
+        actions = {
+            IconButton(onClick = { /* 검색 동작 */ }) {
+                Icon(
+                    imageVector = Icons.Default.Search,
+                    contentDescription = "검색"
+                )
+            }
+        }
+    )
+}
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

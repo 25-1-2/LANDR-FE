@@ -63,44 +63,8 @@ fun SearchScreen() {
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            // 검색 버튼을 상단에 배치
-            Box {
-                Row(
-                    modifier = Modifier.padding(vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(onClick = {
-                    }) {
-                        Image(
-                            imageVector = Icons.Default.ArrowBack,
-                            contentDescription = null
-                        )
-                    }
-
-                    SearchBar()
-
-                    IconButton(onClick = {
-                    }) {
-                        Image(
-                            imageVector = Icons.Default.Search,
-                            contentDescription = null
-                        )
-                    }
-
-                    IconButton(onClick = {
-
-                    }) {
-                        Image(
-                            imageVector = Icons.Default.Search,
-                            contentDescription = null
-                        )
-                    }
-                }
-            }
-
-            // 리스트 표시
+            // 검색 리스트 표시
             InfiniteScrollList()
-
         }
     }
 }
@@ -117,7 +81,7 @@ fun InfiniteScrollList() {
             modifier = Modifier
                 .fillMaxWidth()
                 .fillMaxHeight()
-                .padding(top = 20.dp, bottom = 20.dp, start = 40.dp)
+                .padding(bottom = 20.dp, start = 20.dp)
         ) {
             LazyColumn(
                 state = rememberLazyListState(),
@@ -187,8 +151,7 @@ fun SearchBar() {
     var textState by remember { mutableStateOf("") } // 상태 저장
     Row(
         modifier = Modifier
-            .fillMaxWidth()
-            .padding(start = 20.dp),
+            .fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
         OutlinedTextField(
@@ -205,16 +168,6 @@ fun SearchBar() {
             modifier = Modifier
                 .weight(1f) // OutlinedTextField가 남는 공간을 차지하도록 설정
         )
-
-        IconButton(
-            onClick = { /* TODO: 검색 버튼 클릭 로직 */ },
-        ) {
-            Icon(
-                imageVector = Icons.Default.Search,
-                contentDescription = "Search",
-                tint = Color.Black
-            )
-        }
     }
 }
 
