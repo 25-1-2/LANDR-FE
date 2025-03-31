@@ -112,10 +112,6 @@ fun PeriodPlanPage() {
     var showStartDatePicker by remember { mutableStateOf(false) }
     var showEndDatePicker by remember { mutableStateOf(false) }
 
-    // 배속 선택 상태 예시
-    val speeds = listOf("1.3x", "2.0x")
-    val (selectedSpeed, setSelectedSpeed) = remember { mutableStateOf(speeds.first()) }
-
     Column {
         // 날짜 선택 UI
         Row(
@@ -285,10 +281,6 @@ fun TimePlanPage() {
     var showStartDatePicker by remember { mutableStateOf(false) }
     var showEndDatePicker by remember { mutableStateOf(false) }
 
-    // 배속 선택 상태 예시
-    val speeds = listOf("1.3x", "2.0x")
-    val (selectedSpeed, setSelectedSpeed) = remember { mutableStateOf(speeds.first()) }
-
     Column {
         // 날짜 선택 UI
         Row(
@@ -299,45 +291,25 @@ fun TimePlanPage() {
                 modifier = Modifier.weight(1f)
             ) {
                 Text(
-                    text = "학습 시작일",
+                    text = "일일 학습 시간",
                     style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 OutlinedTextField(
-                    value = startDate,
+                    value = "학습 시간 설정",
                     onValueChange = { },
 //                    label = { Text("DOB") },
                     readOnly = true,
                     trailingIcon = {
                         IconButton(onClick = { showStartDatePicker = !showStartDatePicker }) {
                             Icon(
-                                imageVector = Icons.Default.DateRange,
+                                imageVector = Icons.Default.KeyboardArrowDown,
                                 contentDescription = "Select date"
                             )
                         }
-                    }
-                )
-            }
+                    },
+                    modifier = Modifier.fillMaxSize()
 
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = "목표 완강일",
-                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                OutlinedTextField(
-                    value = endDate,
-                    onValueChange = { },
-//                    label = { Text("DOB") },
-                    readOnly = true,
-                    trailingIcon = {
-                        IconButton(onClick = { showEndDatePicker = !showEndDatePicker }) {
-                            Icon(
-                                imageVector = Icons.Default.DateRange,
-                                contentDescription = "Select date"
-                            )
-                        }
-                    }
                 )
             }
         }
