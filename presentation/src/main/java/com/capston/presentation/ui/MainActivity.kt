@@ -54,6 +54,9 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.capston.presentation.theme.CapstonTheme
 import com.capston.presentation.theme.LightGray2
+import com.capston.presentation.theme.LightGray3
+import com.capston.presentation.theme.LightGray4
+import com.capston.presentation.theme.LightGray4_40
 import com.capston.presentation.theme.MainPurple
 import com.capston.presentation.viewmodel.HomeViewModel
 import com.capston.presentation.viewmodel.PlanViewModel
@@ -152,10 +155,14 @@ fun SearchField(searchQuery: String, onQueryChanged: (String) -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .border(BorderStroke(0.5.dp, Color.LightGray), shape = RoundedCornerShape(8.dp))
-            .padding(horizontal = 12.dp, vertical = 8.dp)
+            .border(BorderStroke(0.5.dp, Color.LightGray), shape = RoundedCornerShape(20.dp))
+            .background(LightGray4_40, shape = RoundedCornerShape(20.dp)) // Box에 배경 색상 적용
+            .padding(horizontal = 12.dp, vertical = 12.dp)
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+        ) {
             BasicTextField(
                 value = searchQuery,
                 onValueChange = onQueryChanged,
