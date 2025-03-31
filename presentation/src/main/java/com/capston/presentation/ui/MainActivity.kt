@@ -99,31 +99,47 @@ fun SearchTopBar(navController: NavController, searchQuery: String, onQueryChang
 }
 
 @Composable
-fun InfiniteScrollList(searchQuery: String) {
-    val allItems = remember { List(50) { "2026 현우진의 수분감 - 수학I (공통)" } + listOf("괜찮아 너만 모르는 건 아니야") }
-    val filteredItems = allItems.filter { it.contains(searchQuery, ignoreCase = true) }
+fun InfiniteScrollList(filteredItems: List<LectureItemDto>, searchQuery: String) {
     var loading by remember { mutableStateOf(false) }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        LazyColumn(state = rememberLazyListState(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        LazyColumn(
+            state = rememberLazyListState(),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            // 필터링된 항목이 없을 경우 표시하지 않음
             if (filteredItems.isEmpty()) {
-                item { Text("검색 결과가 없습니다.", fontSize = 18.sp, color = Color.Gray, modifier = Modifier.fillMaxWidth().padding(16.dp), textAlign = TextAlign.Center) }
+                item {
+                    Text(
+                        text = "검색 결과가 없습니다.",
+                        fontSize = 18.sp,
+                        color = Color.Gray,
+                        modifier = Modifier.fillMaxWidth().padding(16.dp),
+                        textAlign = TextAlign.Center
+                    )
+                }
             } else {
                 items(filteredItems) { item ->
-                    SearchLectureItem(title = item, searchQuery = searchQuery)
+                    SearchLectureItem(lectureItem = item, searchQuery = searchQuery)
                 }
             }
 
+            // 로딩 상태 표시
             if (!loading && filteredItems.isNotEmpty()) {
                 item {
                     LaunchedEffect(Unit) {
                         loading = true
-                        kotlinx.coroutines.delay(1500)
+                        delay(1500)
                         loading = false
                     }
 
                     if (loading) {
-                        CircularProgressIndicator(modifier = Modifier.fillMaxWidth().padding(16.dp), color = MainPurple, strokeWidth = 2.dp)
+                        CircularProgressIndicator(
+                            modifier = Modifier.fillMaxWidth().padding(16.dp),
+                            color = MainPurple,
+                            strokeWidth = 2.dp
+                        )
                     }
                 }
             }
