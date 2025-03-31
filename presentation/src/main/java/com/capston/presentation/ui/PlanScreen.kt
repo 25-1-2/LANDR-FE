@@ -68,7 +68,7 @@ fun PlanScreen() {
             Button(
                 onClick = {
                     coroutineScope.launch {
-                        pagerState.animateScrollToPage(0)
+                        pagerState.scrollToPage(0)
                     }
                 },
                 shape = RoundedCornerShape(8.dp),
@@ -84,7 +84,7 @@ fun PlanScreen() {
             Button(
                 onClick = {
                     coroutineScope.launch {
-                        pagerState.animateScrollToPage(1)
+                        pagerState.scrollToPage(1)
                     }
                 },
                 shape = RoundedCornerShape(8.dp),
@@ -103,7 +103,7 @@ fun PlanScreen() {
 
         HorizontalPager(
             state = pagerState,
-//            modifier = Modifier.fillMaxSize()
+            userScrollEnabled = false
         ) { page ->
             when (page) {
                 0 -> PeriodPlanPage() // 기간으로 계획하기 화면
