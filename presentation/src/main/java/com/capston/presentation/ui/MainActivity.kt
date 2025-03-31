@@ -6,6 +6,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -20,9 +21,9 @@ import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -32,9 +33,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -43,6 +41,7 @@ import com.capston.presentation.theme.CapstonTheme
 import com.capston.presentation.theme.LightGray2
 import com.capston.presentation.theme.MainPurple
 import com.capston.presentation.viewmodel.HomeViewModel
+import com.capston.presentation.viewmodel.PlanViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -53,13 +52,13 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            val homeViewModel = viewModel<HomeViewModel>()
+            val homeViewModel: HomeViewModel by viewModels()
+            val planViewModel: PlanViewModel by viewModels()
             LaunchedEffect(Unit) {
                 homeViewModel.getDistinctHome()
             }
-
             CapstonTheme {
-                SettingTopBottomBar(homeViewModel)
+                SettingTopBottomBar(homeViewModel, planViewModel)
             }
         }
     }
@@ -68,7 +67,7 @@ class MainActivity : ComponentActivity() {
 @RequiresApi(Build.VERSION_CODES.O)
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
-fun SettingTopBottomBar(homeViewModel: HomeViewModel) {
+fun SettingTopBottomBar(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
     var bottomNavState by rememberSaveable { mutableIntStateOf(0) }
     val navController = rememberNavController()
 
@@ -86,8 +85,8 @@ fun SettingTopBottomBar(homeViewModel: HomeViewModel) {
                 startDestination = Screen.Home.title,
                 modifier = Modifier.weight(1f) // NavHost가 남은 영역을 모두 차지하도록 설정
             ) {
-                composable(Screen.Home.title) { HomeScreen(homeViewModel) }
-                composable(Screen.Calender.title) { CalenderScreen() }
+                composable(Screen.Home.title) { HomeScreen(homeViewModel, planViewModel) }
+                composable(Screen.Calender.title) { CalenderScreen(homeViewModel) }
                 composable(Screen.Search.title) { SearchScreen() }
                 composable(Screen.LectureList.title) { LectureListScreen() }
                 composable(Screen.Profile.title) { ProfileScreen() }

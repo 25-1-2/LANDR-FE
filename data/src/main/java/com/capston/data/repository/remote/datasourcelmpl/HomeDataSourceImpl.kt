@@ -4,11 +4,13 @@ import android.util.Log
 import com.capston.domain.base.BaseLoadingState
 import com.capston.data.repository.remote.api.HomeApi
 import com.capston.domain.datasource.HomeDataSource
+import com.capston.domain.request.PatchPlanDto
 import com.capston.domain.response.BaseResponse
-import com.capston.domain.response.DistinctHomeIdResponse
+import com.capston.domain.response.CheckResponse
+import com.capston.domain.response.home.DistinctHomeIdResponse
 import com.capston.domain.response.Result
-import com.capston.domain.response.TodayScheduleResponse
-import com.capston.domain.response.UserProgressResponse
+import com.capston.domain.response.home.TodayScheduleResponse
+import com.capston.domain.response.home.UserProgressResponse
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
@@ -67,6 +69,14 @@ class HomeDataSourceImpl @Inject constructor(
             Log.e("getDistinctHome", "예외 발생: ${e.message}")
             throw e // 기타 예외는 재throw
         }
+    }
+
+    override suspend fun patchLessonSchedulesCheckToggle(lessonScheduleId: Int): Flow<CheckResponse>
+    = flow {
+        val result = homeApi.patchLessonSchedulesCheckToggle(lessonScheduleId)
+        emit(result)
+    }.catch { e ->
+        Log.e("patchLessonSchedulesCheckToggle 에러", e.message.toString())
     }
 
     private fun parseErrorMessage(json: String): String {

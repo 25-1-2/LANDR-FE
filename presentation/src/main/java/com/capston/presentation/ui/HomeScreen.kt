@@ -33,9 +33,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.TextFieldDefaults
-import androidx.compose.material.TextFieldDefaults.outlinedTextFieldColors
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -52,6 +52,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -66,13 +67,13 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.capston.domain.base.BaseLoadingState
-import com.capston.domain.response.LectureProgressResponse
-import com.capston.domain.response.LessonScheduleResponse
-import com.capston.domain.response.TodayScheduleResponse
+import com.capston.domain.request.PatchPlanDto
+import com.capston.domain.response.home.DistinctHomeIdResponse
+import com.capston.domain.response.home.LectureProgressResponse
+import com.capston.domain.response.home.LessonScheduleResponse
 import com.capston.presentation.R
 import com.capston.presentation.theme.LightGray40
 import com.capston.presentation.theme.LightGray3
@@ -82,11 +83,8 @@ import com.capston.presentation.theme.MainBlue
 import com.capston.presentation.theme.MainPurple
 import com.capston.presentation.theme.Purple40
 import com.capston.presentation.viewmodel.HomeViewModel
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.collectLatest
+import com.capston.presentation.viewmodel.PlanViewModel
 import kotlinx.coroutines.launch
-import kotlin.properties.Delegates
-
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -94,8 +92,9 @@ import kotlin.properties.Delegates
     "CoroutineCreationDuringComposition"
 )
 @Composable
-fun HomeScreen(homeViewModel: HomeViewModel) {
+fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
     val scope = rememberCoroutineScope()
+
     val homeState by homeViewModel.getDistinctHome.collectAsState()
 
     // 나의 학습 현황
@@ -107,11 +106,11 @@ fun HomeScreen(homeViewModel: HomeViewModel) {
     var todayTotalLesson = homeState.todaySchedule.totalLessons
     var todayTotalDuration = homeState.todaySchedule.totalDuration
 
-    val lectureProgressList = homeState.userProgress.lectureProgress // 전체 강의 목록
-    var lectureNicknames by remember { mutableStateOf(lectureProgressList.map { it.lectureName.take(8) }) }
+    val lectureProgressList = homeState.userProgress.lectureProgress
+    val patchData by planViewModel.patchPlanName.collectAsState()
 
     // ModalBottomSheet의 boolean 상태를 기억
-    var isBottomSheetVisible by remember { mutableStateOf(false) }
+    var isBottomSheetVisible by rememberSaveable { mutableStateOf(false) }
     val modalBottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     Scaffold(
@@ -144,7 +143,6 @@ fun HomeScreen(homeViewModel: HomeViewModel) {
                             modifier = Modifier
                                 .padding(top = 10.dp)
                         )
-
                         Text(
                             text = stringResource(R.string.home_edit),
                             color = LightGray40, // 원하는 색상으로 설정
@@ -169,14 +167,14 @@ fun HomeScreen(homeViewModel: HomeViewModel) {
                         items(lectureProgressList) { item ->
                             Spacer(modifier = Modifier.width(16.dp)) // 그래프 간격 추가
 
-                            val nickname = if (lectureNicknames.isNotEmpty()) {
-                                lectureNicknames[lectureProgressList.indexOf(item)]
+                            // PATCH 요청 응답을 받아서 name 업데이트
+                            val currentLectureName = if (item.planId == patchData.planId) {
+                                patchData.lectureAlias
                             } else {
-                                item.lectureName.take(8) // Fallback to the original lecture name if nicknames are empty
+                                item.lectureAlias
                             }
-
                             CircleGraph(
-                                name = nickname,
+                                name = currentLectureName,
                                 cleared = item.completedLessons,
                                 total = item.totalLessons
                             )
@@ -197,7 +195,7 @@ fun HomeScreen(homeViewModel: HomeViewModel) {
             Spacer(modifier = Modifier.height(20.dp))
 
             if (todayLessonList != null) {
-                LessonList(330, todayLessonList!!)
+                LessonList(homeViewModel, 330, todayLessonList!!)
             } else {
                 Column(modifier = Modifier.padding(start = 20.dp)) {
                     Spacer(modifier = Modifier.height(30.dp))
@@ -212,6 +210,7 @@ fun HomeScreen(homeViewModel: HomeViewModel) {
 
     // 바텀 시트
     if (isBottomSheetVisible) {
+
         ModalBottomSheet(
             sheetState = modalBottomSheetState,
             onDismissRequest = { isBottomSheetVisible = false }
@@ -221,9 +220,8 @@ fun HomeScreen(homeViewModel: HomeViewModel) {
                 description = "수강 중인 강의를 선택하세요.",
                 modalBottomSheetState = modalBottomSheetState,
                 onDismiss = { isBottomSheetVisible = false },
-                lectureProgressList = lectureProgressList,
-                lectureNicknames = lectureNicknames,
-                onNicknamesUpdated = { updatedNicknames -> lectureNicknames = updatedNicknames }
+                lectureProgressList = lectureProgressList?: emptyList(),
+                planViewModel = planViewModel,
             )
         }
     }
@@ -238,8 +236,7 @@ fun CustomBottomSheetDialog(
     modalBottomSheetState: SheetState,
     onDismiss: () -> Unit,
     lectureProgressList: List<LectureProgressResponse>,
-    lectureNicknames: List<String>,
-    onNicknamesUpdated: (List<String>) -> Unit
+    planViewModel: PlanViewModel,
 ) {
     val scope = rememberCoroutineScope()
     val bottomPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
@@ -287,8 +284,7 @@ fun CustomBottomSheetDialog(
         ) {
             LectureList(
                 lectureProgressList = lectureProgressList,
-                lectureNicknames = lectureNicknames,
-                onUpdateNickName = onNicknamesUpdated
+                planViewModel = planViewModel,
             )
         }
 
@@ -317,109 +313,98 @@ fun CustomBottomSheetDialog(
 @Composable
 fun LectureList(
     lectureProgressList: List<LectureProgressResponse>,
-    lectureNicknames: List<String>,
-    onUpdateNickName: (List<String>) -> Unit
+    planViewModel: PlanViewModel,
 ) {
-    val checkedStates = remember { mutableStateListOf<Boolean>().apply { repeat(lectureProgressList.size) { add(false) } } }
-    var updatedNicknames by remember { mutableStateOf(lectureNicknames.toMutableList()) }
-
     Column {
         lectureProgressList.forEachIndexed { index, lecture ->
-            var lectureTitle by remember { mutableStateOf(updatedNicknames[index]) } // 수정된 강의 별칭을 관리
             var isEditing by remember { mutableStateOf(false) } // 수정 모드 여부
-            var errorMessage by remember { mutableStateOf("") } // 오류 메시지 상태
-            var showError by remember { mutableStateOf(false) }  // 오류 메시지를 표시할지 여부를 관리하는 상태
+            var showError by remember { mutableStateOf(false) }  // 오류 메시지를 표시할지 여부
+            var aliasState by remember { mutableStateOf(lecture.lectureAlias) } // 강의 별칭 상태
 
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
-                    .padding(vertical = 8.dp)
-                    .height(60.dp),
+                    .fillMaxWidth()
             ) {
-                CheckBox(false) // TODO 수정
-
                 if (isEditing) {
-                    Column(modifier = Modifier.fillMaxWidth()) {
-                        Box(
-                            modifier = Modifier.fillMaxWidth()
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                OutlinedTextField(
-                                    value = lectureTitle,
-                                    onValueChange = { newValue ->
-                                        // 8자 이하로 입력할 수 있도록 제한
-                                        if (newValue.length <= 8) {
-                                            lectureTitle = newValue
-                                            errorMessage = "" // 오류 메시지 초기화
-                                            showError = false  // 오류 숨기기
-                                        } else {
-                                            errorMessage = "8글자 이하로 입력해주세요."
-                                            showError = true  // 오류 메시지 표시
-                                        }
-                                    },
-                                    colors = TextFieldDefaults.outlinedTextFieldColors(
-                                        focusedBorderColor = if (showError) Color.Red else MainBlue, // 오류 시 빨간색
-                                        unfocusedBorderColor = if (showError) Color.Red else MainBlue, // 오류 시 빨간색
-                                        textColor = LightGray60
-                                    ),
-                                    textStyle = TextStyle(fontSize = 14.sp),
-                                    modifier = Modifier.weight(1f) // OutlinedTextField이 가능한 공간을 다 차지하도록
-                                )
+                            OutlinedTextField(
+                                value = aliasState,
+                                onValueChange = { newValue ->
+                                    if (newValue.length <= 8) {
+                                        showError = false // 오류 숨기기
+                                        aliasState = newValue
 
-                                // 완료 버튼
-                                Button(
-                                    onClick = {
-                                        // 완료 버튼 클릭 시 수정된 내용 적용
-                                        updatedNicknames[index] = lectureTitle
-                                        isEditing = false  // 수정 모드 종료
-                                        onUpdateNickName(updatedNicknames)
-                                    },
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = MainBlue,
-                                        contentColor = Color.White,
-                                    ),
-                                    modifier = Modifier
-                                        .padding(start = 16.dp),
-                                    shape = RoundedCornerShape(12.dp)
-                                ) {
-                                    Text(
-                                        text = "완료",
-                                        fontSize = 14.sp
+                                    } else {
+                                        showError = true // 오류 표시
+                                    }
+                                },
+                                colors = TextFieldDefaults.outlinedTextFieldColors(
+                                    focusedBorderColor = if (aliasState.length == 8) Color.Red else MainBlue,
+                                    unfocusedBorderColor = if (showError) Color.Red else MainBlue,
+                                    textColor = LightGray60,
+                                ),
+                                textStyle = TextStyle(fontSize = 14.sp),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .padding(end = 8.dp)
+                            )
+
+                            Button(
+                                onClick = {
+                                    isEditing = false
+                                    planViewModel.patchPlanName(
+                                        lecture.planId,
+                                        PatchPlanDto(lectureAlias = aliasState)
                                     )
-                                }
-                            }
-
-                            // 오류 메시지 표시
-                            if (showError) {
-                                Text(
-                                    text = errorMessage,
-                                    color = Color.Red,
-                                    fontSize = 8.sp,
-                                    modifier = Modifier
-                                        .padding(start = 16.dp)
-                                        .align(Alignment.BottomStart) // 오류 메시지를 OutlinedTextField 아래에 위치시킴
-                                )
+                                    lecture.lectureAlias = aliasState
+                                },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MainBlue,
+                                    contentColor = Color.White
+                                ),
+                                shape = RoundedCornerShape(12.dp),
+                                modifier = Modifier
+                            ) {
+                                Text(text = "완료", fontSize = 14.sp)
                             }
                         }
 
-                        // 강의 제목 텍스트가 OutlinedTextField 아래에 보이도록
-                        Spacer(modifier = Modifier.height(8.dp)) // 버튼과 텍스트 간격 추가
-                        Text(
-                            text = lecture.lectureName, // 강의 첫 번째 텍스트
-                            fontSize = 12.sp,
-                            modifier = Modifier.padding(start = 16.dp)
-                        )
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalAlignment = Alignment.Start
+                        ) {
+                            // 글자 수 표시
+                            Text(
+                                text = "${aliasState.length} / 8(자)",
+                                color = if (aliasState.length == 8) Color.Red else Color.Gray,
+                                fontSize = 12.sp,
+                                modifier = Modifier.padding(start = 10.dp)
+                            )
+
+                            // 강의명 표시
+                            Text(
+                                text = lecture.lectureName,
+                                color = LightGray60,
+                                fontSize = 12.sp,
+                                modifier = Modifier.padding(start = 10.dp)
+                            )
+                        }
                     }
                 } else {
-                    // 수정 모드가 아닐 때는 기존 강의 제목을 그대로 표시
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(text = lectureTitle, style = MaterialTheme.typography.bodyLarge)
+                        Text(text = aliasState)
                         Text(
                             text = lecture.lectureName,
-                            style = MaterialTheme.typography.bodyMedium,
+                            fontSize = 12.sp,
                             color = LightGray60
                         )
                     }
@@ -443,51 +428,56 @@ fun LectureList(
 }
 
 @Composable
-fun CheckBox(state: Boolean) {
+fun CheckBox(isChecked: Boolean, onCheckedChange: () -> Unit) {
     IconButton(
-        onClick = {
-//            state = !state TODO 서버에 POST하도록 수정
-        },
+        onClick = onCheckedChange,
         modifier = Modifier
             .size(40.dp) // 이미지 버튼 크기 설정
             .padding(end = 16.dp) // 이미지와 텍스트 간의 간격 설정
     ) {
-        // 상태에 따라 이미지 변경
-        val imageRes = if (!state) {
-            R.drawable.home_screen_check_off // 기본 이미지
-        } else {
-            R.drawable.home_screen_check_on // 클릭된 이미지
-        }
+        val imageRes = if (isChecked) R.drawable.home_screen_check_on
+        else R.drawable.home_screen_check_off
 
         Image(
-            painter = painterResource(id = imageRes), // 상태에 따른 이미지 리소스 설정
+            painter = painterResource(id = imageRes),
             contentDescription = "Lecture Icon"
         )
     }
 }
 
 @Composable
-fun LessonList(maxHeight: Int, todayLessonList: List<LessonScheduleResponse>) {
+fun LessonList(homeViewModel: HomeViewModel, maxHeight: Int, todayLessonList: List<LessonScheduleResponse>) {
     LazyColumn(
-        modifier = Modifier.padding(start = 30.dp).heightIn(max = maxHeight.dp) // 최대 높이를 설정하여 스크롤 범위를 제한
+        modifier = Modifier
+            .padding(start = 30.dp)
+            .heightIn(max = maxHeight.dp) // 최대 높이를 설정하여 스크롤 범위를 제한
     ) {
+        items(todayLessonList) { lesson ->
+            var isChecked by remember { mutableStateOf(lesson.completed) }
 
-        // 강의가 없을 경우
-        items(todayLessonList) { lecture ->
             Row(
                 verticalAlignment = Alignment.CenterVertically, // 세로로 중앙 정렬
-                modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 10.dp)
             ) {
-
-                CheckBox(state = lecture.completed)
+                CheckBox(
+                    isChecked = isChecked,
+                    onCheckedChange = {
+                        homeViewModel.patchLessonSchedulesCheckToggle(lesson.id)
+                        isChecked = !isChecked
+                    }
+                )
                 Column {
                     Text(
-                        text = lecture.lessonTitle,
+                        text = lesson.lessonTitle,
+                        textDecoration = if (isChecked) TextDecoration.LineThrough else TextDecoration.None,
                         style = MaterialTheme.typography.bodyLarge,
                         fontSize = 16.sp
                     )
                     Text(
-                        text = lecture.lectureName + " · 약 " + lecture.adjustedDuration + "분",
+                        text = "${lesson.lectureName} · 약 ${lesson.adjustedDuration}분",
+                        textDecoration = if (isChecked) TextDecoration.LineThrough else TextDecoration.None,
                         style = MaterialTheme.typography.bodyLarge,
                         color = LightGray60,
                         fontSize = 14.sp
