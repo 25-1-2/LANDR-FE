@@ -62,27 +62,42 @@ fun PlanScreen() {
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
+            val isPeriodSelected = pagerState.currentPage == 0
+            val isTimeSelected = pagerState.currentPage == 1
+
             Button(
                 onClick = {
                     coroutineScope.launch {
                         pagerState.animateScrollToPage(0)
                     }
                 },
-                shape = RoundedCornerShape(8.dp)
+                shape = RoundedCornerShape(8.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (isPeriodSelected) MaterialTheme.colorScheme.primary else Color.White,
+                    contentColor = if (isPeriodSelected) Color.White else MaterialTheme.colorScheme.primary
+                ),
+                border = if (isPeriodSelected) null else ButtonDefaults.outlinedButtonBorder
             ) {
                 Text("기간으로 계획하기")
             }
+
             Button(
                 onClick = {
                     coroutineScope.launch {
                         pagerState.animateScrollToPage(1)
                     }
                 },
-                shape = RoundedCornerShape(8.dp)
+                shape = RoundedCornerShape(8.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (isTimeSelected) MaterialTheme.colorScheme.primary else Color.White,
+                    contentColor = if (isTimeSelected) Color.White else MaterialTheme.colorScheme.primary
+                ),
+                border = if (isTimeSelected) null else ButtonDefaults.outlinedButtonBorder
             ) {
                 Text("시간으로 계획하기")
             }
         }
+
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -91,8 +106,8 @@ fun PlanScreen() {
 //            modifier = Modifier.fillMaxSize()
         ) { page ->
             when (page) {
-                1 -> PeriodPlanPage() // 기간으로 계획하기 화면
-                0 -> TimePlanPage()   // 시간으로 계획하기 화면
+                0 -> PeriodPlanPage() // 기간으로 계획하기 화면
+                1 -> TimePlanPage()   // 시간으로 계획하기 화면
             }
         }
     }
