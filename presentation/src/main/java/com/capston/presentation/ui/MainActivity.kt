@@ -8,14 +8,22 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.Notifications
@@ -25,6 +33,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -33,7 +43,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -44,6 +58,7 @@ import com.capston.presentation.theme.MainPurple
 import com.capston.presentation.viewmodel.HomeViewModel
 import com.capston.presentation.viewmodel.PlanViewModel
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.delay
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -65,10 +80,90 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SearchTopBar(navController: NavController, searchQuery: String, onQueryChanged: (String) -> Unit) {
+    TopAppBar(
+        title = { SearchField(searchQuery, onQueryChanged) },
+        navigationIcon = {
+            IconButton(onClick = { navController.popBackStack() }) {
+                Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "뒤로 가기")
+            }
+        },
+        actions = {
+            IconButton(onClick = { /* 검색 버튼 동작 추가 가능 */ }) {
+                Icon(imageVector = Icons.Default.Search, contentDescription = "검색")
+            }
+        }
+    )
+}
+
+@Composable
+fun InfiniteScrollList(searchQuery: String) {
+    val allItems = remember { List(50) { "2026 현우진의 수분감 - 수학I (공통)" } + listOf("괜찮아 너만 모르는 건 아니야") }
+    val filteredItems = allItems.filter { it.contains(searchQuery, ignoreCase = true) }
+    var loading by remember { mutableStateOf(false) }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        LazyColumn(state = rememberLazyListState(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (filteredItems.isEmpty()) {
+                item { Text("검색 결과가 없습니다.", fontSize = 18.sp, color = Color.Gray, modifier = Modifier.fillMaxWidth().padding(16.dp), textAlign = TextAlign.Center) }
+            } else {
+                items(filteredItems) { item ->
+                    SearchLectureItem(title = item, searchQuery = searchQuery)
+                }
+            }
+
+            if (!loading && filteredItems.isNotEmpty()) {
+                item {
+                    LaunchedEffect(Unit) {
+                        loading = true
+                        kotlinx.coroutines.delay(1500)
+                        loading = false
+                    }
+
+                    if (loading) {
+                        CircularProgressIndicator(modifier = Modifier.fillMaxWidth().padding(16.dp), color = MainPurple, strokeWidth = 2.dp)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun SearchField(searchQuery: String, onQueryChanged: (String) -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(BorderStroke(0.5.dp, Color.LightGray), shape = RoundedCornerShape(8.dp))
+            .padding(horizontal = 12.dp, vertical = 8.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            BasicTextField(
+                value = searchQuery,
+                onValueChange = onQueryChanged,
+                singleLine = true,
+                textStyle = TextStyle.Default.copy(fontSize = 16.sp, color = Color.DarkGray),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                keyboardActions = KeyboardActions(onSearch = { /* 검색 동작 가능 */ }),
+                modifier = Modifier.weight(1f)
+            )
+
+            if (searchQuery.isNotEmpty()) {
+                IconButton(onClick = { onQueryChanged("") }, modifier = Modifier.size(20.dp)) {
+                    Icon(imageVector = Icons.Default.Close, contentDescription = "Clear", tint = Color.Gray)
+                }
+            }
+        }
+    }
+}
+
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun SettingTopBottomBar(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
     var bottomNavState by rememberSaveable { mutableIntStateOf(0) }
+    var searchQuery by rememberSaveable { mutableStateOf("") }
     val navController = rememberNavController()
 
     val currentDestination = navController.currentBackStackEntryFlow.collectAsState(initial = null).value?.destination?.route
@@ -76,13 +171,13 @@ fun SettingTopBottomBar(homeViewModel: HomeViewModel, planViewModel: PlanViewMod
     Scaffold(
         topBar = {
             when (currentDestination) {
-                Screen.Search.title -> SearchTopBar(navController) // SearchScreen일 때 검색용 TopBar 표시
-                else -> TopBar(true) // 기본 TopBar
+                Screen.Search.title -> SearchTopBar(navController, searchQuery, { searchQuery = it })
+                else -> TopBar(true)
             }
         },
         bottomBar = {
             if (currentDestination != Screen.Search.title) {
-                BottomBar(navController, bottomNavState, { index -> bottomNavState = index }) // SearchScreen이 아닐 때만 표시
+                BottomBar(navController, bottomNavState, { index -> bottomNavState = index })
             }
         }
     ) { contentPadding ->
@@ -98,40 +193,13 @@ fun SettingTopBottomBar(homeViewModel: HomeViewModel, planViewModel: PlanViewMod
             ) {
                 composable(Screen.Home.title) { HomeScreen(homeViewModel, planViewModel) }
                 composable(Screen.Calender.title) { CalenderScreen(homeViewModel) }
-                composable(Screen.Search.title) { SearchScreen() }
+                composable(Screen.Search.title) { SearchScreen(searchQuery) }
                 composable(Screen.LectureList.title) { LectureListScreen() }
                 composable(Screen.Profile.title) { ProfileScreen() }
             }
         }
     }
 }
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun SearchTopBar(navController: NavController) {
-    TopAppBar(
-        title = {
-            SearchBar() // 검색창을 TopBar에 추가
-        },
-        navigationIcon = {
-            IconButton(onClick = { navController.popBackStack() }) {
-                Icon(
-                    imageVector = Icons.Default.ArrowBack,
-                    contentDescription = "뒤로 가기"
-                )
-            }
-        },
-        actions = {
-            IconButton(onClick = { /* 검색 동작 */ }) {
-                Icon(
-                    imageVector = Icons.Default.Search,
-                    contentDescription = "검색"
-                )
-            }
-        }
-    )
-}
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
