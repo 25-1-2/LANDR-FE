@@ -2,6 +2,7 @@ package com.capston.data.di
 
 import com.capston.data.repository.remote.api.ErrorApi
 import com.capston.data.repository.remote.api.HomeApi
+import com.capston.data.repository.remote.api.PlanApi
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -29,4 +30,10 @@ object ApiModule {
     fun provideErrorServer(
         @MainRetrofit retrofit: Retrofit
     ) : ErrorApi = retrofit.create(ErrorApi::class.java)
+
+    @Provides
+    @Singleton
+    fun providePlanServer(
+        @MainRetrofit retrofit: Retrofit
+    ) : PlanApi = retrofit.create(PlanApi::class.java)
 }

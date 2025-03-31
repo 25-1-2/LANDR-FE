@@ -1,4 +1,4 @@
-package com.capston.domain.response
+package com.capston.domain.response.home
 
 data class LessonScheduleResponse(
     val id: Int = 0,

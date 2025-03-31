@@ -39,11 +39,12 @@ import com.capston.presentation.theme.MainPurple
 import java.time.LocalDate
 import java.time.YearMonth
 import com.capston.presentation.ui.BottomBar
+import com.capston.presentation.viewmodel.HomeViewModel
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun CalenderScreen() {
+fun CalenderScreen(homeViewModel: HomeViewModel) {
     var calendarHeight by remember { mutableStateOf(400) } // 달력의 초기 높이
     var lessonListHeight by remember { mutableStateOf(250) } // 할일 목록의 초기 높이
 
@@ -62,10 +63,21 @@ fun CalenderScreen() {
                 calendarHeight = (calendarHeight - delta).coerceIn(200F, 600F).toInt()
             }
 
+            val homeState by homeViewModel.getDistinctHome.collectAsState()
+
+            // 오늘의 강의
+            var todayLessonList = homeState.todaySchedule.lessonSchedules
+
             // 할일 목록을 크기 조정 가능하게 만드는 부분
-//            Box(modifier = Modifier.weight(1f)) {
-//                LessonList(lessonListHeight, todayLessonList) // LessonList가 바텀 바 아래로 내려가지 않음
-//            }
+            Box(modifier = Modifier.weight(1f)) {
+                if (todayLessonList != null) {
+
+                    // TODO : todayLessonList 대신 해당 날짜로 보도록 API 연동 필요
+                    LessonList(homeViewModel, 330, todayLessonList)
+                } else {
+                    Text("오늘의 강의가 없어요~~")
+                }
+            }
         }
     }
 }
@@ -182,7 +194,7 @@ fun CustomCalendar(
             .height(calendarHeight.dp)
             .pointerInput(Unit) {
                 detectDragGestures { _, dragAmount ->
-                    onDrag(dragAmount.y) // 위아래 드래그 시 크기 변화
+                    onDrag(-dragAmount.y) // 위아래 드래그 시 크기 변화
                 }
             }
     ) {
