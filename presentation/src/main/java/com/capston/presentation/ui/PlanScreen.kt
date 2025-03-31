@@ -266,37 +266,8 @@ fun PeriodPlanPage() {
             )
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-
-
-        Spacer(modifier = Modifier.height(16.dp))
-
         // 배속 선택
-        Text(
-            text = "배속",
-            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.padding(vertical = 4.dp)
-        ) {
-            speeds.forEach { speed ->
-                val isSelected = speed == selectedSpeed
-                Button(
-                    onClick = { setSelectedSpeed(speed) },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (isSelected) MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.surfaceVariant,
-                        contentColor = if (isSelected) Color.White else Color.Black
-                    ),
-                    shape = RoundedCornerShape(50)
-                ) {
-                    Text(speed)
-                }
-            }
-        }
+        PlaybackSpeedSlider()
     }
     // 여기에 날짜 선택 등 로직 작성
 
@@ -335,6 +306,48 @@ fun DatePickerModal(
         DatePicker(state = datePickerState)
     }
 }
+
+@Composable
+fun PlaybackSpeedSlider() {
+    var speed by remember { mutableFloatStateOf(1.0f) } // 기본값 1.0배속
+
+    Column {
+        // "배속" + 현재 배속 값
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+//            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = "배속",
+                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
+            )
+            Text(
+                text = String.format("%.1fx", speed),
+                color = MainPurple,
+                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // 슬라이더 위 라벨 (1.0x ~ 2.0x)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text("1.0x", color = Color.Gray)
+            Text("2.0x", color = Color.Gray)
+        }
+
+        Slider(
+            value = speed,
+            onValueChange = { speed = it },
+            valueRange = 1.0f..2.0f,
+            steps = 10 // 소수점 단위로 조절 (0.1 단위로 1.0 ~ 2.0)
+        )
+    }
+}
+
 
 
 @Preview(showBackground = true)
