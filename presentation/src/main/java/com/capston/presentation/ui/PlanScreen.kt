@@ -100,7 +100,7 @@ fun PlanScreen() {
 @Composable
 fun PeriodPlanPage() {
     // 요일 선택 상태 예시
-    val daysOfWeek = listOf("월", "화", "수", "목", "금")
+    val daysOfWeek = listOf("월", "화", "수", "목", "금", "토", "일")
     val (selectedDays, setSelectedDays) = remember { mutableStateOf(setOf<String>()) }
 
     // 날짜 상태
@@ -185,7 +185,41 @@ fun PeriodPlanPage() {
                 onDismiss = { showEndDatePicker = false }
             )
         }
-// 시작 강의 / 마지막 강의
+
+        // 공부 일정
+        Text(
+            text = "공부 일정",
+            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.padding(vertical = 4.dp)
+        ) {
+            daysOfWeek.forEach { day ->
+                val isSelected = selectedDays.contains(day)
+                FilterChip(
+                    selected = isSelected,
+                    onClick = {
+                        setSelectedDays(
+                            if (isSelected) selectedDays - day else selectedDays + day
+                        )
+                    },
+                    label = { Text(day) },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = MaterialTheme.colorScheme.primary,
+                        selectedLabelColor = Color.White,
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        labelColor = Color.Black
+                    ),
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // 시작 강의 / 마지막 강의
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
@@ -219,37 +253,7 @@ fun PeriodPlanPage() {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // 공부 일정
-        Text(
-            text = "공부 일정",
-            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.padding(vertical = 4.dp)
-        ) {
-            daysOfWeek.forEach { day ->
-                val isSelected = selectedDays.contains(day)
-                Button(
-                    onClick = {
-                        setSelectedDays(
-                            if (isSelected) selectedDays - day else selectedDays + day
-                        )
-                    },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (isSelected) MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.surfaceVariant,
-                        contentColor = if (isSelected) Color.White else Color.Black
-                    ),
-                    shape = RoundedCornerShape(50) // pill 모양
-                ) {
-                    Text(day)
-                }
-            }
-        }
 
-        Spacer(modifier = Modifier.height(16.dp))
 
         Spacer(modifier = Modifier.height(16.dp))
 
