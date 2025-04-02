@@ -88,7 +88,7 @@ fun SettingTopBottomBar(homeViewModel: HomeViewModel, planViewModel: PlanViewMod
                 composable(Screen.Home.title) { HomeScreen(homeViewModel, planViewModel) }
                 composable(Screen.Calender.title) { CalenderScreen(homeViewModel) }
                 composable(Screen.Search.title) { SearchScreen() }
-                composable(Screen.LectureList.title) { LectureListScreen() }
+                composable(Screen.LectureList.title) { LectureRoomScreen() }
                 composable(Screen.Profile.title) { ProfileScreen() }
             }
         }
