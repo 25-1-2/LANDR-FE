@@ -49,11 +49,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
 import com.capston.presentation.theme.CapstonTheme
 import com.capston.presentation.theme.LightGray2
 import com.capston.presentation.theme.LightGray3
@@ -76,140 +74,27 @@ class MainActivity : ComponentActivity() {
         setContent {
             val homeViewModel: HomeViewModel by viewModels()
             val planViewModel: PlanViewModel by viewModels()
-            val dailyScheduleViewModel: DailyScheduleViewModel by viewModels(
-
-            )
             LaunchedEffect(Unit) {
                 homeViewModel.getDistinctHome()
             }
             CapstonTheme {
-                SettingTopBottomBar(homeViewModel, planViewModel, dailyScheduleViewModel)
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun SearchTopBar(navController: NavController, searchQuery: String, onQueryChanged: (String) -> Unit) {
-    TopAppBar(
-        title = { SearchField(searchQuery, onQueryChanged) },
-        navigationIcon = {
-            IconButton(onClick = { navController.popBackStack() }) {
-                Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "뒤로 가기")
-            }
-        },
-        actions = {
-            IconButton(onClick = { /* 검색 버튼 동작 추가 가능 */ }) {
-                Icon(imageVector = Icons.Default.Search, contentDescription = "검색")
-            }
-        }
-    )
-}
-
-@Composable
-fun InfiniteScrollList(filteredItems: List<LectureItemDto>, searchQuery: String) {
-    var loading by remember { mutableStateOf(false) }
-
-    Box(modifier = Modifier.fillMaxSize()) {
-        LazyColumn(
-            state = rememberLazyListState(),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            // 필터링된 항목이 없을 경우 표시하지 않음
-            if (filteredItems.isEmpty()) {
-                item {
-                    Text(
-                        text = "검색 결과가 없습니다.",
-                        fontSize = 18.sp,
-                        color = Color.Gray,
-                        modifier = Modifier.fillMaxWidth().padding(16.dp),
-                        textAlign = TextAlign.Center
-                    )
-                }
-            } else {
-                items(filteredItems) { item ->
-                    SearchLectureItem(lectureItem = item, searchQuery = searchQuery)
-                }
-            }
-
-            // 로딩 상태 표시
-            if (!loading && filteredItems.isNotEmpty()) {
-                item {
-                    LaunchedEffect(Unit) {
-                        loading = true
-                        delay(1500)
-                        loading = false
-                    }
-
-                    if (loading) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.fillMaxWidth().padding(16.dp),
-                            color = MainPurple,
-                            strokeWidth = 2.dp
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun SearchField(searchQuery: String, onQueryChanged: (String) -> Unit) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .border(BorderStroke(0.5.dp, Color.LightGray), shape = RoundedCornerShape(20.dp))
-            .background(LightGray4_40, shape = RoundedCornerShape(20.dp)) // Box에 배경 색상 적용
-            .padding(horizontal = 12.dp, vertical = 12.dp)
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            BasicTextField(
-                value = searchQuery,
-                onValueChange = onQueryChanged,
-                singleLine = true,
-                textStyle = TextStyle.Default.copy(fontSize = 16.sp, color = Color.DarkGray),
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                keyboardActions = KeyboardActions(onSearch = { /* 검색 동작 가능 */ }),
-                modifier = Modifier.weight(1f)
-            )
-
-            if (searchQuery.isNotEmpty()) {
-                IconButton(onClick = { onQueryChanged("") }, modifier = Modifier.size(20.dp)) {
-                    Icon(imageVector = Icons.Default.Close, contentDescription = "Clear", tint = Color.Gray)
-                }
+                SettingTopBottomBar(homeViewModel, planViewModel)
             }
         }
     }
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
+@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
-fun SettingTopBottomBar(homeViewModel: HomeViewModel, planViewModel: PlanViewModel, dailyScheduleViewModel: DailyScheduleViewModel) {
+fun SettingTopBottomBar(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
     var bottomNavState by rememberSaveable { mutableIntStateOf(0) }
-    var searchQuery by rememberSaveable { mutableStateOf("") }
     val navController = rememberNavController()
 
-    val currentDestination = navController.currentBackStackEntryFlow.collectAsState(initial = null).value?.destination?.route
-
     Scaffold(
-        topBar = {
-            when (currentDestination) {
-                Screen.Search.title -> SearchTopBar(navController, searchQuery, { searchQuery = it })
-                else -> TopBar(true)
-            }
-        },
-        bottomBar = {
-            if (currentDestination != Screen.Search.title) {
-                BottomBar(navController, bottomNavState, { index -> bottomNavState = index })
-            }
-        }
-    ) { contentPadding ->
+        topBar = { TopBar(true) },
+        bottomBar = { BottomBar(navController, bottomNavState, { index -> bottomNavState = index }) }
+    ) { contentPadding -> // topBar와 bottomBar를 고려한 padding
         Column(
             modifier = Modifier
                 .fillMaxSize()
