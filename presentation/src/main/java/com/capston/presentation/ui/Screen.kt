@@ -9,12 +9,6 @@ sealed class Screen(
     val selectedIcon: Any,
     val unselectedIcon: Any
 ) {
-    data object Login: Screen(
-        title = "Login",
-        selectedIcon = R.drawable.activity_main_home_iv_on,
-        unselectedIcon = R.drawable.activity_main_home_iv,
-    )
-
     data object Home: Screen(
         title = "home",
         selectedIcon = R.drawable.activity_main_home_iv_on,
@@ -33,8 +27,14 @@ sealed class Screen(
         unselectedIcon = Icons.Default.Search,
     )
 
-    data object LectureList: Screen(
-        title = "lecture_list",
+    data object LectureRoom: Screen(
+        title = "lecture_room",
+        selectedIcon = R.drawable.activity_main_lecture_list_iv_on,
+        unselectedIcon = R.drawable.activity_main_lecture_list_iv,
+    )
+
+    data object LectureDetail: Screen(
+        title = "lecture_detail",
         selectedIcon = R.drawable.activity_main_lecture_list_iv_on,
         unselectedIcon = R.drawable.activity_main_lecture_list_iv,
     )
