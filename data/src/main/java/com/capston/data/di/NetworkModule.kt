@@ -1,6 +1,7 @@
 package com.capston.data.di
 
 import android.util.Log
+import com.capston.data.BuildConfig
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import dagger.Module
@@ -20,7 +21,7 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
 
-    val BaseUrl = "http://211.188.52.64:8080"
+    private const val BASE_URL = BuildConfig.BASE_URL
 
     @Singleton
     @Provides
@@ -78,7 +79,7 @@ object NetworkModule {
             .addConverterFactory(ScalarsConverterFactory.create())
             .addConverterFactory(gsonConverterFactory)
             .client(okHttpClient)
-            .baseUrl(BaseUrl)
+            .baseUrl(BASE_URL)
             .build()
     }
 }
