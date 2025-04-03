@@ -20,7 +20,7 @@ import androidx.compose.ui.res.vectorResource
 
 
 @Composable
-fun LectureDetailScreen() {
+fun LectureDetailScreen(lecture: Lecture?) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -103,6 +103,6 @@ fun TaskItem(taskText: String) {
 @Composable
 fun DetailScreenPreview() {
     CapstonTheme {
-        LectureDetailScreen()
+        LectureDetailScreen(null)
     }
 }
