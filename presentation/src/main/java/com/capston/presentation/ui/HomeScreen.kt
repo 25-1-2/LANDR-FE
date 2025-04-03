@@ -485,7 +485,7 @@ fun LessonList(homeViewModel: HomeViewModel, maxHeight: Int, todayLessonList: Li
                     Text(
                         text = "${lesson.lectureName} · 약 ${lesson.adjustedDuration}분",
                         textDecoration = if (isChecked) TextDecoration.LineThrough else TextDecoration.None,
-                        style = MaterialTheme.typography.bodyLarge,
+                        style = MaterialTheme.typography.bodyMedium,
                         color = LightGray60,
                         fontSize = 14.sp
                     )

@@ -24,7 +24,12 @@ val Typography = Typography(
     ),
     bodyLarge = TextStyle(
         fontFamily = pretendard,
-        fontWeight = FontWeight.Normal,
+        fontWeight = FontWeight.SemiBold,
         fontSize = 14.sp
+    ),
+    bodyMedium = TextStyle(
+        fontFamily = pretendard,
+        fontWeight = FontWeight.Normal,
+        fontSize = 14.sp,
     )
 )
