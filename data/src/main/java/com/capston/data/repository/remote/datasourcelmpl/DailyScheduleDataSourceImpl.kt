@@ -25,13 +25,7 @@ class DailyScheduleDataSourceImpl @Inject constructor(
     override suspend fun getDailySchedule(date: String): Flow<DailyScheduleResponse> = flow {
         try {
             val response: DailyScheduleResponse = dailyScheduleApi.getDailySchedule(date)
-
-            if (response != null) {
-                emit(response)
-            }
-            else {
-                emit(getDefaultDailySchedule(date))
-            }
+            emit(response)
 
         } catch (e: Exception) {
             Log.e("DailyScheduleDataSourceImpl", "예외 발생: ${e.message}")
