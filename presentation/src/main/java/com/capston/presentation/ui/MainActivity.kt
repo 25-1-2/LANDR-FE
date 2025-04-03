@@ -58,6 +58,7 @@ import com.capston.presentation.theme.LightGray3
 import com.capston.presentation.theme.LightGray4
 import com.capston.presentation.theme.LightGray4_40
 import com.capston.presentation.theme.MainPurple
+import com.capston.presentation.viewmodel.DailyScheduleViewModel
 import com.capston.presentation.viewmodel.HomeViewModel
 import com.capston.presentation.viewmodel.PlanViewModel
 import dagger.hilt.android.AndroidEntryPoint
@@ -73,11 +74,14 @@ class MainActivity : ComponentActivity() {
         setContent {
             val homeViewModel: HomeViewModel by viewModels()
             val planViewModel: PlanViewModel by viewModels()
+            val dailyScheduleViewModel: DailyScheduleViewModel by viewModels(
+
+            )
             LaunchedEffect(Unit) {
                 homeViewModel.getDistinctHome()
             }
             CapstonTheme {
-                SettingTopBottomBar(homeViewModel, planViewModel)
+                SettingTopBottomBar(homeViewModel, planViewModel, dailyScheduleViewModel)
             }
         }
     }
@@ -184,7 +188,7 @@ fun SearchField(searchQuery: String, onQueryChanged: (String) -> Unit) {
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun SettingTopBottomBar(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
+fun SettingTopBottomBar(homeViewModel: HomeViewModel, planViewModel: PlanViewModel, dailyScheduleViewModel: DailyScheduleViewModel) {
     var bottomNavState by rememberSaveable { mutableIntStateOf(0) }
     var searchQuery by rememberSaveable { mutableStateOf("") }
     val navController = rememberNavController()
@@ -215,7 +219,7 @@ fun SettingTopBottomBar(homeViewModel: HomeViewModel, planViewModel: PlanViewMod
                 modifier = Modifier.weight(1f)
             ) {
                 composable(Screen.Home.title) { HomeScreen(homeViewModel, planViewModel) }
-                composable(Screen.Calender.title) { CalenderScreen(homeViewModel) }
+                composable(Screen.Calender.title) { CalenderScreen(homeViewModel, dailyScheduleViewModel) }
                 composable(Screen.Search.title) { SearchScreen(searchQuery) }
                 composable(Screen.LectureList.title) { LectureListScreen() }
                 composable(Screen.Profile.title) { ProfileScreen() }

@@ -1,13 +1,12 @@
 package com.capston.data.repository.remote.api
 
-import com.capston.domain.base.Result
-import com.capston.domain.response.home.DistinctHomeIdResponse
-import kotlinx.coroutines.flow.Flow
+import com.capston.domain.response.daily_schedule.DailyScheduleResponse
 import retrofit2.http.GET
+import retrofit2.http.Query
 
 interface DailyScheduleApi {
     //일일 스케줄 조회
     @GET("/v1/daily-schedules")
-    suspend fun getDailySchedule(date: String
-    ): Flow<DistinctHomeIdResponse>
+    suspend fun getDailySchedule(@Query("date") date: String
+    ): DailyScheduleResponse
 }

@@ -1,9 +1,7 @@
 package com.capston.domain.usecase.daily_schedule
 
-import com.capston.domain.base.Result
 import com.capston.domain.repository.DailyScheduleRepository
-import com.capston.domain.repository.ErrorRepository
-import com.capston.domain.response.home.DistinctHomeIdResponse
+import com.capston.domain.response.daily_schedule.DailyScheduleResponse
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
@@ -12,7 +10,7 @@ class GetDailyScheduleUseCase @Inject constructor(
 ){
     suspend operator fun invoke(
         date: String
-    ): Flow<DistinctHomeIdResponse> {
+    ): Flow<DailyScheduleResponse> {
         return dailyScheduleRepository.getDailySchedule(date)
     }
 }
