@@ -1,6 +1,7 @@
 package com.capston.presentation.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,7 +14,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Divider
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -26,7 +26,7 @@ import androidx.compose.ui.unit.dp
 import com.capston.presentation.theme.CapstonTheme
 
 @Composable
-fun LectureRoomScreen() {
+fun LectureRoomScreen(onLectureClick: ((Lecture) -> Unit)?) {
     val lectures = listOf(
         Lecture("2026 현우진의 수분감 - 수학Ⅰ (공통)", "메가스터디", "현우진", 14, 50),
         Lecture("2026 현우진의 수분감 - 수학Ⅱ (공통)", "메가스터디", "현우진", 14, 50),
@@ -47,7 +47,11 @@ fun LectureRoomScreen() {
 
         LazyColumn {
             items(lectures) { lecture ->
-                LectureItem(lecture)
+                LectureItem(lecture = lecture, onClick = {
+                    if (onLectureClick != null) {
+                        onLectureClick(lecture)
+                    }
+                })
                 HorizontalDivider()
             }
         }
@@ -63,8 +67,13 @@ data class Lecture(
 )
 
 @Composable
-fun LectureItem(lecture: Lecture) {
-    Column(modifier = Modifier.padding(vertical = 8.dp)) {
+fun LectureItem(lecture: Lecture, onClick: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+            .padding(vertical = 8.dp)
+    ) {
         Text(text = "${lecture.platform} · ${lecture.instructor}", style = MaterialTheme.typography.labelMedium, color = Color(0xFF4E6EF2))
 
         Row(
@@ -103,6 +112,6 @@ fun StatusChip(status: String, isCompleted: Boolean) {
 @Composable
 fun LectureRoomPreview() {
     CapstonTheme {
-        LectureRoomScreen()
+        LectureRoomScreen(null)
     }
 }
