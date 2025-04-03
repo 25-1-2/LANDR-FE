@@ -2,13 +2,22 @@ package com.capston.presentation.ui
 
 import android.annotation.SuppressLint
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -16,66 +25,89 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import com.capston.presentation.R
-import com.capston.presentation.theme.CapstonTheme
 import com.capston.presentation.theme.LightGray3
 import com.capston.presentation.theme.LightGray4
 import com.capston.presentation.theme.LightGray40
+import com.capston.presentation.theme.LightGray60
 import com.capston.presentation.theme.MainPurple
+import com.capston.presentation.viewmodel.DailyScheduleViewModel
+import com.capston.presentation.viewmodel.HomeViewModel
 import java.time.LocalDate
 import java.time.YearMonth
-import com.capston.presentation.ui.BottomBar
-import com.capston.presentation.viewmodel.HomeViewModel
+import java.time.format.DateTimeFormatter
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun CalenderScreen(homeViewModel: HomeViewModel) {
+fun CalenderScreen(homeViewModel: HomeViewModel, dailyScheduleViewModel: DailyScheduleViewModel) {
     var calendarHeight by remember { mutableStateOf(400) } // 달력의 초기 높이
     var lessonListHeight by remember { mutableStateOf(250) } // 할일 목록의 초기 높이
+    var selectedDate by remember { mutableStateOf(LocalDate.now().format(DateTimeFormatter.ISO_DATE)) } // 선택한 날짜 (String)
 
+    Log.d("selected DAte", selectedDate)
+    // 선택한 날짜가 변경될 때 ViewModel을 통해 일정 가져오기
+    LaunchedEffect(selectedDate) {
+        dailyScheduleViewModel.getDailySchedule(selectedDate)
+    }
+
+    val dailyState by dailyScheduleViewModel.getDailySchedule.collectAsState()
+    val todayLessonList = dailyState.lessonSchedules // 선택한 날짜의 일정
 
     Scaffold(
         modifier = Modifier.fillMaxSize()
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
+            modifier = Modifier.fillMaxSize()
         ) {
-
-            Calendar(calendarHeight) { delta ->
-                // lessonListHeight 변경 시, 그에 맞춰 calendarHeight도 조정
+            Calendar(calendarHeight, selectedDate, onDateSelected = { date ->
+                selectedDate = date // 선택한 날짜 업데이트
+            }) { delta ->
                 lessonListHeight = (lessonListHeight + delta).coerceIn(100F, 600F).toInt()
                 calendarHeight = (calendarHeight - delta).coerceIn(200F, 600F).toInt()
             }
 
-            val homeState by homeViewModel.getDistinctHome.collectAsState()
-
-            // 오늘의 강의
-            var todayLessonList = homeState.todaySchedule.lessonSchedules
-
-            // 할일 목록을 크기 조정 가능하게 만드는 부분
+            // 선택한 날짜의 일정 표시
             Box(modifier = Modifier.weight(1f)) {
                 if (todayLessonList != null) {
-
-                    // TODO : todayLessonList 대신 해당 날짜로 보도록 API 연동 필요
                     LessonList(homeViewModel, 330, todayLessonList)
                 } else {
-                    Text("오늘의 강의가 없어요~~")
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize().padding(bottom = 50.dp), // 화면 전체를 차지하도록 설정
+                        verticalArrangement = Arrangement.Center, // 세로 중앙 정렬
+                        horizontalAlignment = Alignment.CenterHorizontally // 가로 중앙 정렬
+                    ) {
+                        Text(
+                            text = "선택한 날짜에 계획된 강의가 없어요 \uD83D\uDE0A\n",
+                            textAlign = TextAlign.Center,
+                            fontSize = 14.sp,
+                            color = LightGray60
+                        )
+                    }
                 }
             }
         }
@@ -84,25 +116,19 @@ fun CalenderScreen(homeViewModel: HomeViewModel) {
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun Calendar(calendarHeight: Int, onDrag: (Float) -> Unit) {
-    var selectedDate by remember { mutableStateOf<LocalDate?>(null) }
+fun Calendar(calendarHeight: Int, selectedDate: String, onDateSelected: (String) -> Unit, onDrag: (Float) -> Unit) {
     var currentYear by remember { mutableStateOf(LocalDate.now().year) }
     var currentMonth by remember { mutableStateOf(LocalDate.now().monthValue) }
-    val today = LocalDate.now()
-
     var showDatePickerDialog by remember { mutableStateOf(false) } // 다이얼로그 표시 여부
 
     fun updateMonth(year: Int, month: Int) {
         var newYear = year
         var newMonth = month
 
-        // 월이 0이면 이전 해로 이동
         if (newMonth < 1) {
             newYear -= 1
             newMonth = 12
-        }
-        // 월이 13이면 다음 해로 이동
-        else if (newMonth > 12) {
+        } else if (newMonth > 12) {
             newYear += 1
             newMonth = 1
         }
@@ -116,7 +142,7 @@ fun Calendar(calendarHeight: Int, onDrag: (Float) -> Unit) {
             year = currentYear,
             month = currentMonth,
             selectedDate = selectedDate,
-            onDateSelected = { selectedDate = it },
+            onDateSelected = onDateSelected, // 선택한 날짜 업데이트
             onMonthChanged = { newYear, newMonth -> updateMonth(newYear, newMonth) },
             onDrag = onDrag,
             calendarHeight = calendarHeight,
@@ -124,20 +150,10 @@ fun Calendar(calendarHeight: Int, onDrag: (Float) -> Unit) {
         )
 
         // 선택된 날짜 표시
-        selectedDate?.let {
-            val dayOfWeek = it.dayOfWeek.name // 영어 요일
-            val koreanDayOfWeek = getKoreanDayOfWeek(it.dayOfWeek.value) // 한국어 요일 변환
-            Text("${it.year}년 ${it.monthValue}월 ${it.dayOfMonth}일 (${koreanDayOfWeek})",
-                Modifier.padding(start = 20.dp, top = 10.dp), fontSize = 20.sp)
-        } ?: run {
-            // 선택된 날짜가 없으면 오늘 날짜 표시
-            today?.let {
-                val dayOfWeek = it.dayOfWeek.name // 영어 요일
-                val koreanDayOfWeek = getKoreanDayOfWeek(it.dayOfWeek.value) // 한국어 요일 변환
-                Text("${it.year}년 ${it.monthValue}월 ${it.dayOfMonth}일 (${koreanDayOfWeek})",
-                    Modifier.padding(start = 20.dp, top = 10.dp), fontSize = 20.sp)
-            }
-        }
+        Text(
+            text = "$selectedDate (${getKoreanDayOfWeek(LocalDate.parse(selectedDate).dayOfWeek.value)})",
+            Modifier.padding(start = 20.dp, top = 10.dp), fontSize = 20.sp
+        )
 
         // DatePickerDialog 다이얼로그
         if (showDatePickerDialog) {
@@ -168,8 +184,8 @@ fun getKoreanDayOfWeek(dayOfWeek: Int): String {
 fun CustomCalendar(
     year: Int,
     month: Int,
-    selectedDate: LocalDate?,
-    onDateSelected: (LocalDate) -> Unit,
+    selectedDate: String,
+    onDateSelected: (String) -> Unit,
     onMonthChanged: (Int, Int) -> Unit,
     onDrag: (Float) -> Unit,
     calendarHeight: Int,
@@ -183,13 +199,12 @@ fun CustomCalendar(
     val days = (1..daysInMonth).map { firstDayOfMonth.plusDays((it - 1).toLong()) }
     val emptyDays = List(firstDayOfWeek) { null } // 빈칸 채우기
 
-    val dayOfWeekMap = listOf(
-        "SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT" // 영어 요일
-    )
+    val formatter = DateTimeFormatter.ISO_DATE // "YYYY-MM-DD" 포맷
+    val dayOfWeekMap = listOf("SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT")
 
     Box(
         modifier = Modifier
-            .background(color = LightGray3) // 배경
+            .background(color = LightGray3)
             .border(width = 1.dp, color = LightGray4)
             .height(calendarHeight.dp)
             .pointerInput(Unit) {
@@ -218,14 +233,10 @@ fun CustomCalendar(
                 }
             }
 
-            // 영어 요일 표시
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(7),
-                modifier = Modifier.fillMaxWidth()
-            ) {
+            LazyVerticalGrid(columns = GridCells.Fixed(7), modifier = Modifier.fillMaxWidth()) {
                 items(dayOfWeekMap) { day ->
                     Text(
-                        text = day, // 영어 요일 출력
+                        text = day,
                         color = LightGray40,
                         fontSize = 16.sp,
                         textAlign = TextAlign.Center,
@@ -234,23 +245,20 @@ fun CustomCalendar(
                 }
             }
 
-            // 날짜 표시
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(7),
-                modifier = Modifier.fillMaxWidth()
-            ) {
+            LazyVerticalGrid(columns = GridCells.Fixed(7), modifier = Modifier.fillMaxWidth()) {
                 items(emptyDays + days) { date ->
                     if (date == null) {
-                        Box(modifier = Modifier.height(40.dp)) // 빈칸 처리
+                        Box(modifier = Modifier.height(40.dp))
                     } else {
+                        val dateStr = date.format(formatter)
                         val isToday = date == today
-                        val isSelected = date == selectedDate
+                        val isSelected = dateStr == selectedDate
                         val backgroundColor = if (isSelected) MainPurple else Color.Transparent
                         val borderColor = if (isToday) MainPurple else Color.Transparent
                         val textColor = when {
-                            isSelected -> Color.White   // 선택된 날짜: 흰색 글자
-                            isToday -> MainPurple       // 오늘 날짜: 보라색 글자
-                            else -> Color.Black         // 일반 날짜: 검정색 글자
+                            isSelected -> Color.White
+                            isToday -> MainPurple
+                            else -> Color.Black
                         }
 
                         Box(
@@ -258,37 +266,15 @@ fun CustomCalendar(
                                 .size(40.dp)
                                 .background(color = backgroundColor, shape = RoundedCornerShape(20.dp))
                                 .border(1.dp, borderColor, shape = RoundedCornerShape(20.dp))
-                                .clickable { onDateSelected(date) },
+                                .clickable { onDateSelected(dateStr) },
                             contentAlignment = Alignment.Center
                         ) {
-                            Text(
-                                text = date.dayOfMonth.toString(),
-                                color = textColor,
-                                fontSize = 16.sp,
-                                textAlign = TextAlign.Center
-                            )
+                            Text(text = date.dayOfMonth.toString(), color = textColor, fontSize = 16.sp, textAlign = TextAlign.Center)
                         }
                     }
                 }
             }
         }
-
-        // 고정된 크기
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomCenter) // 캘린더 하단에 배치
-                .padding(top = 10.dp)
-        ) {
-            Image(
-                painter = painterResource(R.drawable.calender_screen_adjust_line_iv),
-                contentDescription = "adjust line",
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(40.dp) // 이미지 크기 고정
-                    .padding(top = 10.dp)
-            )
-        }
-
     }
 }
 

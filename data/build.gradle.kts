@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
@@ -13,6 +15,17 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
+
+        // local.properties 값 로드
+        val localProperties = Properties().apply {
+            load(rootProject.file("local.properties").inputStream())
+        }
+
+        // BASE_URL 값이 존재하는지 확인 후 설정
+        val baseUrl = localProperties.getProperty("BASE_URL") ?: throw GradleException("🚨 BASE_URL 값이 local.properties에 없습니다!")
+
+        // 올바른 buildConfigField 적용 (따옴표 추가)
+        buildConfigField("String", "BASE_URL", baseUrl)
     }
 
     buildTypes {
@@ -30,6 +43,10 @@ android {
     }
     kotlinOptions {
         jvmTarget = "11"
+    }
+
+    buildFeatures {
+        buildConfig = true
     }
 }
 

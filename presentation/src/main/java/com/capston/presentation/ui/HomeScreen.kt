@@ -197,10 +197,17 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
             if (todayLessonList != null) {
                 LessonList(homeViewModel, 330, todayLessonList!!)
             } else {
-                Column(modifier = Modifier.padding(start = 20.dp)) {
-                    Spacer(modifier = Modifier.height(30.dp))
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize().padding(bottom = 50.dp), // 화면 전체를 차지하도록 설정
+                    verticalArrangement = Arrangement.Center, // 세로 중앙 정렬
+                    horizontalAlignment = Alignment.CenterHorizontally // 가로 중앙 정렬
+                ) {
                     Text(
-                        "오늘 강의가 없어요 \uD83D\uDE0A\n푹 쉬고 내일 다시 달려보아요 \uD83C\uDFC3",
+                        text = "오늘 강의가 없어요 \uD83D\uDE0A\n푹 쉬고 내일 다시 달려보아요 \uD83C\uDFC3",
+                        textAlign = TextAlign.Center,
+                        fontSize = 14.sp,
+                        color = LightGray60
                     )
                 }
             }

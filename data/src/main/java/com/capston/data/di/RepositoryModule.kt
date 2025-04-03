@@ -1,17 +1,22 @@
 package com.capston.data.di
 
+import com.capston.data.repository.remote.api.DailyScheduleApi
 import com.capston.data.repository.remote.api.ErrorApi
 import com.capston.data.repository.remote.api.HomeApi
 import com.capston.data.repository.remote.api.PlanApi
+import com.capston.data.repository.remote.datasourcelmpl.DailyScheduleDataSourceImpl
 import com.capston.data.repository.remote.datasourcelmpl.ErrorDataSourceImpl
 import com.capston.data.repository.remote.datasourcelmpl.HomeDataSourceImpl
 import com.capston.data.repository.remote.datasourcelmpl.PlanDataSourceImpl
+import com.capston.data.repository.remote.repositoryImpl.DailyScheduleRepositoryImpl
 import com.capston.data.repository.remote.repositoryImpl.ErrorRepositoryImpl
 import com.capston.data.repository.remote.repositoryImpl.HomeRepositoryImpl
 import com.capston.data.repository.remote.repositoryImpl.PlanRepositoryImpl
+import com.capston.domain.datasource.DailyScheduleDataSource
 import com.capston.domain.datasource.ErrorDataSource
 import com.capston.domain.datasource.HomeDataSource
 import com.capston.domain.datasource.PlanDataSource
+import com.capston.domain.repository.DailyScheduleRepository
 import com.capston.domain.repository.ErrorRepository
 import com.capston.domain.repository.HomeRepository
 import com.capston.domain.repository.PlanRepository
@@ -54,7 +59,6 @@ object RepositoryModule {
         ErrorRepositoryImpl(errorDataSource)
 
     // 계획
-
     @Provides
     @Singleton
     fun providePlanDataSource(
@@ -63,8 +67,22 @@ object RepositoryModule {
         return PlanDataSourceImpl(planApi)
     }
 
-    @Singleton
     @Provides
+    @Singleton
     fun providePlanRepository(planDataSource: PlanDataSource): PlanRepository =
         PlanRepositoryImpl(planDataSource)
+
+    // 데일리 스케줄
+    @Provides
+    @Singleton
+    fun provideDailyScheduleDataSource(
+        dailyScheduleApi: DailyScheduleApi
+    ): DailyScheduleDataSource {
+        return DailyScheduleDataSourceImpl(dailyScheduleApi)
+    }
+
+    @Provides
+    @Singleton
+    fun provideDailyScheduleRepository(dailyScheduleDataSource: DailyScheduleDataSource): DailyScheduleRepository =
+        DailyScheduleRepositoryImpl(dailyScheduleDataSource)
 }

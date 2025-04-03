@@ -1,180 +1,98 @@
 package com.capston.presentation.ui
 
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxScope
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.OutlinedTextField
-import androidx.compose.material.Surface
-import androidx.compose.material.TextFieldDefaults
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
+import android.annotation.SuppressLint
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.semantics.Role.Companion.Image
-import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.capston.presentation.theme.CapstonTheme
+import com.capston.presentation.theme.LightGray2
 import com.capston.presentation.theme.LightGray40
-import com.capston.presentation.theme.LightGray60
-import com.capston.presentation.theme.MainBlue
 import com.capston.presentation.theme.MainPurple
-import kotlinx.coroutines.delay
 
+@SuppressLint("RememberReturnType")
 @Composable
-fun SearchScreen() {
-    Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-        ) {
-            // 검색 버튼을 상단에 배치
-            Box {
-                Row(
-                    modifier = Modifier.padding(vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(onClick = {
-                    }) {
-                        Image(
-                            imageVector = Icons.Default.ArrowBack,
-                            contentDescription = null
-                        )
-                    }
+fun SearchScreen(searchQuery: String) {
+    val allItems = remember {
+        List(50) {
+            LectureItemDto(
+                title = "2026 현우진의 수분감 - 수학I (공통)",
+                com = "메가스터디",
+                teach = "현우진 · [고3·2·N수] 수능 (문제풀이) · 50강"
+            )
+        } + listOf(
+            LectureItemDto(
+                title = "괜찮아 너만 모르는 건 아니야",
+                com = "메가스터디",
+                teach = "조정식 · 수능 대비 강좌"
+            )
+        )
+    }
+    // 검색어가 포함된 항목만 필터링
+    val filteredItems = allItems.filter { item ->
+        item.title.contains(searchQuery, ignoreCase = true) ||
+                item.com.contains(searchQuery, ignoreCase = true) ||
+                item.teach.contains(searchQuery, ignoreCase = true)
+    }
 
-                    SearchBar()
-
-                    IconButton(onClick = {
-                    }) {
-                        Image(
-                            imageVector = Icons.Default.Search,
-                            contentDescription = null
-                        )
-                    }
-
-                    IconButton(onClick = {
-
-                    }) {
-                        Image(
-                            imageVector = Icons.Default.Search,
-                            contentDescription = null
-                        )
-                    }
-                }
-            }
-
-            // 리스트 표시
-            InfiniteScrollList()
-
-        }
+    Column {
+        InfiniteScrollList(filteredItems, searchQuery)
     }
 }
 
 @Composable
-fun InfiniteScrollList() {
-    var items by remember { mutableStateOf(List(1000) {
-        "2026 현우진의 수분감 - 수학I (공통)"
-    }) }
-    var loading by remember { mutableStateOf(false) }
+fun SearchLectureItem(lectureItem: LectureItemDto, searchQuery: String) {
+    // 검색어가 포함된 부분을 하이라이트하는 함수
+    val annotatedString = buildAnnotatedString {
+        var startIndex = 0
+        var endIndex = 0
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .fillMaxHeight()
-                .padding(top = 20.dp, bottom = 20.dp, start = 40.dp)
-        ) {
-            LazyColumn(
-                state = rememberLazyListState(),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(items) { item ->
-                    SearchLectureItem(title = item) // 새롭게 분리한 Composable 사용
-                }
-
-                if (!loading) {
-                    item {
-                        val listState = rememberLazyListState()
-
-                        LaunchedEffect(remember { derivedStateOf { listState.firstVisibleItemIndex } }) {
-                            if (listState.firstVisibleItemIndex == items.size - 1) {
-                                loading = true
-                                delay(1500)
-                                val newItems = List(20) { "New Item #$it" }
-                                items = items + newItems
-                                loading = false
-                            }
-                        }
-
-                        if (loading) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.fillMaxWidth().padding(16.dp),
-                                color = MainPurple,
-                                strokeWidth = 2.dp
-                            )
-                        }
-                    }
-                }
+        if (searchQuery.isNotEmpty()) {
+            var searchPos = lectureItem.title.indexOf(searchQuery, ignoreCase = true)
+            while (searchPos != -1) {
+                append(lectureItem.title.substring(startIndex, searchPos))
+                appendAnnotatedString(lectureItem.title.substring(searchPos, searchPos + searchQuery.length), MainPurple)
+                startIndex = searchPos + searchQuery.length
+                searchPos = lectureItem.title.indexOf(searchQuery, startIndex, ignoreCase = true)
             }
+            append(lectureItem.title.substring(startIndex))
+        } else {
+            append(lectureItem.title)
         }
     }
-}
 
-@Composable
-fun SearchLectureItem(title: String) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(8.dp) // 아이템 간격 추가
+            .padding(8.dp)
     ) {
         Column {
+            // 회사명 표시
             Text(
-                text = "메가스터디",
+                text = lectureItem.com,
                 color = MainPurple,
-                fontSize = 14.sp)
+                fontSize = 14.sp
+            )
+
+            // 하이라이트된 제목 출력
             Text(
-                text = title,
+                text = annotatedString,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold
-            ) // title을 전달받아 표시
+            )
+
+            // 추가 설명 텍스트
             Text(
-                text = "현우진 · [고3·2·N수] 수능 (문제풀이) · 50강",
+                text = lectureItem.teach,
                 color = LightGray40,
                 fontSize = 14.sp
             )
@@ -182,46 +100,16 @@ fun SearchLectureItem(title: String) {
     }
 }
 
-@Composable
-fun SearchBar() {
-    var textState by remember { mutableStateOf("") } // 상태 저장
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(start = 20.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        OutlinedTextField(
-            value = textState,
-            onValueChange = { textState = it },
-            colors = TextFieldDefaults.outlinedTextFieldColors(
-                focusedBorderColor = Color.Red,
-                unfocusedBorderColor = MainPurple,
-                textColor = LightGray60
-            ),
-            textStyle = TextStyle(
-                fontSize = 20.sp
-            ),
-            modifier = Modifier
-                .weight(1f) // OutlinedTextField가 남는 공간을 차지하도록 설정
-        )
-
-        IconButton(
-            onClick = { /* TODO: 검색 버튼 클릭 로직 */ },
-        ) {
-            Icon(
-                imageVector = Icons.Default.Search,
-                contentDescription = "Search",
-                tint = Color.Black
-            )
-        }
+private fun AnnotatedString.Builder.appendAnnotatedString(text: String, color: Color) {
+    withStyle(style = SpanStyle(color = color)) {
+        append(text)
     }
 }
 
 @Preview(showBackground = true)
 @Composable
-fun GreetingPreview() {
+fun SearchScreenPreview() {
     CapstonTheme {
-        SearchScreen()
+        SearchScreen(searchQuery = "")
     }
 }
