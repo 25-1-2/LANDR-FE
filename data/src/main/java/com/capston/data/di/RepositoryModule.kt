@@ -3,22 +3,27 @@ package com.capston.data.di
 import com.capston.data.repository.remote.api.DailyScheduleApi
 import com.capston.data.repository.remote.api.ErrorApi
 import com.capston.data.repository.remote.api.HomeApi
+import com.capston.data.repository.remote.api.LoginApi
 import com.capston.data.repository.remote.api.PlanApi
 import com.capston.data.repository.remote.datasourcelmpl.DailyScheduleDataSourceImpl
 import com.capston.data.repository.remote.datasourcelmpl.ErrorDataSourceImpl
 import com.capston.data.repository.remote.datasourcelmpl.HomeDataSourceImpl
+import com.capston.data.repository.remote.datasourcelmpl.LoginDataSourceImpl
 import com.capston.data.repository.remote.datasourcelmpl.PlanDataSourceImpl
 import com.capston.data.repository.remote.repositoryImpl.DailyScheduleRepositoryImpl
 import com.capston.data.repository.remote.repositoryImpl.ErrorRepositoryImpl
 import com.capston.data.repository.remote.repositoryImpl.HomeRepositoryImpl
+import com.capston.data.repository.remote.repositoryImpl.LoginRepositoryImpl
 import com.capston.data.repository.remote.repositoryImpl.PlanRepositoryImpl
 import com.capston.domain.datasource.DailyScheduleDataSource
 import com.capston.domain.datasource.ErrorDataSource
 import com.capston.domain.datasource.HomeDataSource
+import com.capston.domain.datasource.LoginDataSource
 import com.capston.domain.datasource.PlanDataSource
 import com.capston.domain.repository.DailyScheduleRepository
 import com.capston.domain.repository.ErrorRepository
 import com.capston.domain.repository.HomeRepository
+import com.capston.domain.repository.LoginRepository
 import com.capston.domain.repository.PlanRepository
 import dagger.Module
 import dagger.Provides
@@ -29,6 +34,19 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object RepositoryModule {
+    // 로그인
+    @Provides
+    @Singleton
+    fun provideLoginDataSource(
+        loginApi: LoginApi
+    ): LoginDataSource {
+        return LoginDataSourceImpl(loginApi)
+    }
+
+    @Singleton
+    @Provides
+    fun provideLoginRepository(loginDataSource: LoginDataSource): LoginRepository =
+        LoginRepositoryImpl(loginDataSource)
 
     // 홈
     @Provides

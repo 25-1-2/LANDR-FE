@@ -3,6 +3,7 @@ package com.capston.data.di
 import com.capston.data.repository.remote.api.DailyScheduleApi
 import com.capston.data.repository.remote.api.ErrorApi
 import com.capston.data.repository.remote.api.HomeApi
+import com.capston.data.repository.remote.api.LoginApi
 import com.capston.data.repository.remote.api.PlanApi
 import dagger.Module
 import dagger.Provides
@@ -14,11 +15,11 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object ApiModule {
-//    @Provides
-//    @Singleton
-//    fun provideLogInServer(
-//        @MainRetrofit retrofit: Retrofit
-//    ): LoginApi = retrofit.create(LoginApi::class.java)
+    @Provides
+    @Singleton
+    fun provideLogInServer(
+        @MainRetrofit retrofit: Retrofit
+    ): LoginApi = retrofit.create(LoginApi::class.java)
 
     @Provides
     @Singleton
