@@ -7,7 +7,7 @@ import com.capston.data.repository.remote.api.DailyScheduleApi
 import com.capston.domain.base.BaseLoadingState
 import com.capston.domain.datasource.DailyScheduleDataSource
 import com.capston.domain.response.BaseResponse
-import com.capston.domain.response.Result
+import com.capston.domain.response.BaseResult
 import com.capston.domain.response.daily_schedule.DailyScheduleResponse
 import com.capston.domain.response.enum_class.Day
 import kotlinx.coroutines.flow.Flow
@@ -35,8 +35,8 @@ class DailyScheduleDataSourceImpl @Inject constructor(
         val errorMessage = e.message ?: "알 수 없는 오류 발생"
         Log.e("DailyScheduleDataSourceImpl", "에러: $errorMessage")
 
-        val errorResponse = Result(code = 5000, message = errorMessage)
-        val response = BaseResponse(result = errorResponse, payload = null, status = BaseLoadingState.ERROR)
+        val errorResponse = BaseResult(code = 5000, message = errorMessage)
+        val response = BaseResponse(baseResult = errorResponse, payload = null, status = BaseLoadingState.ERROR)
 
         Log.e("DailyScheduleDataSourceImpl", response.toString())
     }

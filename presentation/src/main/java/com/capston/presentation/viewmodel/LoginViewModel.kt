@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.capston.domain.request.LoginDto
+import com.capston.domain.response.BaseResult
 import com.capston.domain.usecase.login.PostLoginInfoUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,7 +19,7 @@ class LoginViewModel @Inject constructor(
     private val postLoginInfoUseCase: PostLoginInfoUseCase
 ): ViewModel() {
     // 로그인 성공 여부를 나타내는 상태 변수(예: 이벤트 또는 플래그)
-    private val _basicResult = MutableStateFlow(Result)
+    private val _basicResult = MutableStateFlow(BaseResult)
     private val _loginSuccess = MutableStateFlow(false)
     val loginSuccess: StateFlow<Boolean> = _loginSuccess.asStateFlow()
 
