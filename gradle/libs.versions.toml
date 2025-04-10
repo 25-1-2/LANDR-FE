@@ -52,8 +52,6 @@ playServicesAuth = "21.3.0"
 googleApiClient = "1.32.1"
 googleHttpClient = "1.32.1"
 rxjava = "2.2.21"
-securityCrypto = "1.1.0-alpha06"
-securityCryptoKtx = "1.0.0-alpha06"
 datastoreCoreAndroid = "1.1.4"
 
 [libraries]
@@ -114,8 +112,6 @@ androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit
 androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
 androidx-credentials = { group = "androidx.credentials", name = "credentials", version.ref = "credentials" }
 androidx-credentials-play-services-auth = { group = "androidx.credentials", name = "credentials-play-services-auth", version.ref = "credentials"}
-androidx-security-crypto = { group = "androidx.security", name = "security-crypto", version.ref = "securityCrypto" }
-androidx-security-crypto-ktx = { group = "androidx.security", name = "security-crypto-ktx", version.ref = "securityCryptoKtx" }
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
 firebase-analytics = { module = "com.google.firebase:firebase-analytics" }
 identity-googleid = { module = "com.google.android.libraries.identity.googleid:googleid", version.ref = "identityGoogleid" }

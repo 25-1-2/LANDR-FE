@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.map
 // Context 확장 속성으로 dataStore 인스턴스 정의
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "auth_tokens")
 
-class TokenManager(private val context: Context) {
+class TokenDataStore(private val context: Context) {
 
     companion object {
         private val ACCESS_TOKEN_KEY = stringPreferencesKey("access_token")
