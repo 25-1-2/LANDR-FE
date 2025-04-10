@@ -154,5 +154,6 @@ dependencies {
     implementation(libs.identity.googleid)
     implementation(libs.gms.play.services.auth)
 
+    implementation(libs.androidx.security.crypto.ktx)
 
 }

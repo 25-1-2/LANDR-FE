@@ -1,10 +1,10 @@
 package com.capston.presentation.viewmodel
 
+import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.capston.domain.request.LoginDto
-import com.capston.domain.response.BaseResult
 import com.capston.domain.response.LoginResponse
 import com.capston.domain.usecase.login.PostLoginInfoUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -37,19 +37,7 @@ class LoginViewModel @Inject constructor(
                     _loginResponse.value = response
                     _loginSuccess.value = true
                     Log.d("LoginViewModel", "로그인 성공! Token: ${response.token}")
-
-                    // 토큰 저장 로직을 여기에 추가할 수 있습니다
-                    // saveTokens(response.accessToken, response.refreshToken)
                 }
         }
-    }
-
-    // 토큰 저장 메서드를 추가할 수 있습니다
-    private fun saveTokens(token: String) {
-//        viewModelScope.launch {
-//            dataStore.edit { preferences ->
-//                preferences[ACCESS_TOKEN_KEY] = token
-//            }
-//        }
     }
 }
