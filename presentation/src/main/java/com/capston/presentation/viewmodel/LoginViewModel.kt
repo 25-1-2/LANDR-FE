@@ -42,11 +42,11 @@ class LoginViewModel @Inject constructor(
                 .collect { response ->
                     _loginResponse.value = response
                     _loginSuccess.value = true
-                    Log.d("LoginViewModel", "로그인 성공! Access Token: ${response.accessToken}")
+                    Log.d("LoginViewModel", "로그인 성공! Access Token: ${response.token}")
 
                     // 토큰 저장 (비동기 작업)
                     saveTokensUseCase(
-                        response.accessToken,
+                        response.token,
                     )
                     Log.d("LoginViewModel", "토큰 저장 요청 완료")
 

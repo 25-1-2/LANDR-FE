@@ -13,7 +13,7 @@ class LoginDataSourceImpl @Inject constructor(
     override suspend fun postLoginInfo(loginDto: LoginDto): LoginResponse {
         val response = loginApi.postLoginInfo(loginDto)
         // 액세스 토큰 로그 출력
-        Log.d("LoginDataSourceImpl", "Token: ${response.accessToken}")
+        Log.d("LoginDataSourceImpl", "Token: ${response.token}")
         return loginApi.postLoginInfo(loginDto)
     }
 }
