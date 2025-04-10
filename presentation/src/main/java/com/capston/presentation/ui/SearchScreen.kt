@@ -15,7 +15,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.capston.presentation.theme.CapstonTheme
-import com.capston.presentation.theme.LightGray2
 import com.capston.presentation.theme.LightGray40
 import com.capston.presentation.theme.MainPurple
 
@@ -73,7 +72,7 @@ fun SearchLectureItem(lectureItem: LectureItemDto, searchQuery: String) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(8.dp)
+            .padding(15.dp)
     ) {
         Column {
             // 회사명 표시

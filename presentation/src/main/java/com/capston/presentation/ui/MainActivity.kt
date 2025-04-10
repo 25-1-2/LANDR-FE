@@ -19,8 +19,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
@@ -76,9 +74,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             val homeViewModel: HomeViewModel by viewModels()
             val planViewModel: PlanViewModel by viewModels()
-            val dailyScheduleViewModel: DailyScheduleViewModel by viewModels(
-
-            )
+            val dailyScheduleViewModel: DailyScheduleViewModel by viewModels()
             LaunchedEffect(Unit) {
                 homeViewModel.getDistinctHome()
             }
@@ -179,8 +175,8 @@ fun InfiniteScrollList(filteredItems: List<LectureItemDto>, searchQuery: String)
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
             state = rememberLazyListState(),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            contentPadding = PaddingValues(25.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             // 필터링된 항목이 없을 경우 표시하지 않음
             if (filteredItems.isEmpty()) {
@@ -195,7 +191,10 @@ fun InfiniteScrollList(filteredItems: List<LectureItemDto>, searchQuery: String)
                 }
             } else {
                 items(filteredItems) { item ->
-                    SearchLectureItem(lectureItem = item, searchQuery = searchQuery)
+                    SearchLectureItem(
+                        lectureItem = item,
+                        searchQuery = searchQuery,
+                    )
                 }
             }
 
