@@ -44,4 +44,10 @@ sealed class Screen(
         selectedIcon = R.drawable.activity_main_profile_iv_on,
         unselectedIcon = R.drawable.activity_main_profile_iv,
     )
+
+    data object Plan: Screen(
+        title = "plan",
+        selectedIcon = R.drawable.activity_main_profile_iv_on,
+        unselectedIcon = R.drawable.activity_main_profile_iv
+    )
 }

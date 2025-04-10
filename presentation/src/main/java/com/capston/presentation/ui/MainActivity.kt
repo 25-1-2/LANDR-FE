@@ -169,7 +169,7 @@ fun SearchFieldWithIcons(
 }
 
 @Composable
-fun InfiniteScrollList(filteredItems: List<LectureItemDto>, searchQuery: String) {
+fun InfiniteScrollList(filteredItems: List<LectureItemDto>, searchQuery: String, navController: NavController) {
     var loading by remember { mutableStateOf(false) }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -194,6 +194,9 @@ fun InfiniteScrollList(filteredItems: List<LectureItemDto>, searchQuery: String)
                     SearchLectureItem(
                         lectureItem = item,
                         searchQuery = searchQuery,
+                        onClick = {
+                            navController.navigate("${Screen.Plan.title}/${item.title}")
+                        }
                     )
                 }
             }
@@ -254,7 +257,7 @@ fun SettingTopBottomBar(homeViewModel: HomeViewModel, planViewModel: PlanViewMod
             ) {
                 composable(Screen.Home.title) { HomeScreen(homeViewModel, planViewModel) }
                 composable(Screen.Calender.title) { CalenderScreen(homeViewModel, dailyScheduleViewModel) }
-                composable(Screen.Search.title) { SearchScreen(searchQuery) }
+                composable(Screen.Search.title) { SearchScreen(searchQuery, navController) }
                 composable(Screen.LectureRoom.title) {
                     LectureRoomScreen(
                         onLectureClick = { lecture ->
@@ -262,6 +265,13 @@ fun SettingTopBottomBar(homeViewModel: HomeViewModel, planViewModel: PlanViewMod
                             navController.navigate("${Screen.LectureDetail.title}/${lecture.title}")
                         }
                     )
+                }
+                composable(
+                    route = "${Screen.Plan.title}/{lectureTitle}",
+                    arguments = listOf(navArgument("lectureTitle") { type = NavType.StringType })
+                ) { backStackEntry ->
+                    val lectureTitle = backStackEntry.arguments?.getString("lectureTitle") ?: "Unknown"
+                    PlanScreen(lectureTitle = lectureTitle)
                 }
                 composable(
                     route = "${Screen.LectureDetail.title}/{lectureTitle}",
