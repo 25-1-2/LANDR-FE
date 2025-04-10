@@ -91,20 +91,85 @@ class MainActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SearchTopBar(navController: NavController, searchQuery: String, onQueryChanged: (String) -> Unit) {
+fun SearchTopBar(
+    navController: NavController,
+    searchQuery: String,
+    onQueryChanged: (String) -> Unit
+) {
     TopAppBar(
-        title = { SearchField(searchQuery, onQueryChanged) },
-        navigationIcon = {
-            IconButton(onClick = { navController.popBackStack() }) {
-                Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "뒤로 가기")
-            }
-        },
-        actions = {
-            IconButton(onClick = { /* 검색 버튼 동작 추가 가능 */ }) {
-                Icon(imageVector = Icons.Default.Search, contentDescription = "검색")
-            }
+        title = {
+            SearchFieldWithIcons(
+                searchQuery = searchQuery,
+                onQueryChanged = onQueryChanged,
+                onBackClick = { navController.popBackStack() },
+                onSearchClick = { /* TODO: 검색 동작 */ }
+            )
         }
     )
+}
+
+@Composable
+fun SearchFieldWithIcons(
+    searchQuery: String,
+    onQueryChanged: (String) -> Unit,
+    onBackClick: () -> Unit,
+    onSearchClick: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(end = 16.dp)
+            .height(40.dp)
+            .border(BorderStroke(0.5.dp, Color.LightGray), shape = RoundedCornerShape(20.dp))
+            .background(LightGray4_40, shape = RoundedCornerShape(20.dp))
+            .padding(horizontal = 8.dp)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            IconButton(onClick = onBackClick, modifier = Modifier.size(24.dp)) {
+                Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "뒤로 가기", tint = Color.Gray)
+            }
+
+            BasicTextField(
+                value = searchQuery,
+                onValueChange = onQueryChanged,
+                singleLine = true,
+                textStyle = TextStyle(fontSize = 16.sp, color = Color.DarkGray),
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                decorationBox = { innerTextField ->
+                    if (searchQuery.isEmpty()) {
+                        Text(
+                            text = "계획 생성하고 싶은 강의를 선택하세요",
+                            fontSize = 12.sp,
+                            color = Color.Gray
+                        )
+                    }
+                    innerTextField()
+                }
+            )
+
+            if (searchQuery.isNotEmpty()) {
+                IconButton(
+                    onClick = { onQueryChanged("") },
+                    modifier = Modifier.size(20.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Clear",
+                        tint = Color.Gray
+                    )
+                }
+            }
+
+            IconButton(onClick = onSearchClick, modifier = Modifier.size(24.dp)) {
+                Icon(imageVector = Icons.Default.Search, contentDescription = "검색", tint = Color.Gray)
+            }
+        }
+    }
 }
 
 @Composable
@@ -150,38 +215,6 @@ fun InfiniteScrollList(filteredItems: List<LectureItemDto>, searchQuery: String)
                             strokeWidth = 2.dp
                         )
                     }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun SearchField(searchQuery: String, onQueryChanged: (String) -> Unit) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .border(BorderStroke(0.5.dp, Color.LightGray), shape = RoundedCornerShape(20.dp))
-            .background(LightGray4_40, shape = RoundedCornerShape(20.dp)) // Box에 배경 색상 적용
-            .padding(horizontal = 12.dp, vertical = 12.dp)
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            BasicTextField(
-                value = searchQuery,
-                onValueChange = onQueryChanged,
-                singleLine = true,
-                textStyle = TextStyle.Default.copy(fontSize = 16.sp, color = Color.DarkGray),
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                keyboardActions = KeyboardActions(onSearch = { /* 검색 동작 가능 */ }),
-                modifier = Modifier.weight(1f)
-            )
-
-            if (searchQuery.isNotEmpty()) {
-                IconButton(onClick = { onQueryChanged("") }, modifier = Modifier.size(20.dp)) {
-                    Icon(imageVector = Icons.Default.Close, contentDescription = "Clear", tint = Color.Gray)
                 }
             }
         }
