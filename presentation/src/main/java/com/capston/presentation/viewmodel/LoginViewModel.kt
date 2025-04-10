@@ -19,10 +19,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class LoginViewModel @Inject constructor(
-    private val postLoginInfoUseCase: PostLoginInfoUseCase,
-    private val saveTokensUseCase: SaveAccessTokenUseCase,
-    private val getAccessTokenUseCase: GetAccessTokenUseCase,
-    private val clearTokensUseCase: ClearTokensUseCase
+    private val postLoginInfoUseCase: PostLoginInfoUseCase
 ): ViewModel() {
     // 회원가입 성공 시 받아오는 액세스 토큰
     private val _loginResponse = MutableStateFlow(LoginResponse())
@@ -52,23 +49,6 @@ class LoginViewModel @Inject constructor(
 
                     checkAccessToken()
                 }
-        }
-    }
-
-    // 토큰 정보 수집 예시
-    fun checkAccessToken() {
-        viewModelScope.launch {
-            getAccessTokenUseCase().collect { token ->
-                Log.d("LoginViewModel", "현재 저장된 액세스 토큰: $token")
-            }
-        }
-    }
-
-    // 로그아웃 기능
-    fun logout() {
-        viewModelScope.launch {
-            clearTokensUseCase()
-            Log.d("LoginViewModel", "토큰 삭제 완료")
         }
     }
 }
