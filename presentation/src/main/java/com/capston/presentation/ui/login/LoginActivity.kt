@@ -29,6 +29,7 @@ import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlin.math.sign
 
 class LoginActivity : ComponentActivity() {
     private lateinit var auth: FirebaseAuth
@@ -43,6 +44,8 @@ class LoginActivity : ComponentActivity() {
         auth = Firebase.auth
         val currentUser = auth.currentUser
         Log.d("LoginActivity", "currentUser: ${currentUser?.uid}")
+
+//        signOut(CredentialManager.create(this))
 
         // 이미 로그인되어 있는지 확인
         if (currentUser != null) {
