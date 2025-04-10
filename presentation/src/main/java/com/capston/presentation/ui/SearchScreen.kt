@@ -2,6 +2,7 @@ package com.capston.presentation.ui
 
 import android.annotation.SuppressLint
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -17,6 +18,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import com.capston.presentation.R
 import com.capston.presentation.theme.CapstonTheme
 import com.capston.presentation.theme.LightGray40
@@ -24,7 +26,7 @@ import com.capston.presentation.theme.MainPurple
 
 @SuppressLint("RememberReturnType")
 @Composable
-fun SearchScreen(searchQuery: String) {
+fun SearchScreen(searchQuery: String, navController: NavController) {
     val allItems = remember {
         List(50) {
             LectureItemDto(
@@ -48,12 +50,12 @@ fun SearchScreen(searchQuery: String) {
     }
 
     Column {
-        InfiniteScrollList(filteredItems, searchQuery)
+        InfiniteScrollList(filteredItems, searchQuery, navController)
     }
 }
 
 @Composable
-fun SearchLectureItem(lectureItem: LectureItemDto, searchQuery: String) {
+fun SearchLectureItem(lectureItem: LectureItemDto, searchQuery: String, onClick: () -> Unit) {
     // 검색어가 포함된 부분을 하이라이트하는 함수
     val annotatedString = buildAnnotatedString {
         var startIndex = 0
@@ -77,6 +79,7 @@ fun SearchLectureItem(lectureItem: LectureItemDto, searchQuery: String) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(15.dp)
+            .clickable{ onClick() }
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -117,13 +120,5 @@ fun SearchLectureItem(lectureItem: LectureItemDto, searchQuery: String) {
 private fun AnnotatedString.Builder.appendAnnotatedString(text: String, color: Color) {
     withStyle(style = SpanStyle(color = color)) {
         append(text)
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun SearchScreenPreview() {
-    CapstonTheme {
-        SearchScreen(searchQuery = "")
     }
 }
