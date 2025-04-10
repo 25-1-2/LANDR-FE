@@ -79,6 +79,7 @@ import com.capston.domain.response.home.DistinctHomeIdResponse
 import com.capston.domain.response.home.LectureProgressResponse
 import com.capston.domain.response.home.LessonScheduleResponse
 import com.capston.presentation.R
+import com.capston.presentation.theme.LightGray2
 import com.capston.presentation.theme.LightGray40
 import com.capston.presentation.theme.LightGray3
 import com.capston.presentation.theme.LightGray4
@@ -538,7 +539,7 @@ fun CircleGraph(name: String, cleared: Int, total: Int) {
         )
 
         drawArc(
-            color = Color(0xFFE1E2E9),
+            color = LightGray40,
             startAngle = 0f,
             sweepAngle = 360f,
             useCenter = false,
