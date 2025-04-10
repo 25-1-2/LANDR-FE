@@ -79,4 +79,8 @@ dependencies {
 
     // coroutines
     implementation(libs.kotlinx.coroutines.android)
+
+    // EncryptedSharedPreferences
+    implementation(libs.androidx.security.crypto)
+
 }

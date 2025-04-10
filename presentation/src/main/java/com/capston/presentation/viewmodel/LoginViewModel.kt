@@ -46,10 +46,10 @@ class LoginViewModel @Inject constructor(
 
     // 토큰 저장 메서드를 추가할 수 있습니다
     private fun saveTokens(token: String) {
-        viewModelScope.launch {
-            dataStore.edit { preferences ->
-                preferences[ACCESS_TOKEN_KEY] = token
-            }
-        }
+//        viewModelScope.launch {
+//            dataStore.edit { preferences ->
+//                preferences[ACCESS_TOKEN_KEY] = token
+//            }
+//        }
     }
 }
