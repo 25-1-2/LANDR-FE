@@ -1,11 +1,14 @@
 package com.capston.presentation.ui
 
 import android.annotation.SuppressLint
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -14,6 +17,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.capston.presentation.R
 import com.capston.presentation.theme.CapstonTheme
 import com.capston.presentation.theme.LightGray40
 import com.capston.presentation.theme.MainPurple
@@ -74,26 +78,37 @@ fun SearchLectureItem(lectureItem: LectureItemDto, searchQuery: String) {
             .fillMaxWidth()
             .padding(15.dp)
     ) {
-        Column {
-            // 회사명 표시
-            Text(
-                text = lectureItem.com,
-                color = MainPurple,
-                fontSize = 14.sp
-            )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = lectureItem.com,
+                    color = MainPurple,
+                    fontSize = 14.sp
+                )
 
-            // 하이라이트된 제목 출력
-            Text(
-                text = annotatedString,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold
-            )
+                Text(
+                    text = annotatedString,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold
+                )
 
-            // 추가 설명 텍스트
-            Text(
-                text = lectureItem.teach,
-                color = LightGray40,
-                fontSize = 14.sp
+                Text(
+                    text = lectureItem.teach,
+                    color = LightGray40,
+                    fontSize = 14.sp
+                )
+            }
+
+            Image(
+                painter = painterResource(R.drawable.screen_search_math_iv),
+                contentDescription = "과목명",
+                modifier = Modifier
+                    .padding(start = 8.dp) // 텍스트와 살짝 간격 주기
             )
         }
     }
