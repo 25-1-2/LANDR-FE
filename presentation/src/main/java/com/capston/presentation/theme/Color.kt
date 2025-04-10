@@ -12,7 +12,7 @@ val Pink40 = Color(0xFF7D5260)
 
 // 정의한 색상들
 val MainPurple = Color(0xFF3F15EA)
-val LightPurple = Color(0xFFE7DBEC)
+val LightPurple = Color(0xFFF2F1F6)
 val LightGray40 = Color(0x40000000)
 val LightGray2 = Color(0xFFBBBBBB)
 val LightGray3 = Color(0xFFF7F7F7)
