@@ -2,6 +2,7 @@ package com.capston.data.di
 
 import android.util.Log
 import com.capston.data.BuildConfig
+import com.capston.data.local.storage.TokenDataStore
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import dagger.Module
@@ -23,14 +24,6 @@ object NetworkModule {
 
     private const val BASE_URL = BuildConfig.BASE_URL
 
-    fun getApiClient(): Retrofit {
-        return Retrofit.Builder()
-            .baseUrl(BASE_URL)
-            .client(provideOkHttpClient(AppInterceptor()))
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-    }
-
     @Singleton
     @Provides
     fun provideHttpLoggingInterceptor(): HttpLoggingInterceptor {
@@ -45,11 +38,11 @@ object NetworkModule {
         return GsonBuilder().setLenient().create() // setLenient() 추가
     }
 
-//    @Singleton
-//    @Provides
-//    fun provideAccessTokenInterceptor(tokenManager: TokenManager): AccessTokenInterceptor {
-//        return AccessTokenInterceptor(tokenManager)
-//    }
+    @Provides
+    @Singleton
+    fun provideAccessTokenInterceptor(tokenDataStore: TokenDataStore): AccessTokenInterceptor {
+        return AccessTokenInterceptor(tokenDataStore)
+    }
 
     @Provides
     @Singleton
@@ -59,14 +52,15 @@ object NetworkModule {
     @Provides
     @Named("defaultOkHttpClient")
     fun provideOkHttpClient(
-        httpLoggingInterceptor: AppInterceptor,
-//        accessTokenInterceptor: AccessTokenInterceptor,
+        httpLoggingInterceptor: HttpLoggingInterceptor,
+        accessTokenInterceptor: AccessTokenInterceptor,
     ): OkHttpClient {
         return OkHttpClient.Builder()
             .connectTimeout(150, TimeUnit.SECONDS)
             .readTimeout(150, TimeUnit.SECONDS)
             .writeTimeout(150, TimeUnit.SECONDS)
             .addInterceptor(httpLoggingInterceptor)
+            .addInterceptor(accessTokenInterceptor)
             .addInterceptor{ chain ->
                 val request = chain.request()
                 Log.d("토큰", "Headers: ${request.headers}")
