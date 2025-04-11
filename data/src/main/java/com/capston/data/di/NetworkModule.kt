@@ -23,6 +23,14 @@ object NetworkModule {
 
     private const val BASE_URL = BuildConfig.BASE_URL
 
+    fun getApiClient(): Retrofit {
+        return Retrofit.Builder()
+            .baseUrl(BASE_URL)
+            .client(provideOkHttpClient(AppInterceptor()))
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+    }
+
     @Singleton
     @Provides
     fun provideHttpLoggingInterceptor(): HttpLoggingInterceptor {
@@ -51,7 +59,7 @@ object NetworkModule {
     @Provides
     @Named("defaultOkHttpClient")
     fun provideOkHttpClient(
-        httpLoggingInterceptor: HttpLoggingInterceptor,
+        httpLoggingInterceptor: AppInterceptor,
 //        accessTokenInterceptor: AccessTokenInterceptor,
     ): OkHttpClient {
         return OkHttpClient.Builder()
