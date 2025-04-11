@@ -63,7 +63,7 @@ object NetworkModule {
             .addInterceptor(accessTokenInterceptor)
             .addInterceptor{ chain ->
                 val request = chain.request()
-                Log.d("토큰", "Headers: ${request.headers}")
+                Log.d("NetworkModule", "Headers: ${request.headers}")
                 chain.proceed(request)
             }
 //            .addInterceptor(accessTokenInterceptor)

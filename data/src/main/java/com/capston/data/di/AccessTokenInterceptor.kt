@@ -19,7 +19,7 @@ class AccessTokenInterceptor @Inject constructor(
         // 토큰이 있는 경우에만 헤더에 추가
         val newRequest = if (token != null) {
             request().newBuilder()
-                .addHeader("token", "$token")
+                .addHeader("Authorization", "Bearer $token")
                 .build()
         } else {
             request()
