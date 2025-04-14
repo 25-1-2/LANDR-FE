@@ -1,6 +1,7 @@
 package com.capston.presentation.ui
 
 import android.annotation.SuppressLint
+import android.hardware.lights.Light
 import android.util.Log
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
@@ -13,6 +14,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -31,6 +33,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.Divider
 import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.TextFieldDefaults
 import androidx.compose.material3.Button
@@ -59,6 +62,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Color.Companion.LightGray
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
@@ -75,10 +79,12 @@ import com.capston.domain.response.home.DistinctHomeIdResponse
 import com.capston.domain.response.home.LectureProgressResponse
 import com.capston.domain.response.home.LessonScheduleResponse
 import com.capston.presentation.R
+import com.capston.presentation.theme.LightGray2
 import com.capston.presentation.theme.LightGray40
 import com.capston.presentation.theme.LightGray3
 import com.capston.presentation.theme.LightGray4
 import com.capston.presentation.theme.LightGray60
+import com.capston.presentation.theme.LightPurple
 import com.capston.presentation.theme.MainBlue
 import com.capston.presentation.theme.MainPurple
 import com.capston.presentation.theme.Purple40
@@ -124,8 +130,7 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .border(width = 2.dp, color = LightGray4)
-                    .background(LightGray3)
+                    .background(LightPurple)
             ) {
                 Column(
                     modifier = Modifier
@@ -157,8 +162,8 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
 
                     LazyRow(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp)
+                            .fillMaxWidth(),
+
                     ) {
                         item {
                             CircleGraph("전체", totalCompletedLessons, totalLessons)
@@ -182,6 +187,12 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
                     }
                 }
             }
+
+            Divider(
+                color = LightGray,
+                thickness = 1.dp,
+                modifier = Modifier.fillMaxWidth()
+            )
 
             Spacer(modifier = Modifier.height(30.dp)) // 🌟 그래프와 강의 목록 사이 간격 추가
 
@@ -255,7 +266,7 @@ fun CustomBottomSheetDialog(
         modifier = Modifier
             .padding(top = 10.dp, start = 10.dp, end = 10.dp, bottom = bottomPadding)
             .fillMaxWidth()
-            .height(300.dp),
+            .height(280.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
@@ -485,7 +496,7 @@ fun LessonList(homeViewModel: HomeViewModel, maxHeight: Int, todayLessonList: Li
                     Text(
                         text = "${lesson.lectureName} · 약 ${lesson.adjustedDuration}분",
                         textDecoration = if (isChecked) TextDecoration.LineThrough else TextDecoration.None,
-                        style = MaterialTheme.typography.bodyLarge,
+                        style = MaterialTheme.typography.bodyMedium,
                         color = LightGray60,
                         fontSize = 14.sp
                     )
@@ -500,16 +511,14 @@ fun LessonList(homeViewModel: HomeViewModel, maxHeight: Int, todayLessonList: Li
 fun CircleGraph(name: String, cleared: Int, total: Int) {
     val animatedValue = remember { Animatable(0f) }
 
-    // 비율에 맞게 애니메이션의 목표값 설정
     val targetValue = if (total > 0) {
         (cleared.toFloat() / total.toFloat()) * 360f
     } else {
-        0f // 강의가 없으면 0으로 설정
+        0f
     }
 
-    // 특정 값으로 색을 채우는 Animation
     LaunchedEffect(targetValue) {
-        animatedValue.snapTo(0f) // 애니메이션을 처음부터 시작
+        animatedValue.snapTo(0f)
         animatedValue.animateTo(
             targetValue = targetValue,
             animationSpec = tween(durationMillis = 1000, easing = LinearEasing),
@@ -520,21 +529,28 @@ fun CircleGraph(name: String, cleared: Int, total: Int) {
         modifier = Modifier.size(150.dp)
     ) {
         val sizeArc = size / 1.3F
+        val arcStrokeWidth = 30f
+
+        // 내부 색 채우기
+        drawCircle(
+            color = Color.White,
+            radius = (sizeArc.minDimension / 2f) - (arcStrokeWidth / 2f),
+            center = center
+        )
+
         drawArc(
-            color = Color(0xFFE1E2E9),
+            color = LightGray40,
             startAngle = 0f,
             sweepAngle = 360f,
-            useCenter = true,
+            useCenter = false,
             topLeft = Offset((size.width - sizeArc.width) / 2f, (size.height - sizeArc.height) / 2f),
             size = sizeArc,
-            style = Stroke(width = 30f)
+            style = Stroke(width = arcStrokeWidth)
         )
 
         drawArc(
             brush = Brush.linearGradient(
-                colors = listOf(
-                    MainPurple, MainPurple
-                ),
+                colors = listOf(MainPurple, MainPurple),
                 start = Offset.Zero,
                 end = Offset.Infinite,
             ),
@@ -546,28 +562,28 @@ fun CircleGraph(name: String, cleared: Int, total: Int) {
                 (size.height - sizeArc.height) / 2f
             ),
             size = sizeArc,
-            style = Stroke(width = 30f, cap = StrokeCap.Round)
+            style = Stroke(width = arcStrokeWidth, cap = StrokeCap.Round)
         )
 
         drawContext.canvas.nativeCanvas.drawText(
-            name,  // 텍스트 내용
-            size.width / 2,  // X 위치
-            size.height / 2,  // Y 위치
+            name,
+            size.width / 2,
+            size.height / 2,
             android.graphics.Paint().apply {
-                color = android.graphics.Color.BLACK  // 텍스트 색
-                textAlign = android.graphics.Paint.Align.CENTER  // 텍스트 중앙 정렬
-                textSize = 50f  // 텍스트 크기
+                color = android.graphics.Color.BLACK
+                textAlign = android.graphics.Paint.Align.CENTER
+                textSize = 50f
             }
         )
 
         drawContext.canvas.nativeCanvas.drawText(
-            "${cleared}/${total}",  // 텍스트 내용
-            size.width / 2,  // X 위치
-            size.height / 2 + 70,  // Y 위치
+            "${cleared}/${total}",
+            size.width / 2,
+            size.height / 2 + 70,
             android.graphics.Paint().apply {
-                color = android.graphics.Color.BLACK  // 텍스트 색
-                textAlign = android.graphics.Paint.Align.CENTER  // 텍스트 중앙 정렬
-                textSize = 50f  // 텍스트 크기
+                color = android.graphics.Color.BLACK
+                textAlign = android.graphics.Paint.Align.CENTER
+                textSize = 50f
             }
         )
     }

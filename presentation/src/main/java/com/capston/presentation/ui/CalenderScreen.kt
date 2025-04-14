@@ -22,6 +22,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.Divider
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
@@ -43,6 +44,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Color.Companion.LightGray
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -149,6 +151,12 @@ fun Calendar(calendarHeight: Int, selectedDate: String, onDateSelected: (String)
             onDatePickerClick = { showDatePickerDialog = true }
         )
 
+        Divider(
+            color = LightGray,
+            thickness = 1.dp,
+            modifier = Modifier.fillMaxWidth()
+        )
+
         // 선택된 날짜 표시
         Text(
             text = "$selectedDate (${getKoreanDayOfWeek(LocalDate.parse(selectedDate).dayOfWeek.value)})",
@@ -205,7 +213,6 @@ fun CustomCalendar(
     Box(
         modifier = Modifier
             .background(color = LightGray3)
-            .border(width = 1.dp, color = LightGray4)
             .height(calendarHeight.dp)
             .pointerInput(Unit) {
                 detectDragGestures { _, dragAmount ->

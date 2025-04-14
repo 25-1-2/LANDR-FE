@@ -19,8 +19,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
@@ -76,9 +74,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             val homeViewModel: HomeViewModel by viewModels()
             val planViewModel: PlanViewModel by viewModels()
-            val dailyScheduleViewModel: DailyScheduleViewModel by viewModels(
-
-            )
+            val dailyScheduleViewModel: DailyScheduleViewModel by viewModels()
             LaunchedEffect(Unit) {
                 homeViewModel.getDistinctHome()
             }
@@ -91,31 +87,96 @@ class MainActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SearchTopBar(navController: NavController, searchQuery: String, onQueryChanged: (String) -> Unit) {
+fun SearchTopBar(
+    navController: NavController,
+    searchQuery: String,
+    onQueryChanged: (String) -> Unit
+) {
     TopAppBar(
-        title = { SearchField(searchQuery, onQueryChanged) },
-        navigationIcon = {
-            IconButton(onClick = { navController.popBackStack() }) {
-                Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "뒤로 가기")
-            }
-        },
-        actions = {
-            IconButton(onClick = { /* 검색 버튼 동작 추가 가능 */ }) {
-                Icon(imageVector = Icons.Default.Search, contentDescription = "검색")
-            }
+        title = {
+            SearchFieldWithIcons(
+                searchQuery = searchQuery,
+                onQueryChanged = onQueryChanged,
+                onBackClick = { navController.popBackStack() },
+                onSearchClick = { /* TODO: 검색 동작 */ }
+            )
         }
     )
 }
 
 @Composable
-fun InfiniteScrollList(filteredItems: List<LectureItemDto>, searchQuery: String) {
+fun SearchFieldWithIcons(
+    searchQuery: String,
+    onQueryChanged: (String) -> Unit,
+    onBackClick: () -> Unit,
+    onSearchClick: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(end = 16.dp)
+            .height(40.dp)
+            .border(BorderStroke(0.5.dp, Color.LightGray), shape = RoundedCornerShape(20.dp))
+            .background(LightGray4_40, shape = RoundedCornerShape(20.dp))
+            .padding(horizontal = 8.dp)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            IconButton(onClick = onBackClick, modifier = Modifier.size(24.dp)) {
+                Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "뒤로 가기", tint = Color.Gray)
+            }
+
+            BasicTextField(
+                value = searchQuery,
+                onValueChange = onQueryChanged,
+                singleLine = true,
+                textStyle = TextStyle(fontSize = 16.sp, color = Color.DarkGray),
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                decorationBox = { innerTextField ->
+                    if (searchQuery.isEmpty()) {
+                        Text(
+                            text = "계획 생성하고 싶은 강의를 선택하세요",
+                            fontSize = 12.sp,
+                            color = Color.Gray
+                        )
+                    }
+                    innerTextField()
+                }
+            )
+
+            if (searchQuery.isNotEmpty()) {
+                IconButton(
+                    onClick = { onQueryChanged("") },
+                    modifier = Modifier.size(20.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Clear",
+                        tint = Color.Gray
+                    )
+                }
+            }
+
+            IconButton(onClick = onSearchClick, modifier = Modifier.size(24.dp)) {
+                Icon(imageVector = Icons.Default.Search, contentDescription = "검색", tint = Color.Gray)
+            }
+        }
+    }
+}
+
+@Composable
+fun InfiniteScrollList(filteredItems: List<LectureItemDto>, searchQuery: String, navController: NavController) {
     var loading by remember { mutableStateOf(false) }
 
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
             state = rememberLazyListState(),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            contentPadding = PaddingValues(25.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             // 필터링된 항목이 없을 경우 표시하지 않음
             if (filteredItems.isEmpty()) {
@@ -130,7 +191,13 @@ fun InfiniteScrollList(filteredItems: List<LectureItemDto>, searchQuery: String)
                 }
             } else {
                 items(filteredItems) { item ->
-                    SearchLectureItem(lectureItem = item, searchQuery = searchQuery)
+                    SearchLectureItem(
+                        lectureItem = item,
+                        searchQuery = searchQuery,
+                        onClick = {
+                            navController.navigate("${Screen.Plan.title}/${item.title}")
+                        }
+                    )
                 }
             }
 
@@ -150,38 +217,6 @@ fun InfiniteScrollList(filteredItems: List<LectureItemDto>, searchQuery: String)
                             strokeWidth = 2.dp
                         )
                     }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun SearchField(searchQuery: String, onQueryChanged: (String) -> Unit) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .border(BorderStroke(0.5.dp, Color.LightGray), shape = RoundedCornerShape(20.dp))
-            .background(LightGray4_40, shape = RoundedCornerShape(20.dp)) // Box에 배경 색상 적용
-            .padding(horizontal = 12.dp, vertical = 12.dp)
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            BasicTextField(
-                value = searchQuery,
-                onValueChange = onQueryChanged,
-                singleLine = true,
-                textStyle = TextStyle.Default.copy(fontSize = 16.sp, color = Color.DarkGray),
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                keyboardActions = KeyboardActions(onSearch = { /* 검색 동작 가능 */ }),
-                modifier = Modifier.weight(1f)
-            )
-
-            if (searchQuery.isNotEmpty()) {
-                IconButton(onClick = { onQueryChanged("") }, modifier = Modifier.size(20.dp)) {
-                    Icon(imageVector = Icons.Default.Close, contentDescription = "Clear", tint = Color.Gray)
                 }
             }
         }
@@ -222,7 +257,7 @@ fun SettingTopBottomBar(homeViewModel: HomeViewModel, planViewModel: PlanViewMod
             ) {
                 composable(Screen.Home.title) { HomeScreen(homeViewModel, planViewModel) }
                 composable(Screen.Calender.title) { CalenderScreen(homeViewModel, dailyScheduleViewModel) }
-                composable(Screen.Search.title) { SearchScreen(searchQuery) }
+                composable(Screen.Search.title) { SearchScreen(searchQuery, navController) }
                 composable(Screen.LectureRoom.title) {
                     LectureRoomScreen(
                         onLectureClick = { lecture ->
@@ -230,6 +265,13 @@ fun SettingTopBottomBar(homeViewModel: HomeViewModel, planViewModel: PlanViewMod
                             navController.navigate("${Screen.LectureDetail.title}/${lecture.title}")
                         }
                     )
+                }
+                composable(
+                    route = "${Screen.Plan.title}/{lectureTitle}",
+                    arguments = listOf(navArgument("lectureTitle") { type = NavType.StringType })
+                ) { backStackEntry ->
+                    val lectureTitle = backStackEntry.arguments?.getString("lectureTitle") ?: "Unknown"
+                    PlanScreen(lectureTitle = lectureTitle)
                 }
                 composable(
                     route = "${Screen.LectureDetail.title}/{lectureTitle}",

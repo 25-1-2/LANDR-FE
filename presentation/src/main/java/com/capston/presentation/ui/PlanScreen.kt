@@ -33,7 +33,7 @@ fun formatDate(millis: Long?): String {
 }
 
 @Composable
-fun PlanScreen() {
+fun PlanScreen(lectureTitle: String) {
     val pagerState = rememberPagerState(pageCount = { 2 }) // 0: 기간, 1: 시간
     val coroutineScope = rememberCoroutineScope()
 
@@ -506,6 +506,6 @@ fun PlaybackSpeedSlider() {
 @Composable
 fun PlanScreenPreview() {
     CapstonTheme {
-        PlanScreen()
+        PlanScreen("")
     }
 }

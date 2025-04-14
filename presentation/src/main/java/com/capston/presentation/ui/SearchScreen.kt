@@ -1,11 +1,15 @@
 package com.capston.presentation.ui
 
 import android.annotation.SuppressLint
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -14,14 +18,15 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import com.capston.presentation.R
 import com.capston.presentation.theme.CapstonTheme
-import com.capston.presentation.theme.LightGray2
 import com.capston.presentation.theme.LightGray40
 import com.capston.presentation.theme.MainPurple
 
 @SuppressLint("RememberReturnType")
 @Composable
-fun SearchScreen(searchQuery: String) {
+fun SearchScreen(searchQuery: String, navController: NavController) {
     val allItems = remember {
         List(50) {
             LectureItemDto(
@@ -45,12 +50,12 @@ fun SearchScreen(searchQuery: String) {
     }
 
     Column {
-        InfiniteScrollList(filteredItems, searchQuery)
+        InfiniteScrollList(filteredItems, searchQuery, navController)
     }
 }
 
 @Composable
-fun SearchLectureItem(lectureItem: LectureItemDto, searchQuery: String) {
+fun SearchLectureItem(lectureItem: LectureItemDto, searchQuery: String, onClick: () -> Unit) {
     // 검색어가 포함된 부분을 하이라이트하는 함수
     val annotatedString = buildAnnotatedString {
         var startIndex = 0
@@ -73,28 +78,40 @@ fun SearchLectureItem(lectureItem: LectureItemDto, searchQuery: String) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(8.dp)
+            .padding(15.dp)
+            .clickable{ onClick() }
     ) {
-        Column {
-            // 회사명 표시
-            Text(
-                text = lectureItem.com,
-                color = MainPurple,
-                fontSize = 14.sp
-            )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = lectureItem.com,
+                    color = MainPurple,
+                    fontSize = 14.sp
+                )
 
-            // 하이라이트된 제목 출력
-            Text(
-                text = annotatedString,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold
-            )
+                Text(
+                    text = annotatedString,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold
+                )
 
-            // 추가 설명 텍스트
-            Text(
-                text = lectureItem.teach,
-                color = LightGray40,
-                fontSize = 14.sp
+                Text(
+                    text = lectureItem.teach,
+                    color = LightGray40,
+                    fontSize = 14.sp
+                )
+            }
+
+            Image(
+                painter = painterResource(R.drawable.screen_search_math_iv),
+                contentDescription = "과목명",
+                modifier = Modifier
+                    .padding(start = 8.dp) // 텍스트와 살짝 간격 주기
             )
         }
     }
@@ -103,13 +120,5 @@ fun SearchLectureItem(lectureItem: LectureItemDto, searchQuery: String) {
 private fun AnnotatedString.Builder.appendAnnotatedString(text: String, color: Color) {
     withStyle(style = SpanStyle(color = color)) {
         append(text)
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun SearchScreenPreview() {
-    CapstonTheme {
-        SearchScreen(searchQuery = "")
     }
 }
