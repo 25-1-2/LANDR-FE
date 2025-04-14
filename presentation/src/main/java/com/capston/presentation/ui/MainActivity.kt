@@ -190,7 +190,7 @@ fun SettingTopBottomBar(homeViewModel: HomeViewModel, planViewModel: PlanViewMod
 //                    PlanScreen(
 //                        lecture = TODO()
 //                    )
-//                }
+
                 composable(
                     route = "${Screen.LectureDetail.title}/{lectureTitle}",
                     arguments = listOf(navArgument("lectureTitle") { type = NavType.StringType })
