@@ -1,5 +1,7 @@
 package com.capston.presentation.ui
 
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
@@ -15,14 +17,22 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
 import com.capston.domain.model.Lecture
 import com.capston.domain.request.PostPlanDto
 import com.capston.domain.response.enum_class.DayOfWeek
+import com.capston.presentation.R
 import com.capston.presentation.theme.CapstonTheme
+import com.capston.presentation.theme.LightGray2
+import com.capston.presentation.theme.LightGray3
 import com.capston.presentation.theme.MainPurple
+import com.capston.presentation.theme.backgroundGray
+import com.capston.presentation.theme.dividerGray
+import com.capston.presentation.theme.materialGray
+import com.capston.presentation.theme.textGray
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -68,10 +78,12 @@ fun PlanScreen(lecture: Lecture) {
                 pagerState = pagerState,
                 coroutineScope = coroutineScope
             )
+            HorizontalDivider(color = dividerGray)
 
             HorizontalPager(
                 state = pagerState,
-                userScrollEnabled = false
+                userScrollEnabled = false,
+                modifier = Modifier.padding(bottom = 16.dp)
             ) { page ->
                 when (page) {
                     0 -> PeriodPlanPage(
@@ -92,31 +104,31 @@ fun PlanScreen(lecture: Lecture) {
                     )
                 }
             }
+
+            Button(
+                onClick = {
+                    val dto = PostPlanDto(
+                        lectureId = lecture.id,
+                        planType = if (pagerState.currentPage == 0) "PERIOD" else "TIME",
+                        startLessonId = startLessonId.value,
+                        endLessonId = endLessonId.value,
+                        studyDayOfWeeks = selectedDays.value,
+                        dailyTime = 120, // 시간 방식일 때 설정된 시간 (예시 값)
+                        startDate = startDate.value,
+                        endDate = endDate.value,
+                        playbackSpeed = playbackSpeed.value
+                    )
+
+                    // TODO: 서버에 dto 전달하는 API 호출 작성
+                    // ex) viewModel.postPlan(dto)
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("완료")
+            }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
 
-        Button(
-            onClick = {
-                val dto = PostPlanDto(
-                    lectureId = lecture.id,
-                    planType = if (pagerState.currentPage == 0) "PERIOD" else "TIME",
-                    startLessonId = startLessonId.value,
-                    endLessonId = endLessonId.value,
-                    studyDayOfWeeks = selectedDays.value,
-                    dailyTime = 120, // 시간 방식일 때 설정된 시간 (예시 값)
-                    startDate = startDate.value,
-                    endDate = endDate.value,
-                    playbackSpeed = playbackSpeed.value
-                )
-
-                // TODO: 서버에 dto 전달하는 API 호출 작성
-                // ex) viewModel.postPlan(dto)
-            },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("완료")
-        }
     }
 }
 
@@ -130,7 +142,9 @@ fun PlanTopBar() {
                 IconButton(onClick = {
                     // 뒤로가기 or 닫기 로직
                 }) {
-                    Icon(Icons.Default.ArrowBack, contentDescription = "뒤로 가기")
+                    Image(
+                        painter = painterResource(id = R.drawable.icon_arrow_back), // 너가 추가한 xml 이름
+                        contentDescription = "뒤로 가기")
                 }
             }
         )
@@ -145,22 +159,26 @@ fun HeaderSection(
     coroutineScope: CoroutineScope
 ) {
     Column(
-        modifier = Modifier.padding(16.dp)
-    ) {
-        Text(lecture.platform, color = MainPurple)
+        modifier = Modifier
+            .background(backgroundGray)
+            .padding(16.dp)
 
+    ) {
+        // 인강 플랫폼
+        Text(lecture.platform, color = MainPurple)
+        // 제목
         Text(
             text = lecture.title,
-            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+            modifier = Modifier.padding(bottom = 4.dp)
         )
-        Spacer(modifier = Modifier.height(4.dp))
+        // 세부정보
         Text(
             text = "${lecture.teacher}· ${lecture.tag} · ${lecture.totalLessons}강",
             style = MaterialTheme.typography.bodyMedium,
-            color = Color.Gray
+            color = textGray,
+            modifier = Modifier.padding(bottom = 16.dp)
         )
-
-        Spacer(modifier = Modifier.height(16.dp))
 
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -177,8 +195,8 @@ fun HeaderSection(
                 },
                 shape = RoundedCornerShape(8.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isPeriodSelected) MaterialTheme.colorScheme.primary else Color.White,
-                    contentColor = if (isPeriodSelected) Color.White else MaterialTheme.colorScheme.primary
+                    containerColor = if (isPeriodSelected) materialGray else Color.White,
+                    contentColor = if (isPeriodSelected) Color.White else materialGray
                 ),
                 border = if (isPeriodSelected) null else ButtonDefaults.outlinedButtonBorder,
                 modifier = Modifier.weight(1f),
@@ -194,8 +212,8 @@ fun HeaderSection(
                 },
                 shape = RoundedCornerShape(8.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isTimeSelected) MaterialTheme.colorScheme.primary else Color.White,
-                    contentColor = if (isTimeSelected) Color.White else MaterialTheme.colorScheme.primary
+                    containerColor = if (isTimeSelected) materialGray else Color.White,
+                    contentColor = if (isTimeSelected) Color.White else textGray
                 ),
                 border = if (isTimeSelected) null else ButtonDefaults.outlinedButtonBorder,
                 modifier = Modifier.weight(1f),
@@ -204,7 +222,6 @@ fun HeaderSection(
             }
         }
     }
-
 }
 
 
@@ -229,7 +246,9 @@ fun PeriodPlanPage(
     var showStartDatePicker by remember { mutableStateOf(false) }
     var showEndDatePicker by remember { mutableStateOf(false) }
 
-    Column {
+    Column(
+        modifier = Modifier.padding(16.dp)
+    ) {
         // 날짜 선택 UI
         Row(
             modifier = Modifier.fillMaxWidth(),
