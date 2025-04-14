@@ -1,6 +1,7 @@
 package com.capston.presentation.ui
 
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -13,9 +14,6 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -40,6 +38,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
@@ -62,7 +61,6 @@ import com.capston.presentation.viewmodel.DailyScheduleViewModel
 import com.capston.presentation.viewmodel.HomeViewModel
 import com.capston.presentation.viewmodel.PlanViewModel
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.delay
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -83,25 +81,6 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun SearchTopBar(
-    navController: NavController,
-    searchQuery: String,
-    onQueryChanged: (String) -> Unit
-) {
-    TopAppBar(
-        title = {
-            SearchFieldWithIcons(
-                searchQuery = searchQuery,
-                onQueryChanged = onQueryChanged,
-                onBackClick = { navController.popBackStack() },
-                onSearchClick = { /* TODO: 검색 동작 */ }
-            )
-        }
-    )
 }
 
 @Composable
@@ -168,81 +147,18 @@ fun SearchFieldWithIcons(
     }
 }
 
-@Composable
-fun InfiniteScrollList(filteredItems: List<LectureItemDto>, searchQuery: String, navController: NavController) {
-    var loading by remember { mutableStateOf(false) }
-
-    Box(modifier = Modifier.fillMaxSize()) {
-        LazyColumn(
-            state = rememberLazyListState(),
-            contentPadding = PaddingValues(25.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            // 필터링된 항목이 없을 경우 표시하지 않음
-            if (filteredItems.isEmpty()) {
-                item {
-                    Text(
-                        text = "검색 결과가 없습니다.",
-                        fontSize = 18.sp,
-                        color = Color.Gray,
-                        modifier = Modifier.fillMaxWidth().padding(16.dp),
-                        textAlign = TextAlign.Center
-                    )
-                }
-            } else {
-                items(filteredItems) { item ->
-                    SearchLectureItem(
-                        lectureItem = item,
-                        searchQuery = searchQuery,
-                        onClick = {
-                            navController.navigate("${Screen.Plan.title}/${item.title}")
-                        }
-                    )
-                }
-            }
-
-            // 로딩 상태 표시
-            if (!loading && filteredItems.isNotEmpty()) {
-                item {
-                    LaunchedEffect(Unit) {
-                        loading = true
-                        delay(1500)
-                        loading = false
-                    }
-
-                    if (loading) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.fillMaxWidth().padding(16.dp),
-                            color = MainPurple,
-                            strokeWidth = 2.dp
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun SettingTopBottomBar(homeViewModel: HomeViewModel, planViewModel: PlanViewModel, dailyScheduleViewModel: DailyScheduleViewModel) {
     var bottomNavState by rememberSaveable { mutableIntStateOf(0) }
-    var searchQuery by rememberSaveable { mutableStateOf("") }
     val navController = rememberNavController()
-
-    val currentDestination = navController.currentBackStackEntryFlow.collectAsState(initial = null).value?.destination?.route
 
     Scaffold(
         topBar = {
-            when (currentDestination) {
-                Screen.Search.title -> SearchTopBar(navController, searchQuery, { searchQuery = it })
-                else -> TopBar(true)
-            }
+            TopBar(true)
         },
         bottomBar = {
-            if (currentDestination != Screen.Search.title) {
-                BottomBar(navController, bottomNavState, { index -> bottomNavState = index })
-            }
+            BottomBar(navController, bottomNavState, { index -> bottomNavState = index})
         }
     ) { contentPadding ->
         Column(
@@ -257,7 +173,6 @@ fun SettingTopBottomBar(homeViewModel: HomeViewModel, planViewModel: PlanViewMod
             ) {
                 composable(Screen.Home.title) { HomeScreen(homeViewModel, planViewModel) }
                 composable(Screen.Calender.title) { CalenderScreen(homeViewModel, dailyScheduleViewModel) }
-                composable(Screen.Search.title) { SearchScreen(searchQuery, navController) }
                 composable(Screen.LectureRoom.title) {
                     LectureRoomScreen(
                         onLectureClick = { lecture ->
@@ -353,6 +268,7 @@ fun BottomBar(
         Screen.LectureRoom,
         Screen.Profile,
     )
+    val context = LocalContext.current
 
     Divider(color = LightGray2, thickness = 1.dp)
     Box(
@@ -393,7 +309,8 @@ fun BottomBar(
 
         FloatingActionButton(
             onClick = {
-                navController.navigate(Screen.Search.title)
+                val intent = Intent(context, SearchActivity::class.java)
+                context.startActivity(intent)
             },
             containerColor = MainPurple,
             modifier = Modifier
@@ -410,4 +327,3 @@ fun BottomBar(
         }
     }
 }
-
