@@ -17,6 +17,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
+import com.capston.domain.model.Lecture
+import com.capston.domain.request.PostPlanDto
 import com.capston.domain.response.enum_class.DayOfWeek
 import com.capston.presentation.theme.CapstonTheme
 import com.capston.presentation.theme.MainPurple
@@ -35,7 +37,8 @@ fun formatDate(millis: Long?): String {
 }
 
 @Composable
-fun PlanScreen(lectureTitle: String) {
+fun PlanScreen(lecture: Lecture) {
+    val postPlanDto = PostPlanDto()
     val pagerState = rememberPagerState(pageCount = { 2 }) // 0: 기간, 1: 시간
     val coroutineScope = rememberCoroutineScope()
 
@@ -49,15 +52,15 @@ fun PlanScreen(lectureTitle: String) {
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
-            Text("메가스터디", color = MainPurple)
+            Text(lecture.platform, color = MainPurple)
 
             Text(
-                text = "2026 현우진의 수분감 - 수학 (공통)",
+                text = lecture.title,
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "현우진 [고3·N수] 수능 (문제풀이) · 50강",
+                text = "${lecture.teacher}· ${lecture.tag} · ${lecture.totalLessons}강",
                 style = MaterialTheme.typography.bodyMedium,
                 color = Color.Gray
             )
@@ -531,6 +534,6 @@ fun PlaybackSpeedSlider() {
 @Composable
 fun PlanScreenPreview() {
     CapstonTheme {
-        PlanScreen("")
+        PlanScreen(Lecture())
     }
 }
