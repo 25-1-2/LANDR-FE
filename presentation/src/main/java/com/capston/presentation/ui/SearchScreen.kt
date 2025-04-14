@@ -25,6 +25,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.navigation.NavHostController
+import androidx.navigation.NavType
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.capston.presentation.R
 import com.capston.presentation.theme.CapstonTheme
 import com.capston.presentation.theme.LightGray40
@@ -33,7 +39,7 @@ import kotlinx.coroutines.delay
 
 @SuppressLint("RememberReturnType")
 @Composable
-fun SearchScreen(initialQuery: String = "") {
+fun SearchScreen(navController: NavController,initialQuery: String = "") {
     var searchQuery by remember { mutableStateOf(initialQuery) }
 
     Column {
@@ -61,12 +67,12 @@ fun SearchScreen(initialQuery: String = "") {
                     item.teach.contains(searchQuery, ignoreCase = true)
         }
 
-        InfiniteScrollList(filteredItems, searchQuery)
+        InfiniteScrollList(navController, filteredItems, searchQuery)
     }
 }
 
 @Composable
-fun InfiniteScrollList(filteredItems: List<LectureItemDto>, searchQuery: String) {
+fun InfiniteScrollList(navController: NavController, filteredItems: List<LectureItemDto>, searchQuery: String) {
     var loading by remember { mutableStateOf(false) }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -92,7 +98,7 @@ fun InfiniteScrollList(filteredItems: List<LectureItemDto>, searchQuery: String)
                         lectureItem = item,
                         searchQuery = searchQuery,
                         onClick = {
-                            //navController.navigate("${Screen.Plan.title}/${item.title}")
+                            navController.navigate("${Screen.Plan.title}/${item.title}")
                         }
                     )
                 }
@@ -116,6 +122,25 @@ fun InfiniteScrollList(filteredItems: List<LectureItemDto>, searchQuery: String)
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun SearchNavHost(navController: NavHostController) {
+    NavHost(
+        navController = navController,
+        startDestination = "search"
+    ) {
+        composable("search") {
+            SearchScreen(navController = navController)
+        }
+        composable(
+            route = "plan/{lectureTitle}",
+            arguments = listOf(navArgument("lectureTitle") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val title = backStackEntry.arguments?.getString("lectureTitle") ?: ""
+            PlanScreen(lectureTitle = title)
         }
     }
 }

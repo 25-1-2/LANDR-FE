@@ -1,15 +1,10 @@
 package com.capston.presentation.ui
 
-import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
+import androidx.navigation.compose.rememberNavController
 import com.capston.presentation.theme.CapstonTheme
 
 class SearchActivity : ComponentActivity() {
@@ -18,10 +13,10 @@ class SearchActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         setContent {
-            var searchQuery by rememberSaveable { mutableStateOf("") }
+            val navController = rememberNavController()
 
             CapstonTheme {
-                SearchScreen(searchQuery)
+                SearchNavHost(navController)
             }
         }
     }
