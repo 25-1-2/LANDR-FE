@@ -6,6 +6,9 @@
         <activity
             android:name=".ui.login.LoginActivity"
             android:exported="true" />
+        <activity
+            android:name=".ui.SearchActivity"
+            android:exported="true" />
     </application>
 
 </manifest>
