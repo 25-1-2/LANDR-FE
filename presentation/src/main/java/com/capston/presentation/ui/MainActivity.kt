@@ -181,13 +181,13 @@ fun SettingTopBottomBar(homeViewModel: HomeViewModel, planViewModel: PlanViewMod
                         }
                     )
                 }
-                composable(
-                    route = "${Screen.Plan.title}/{lectureTitle}",
-                    arguments = listOf(navArgument("lectureTitle") { type = NavType.StringType })
-                ) { backStackEntry ->
-                    val lectureTitle = backStackEntry.arguments?.getString("lectureTitle") ?: "Unknown"
-                    PlanScreen(lectureTitle = lectureTitle)
-                }
+//                composable(
+//                    route = "${Screen.Plan.title}/{lectureTitle}",
+//                    arguments = listOf(navArgument("lectureTitle") { type = NavType.StringType })
+//                ) { backStackEntry ->
+//                    val lectureTitle = backStackEntry.arguments?.getString("lectureTitle") ?: "Unknown"
+//                    PlanScreen(lectureTitle = lectureTitle)
+//                }
                 composable(
                     route = "${Screen.LectureDetail.title}/{lectureTitle}",
                     arguments = listOf(navArgument("lectureTitle") { type = NavType.StringType })
