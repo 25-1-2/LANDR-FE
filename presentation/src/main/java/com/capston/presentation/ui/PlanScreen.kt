@@ -7,6 +7,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.*
@@ -16,6 +17,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
+import com.capston.domain.response.enum_class.DayOfWeek
 import com.capston.presentation.theme.CapstonTheme
 import com.capston.presentation.theme.MainPurple
 import kotlinx.coroutines.launch
@@ -34,84 +36,89 @@ fun formatDate(millis: Long?): String {
 
 @Composable
 fun PlanScreen(lectureTitle: String) {
-    val pagerState = rememberPagerState(pageCount = { 2 }) // 0: 기간, 1: 시간
+    val pagerState = rememberPagerState(pageCount = { 2 })
     val coroutineScope = rememberCoroutineScope()
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp)
-    ) {
-        Text("메가스터디", color = MainPurple)
-
-        Text(
-            text = "2026 현우진의 수분감 - 수학 (공통)",
-            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
-        )
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(
-            text = "현우진 [고3·N수] 수능 (문제풀이) · 50강",
-            style = MaterialTheme.typography.bodyMedium,
-            color = Color.Gray
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
+    Scaffold(
+        topBar = { PlanTopBar() }
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding) // Scaffold 패딩 추가
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp)
         ) {
-            val isPeriodSelected = pagerState.currentPage == 0
-            val isTimeSelected = pagerState.currentPage == 1
+            Text("메가스터디", color = MainPurple)
 
-            Button(
-                onClick = {
-                    coroutineScope.launch {
-                        pagerState.scrollToPage(0)
-                    }
-                },
-                shape = RoundedCornerShape(8.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isPeriodSelected) MaterialTheme.colorScheme.primary else Color.White,
-                    contentColor = if (isPeriodSelected) Color.White else MaterialTheme.colorScheme.primary
-                ),
-                border = if (isPeriodSelected) null else ButtonDefaults.outlinedButtonBorder
+            Text(
+                text = "2026 현우진의 수분감 - 수학 (공통)",
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = "현우진 [고3·N수] 수능 (문제풀이) · 50강",
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.Gray
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text("기간으로 계획하기")
+                val isPeriodSelected = pagerState.currentPage == 0
+                val isTimeSelected = pagerState.currentPage == 1
+
+                Button(
+                    onClick = {
+                        coroutineScope.launch {
+                            pagerState.scrollToPage(0)
+                        }
+                    },
+                    shape = RoundedCornerShape(8.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (isPeriodSelected) MaterialTheme.colorScheme.primary else Color.White,
+                        contentColor = if (isPeriodSelected) Color.White else MaterialTheme.colorScheme.primary
+                    ),
+                    border = if (isPeriodSelected) null else ButtonDefaults.outlinedButtonBorder
+                ) {
+                    Text("기간으로 계획하기")
+                }
+
+                Button(
+                    onClick = {
+                        coroutineScope.launch {
+                            pagerState.scrollToPage(1)
+                        }
+                    },
+                    shape = RoundedCornerShape(8.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (isTimeSelected) MaterialTheme.colorScheme.primary else Color.White,
+                        contentColor = if (isTimeSelected) Color.White else MaterialTheme.colorScheme.primary
+                    ),
+                    border = if (isTimeSelected) null else ButtonDefaults.outlinedButtonBorder
+                ) {
+                    Text("시간으로 계획하기")
+                }
             }
 
-            Button(
-                onClick = {
-                    coroutineScope.launch {
-                        pagerState.scrollToPage(1)
-                    }
-                },
-                shape = RoundedCornerShape(8.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isTimeSelected) MaterialTheme.colorScheme.primary else Color.White,
-                    contentColor = if (isTimeSelected) Color.White else MaterialTheme.colorScheme.primary
-                ),
-                border = if (isTimeSelected) null else ButtonDefaults.outlinedButtonBorder
-            ) {
-                Text("시간으로 계획하기")
-            }
-        }
+            Spacer(modifier = Modifier.height(16.dp))
 
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        HorizontalPager(
-            state = pagerState,
-            userScrollEnabled = false
-        ) { page ->
-            when (page) {
-                0 -> PeriodPlanPage() // 기간으로 계획하기 화면
-                1 -> TimePlanPage()   // 시간으로 계획하기 화면
+            HorizontalPager(
+                state = pagerState,
+                userScrollEnabled = false
+            ) { page ->
+                when (page) {
+                    0 -> PeriodPlanPage()
+                    1 -> TimePlanPage()
+                }
             }
         }
     }
 }
+
 
 @Composable
 fun PeriodPlanPage() {
@@ -282,10 +289,28 @@ fun PeriodPlanPage() {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PlanTopBar() {
+    Column {
+        TopAppBar(
+            title = {},
+            navigationIcon = {
+                IconButton(onClick = {
+                    // 뒤로가기 or 닫기 로직
+                }) {
+                    Icon(Icons.Default.ArrowBack, contentDescription = "뒤로 가기")
+                }
+            }
+        )
+        HorizontalDivider(thickness = 1.dp, color = Color.LightGray)
+    }
+}
+
 @Composable
 fun TimePlanPage() {
     // 요일 선택 상태 예시
-    val daysOfWeek = listOf("월", "화", "수", "목", "금", "토", "일")
+    val daysOfWeek = DayOfWeek.entries.map { it.label }
     val (selectedDays, setSelectedDays) = remember { mutableStateOf(setOf<String>()) }
 
     // 날짜 상태
