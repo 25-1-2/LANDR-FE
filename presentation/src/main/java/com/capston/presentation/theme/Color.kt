@@ -25,5 +25,5 @@ val MainBlue = Color(0xFF007AFF)
 val materialGray = Color(0xFF5F6368)
 val backgroundGray = Color(0xFFF7F7F7)
 val dividerGray = Color(0xFFCCCCCC)
-val textGray = Color(0xFF7A7A7A
-)
+val textGray = Color(0xFF7A7A7A)
+val chipGray = Color(0xFFEDEDED)
