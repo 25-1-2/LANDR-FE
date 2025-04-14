@@ -1,3 +1,7 @@
+import com.android.build.gradle.internal.cxx.configure.gradleLocalProperties
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -5,6 +9,7 @@ plugins {
     id("kotlin-kapt")
     alias(libs.plugins.hilt)
     alias(libs.plugins.kotlin.serialization)
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -19,6 +24,17 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // local.properties 값 로드
+        val localProperties = Properties().apply {
+            load(rootProject.file("local.properties").inputStream())
+        }
+
+        // BASE_URL 값이 존재하는지 확인 후 설정
+        val baseUrl = localProperties.getProperty("BASE_URL") ?: throw GradleException("🚨 BASE_URL 값이 local.properties에 없습니다!")
+
+        // 올바른 buildConfigField 적용 (따옴표 추가)
+        buildConfigField("String", "BASE_URL", baseUrl)
     }
 
     buildTypes {
@@ -39,6 +55,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -95,6 +112,7 @@ dependencies {
     // retrofit
     implementation(libs.retrofit)
     implementation(libs.converter.gson)
+    implementation(libs.rxjava.adapter)
 
     // gson
     implementation(libs.gson)
@@ -126,4 +144,13 @@ dependencies {
     // bottom navigation
     implementation(libs.androidx.material)
     implementation(libs.navigation.compose)
+
+    // firebase
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.analytics)
+    implementation(libs.firebase.auth.ktx)
+    implementation(libs.androidx.credentials)
+    implementation(libs.androidx.credentials.play.services.auth)
+    implementation(libs.identity.googleid)
+    implementation(libs.gms.play.services.auth)
 }

@@ -1,8 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- 로그인 관련 -->
+    <string name="google_client_id">441389992846-sqijfp1cvh0i94b0ubuk8vut8n0tn5eh.apps.googleusercontent.com</string>
+
+    <!-- 홈 관련 -->
     <string name="home">홈</string>
     <string name="calender">캘린더</string>
     <string name="search">검색</string>
     <string name="lecture_list">강의목록</string>
     <string name="profile">프로필</string>
+
+    <string name="home_status">나의 학습 현황</string>
+    <string name="home_edit">편집</string>
+
+    <!-- 캘린더 관련 -->
+    <string name="calender_mon">MON</string>
+    <string name="calender_tue">TUE</string>
+    <string name="calender_wed">WED</string>
+    <string name="calender_thu">THU</string>
+    <string name="calender_fri">FRI</string>
+    <string name="calender_sat">SAT</string>
+    <string name="calender_sun">SUN</string>
 </resources>

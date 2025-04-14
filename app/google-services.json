@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "441389992846",
+    "project_id": "landr-42e75",
+    "storage_bucket": "landr-42e75.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:441389992846:android:981ff961926f1f341672df",
+        "android_client_info": {
+          "package_name": "com.example.capston"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "441389992846-d26jjsoijv5cko7mk8ie69ca6hhcn2j1.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.capston",
+            "certificate_hash": "8464c9ce9720eaddb53d128a2638d41bc7e319ee"
+          }
+        },
+        {
+          "client_id": "441389992846-sqijfp1cvh0i94b0ubuk8vut8n0tn5eh.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCW0gN7glPsPtAFoMD2fB-TCmN80EyWymM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "441389992846-sqijfp1cvh0i94b0ubuk8vut8n0tn5eh.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

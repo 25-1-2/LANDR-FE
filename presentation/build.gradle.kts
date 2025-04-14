@@ -51,6 +51,12 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation(libs.hilt)
+    implementation(libs.firebase.auth.ktx)
+    implementation(libs.gms.play.services.auth)
+    implementation(libs.identity.googleid)
+    implementation(libs.androidx.appcompat)
+    implementation(libs.material)
+    implementation(libs.androidx.activity)
     kapt(libs.hilt.compiler)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
@@ -63,5 +69,9 @@ dependencies {
     // bottom navigation
     implementation(libs.androidx.material)
     implementation(libs.navigation.compose)
+
+    // bottom 시트
+    implementation(libs.androidx.compose.material3)
+
 
 }
