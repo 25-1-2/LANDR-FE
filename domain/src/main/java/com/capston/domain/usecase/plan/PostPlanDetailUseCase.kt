@@ -2,16 +2,18 @@ package com.capston.domain.usecase.plan
 
 import com.capston.domain.repository.PlanRepository
 import com.capston.domain.request.PatchPlanDto
+import com.capston.domain.request.PostPlanDto
 import com.capston.domain.response.plan.LectureAliasResponse
+import com.capston.domain.response.plan.PostPlanResponse
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 
-class PatchPlanNameUseCase @Inject constructor(
+class PostPlanDetailUseCase @Inject constructor(
     private val repository: PlanRepository
 ) {
-    operator fun invoke(planId: Int, patchPlanDto: PatchPlanDto): Flow<LectureAliasResponse> = flow {
-        val response = repository.patchPlanName(planId, patchPlanDto)
-        emit(response)  // JSON 변환 없이 문자열 그대로 emit
+    operator fun invoke(postPlanDto: PostPlanDto): Flow<PostPlanResponse> = flow {
+        val response = repository.postPlanDetail(postPlanDto)
+        emit(response)
     }
 }

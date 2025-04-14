@@ -4,8 +4,11 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.capston.domain.request.PatchPlanDto
+import com.capston.domain.request.PostPlanDto
 import com.capston.domain.response.plan.LectureAliasResponse
+import com.capston.domain.response.plan.PostPlanResponse
 import com.capston.domain.usecase.plan.PatchPlanNameUseCase
+import com.capston.domain.usecase.plan.PostPlanDetailUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -16,10 +19,27 @@ import javax.inject.Inject
 
 @HiltViewModel
 class PlanViewModel @Inject constructor(
+    private val postPlanDetailUseCase: PostPlanDetailUseCase,
     private val patchPlanNameUseCase: PatchPlanNameUseCase
 ) : ViewModel() {
+    private val _postPlanDetail = MutableStateFlow(PostPlanResponse())  // 기본값 ""
+    val postPlanDetail: StateFlow<PostPlanResponse> = _postPlanDetail.asStateFlow()
+
     private val _patchPlanName = MutableStateFlow(LectureAliasResponse())  // 기본값 ""
     val patchPlanName: StateFlow<LectureAliasResponse> = _patchPlanName.asStateFlow()
+
+    fun postPlanDetail(postPlanDto: PostPlanDto) {
+        viewModelScope.launch {
+            postPlanDetailUseCase(postPlanDto)
+                .catch { e ->
+                    Log.e("PlanViewModel", "postPlanDetail 에러: ${e.message}")
+                }
+                .collect { response ->  // 값 저장
+                    _postPlanDetail.value = response // 공백 제거 후 저장
+                    Log.d("PlanViewModel", "postPlanDetail 업데이트됨: $response")
+                }
+        }
+    }
 
     fun patchPlanName(planId: Int, patchPlanDto: PatchPlanDto) {
         viewModelScope.launch {

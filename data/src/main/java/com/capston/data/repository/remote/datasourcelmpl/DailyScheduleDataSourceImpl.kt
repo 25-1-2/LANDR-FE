@@ -9,7 +9,7 @@ import com.capston.domain.datasource.DailyScheduleDataSource
 import com.capston.domain.response.BaseResponse
 import com.capston.domain.response.BaseResult
 import com.capston.domain.response.daily_schedule.DailyScheduleResponse
-import com.capston.domain.response.enum_class.Day
+import com.capston.domain.response.enum_class.DayOfWeek
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
@@ -53,7 +53,7 @@ class DailyScheduleDataSourceImpl @Inject constructor(
             LocalDate.now() // 날짜 파싱 실패 시 오늘 날짜 사용
         }
 
-        val dayOfWeek = Day.MON
+        val dayOfWeek = DayOfWeek.MON
 
         return DailyScheduleResponse(
             date = dateString,

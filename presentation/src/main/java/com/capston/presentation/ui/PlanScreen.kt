@@ -1,23 +1,38 @@
 package com.capston.presentation.ui
 
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
+import com.capston.domain.model.Lecture
+import com.capston.domain.request.PostPlanDto
+import com.capston.domain.response.enum_class.DayOfWeek
+import com.capston.presentation.R
 import com.capston.presentation.theme.CapstonTheme
 import com.capston.presentation.theme.MainPurple
+import com.capston.presentation.theme.backgroundGray
+import com.capston.presentation.theme.chipGray
+import com.capston.presentation.theme.dividerGray
+import com.capston.presentation.theme.materialGray
+import com.capston.presentation.theme.textGray
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -25,7 +40,7 @@ import java.util.Locale
 
 fun formatDate(millis: Long?): String {
     return if (millis != null) {
-        val sdf = SimpleDateFormat("yyyy.MM.dd", Locale.getDefault())
+        val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
         sdf.format(Date(millis))
     } else {
         ""
@@ -33,34 +48,141 @@ fun formatDate(millis: Long?): String {
 }
 
 @Composable
-fun PlanScreen(lectureTitle: String) {
+fun PlanScreen(lecture: Lecture) {
+    val planType = remember { mutableStateOf("") }
+    val startLessonId = remember { mutableIntStateOf(0) }
+    val endLessonId = remember { mutableIntStateOf(0) }
+    val studyDayOfWeeks = remember { mutableStateOf(emptyList<String>()) }
+    val dailyTime = remember { mutableIntStateOf(0) }
+    val startDate = remember { mutableStateOf("시작일 선택") }
+    val endDate = remember { mutableStateOf("종료일 선택") }
+    val playbackSpeed = remember { mutableDoubleStateOf(1.0) }
+
     val pagerState = rememberPagerState(pageCount = { 2 }) // 0: 기간, 1: 시간
     val coroutineScope = rememberCoroutineScope()
 
+    val postPlanDto = PostPlanDto(
+        lectureId = lecture.id,
+    )
+
+    Scaffold(
+        topBar = { PlanTopBar() }
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding) // Scaffold 패딩 추가
+                .verticalScroll(rememberScrollState())
+        ) {
+            HeaderSection(
+                lecture = lecture,
+                pagerState = pagerState,
+                coroutineScope = coroutineScope
+            )
+            HorizontalDivider(color = dividerGray)
+
+            HorizontalPager(
+                state = pagerState,
+                userScrollEnabled = false,
+            ) { page ->
+                when (page) {
+                    0 -> PeriodPlanPage(
+                        startLessonId = startLessonId,
+                        endLessonId = endLessonId,
+                        studyDayOfWeeks = studyDayOfWeeks,
+                        startDate = startDate,
+                        endDate = endDate,
+                        playbackSpeed = playbackSpeed
+                    )
+                    1 -> TimePlanPage(
+                        startLessonId = startLessonId,
+                        endLessonId = endLessonId,
+                        studyDayOfWeeks = studyDayOfWeeks,
+                        dailyTime = dailyTime,
+                        playbackSpeed = playbackSpeed
+                    )
+                }
+            }
+
+            Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+                Button(
+                    onClick = {
+                        val dto = PostPlanDto(
+                            lectureId = lecture.id,
+                            planType = if (pagerState.currentPage == 0) "PERIOD" else "TIME",
+                            startLessonId = startLessonId.value,
+                            endLessonId = endLessonId.value,
+                            studyDayOfWeeks = studyDayOfWeeks.value,
+                            dailyTime = 120, // 시간 방식일 때 설정된 시간 (예시 값)
+                            startDate = startDate.value,
+                            endDate = endDate.value,
+                            playbackSpeed = playbackSpeed.value
+                        )
+
+                        // TODO: 서버에 dto 전달하는 API 호출 작성
+                        // ex) viewModel.postPlan(dto)
+                    },
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("완료")
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PlanTopBar() {
+    Column {
+        TopAppBar(
+            title = {},
+            navigationIcon = {
+                IconButton(onClick = {
+                    // 뒤로가기 or 닫기 로직
+                }) {
+                    Image(
+                        painter = painterResource(id = R.drawable.icon_arrow_back), // 너가 추가한 xml 이름
+                        contentDescription = "뒤로 가기")
+                }
+            }
+        )
+        HorizontalDivider(thickness = 1.dp, color = Color.LightGray)
+    }
+}
+
+@Composable
+fun HeaderSection(
+    lecture: Lecture,
+    pagerState: PagerState,
+    coroutineScope: CoroutineScope
+) {
     Column(
         modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
+            .background(backgroundGray)
             .padding(16.dp)
+
     ) {
-        Text("메가스터디", color = MainPurple)
-
+        // 인강 플랫폼
+        Text(lecture.platform, color = MainPurple)
+        // 제목
         Text(
-            text = "2026 현우진의 수분감 - 수학 (공통)",
-            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+            text = lecture.title,
+            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+            modifier = Modifier.padding(bottom = 4.dp)
         )
-        Spacer(modifier = Modifier.height(4.dp))
+        // 세부정보
         Text(
-            text = "현우진 [고3·N수] 수능 (문제풀이) · 50강",
+            text = "${lecture.teacher}· ${lecture.tag} · ${lecture.totalLessons}강",
             style = MaterialTheme.typography.bodyMedium,
-            color = Color.Gray
+            color = textGray,
+            modifier = Modifier.padding(bottom = 16.dp)
         )
-
-        Spacer(modifier = Modifier.height(16.dp))
 
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             val isPeriodSelected = pagerState.currentPage == 0
             val isTimeSelected = pagerState.currentPage == 1
@@ -73,10 +195,11 @@ fun PlanScreen(lectureTitle: String) {
                 },
                 shape = RoundedCornerShape(8.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isPeriodSelected) MaterialTheme.colorScheme.primary else Color.White,
-                    contentColor = if (isPeriodSelected) Color.White else MaterialTheme.colorScheme.primary
+                    containerColor = if (isPeriodSelected) materialGray else Color.White,
+                    contentColor = if (isPeriodSelected) Color.White else materialGray
                 ),
-                border = if (isPeriodSelected) null else ButtonDefaults.outlinedButtonBorder
+                border = if (isPeriodSelected) null else ButtonDefaults.outlinedButtonBorder,
+                modifier = Modifier.weight(1f),
             ) {
                 Text("기간으로 계획하기")
             }
@@ -89,345 +212,131 @@ fun PlanScreen(lectureTitle: String) {
                 },
                 shape = RoundedCornerShape(8.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isTimeSelected) MaterialTheme.colorScheme.primary else Color.White,
-                    contentColor = if (isTimeSelected) Color.White else MaterialTheme.colorScheme.primary
+                    containerColor = if (isTimeSelected) materialGray else Color.White,
+                    contentColor = if (isTimeSelected) Color.White else textGray
                 ),
-                border = if (isTimeSelected) null else ButtonDefaults.outlinedButtonBorder
+                border = if (isTimeSelected) null else ButtonDefaults.outlinedButtonBorder,
+                modifier = Modifier.weight(1f),
             ) {
                 Text("시간으로 계획하기")
             }
         }
+    }
+}
 
 
-        Spacer(modifier = Modifier.height(16.dp))
+@Composable
+fun PeriodPlanPage(
+    startLessonId: MutableState<Int>,
+    endLessonId: MutableState<Int>,
+    studyDayOfWeeks: MutableState<List<String>>,
+    startDate: MutableState<String>,
+    endDate: MutableState<String>,
+    playbackSpeed: MutableState<Double>
+) {
+    Column(
+        modifier = Modifier.padding(16.dp)
+    ) {
+        DurationSection(startDate, endDate)
+        StudyDaysOfWeekSection(studyDayOfWeeks)
+        StartEndLectureSection(startLessonId, endLessonId)
+        PlaybackSpeedSection(playbackSpeed)
+    }
+}
 
-        HorizontalPager(
-            state = pagerState,
-            userScrollEnabled = false
-        ) { page ->
-            when (page) {
-                0 -> PeriodPlanPage() // 기간으로 계획하기 화면
-                1 -> TimePlanPage()   // 시간으로 계획하기 화면
-            }
-        }
+
+
+@Composable
+fun TimePlanPage(
+    startLessonId: MutableState<Int>,
+    endLessonId: MutableState<Int>,
+    studyDayOfWeeks: MutableState<List<String>>,
+    dailyTime: MutableState<Int>,
+    playbackSpeed: MutableState<Double>
+) {
+    Column {
+        StudyTimeSection(dailyTime)
+        StudyDaysOfWeekSection(studyDayOfWeeks)
+        StartEndLectureSection(startLessonId, endLessonId)
+        PlaybackSpeedSection(playbackSpeed)
     }
 }
 
 @Composable
-fun PeriodPlanPage() {
-    // 요일 선택 상태 예시
-    val daysOfWeek = listOf("월", "화", "수", "목", "금", "토", "일")
-    val (selectedDays, setSelectedDays) = remember { mutableStateOf(setOf<String>()) }
-
-    // 날짜 상태
-    var startDate by remember { mutableStateOf("시작일 선택") }
-    var endDate by remember { mutableStateOf("종료일 선택") }
-
+fun DurationSection(
+    startDate: MutableState<String>,
+    endDate: MutableState<String>
+) {
     // 모달 제어
     var showStartDatePicker by remember { mutableStateOf(false) }
     var showEndDatePicker by remember { mutableStateOf(false) }
 
-    Column {
-        // 날짜 선택 UI
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
+    // 날짜 선택 UI
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Column(
+            modifier = Modifier.weight(1f)
         ) {
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
-                Text(
-                    text = "학습 시작일",
-                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                OutlinedTextField(
-                    value = startDate,
-                    onValueChange = { },
-//                    label = { Text("DOB") },
-                    readOnly = true,
-                    trailingIcon = {
-                        IconButton(onClick = { showStartDatePicker = !showStartDatePicker }) {
-                            Icon(
-                                imageVector = Icons.Default.DateRange,
-                                contentDescription = "Select date"
-                            )
-                        }
-                    }
-                )
-            }
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = "목표 완강일",
-                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                OutlinedTextField(
-                    value = endDate,
-                    onValueChange = { },
-//                    label = { Text("DOB") },
-                    readOnly = true,
-                    trailingIcon = {
-                        IconButton(onClick = { showEndDatePicker = !showEndDatePicker }) {
-                            Icon(
-                                imageVector = Icons.Default.DateRange,
-                                contentDescription = "Select date"
-                            )
-                        }
-                    }
-                )
-            }
-        }
-
-        if (showStartDatePicker) {
-            DatePickerModal(
-                onDateSelected = { millis ->
-                    startDate = formatDate(millis)
-                },
-                onDismiss = { showStartDatePicker = false }
-            )
-        }
-
-        if (showEndDatePicker) {
-            DatePickerModal(
-                onDateSelected = { millis ->
-                    endDate = formatDate(millis)
-                },
-                onDismiss = { showEndDatePicker = false }
-            )
-        }
-
-        // 공부 일정
-        Text(
-            text = "공부 일정",
-            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.padding(vertical = 4.dp)
-        ) {
-            daysOfWeek.forEach { day ->
-                val isSelected = selectedDays.contains(day)
-                FilterChip(
-                    selected = isSelected,
-                    onClick = {
-                        setSelectedDays(
-                            if (isSelected) selectedDays - day else selectedDays + day
-                        )
-                    },
-                    label = { Text(day) },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = MaterialTheme.colorScheme.primary,
-                        selectedLabelColor = Color.White,
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                        labelColor = Color.Black
-                    ),
-                    modifier = Modifier.weight(1f)
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // 시작 강의 / 마지막 강의
-        Column {
             Text(
-                text = "시작 강의",
-                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
+                text = "학습 시작일",
+                modifier = Modifier.padding(bottom = 4.dp)
             )
-            Spacer(modifier = Modifier.height(4.dp))
+
             OutlinedTextField(
-                value = "강의 선택",
+                value = startDate.value,
                 onValueChange = { },
-//                    label = { Text("DOB") },
                 readOnly = true,
                 trailingIcon = {
                     IconButton(onClick = { showStartDatePicker = !showStartDatePicker }) {
-                        Icon(
-                            imageVector = Icons.Default.KeyboardArrowDown,
-                            contentDescription = "Select date"
+                        Image(
+                            painter = painterResource(id = R.drawable.icon_calendar), // 너가 추가한 xml 이름
+                            contentDescription = "시작일 선택"
                         )
                     }
-                },
-                modifier = Modifier.fillMaxSize()
-            )
-        }
-        Column {
-            Text(
-                text = "마지막 강의",
-                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            OutlinedTextField(
-                value = "강의 선택",
-                onValueChange = { },
-//                    label = { Text("DOB") },
-                readOnly = true,
-                trailingIcon = {
-                    IconButton(onClick = { showStartDatePicker = !showStartDatePicker }) {
-                        Icon(
-                            imageVector = Icons.Default.KeyboardArrowDown,
-                            contentDescription = "Select date"
-                        )
-                    }
-                },
-                modifier = Modifier.fillMaxSize()
+                }
             )
         }
 
-        // 배속 선택
-        PlaybackSpeedSlider()
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = "목표 완강일",
+                modifier = Modifier.padding(bottom = 4.dp)
+            )
+            OutlinedTextField(
+                value = endDate.value,
+                onValueChange = { },
+                readOnly = true,
+                trailingIcon = {
+                    IconButton(onClick = { showEndDatePicker = !showEndDatePicker }) {
+                        Image(
+                            painter = painterResource(id = R.drawable.icon_calendar), // 너가 추가한 xml 이름
+                            contentDescription = "종료일 선택")
+                    }
+                }
+            )
+        }
     }
-}
 
-@Composable
-fun TimePlanPage() {
-    // 요일 선택 상태 예시
-    val daysOfWeek = listOf("월", "화", "수", "목", "금", "토", "일")
-    val (selectedDays, setSelectedDays) = remember { mutableStateOf(setOf<String>()) }
-
-    // 날짜 상태
-    var startDate by remember { mutableStateOf("시작일 선택") }
-    var endDate by remember { mutableStateOf("종료일 선택") }
-
-    // 모달 제어
-    var showStartDatePicker by remember { mutableStateOf(false) }
-    var showEndDatePicker by remember { mutableStateOf(false) }
-
-    Column {
-        // 날짜 선택 UI
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
-                Text(
-                    text = "일일 학습 시간",
-                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                OutlinedTextField(
-                    value = "학습 시간 설정",
-                    onValueChange = { },
-//                    label = { Text("DOB") },
-                    readOnly = true,
-                    trailingIcon = {
-                        IconButton(onClick = { showStartDatePicker = !showStartDatePicker }) {
-                            Icon(
-                                imageVector = Icons.Default.KeyboardArrowDown,
-                                contentDescription = "Select date"
-                            )
-                        }
-                    },
-                    modifier = Modifier.fillMaxSize()
-
-                )
-            }
-        }
-
-        if (showStartDatePicker) {
-            DatePickerModal(
-                onDateSelected = { millis ->
-                    startDate = formatDate(millis)
-                },
-                onDismiss = { showStartDatePicker = false }
-            )
-        }
-
-        if (showEndDatePicker) {
-            DatePickerModal(
-                onDateSelected = { millis ->
-                    endDate = formatDate(millis)
-                },
-                onDismiss = { showEndDatePicker = false }
-            )
-        }
-
-        // 공부 일정
-        Text(
-            text = "공부 일정",
-            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
+    if (showStartDatePicker) {
+        DatePickerModal(
+            onDateSelected = { millis ->
+                startDate.value = formatDate(millis)
+            },
+            onDismiss = { showStartDatePicker = false }
         )
-        Spacer(modifier = Modifier.height(8.dp))
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.padding(vertical = 4.dp)
-        ) {
-            daysOfWeek.forEach { day ->
-                val isSelected = selectedDays.contains(day)
-                FilterChip(
-                    selected = isSelected,
-                    onClick = {
-                        setSelectedDays(
-                            if (isSelected) selectedDays - day else selectedDays + day
-                        )
-                    },
-                    label = { Text(day) },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = MaterialTheme.colorScheme.primary,
-                        selectedLabelColor = Color.White,
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                        labelColor = Color.Black
-                    ),
-                    modifier = Modifier.weight(1f)
-                )
-            }
-        }
+    }
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // 시작 강의 / 마지막 강의
-        Column {
-            Text(
-                text = "시작 강의",
-                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            OutlinedTextField(
-                value = "강의 선택",
-                onValueChange = { },
-//                    label = { Text("DOB") },
-                readOnly = true,
-                trailingIcon = {
-                    IconButton(onClick = { showStartDatePicker = !showStartDatePicker }) {
-                        Icon(
-                            imageVector = Icons.Default.KeyboardArrowDown,
-                            contentDescription = "Select date"
-                        )
-                    }
-                },
-                modifier = Modifier.fillMaxSize()
-            )
-        }
-        Column {
-            Text(
-                text = "마지막 강의",
-                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            OutlinedTextField(
-                value = "강의 선택",
-                onValueChange = { },
-//                    label = { Text("DOB") },
-                readOnly = true,
-                trailingIcon = {
-                    IconButton(onClick = { showStartDatePicker = !showStartDatePicker }) {
-                        Icon(
-                            imageVector = Icons.Default.KeyboardArrowDown,
-                            contentDescription = "Select date"
-                        )
-                    }
-                },
-                modifier = Modifier.fillMaxSize()
-            )
-        }
-
-        // 배속 선택
-        PlaybackSpeedSlider()
+    if (showEndDatePicker) {
+        DatePickerModal(
+            onDateSelected = { millis ->
+                endDate.value = formatDate(millis)
+            },
+            onDismiss = { showEndDatePicker = false }
+        )
     }
 }
 
@@ -460,27 +369,166 @@ fun DatePickerModal(
 }
 
 @Composable
-fun PlaybackSpeedSlider() {
+fun StudyTimeSection(dailyTime: MutableState<Int>) {
+    // 하루에 공부할 시간
+    var input by remember { mutableStateOf(dailyTime.value.toString()) }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Column(
+            modifier = Modifier.weight(1f)
+        ) {
+            Text(
+                text = "일일 학습 시간 (분)",
+                modifier = Modifier.padding(bottom = 4.dp)
+            )
+
+            OutlinedTextField(
+                value = input,
+                onValueChange = { newValue ->
+                    // 숫자만 허용
+                    if (newValue.all { it.isDigit() }) {
+                        input = newValue
+                        dailyTime.value = newValue.toIntOrNull() ?: 0
+                    }
+                },
+                placeholder = { Text("예: 120") },
+                keyboardOptions = KeyboardOptions.Default.copy(
+                    keyboardType = KeyboardType.Number
+                ),
+                trailingIcon = {
+                    IconButton(onClick = { /* 드롭다운 등 동작 */ }) {
+                        Icon(
+                            imageVector = Icons.Default.KeyboardArrowDown,
+                            contentDescription = "Select value"
+                        )
+                    }
+                },
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+    }
+}
+
+@Composable
+fun StudyDaysOfWeekSection(studyDayOfWeeks: MutableState<List<String>>) {
+    val selectedDays = remember { mutableStateOf(studyDayOfWeeks.value.toSet()) }
+
+    Column(
+        modifier = Modifier.padding(bottom = 16.dp)
+    ) {
+        Text(
+            text = "공부 일정",
+            modifier = Modifier.padding(bottom = 4.dp)
+        )
+
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            DayOfWeek.entries.forEach { day ->
+                val isSelected = selectedDays.value.contains(day.name)
+                FilterChip(
+                    selected = isSelected,
+                    onClick = {
+                        selectedDays.value = if (isSelected)
+                            selectedDays.value - day.name
+                        else
+                            selectedDays.value + day.name
+
+                        // 외부 상태 업데이트 (enum.name 기준으로 저장)
+                        studyDayOfWeeks.value = selectedDays.value.toList()
+                    },
+                    label = { Text(day.label) }, // 표시는 label ("월", "화", ...)
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = MaterialTheme.colorScheme.primary,
+                        selectedLabelColor = Color.White,
+                        containerColor = chipGray,
+                        labelColor = Color.Black
+                    )
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun StartEndLectureSection(
+    startLessonId: MutableState<Int>,
+    endLessonId: MutableState<Int>
+) {
+    // 시작 강의 / 마지막 강의
+    Column(
+        modifier = Modifier.padding(bottom = 16.dp)
+    ) {
+        Text(
+            text = "시작 강의",
+//            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+        OutlinedTextField(
+            value = "강의 선택",
+            onValueChange = { },
+            readOnly = true,
+            trailingIcon = {
+                IconButton(onClick = { /* 강의 목록 드롭다운 */ }) {
+                    Image(
+                        painter = painterResource(id = R.drawable.icon_nav_arrow_down),
+                        contentDescription = "시작 강의 선택"
+                    )
+                }
+            },
+            modifier = Modifier.fillMaxSize()
+        )
+    }
+    Column(
+        modifier = Modifier.padding(bottom = 16.dp)
+    ) {
+        Text(
+            text = "마지막 강의",
+//            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+        OutlinedTextField(
+            value = "강의 선택",
+            onValueChange = { },
+            readOnly = true,
+            trailingIcon = {
+                IconButton(onClick = { /* 강의 목록 드롭다운 */ }) {
+                    Image(
+                        painter = painterResource(id = R.drawable.icon_nav_arrow_down),
+                        contentDescription = "마지막 강의 선택"
+                    )
+                }
+            },
+            modifier = Modifier.fillMaxSize()
+        )
+    }
+}
+
+@Composable
+fun PlaybackSpeedSection(playbackSpeed: MutableState<Double>) {
     var speed by remember { mutableFloatStateOf(1.0f) } // 기본값 1.0배속
 
     Column {
         // "배속" + 현재 배속 값
         Row(
-            modifier = Modifier.fillMaxWidth(),
-//            horizontalArrangement = Arrangement.SpaceBetween
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             Text(
                 text = "배속",
-                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
             )
             Text(
                 text = String.format("%.1fx", speed),
                 color = MainPurple,
-                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
             )
         }
-
-        Spacer(modifier = Modifier.height(8.dp))
 
         // 슬라이더 위 라벨 (1.0x ~ 2.0x)
         Row(
@@ -495,17 +543,15 @@ fun PlaybackSpeedSlider() {
             value = speed,
             onValueChange = { speed = it },
             valueRange = 1.0f..2.0f,
-            steps = 10 // 소수점 단위로 조절 (0.1 단위로 1.0 ~ 2.0)
+            steps = 10, // 소수점 단위로 조절 (0.1 단위로 1.0 ~ 2.0)
         )
     }
 }
-
-
 
 @Preview(showBackground = true)
 @Composable
 fun PlanScreenPreview() {
     CapstonTheme {
-        PlanScreen("")
+        PlanScreen(Lecture())
     }
 }

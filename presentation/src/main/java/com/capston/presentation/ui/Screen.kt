@@ -18,7 +18,7 @@ sealed class Screen(
     data object Calender: Screen(
         title = "calender",
         selectedIcon = R.drawable.activity_main_calener_iv_on,
-        unselectedIcon = R.drawable.activity_main_calender_iv,
+        unselectedIcon = R.drawable.activity_main_calendar_iv,
     )
 
     data object Search: Screen(
