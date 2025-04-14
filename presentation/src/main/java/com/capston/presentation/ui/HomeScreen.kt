@@ -32,6 +32,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Divider
 import androidx.compose.material.OutlinedTextField
@@ -68,6 +69,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -214,11 +216,30 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
                     verticalArrangement = Arrangement.Center, // 세로 중앙 정렬
                     horizontalAlignment = Alignment.CenterHorizontally // 가로 중앙 정렬
                 ) {
+                    Image(
+                        painter = painterResource(R.drawable.home_screen_empty),
+                        contentDescription = "과목명",
+                        modifier = Modifier.size(100.dp)
+                    )
                     Text(
-                        text = "오늘 강의가 없어요 \uD83D\uDE0A\n푹 쉬고 내일 다시 달려보아요 \uD83C\uDFC3",
+                        text = "오늘 강의가 없어요",
+                        textAlign = TextAlign.Center,
+                        fontSize = 16.sp,
+                        color = LightGray60
+                    )
+                    Spacer(Modifier.height(10.dp))
+
+                    Text(
+                        text = "계획 생성하러 가기",
                         textAlign = TextAlign.Center,
                         fontSize = 14.sp,
-                        color = LightGray60
+                        color = MainPurple,
+                        textDecoration = TextDecoration.Underline,
+//                        modifier = Modifier
+//                            .clickable {
+//                                navController.navigate("plan/$encodedTitle")
+//                            }
+//                            .padding(8.dp) // 클릭 영역 넓히기 (선택사항)
                     )
                 }
             }

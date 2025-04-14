@@ -4,10 +4,11 @@ import android.annotation.SuppressLint
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,10 +19,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.Card
 import androidx.compose.material.Divider
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -43,16 +47,20 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Color.Companion.LightGray
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.capston.presentation.theme.LightGray3
-import com.capston.presentation.theme.LightGray4
 import com.capston.presentation.theme.LightGray40
 import com.capston.presentation.theme.LightGray60
 import com.capston.presentation.theme.MainPurple
@@ -66,11 +74,16 @@ import java.time.format.DateTimeFormatter
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun CalenderScreen(homeViewModel: HomeViewModel, dailyScheduleViewModel: DailyScheduleViewModel) {
-    var calendarHeight by remember { mutableStateOf(400) } // 달력의 초기 높이
-    var lessonListHeight by remember { mutableStateOf(250) } // 할일 목록의 초기 높이
-    var selectedDate by remember { mutableStateOf(LocalDate.now().format(DateTimeFormatter.ISO_DATE)) } // 선택한 날짜 (String)
+    var isCollapsed by remember { mutableStateOf(false) }
+    val calendarHeight by animateDpAsState(targetValue = if (isCollapsed) 0.dp else 300.dp)
 
-    Log.d("selected DAte", selectedDate)
+    var selectedDate by remember {
+        mutableStateOf(
+            LocalDate.now().format(DateTimeFormatter.ISO_DATE)
+        )
+    } // 선택한 날짜 (String)
+
+    Log.d("selected Date", selectedDate)
     // 선택한 날짜가 변경될 때 ViewModel을 통해 일정 가져오기
     LaunchedEffect(selectedDate) {
         dailyScheduleViewModel.getDailySchedule(selectedDate)
@@ -79,46 +92,91 @@ fun CalenderScreen(homeViewModel: HomeViewModel, dailyScheduleViewModel: DailySc
     val dailyState by dailyScheduleViewModel.getDailySchedule.collectAsState()
     val todayLessonList = dailyState.lessonSchedules // 선택한 날짜의 일정
 
+    val nestedScrollConnection = remember {
+        object : NestedScrollConnection {
+            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                // 위로 스크롤 (접기)
+                if (available.y < -10 && !isCollapsed) {
+                    isCollapsed = true
+                    return Offset.Zero
+                }
+                // 아래로 스크롤 (펼치기)
+                if (available.y > 10 && isCollapsed) {
+                    isCollapsed = false
+                    return Offset.Zero
+                }
+                return Offset.Zero
+            }
+        }
+    }
+
     Scaffold(
         modifier = Modifier.fillMaxSize()
     ) {
         Column(
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier
+                .fillMaxSize()
+                .nestedScroll(nestedScrollConnection)
+
         ) {
             Calendar(calendarHeight, selectedDate, onDateSelected = { date ->
                 selectedDate = date // 선택한 날짜 업데이트
-            }) { delta ->
-                lessonListHeight = (lessonListHeight + delta).coerceIn(100F, 600F).toInt()
-                calendarHeight = (calendarHeight - delta).coerceIn(200F, 600F).toInt()
-            }
+            })
 
-            // 선택한 날짜의 일정 표시
             Box(modifier = Modifier.weight(1f)) {
                 if (todayLessonList != null) {
                     LessonList(homeViewModel, 330, todayLessonList)
                 } else {
                     Column(
                         modifier = Modifier
-                            .fillMaxSize().padding(bottom = 50.dp), // 화면 전체를 차지하도록 설정
-                        verticalArrangement = Arrangement.Center, // 세로 중앙 정렬
-                        horizontalAlignment = Alignment.CenterHorizontally // 가로 중앙 정렬
+                            .fillMaxSize()
+                            .padding(bottom = 50.dp),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
                             text = "선택한 날짜에 계획된 강의가 없어요 \uD83D\uDE0A\n",
                             textAlign = TextAlign.Center,
                             fontSize = 14.sp,
                             color = LightGray60
-                        )
+//                        )
+                        /* 테스트용 더미 데이터
+                        LazyColumn {
+                            itemsIndexed(
+                                listOf(100, 200, 300) // 1. 아이템 3개 생성
+                            ) { index, item ->
+                                KotlinWorldCard(order = item)
+                            }
+                        }
+                         */
                     }
                 }
             }
         }
     }
+
 }
+
+/* 테스트용 더미데이터
+@Composable
+fun KotlinWorldCard(order: Int) {
+    Card(
+        Modifier
+            .padding(12.dp)
+            .border(width = 4.dp, color = Color.Black)
+            .fillMaxWidth()
+            .height(100.dp)
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Text("Kotlin World ${order}")
+        }
+    }
+}
+*/
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun Calendar(calendarHeight: Int, selectedDate: String, onDateSelected: (String) -> Unit, onDrag: (Float) -> Unit) {
+fun Calendar(calendarHeight: Dp, selectedDate: String, onDateSelected: (String) -> Unit) {
     var currentYear by remember { mutableStateOf(LocalDate.now().year) }
     var currentMonth by remember { mutableStateOf(LocalDate.now().monthValue) }
     var showDatePickerDialog by remember { mutableStateOf(false) } // 다이얼로그 표시 여부
@@ -146,7 +204,6 @@ fun Calendar(calendarHeight: Int, selectedDate: String, onDateSelected: (String)
             selectedDate = selectedDate,
             onDateSelected = onDateSelected, // 선택한 날짜 업데이트
             onMonthChanged = { newYear, newMonth -> updateMonth(newYear, newMonth) },
-            onDrag = onDrag,
             calendarHeight = calendarHeight,
             onDatePickerClick = { showDatePickerDialog = true }
         )
@@ -195,8 +252,7 @@ fun CustomCalendar(
     selectedDate: String,
     onDateSelected: (String) -> Unit,
     onMonthChanged: (Int, Int) -> Unit,
-    onDrag: (Float) -> Unit,
-    calendarHeight: Int,
+    calendarHeight: Dp,
     onDatePickerClick: () -> Unit
 ) {
     val today = LocalDate.now()
@@ -213,12 +269,7 @@ fun CustomCalendar(
     Box(
         modifier = Modifier
             .background(color = LightGray3)
-            .height(calendarHeight.dp)
-            .pointerInput(Unit) {
-                detectDragGestures { _, dragAmount ->
-                    onDrag(-dragAmount.y) // 위아래 드래그 시 크기 변화
-                }
-            }
+            .height(calendarHeight)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
