@@ -21,11 +21,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.capston.domain.model.Lecture
 import com.capston.domain.model.MyLecture
 import com.capston.presentation.theme.CapstonTheme
+import com.capston.presentation.theme.MainPurple
 import com.capston.presentation.theme.Typography
 
 @Composable
@@ -45,9 +47,10 @@ fun LectureRoomScreen(onLectureClick: ((MyLecture) -> Unit)?) {
             .padding(16.dp)
     ) {
         Text(
-            text = "🎓 나의 강의실", style = Typography.headlineMedium)
-
-        Spacer(modifier = Modifier.height(12.dp))
+            text = "🎓 나의 강의실",
+            style = Typography.headlineMedium,
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
 
         LazyColumn {
             items(lectures) { lecture ->
@@ -66,17 +69,30 @@ fun LectureItem(lecture: MyLecture, onClick: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() }
-            .padding(vertical = 8.dp)
+            .padding(vertical = 16.dp)
     ) {
-        Text(text = "${lecture.platform} · ${lecture.teacher}", style = Typography.labelMedium, color = Color(0xFF4E6EF2))
+        Text(
+            text = "${lecture.platform} · ${lecture.teacher}",
+            style = Typography.labelMedium,
+            color = MainPurple,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
 
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
-            modifier = Modifier.fillMaxWidth().padding(top = 4.dp)
+            modifier = Modifier.fillMaxWidth()
         ) {
-            Text(text = lecture.lectureTitle, style = Typography.bodyMedium)
-            Text("${lecture.completedLessons}/${lecture.totalLessons}", style = MaterialTheme.typography.labelSmall)
+            Text(
+                text = lecture.lectureTitle,
+                style = Typography.bodyMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = "${lecture.completedLessons}/${lecture.totalLessons}",
+                style = MaterialTheme.typography.labelSmall
+            )
         }
     }
 }
