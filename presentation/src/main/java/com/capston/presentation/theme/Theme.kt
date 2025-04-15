@@ -37,21 +37,11 @@ private val LightColorScheme = lightColorScheme(
 
 @Composable
 fun CapstonTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    darkTheme: Boolean = isSystemInDarkTheme(), // 사용은 계속 가능
+    dynamicColor: Boolean = true, // 사용하지 않음
     content: @Composable () -> Unit
 ) {
-    val colorScheme = when {
-//        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-//            val context = LocalContext.current
-//            dynamicLightColorScheme(context)
-////            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-//        }
-
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
-    }
+    val colorScheme = LightColorScheme // 항상 LightColorScheme 사용
 
     MaterialTheme(
         colorScheme = colorScheme,
