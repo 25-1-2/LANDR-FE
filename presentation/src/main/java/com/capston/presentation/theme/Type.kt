@@ -20,16 +20,46 @@ val Typography = Typography(
     headlineLarge = TextStyle(
         fontFamily = pretendard,
         fontWeight = FontWeight.Bold,
+        fontSize = 26.sp
+    ),
+    headlineMedium = TextStyle(
+        fontFamily = pretendard,
+        fontWeight = FontWeight.SemiBold,
         fontSize = 24.sp
+    ),
+    headlineSmall = TextStyle(
+        fontFamily = pretendard,
+        fontWeight = FontWeight.Medium,
+        fontSize = 22.sp
     ),
     bodyLarge = TextStyle(
         fontFamily = pretendard,
-        fontWeight = FontWeight.SemiBold,
-        fontSize = 14.sp
+        fontWeight = FontWeight.Medium,
+        fontSize = 18.sp
     ),
     bodyMedium = TextStyle(
         fontFamily = pretendard,
+        fontWeight = FontWeight.Medium,
+        fontSize = 16.sp,
+    ),
+    bodySmall = TextStyle(
+        fontFamily = pretendard,
+        fontWeight = FontWeight.Medium,
+        fontSize = 14.sp,
+    ),
+    labelLarge = TextStyle(
+        fontFamily = pretendard,
+        fontWeight = FontWeight.Normal,
+        fontSize = 16.sp,
+    ),
+    labelMedium = TextStyle(
+        fontFamily = pretendard,
         fontWeight = FontWeight.Normal,
         fontSize = 14.sp,
-    )
+    ),
+    labelSmall = TextStyle(
+        fontFamily = pretendard,
+        fontWeight = FontWeight.Normal,
+        fontSize = 12.sp,
+    ),
 )

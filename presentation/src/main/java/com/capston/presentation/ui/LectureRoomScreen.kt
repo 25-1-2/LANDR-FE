@@ -24,17 +24,19 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.capston.domain.model.Lecture
+import com.capston.domain.model.MyLecture
 import com.capston.presentation.theme.CapstonTheme
+import com.capston.presentation.theme.Typography
 
 @Composable
-fun LectureRoomScreen(onLectureClick: ((Lecture) -> Unit)?) {
-    val lectures = listOf(""
-//        Lecture("2026 현우진의 수분감 - 수학Ⅰ (공통)", "메가스터디", "현우진", 14, 50),
-//        Lecture("2026 현우진의 수분감 - 수학Ⅱ (공통)", "메가스터디", "현우진", 14, 50),
-//        Lecture("믿어봐! 문장 읽는 법을 알려줄게", "메가스터디",  "조정식", 14, 50),
-//        Lecture("이디지도 설레는 동아시아사", "메가스터디", "이다지", 14, 50),
-//        Lecture("2026 파노라마 독서 기출 총론", "대성마이맥", "유대종", 50, 50),
-//        Lecture("LIM IT - 생활과 윤리", "대성마이맥", "임정환", 50, 50)
+fun LectureRoomScreen(onLectureClick: ((MyLecture) -> Unit)?) {
+    val lectures = listOf(
+        MyLecture(1, "2026 현우진의 수분감 - 수학Ⅰ (공통)", "메가스터디", "현우진", 14, 50),
+        MyLecture(2, "2026 현우진의 수분감 - 수학Ⅱ (공통)", "메가스터디", "현우진", 14, 50),
+        MyLecture(3, "믿어봐! 문장 읽는 법을 알려줄게", "메가스터디",  "조정식", 14, 50),
+        MyLecture(4, "이디지도 설레는 동아시아사", "메가스터디", "이다지", 14, 50),
+        MyLecture(5, "2026 파노라마 독서 기출 총론", "대성마이맥", "유대종", 50, 50),
+        MyLecture(6, "LIM IT - 생활과 윤리", "대성마이맥", "임정환", 50, 50)
     )
 
     Column(
@@ -42,17 +44,16 @@ fun LectureRoomScreen(onLectureClick: ((Lecture) -> Unit)?) {
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        Text("🎓 나의 강의실", style = MaterialTheme.typography.headlineSmall)
+        Text(
+            text = "🎓 나의 강의실", style = Typography.headlineMedium)
 
         Spacer(modifier = Modifier.height(12.dp))
 
         LazyColumn {
             items(lectures) { lecture ->
-//                LectureItem(lecture = lecture, onClick = {
-//                    if (onLectureClick != null) {
-//                        onLectureClick(lecture)
-//                    }
-//                })
+                LectureItem(lecture = lecture, onClick = {
+                    if (onLectureClick != null) { onLectureClick(lecture) }
+                })
                 HorizontalDivider()
             }
         }
@@ -60,22 +61,22 @@ fun LectureRoomScreen(onLectureClick: ((Lecture) -> Unit)?) {
 }
 
 @Composable
-fun LectureItem(lecture: Lecture, onClick: () -> Unit) {
+fun LectureItem(lecture: MyLecture, onClick: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() }
             .padding(vertical = 8.dp)
     ) {
-//        Text(text = "${lecture.platform} · ${lecture.instructor}", style = MaterialTheme.typography.labelMedium, color = Color(0xFF4E6EF2))
+        Text(text = "${lecture.platform} · ${lecture.teacher}", style = Typography.labelMedium, color = Color(0xFF4E6EF2))
 
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
             modifier = Modifier.fillMaxWidth().padding(top = 4.dp)
         ) {
-            Text(text = lecture.title, style = MaterialTheme.typography.bodyLarge)
-//            Text("${lecture.progress}/${lecture.total}", style = MaterialTheme.typography.labelSmall)
+            Text(text = lecture.lectureTitle, style = Typography.bodyMedium)
+            Text("${lecture.completedLessons}/${lecture.totalLessons}", style = MaterialTheme.typography.labelSmall)
         }
     }
 }
