@@ -139,7 +139,7 @@ fun CalenderScreen(homeViewModel: HomeViewModel, dailyScheduleViewModel: DailySc
                             textAlign = TextAlign.Center,
                             fontSize = 14.sp,
                             color = LightGray60
-//                        )
+                        )
                         /* 테스트용 더미 데이터
                         LazyColumn {
                             itemsIndexed(

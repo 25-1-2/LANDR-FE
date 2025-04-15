@@ -2,6 +2,7 @@ package com.capston.presentation.ui
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
@@ -26,12 +27,14 @@ import com.capston.domain.request.PostPlanDto
 import com.capston.domain.response.enum_class.DayOfWeek
 import com.capston.presentation.R
 import com.capston.presentation.theme.CapstonTheme
+import com.capston.presentation.theme.LightPurple
 import com.capston.presentation.theme.MainPurple
 import com.capston.presentation.theme.backgroundGray
 import com.capston.presentation.theme.chipGray
 import com.capston.presentation.theme.dividerGray
 import com.capston.presentation.theme.materialGray
 import com.capston.presentation.theme.textGray
+import com.capston.presentation.viewmodel.PlanViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -48,7 +51,10 @@ fun formatDate(millis: Long?): String {
 }
 
 @Composable
-fun PlanScreen(lecture: Lecture) {
+fun PlanScreen(
+    lecture: Lecture,
+    viewModel: PlanViewModel
+) {
     val planType = remember { mutableStateOf("") }
     val startLessonId = remember { mutableIntStateOf(0) }
     val endLessonId = remember { mutableIntStateOf(0) }
@@ -120,7 +126,8 @@ fun PlanScreen(lecture: Lecture) {
                         )
 
                         // TODO: 서버에 dto 전달하는 API 호출 작성
-                        // ex) viewModel.postPlan(dto)
+                        viewModel.postPlanDetail(dto)
+                        // 이후 원래 화면으로 돌아온다
                     },
                     shape = RoundedCornerShape(8.dp),
                     modifier = Modifier.fillMaxWidth()
@@ -427,7 +434,8 @@ fun StudyDaysOfWeekSection(studyDayOfWeeks: MutableState<List<String>>) {
         )
 
         Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.horizontalScroll(rememberScrollState()),
         ) {
             DayOfWeek.entries.forEach { day ->
                 val isSelected = selectedDays.value.contains(day.name)
@@ -444,10 +452,15 @@ fun StudyDaysOfWeekSection(studyDayOfWeeks: MutableState<List<String>>) {
                     },
                     label = { Text(day.label) }, // 표시는 label ("월", "화", ...)
                     colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = MaterialTheme.colorScheme.primary,
-                        selectedLabelColor = Color.White,
+                        selectedContainerColor = LightPurple,
                         containerColor = chipGray,
+                        selectedLabelColor = MainPurple,
                         labelColor = Color.Black
+                    ),
+                    border = FilterChipDefaults.filterChipBorder(
+                        enabled = true,
+                        selected = isSelected,
+                        selectedBorderColor = MainPurple,
                     )
                 )
             }
@@ -548,10 +561,10 @@ fun PlaybackSpeedSection(playbackSpeed: MutableState<Double>) {
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun PlanScreenPreview() {
-    CapstonTheme {
-        PlanScreen(Lecture())
-    }
-}
+//@Preview(showBackground = true)
+//@Composable
+//fun PlanScreenPreview() {
+//    CapstonTheme {
+//        PlanScreen(Lecture())
+//    }
+//}
