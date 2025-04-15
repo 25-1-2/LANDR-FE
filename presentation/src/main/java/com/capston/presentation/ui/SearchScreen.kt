@@ -31,6 +31,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.capston.domain.model.Lecture
 import com.capston.presentation.R
 import com.capston.presentation.theme.CapstonTheme
 import com.capston.presentation.theme.LightGray40
@@ -140,7 +141,7 @@ fun SearchNavHost(navController: NavHostController) {
             arguments = listOf(navArgument("lectureTitle") { type = NavType.StringType })
         ) { backStackEntry ->
             val title = backStackEntry.arguments?.getString("lectureTitle") ?: ""
-            PlanScreen(lectureTitle = title)
+            PlanScreen(Lecture())
         }
     }
 }
