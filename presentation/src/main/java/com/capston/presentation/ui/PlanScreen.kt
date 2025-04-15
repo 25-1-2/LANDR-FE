@@ -126,7 +126,8 @@ fun PlanScreen(
                         )
 
                         // TODO: 서버에 dto 전달하는 API 호출 작성
-                        // ex) viewModel.postPlan(dto)
+                        viewModel.postPlanDetail(dto)
+                        // 이후 원래 화면으로 돌아온다
                     },
                     shape = RoundedCornerShape(8.dp),
                     modifier = Modifier.fillMaxWidth()

@@ -36,11 +36,15 @@ import com.capston.presentation.R
 import com.capston.presentation.theme.CapstonTheme
 import com.capston.presentation.theme.LightGray40
 import com.capston.presentation.theme.MainPurple
+import com.capston.presentation.viewmodel.PlanViewModel
 import kotlinx.coroutines.delay
 
 @SuppressLint("RememberReturnType")
 @Composable
-fun SearchScreen(navController: NavController,initialQuery: String = "") {
+fun SearchScreen(
+    navController: NavController,
+    initialQuery: String = "",
+) {
     var searchQuery by remember { mutableStateOf(initialQuery) }
 
     Column {
@@ -128,7 +132,7 @@ fun InfiniteScrollList(navController: NavController, filteredItems: List<Lecture
 }
 
 @Composable
-fun SearchNavHost(navController: NavHostController) {
+fun SearchNavHost(navController: NavHostController, planViewModel: PlanViewModel) {
     NavHost(
         navController = navController,
         startDestination = "search"
@@ -141,7 +145,7 @@ fun SearchNavHost(navController: NavHostController) {
             arguments = listOf(navArgument("lectureTitle") { type = NavType.StringType })
         ) { backStackEntry ->
             val title = backStackEntry.arguments?.getString("lectureTitle") ?: ""
-            PlanScreen(Lecture())
+            PlanScreen(Lecture(), planViewModel)
         }
     }
 }
