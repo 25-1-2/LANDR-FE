@@ -8,7 +8,9 @@ import androidx.activity.viewModels
 import androidx.navigation.compose.rememberNavController
 import com.capston.presentation.theme.CapstonTheme
 import com.capston.presentation.viewmodel.PlanViewModel
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class SearchActivity : ComponentActivity() {
     val planViewModel: PlanViewModel by viewModels()
 
