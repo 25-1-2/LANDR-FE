@@ -1,6 +1,7 @@
 package com.capston.presentation.ui
 
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.hardware.lights.Light
 import android.util.Log
 import androidx.compose.animation.core.Animatable
@@ -37,10 +38,13 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Divider
 import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.TextFieldDefaults
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -67,6 +71,7 @@ import androidx.compose.ui.graphics.Color.Companion.LightGray
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
@@ -90,10 +95,10 @@ import com.capston.presentation.theme.LightPurple
 import com.capston.presentation.theme.MainBlue
 import com.capston.presentation.theme.MainPurple
 import com.capston.presentation.theme.Purple40
+import com.capston.presentation.theme.backgroundGray
 import com.capston.presentation.viewmodel.HomeViewModel
 import com.capston.presentation.viewmodel.PlanViewModel
 import kotlinx.coroutines.launch
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter", "StateFlowValueCalledInComposition",
@@ -102,6 +107,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
 
     val homeState by homeViewModel.getDistinctHome.collectAsState()
 
@@ -132,7 +138,7 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(LightPurple)
+                    .background(backgroundGray)
             ) {
                 Column(
                     modifier = Modifier
@@ -152,7 +158,7 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
                         )
                         Text(
                             text = stringResource(R.string.home_edit),
-                            color = LightGray40, // 원하는 색상으로 설정
+                            color = MainPurple,
                             modifier = Modifier
                                 .padding(top = 25.dp, end = 20.dp)
                                 .clickable {
@@ -208,7 +214,7 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
             Spacer(modifier = Modifier.height(20.dp))
 
             if (todayLessonList != null) {
-                LessonList(homeViewModel, 330, todayLessonList!!)
+                LessonList(homeViewModel, 330, todayLessonList)
             } else {
                 Column(
                     modifier = Modifier
@@ -235,11 +241,11 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
                         fontSize = 14.sp,
                         color = MainPurple,
                         textDecoration = TextDecoration.Underline,
-//                        modifier = Modifier
-//                            .clickable {
-//                                navController.navigate("plan/$encodedTitle")
-//                            }
-//                            .padding(8.dp) // 클릭 영역 넓히기 (선택사항)
+                        modifier = Modifier
+                            .clickable {
+                                val intent = Intent(context, SearchActivity::class.java)
+                                context.startActivity(intent)
+                            }
                     )
                 }
             }
@@ -280,8 +286,8 @@ fun CustomBottomSheetDialog(
     val scope = rememberCoroutineScope()
     val bottomPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
 
-    var errorMessage by remember { mutableStateOf("") } // 오류 메시지 상태
-    var vibrationTrigger by remember { mutableStateOf(false) } // 진동 트리거 상태
+    var errorMessage by remember { mutableStateOf("") }
+    var vibrationTrigger by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -290,15 +296,51 @@ fun CustomBottomSheetDialog(
             .height(280.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(
-            text = title,
-            textAlign = TextAlign.Start,
-            style = TextStyle(
-                color = Color.Black,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 10.dp),
+        ) {
+            // Title 중앙 정렬
+            Text(
+                text = title,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.align(Alignment.Center),
+                style = TextStyle(
+                    color = Color.Black,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold
+                )
             )
-        )
+
+            // 뒤로가기 텍스트 + 아이콘 (우측 정렬)
+            Row(
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .clickable {
+                        scope.launch {
+                            modalBottomSheetState.hide()
+                        }.invokeOnCompletion {
+                            onDismiss()
+                        }
+                    },
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "뒤로가기",
+                    color = MainPurple,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium
+                )
+                Icon(
+                    imageVector = Icons.Default.ArrowBack,
+                    contentDescription = "뒤로가기",
+                    tint = MainPurple,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+        }
+
         Spacer(modifier = Modifier.height(10.dp))
 
         Text(
@@ -325,26 +367,6 @@ fun CustomBottomSheetDialog(
                 lectureProgressList = lectureProgressList,
                 planViewModel = planViewModel,
             )
-        }
-
-        Spacer(modifier = Modifier.height(10.dp))
-
-        Button(
-            onClick = {
-                scope.launch {
-                    modalBottomSheetState.hide()
-                }.invokeOnCompletion {
-                    onDismiss()
-                }
-            },
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MainBlue,
-                contentColor = Color.White,
-                disabledContainerColor = Purple40,
-                disabledContentColor = Color.White,
-            ),
-        ) {
-            Text("수정 완료")
         }
     }
 }
