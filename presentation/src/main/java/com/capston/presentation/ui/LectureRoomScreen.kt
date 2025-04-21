@@ -31,17 +31,15 @@ import com.capston.domain.model.MyLecture
 import com.capston.presentation.theme.CapstonTheme
 import com.capston.presentation.theme.MainPurple
 import com.capston.presentation.theme.Typography
+import com.capston.presentation.viewmodel.PlanViewModel
 
 @Composable
-fun LectureRoomScreen(onLectureClick: ((MyLecture) -> Unit)?) {
-    val lectures = listOf(
-        MyLecture(1, "2026 현우진의 수분감 - 수학Ⅰ (공통)", "메가스터디", "현우진", 14, 50),
-        MyLecture(2, "2026 현우진의 수분감 - 수학Ⅱ (공통)", "메가스터디", "현우진", 14, 50),
-        MyLecture(3, "믿어봐! 문장 읽는 법을 알려줄게", "메가스터디",  "조정식", 14, 50),
-        MyLecture(4, "이디지도 설레는 동아시아사", "메가스터디", "이다지", 14, 50),
-        MyLecture(5, "2026 파노라마 독서 기출 총론", "대성마이맥", "유대종", 50, 50),
-        MyLecture(6, "LIM IT - 생활과 윤리", "대성마이맥", "임정환", 50, 50)
-    )
+fun LectureRoomScreen(
+    viewModel: PlanViewModel,
+    onLectureClick: ((MyLecture) -> Unit)?
+) {
+    val lectures = viewModel.getPlanLectureRoom
+    viewModel.getPlanLectureRoom()
 
     Column(
         modifier = Modifier
@@ -55,7 +53,7 @@ fun LectureRoomScreen(onLectureClick: ((MyLecture) -> Unit)?) {
         )
 
         LazyColumn {
-            items(lectures) { lecture ->
+            items(lectures.value) { lecture ->
                 LectureItem(lecture = lecture, onClick = {
                     if (onLectureClick != null) { onLectureClick(lecture) }
                 })
@@ -90,7 +88,7 @@ fun LectureItem(lecture: MyLecture, onClick: () -> Unit) {
         ) {
             Text(
                 text = lecture.lectureTitle,
-                style = Typography.bodyMedium,
+                style = Typography.titleMedium,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
@@ -123,10 +121,10 @@ fun StatusChip(status: String, isCompleted: Boolean) {
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun LectureRoomPreview() {
-    CapstonTheme {
-        LectureRoomScreen(null)
-    }
-}
+//@Preview(showBackground = true)
+//@Composable
+//fun LectureRoomPreview() {
+//    CapstonTheme {
+//        LectureRoomScreen(PlanViewModel(), null)
+//    }
+//}
