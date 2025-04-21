@@ -2,6 +2,7 @@ package com.capston.domain.datasource
 
 import com.capston.domain.request.PatchPlanDto
 import com.capston.domain.request.PostPlanDto
+import com.capston.domain.response.plan.GetPlanLectureRoomResponse
 import com.capston.domain.response.plan.LectureAliasResponse
 import com.capston.domain.response.plan.PostPlanResponse
 
@@ -16,4 +17,7 @@ interface PlanDataSource {
         planId: Int,
         patchPlanDto: PatchPlanDto
     ): LectureAliasResponse
+
+    // 나의 강의실 조회
+    suspend fun getPlanLectureRoom(): GetPlanLectureRoomResponse
 }
