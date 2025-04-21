@@ -7,5 +7,4 @@ data class MyLecture(
     val teacher: String = "",
     val completedLessons: Int = 0,
     val totalLessons: Int = 0,
-
 )
