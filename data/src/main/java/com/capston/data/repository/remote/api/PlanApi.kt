@@ -5,6 +5,7 @@ import com.capston.domain.request.PostPlanDto
 import com.capston.domain.response.plan.LectureAliasResponse
 import com.capston.domain.response.plan.PostPlanResponse
 import retrofit2.http.Body
+import retrofit2.http.GET
 import retrofit2.http.PATCH
 import retrofit2.http.POST
 import retrofit2.http.Path
@@ -22,4 +23,10 @@ interface PlanApi {
         @Path("planId") planId: Int,
         @Body patchPlanDto: PatchPlanDto
     ): LectureAliasResponse
+
+    // 나의 강의실 조회
+    @GET("/v1/plans/me")
+    suspend fun getPlanLectureRoom(
+        @Body getPlanLectureRoomDto: GetPlanLectureRoomDto
+    ): GetPlanLectureRoomResponse
 }
