@@ -1,6 +1,7 @@
 package com.capston.presentation.ui
 
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.hardware.lights.Light
 import android.util.Log
 import androidx.compose.animation.core.Animatable
@@ -24,6 +25,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -37,10 +39,13 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Divider
 import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.TextFieldDefaults
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -67,6 +72,8 @@ import androidx.compose.ui.graphics.Color.Companion.LightGray
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
@@ -74,6 +81,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.capston.domain.request.PatchPlanDto
@@ -90,10 +98,10 @@ import com.capston.presentation.theme.LightPurple
 import com.capston.presentation.theme.MainBlue
 import com.capston.presentation.theme.MainPurple
 import com.capston.presentation.theme.Purple40
+import com.capston.presentation.theme.backgroundGray
 import com.capston.presentation.viewmodel.HomeViewModel
 import com.capston.presentation.viewmodel.PlanViewModel
 import kotlinx.coroutines.launch
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter", "StateFlowValueCalledInComposition",
@@ -102,6 +110,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
 
     val homeState by homeViewModel.getDistinctHome.collectAsState()
 
@@ -132,7 +141,7 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(LightPurple)
+                    .background(backgroundGray)
             ) {
                 Column(
                     modifier = Modifier
@@ -152,7 +161,7 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
                         )
                         Text(
                             text = stringResource(R.string.home_edit),
-                            color = LightGray40, // 원하는 색상으로 설정
+                            color = MainPurple,
                             modifier = Modifier
                                 .padding(top = 25.dp, end = 20.dp)
                                 .clickable {
@@ -208,7 +217,7 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
             Spacer(modifier = Modifier.height(20.dp))
 
             if (todayLessonList != null) {
-                LessonList(homeViewModel, 330, todayLessonList!!)
+                LessonList(homeViewModel, 330, todayLessonList, 0.0F)
             } else {
                 Column(
                     modifier = Modifier
@@ -235,11 +244,11 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
                         fontSize = 14.sp,
                         color = MainPurple,
                         textDecoration = TextDecoration.Underline,
-//                        modifier = Modifier
-//                            .clickable {
-//                                navController.navigate("plan/$encodedTitle")
-//                            }
-//                            .padding(8.dp) // 클릭 영역 넓히기 (선택사항)
+                        modifier = Modifier
+                            .clickable {
+                                val intent = Intent(context, SearchActivity::class.java)
+                                context.startActivity(intent)
+                            }
                     )
                 }
             }
@@ -280,8 +289,8 @@ fun CustomBottomSheetDialog(
     val scope = rememberCoroutineScope()
     val bottomPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
 
-    var errorMessage by remember { mutableStateOf("") } // 오류 메시지 상태
-    var vibrationTrigger by remember { mutableStateOf(false) } // 진동 트리거 상태
+    var errorMessage by remember { mutableStateOf("") }
+    var vibrationTrigger by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -290,15 +299,51 @@ fun CustomBottomSheetDialog(
             .height(280.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(
-            text = title,
-            textAlign = TextAlign.Start,
-            style = TextStyle(
-                color = Color.Black,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 10.dp),
+        ) {
+            // Title 중앙 정렬
+            Text(
+                text = title,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.align(Alignment.Center),
+                style = TextStyle(
+                    color = Color.Black,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold
+                )
             )
-        )
+
+            // 뒤로가기 텍스트 + 아이콘 (우측 정렬)
+            Row(
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .clickable {
+                        scope.launch {
+                            modalBottomSheetState.hide()
+                        }.invokeOnCompletion {
+                            onDismiss()
+                        }
+                    },
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "뒤로가기",
+                    color = MainPurple,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium
+                )
+                Icon(
+                    imageVector = Icons.Default.ArrowBack,
+                    contentDescription = "뒤로가기",
+                    tint = MainPurple,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+        }
+
         Spacer(modifier = Modifier.height(10.dp))
 
         Text(
@@ -325,26 +370,6 @@ fun CustomBottomSheetDialog(
                 lectureProgressList = lectureProgressList,
                 planViewModel = planViewModel,
             )
-        }
-
-        Spacer(modifier = Modifier.height(10.dp))
-
-        Button(
-            onClick = {
-                scope.launch {
-                    modalBottomSheetState.hide()
-                }.invokeOnCompletion {
-                    onDismiss()
-                }
-            },
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MainBlue,
-                contentColor = Color.White,
-                disabledContainerColor = Purple40,
-                disabledContentColor = Color.White,
-            ),
-        ) {
-            Text("수정 완료")
         }
     }
 }
@@ -485,17 +510,31 @@ fun CheckBox(isChecked: Boolean, onCheckedChange: () -> Unit) {
 }
 
 @Composable
-fun LessonList(homeViewModel: HomeViewModel, maxHeight: Int, todayLessonList: List<LessonScheduleResponse>) {
+fun LessonList(
+    homeViewModel: HomeViewModel,
+    maxHeight: Int,
+    todayLessonList: List<LessonScheduleResponse>,
+    offsetY: Float // 드래그 양을 받음
+) {
     LazyColumn(
         modifier = Modifier
+            .offset { IntOffset(x = 0, y = offsetY.toInt()) } // 드래그 한 만큼 위로 이동
+            .pointerInput(Unit) {
+                awaitPointerEventScope {
+                    while (true) {
+                        val event = awaitPointerEvent()
+                        event.changes.forEach { it.consume() } // 제스처 무시
+                    }
+                }
+            }
             .padding(start = 30.dp)
-            .heightIn(max = maxHeight.dp) // 최대 높이를 설정하여 스크롤 범위를 제한
+            .heightIn(max = maxHeight.dp), // 최대 높이 제한
     ) {
         items(todayLessonList) { lesson ->
             var isChecked by remember { mutableStateOf(lesson.completed) }
 
             Row(
-                verticalAlignment = Alignment.CenterVertically, // 세로로 중앙 정렬
+                verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 10.dp)
