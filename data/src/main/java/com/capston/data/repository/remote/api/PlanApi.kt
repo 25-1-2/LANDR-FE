@@ -2,6 +2,7 @@ package com.capston.data.repository.remote.api
 
 import com.capston.domain.request.PatchPlanDto
 import com.capston.domain.request.PostPlanDto
+import com.capston.domain.response.plan.GetPlanLectureRoomResponse
 import com.capston.domain.response.plan.LectureAliasResponse
 import com.capston.domain.response.plan.PostPlanResponse
 import retrofit2.http.Body
@@ -26,7 +27,5 @@ interface PlanApi {
 
     // 나의 강의실 조회
     @GET("/v1/plans/me")
-    suspend fun getPlanLectureRoom(
-        @Body getPlanLectureRoomDto: GetPlanLectureRoomDto
-    ): GetPlanLectureRoomResponse
+    suspend fun getPlanLectureRoom(): GetPlanLectureRoomResponse
 }
