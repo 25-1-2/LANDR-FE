@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -57,6 +58,8 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -121,7 +124,6 @@ fun CalenderScreen(homeViewModel: HomeViewModel, dailyScheduleViewModel: DailySc
             modifier = Modifier
                 .fillMaxSize()
                 .nestedScroll(nestedScrollConnection)
-
         ) {
             Calendar(calendarHeight, selectedDate, onDateSelected = { date ->
                 selectedDate = date // 선택한 날짜 업데이트
@@ -129,7 +131,12 @@ fun CalenderScreen(homeViewModel: HomeViewModel, dailyScheduleViewModel: DailySc
 
             Box(modifier = Modifier.weight(1f)) {
                 if (todayLessonList != null) {
-                    LessonList(homeViewModel, 330, todayLessonList, 0.0F)
+                    // Use the new DraggableLessonContainer
+                    DraggableLessonContainer(
+                        homeViewModel = homeViewModel,
+                        maxHeight = 330,
+                        todayLessonList = todayLessonList
+                    )
                 } else {
                     Column(
                         modifier = Modifier
@@ -149,7 +156,6 @@ fun CalenderScreen(homeViewModel: HomeViewModel, dailyScheduleViewModel: DailySc
             }
         }
     }
-
 }
 
 @Composable
@@ -158,27 +164,42 @@ fun DraggableLessonContainer(
     maxHeight: Int,
     todayLessonList: List<LessonScheduleResponse>
 ) {
-    var offsetY by remember { mutableStateOf(0f) }
+    var containerHeight by remember { mutableStateOf(maxHeight.toFloat()) }
+    val maxContainerHeight = with(LocalDensity.current) { LocalConfiguration.current.screenHeightDp.dp.toPx() * 0.8f }
 
     val dragState = rememberDraggableState { delta ->
-        // 드래그 한 만큼만 확장되도록 (0 이상 못 올리게 제한)
-        offsetY = (offsetY + delta).coerceAtMost(0f)
+        // Expand container based on drag amount, limited between maxHeight and screen height
+        containerHeight = (containerHeight - delta).coerceIn(
+            maxHeight.toFloat(),
+            maxContainerHeight
+        )
     }
 
     Box(
         modifier = Modifier
-            .fillMaxSize()
+            .fillMaxWidth()
+            .height(with(LocalDensity.current) { containerHeight.toDp() })
             .background(Color(0xFFF8F8F8))
             .draggable(
                 state = dragState,
                 orientation = Orientation.Vertical
             )
     ) {
-        LessonList(
+        // Drag handle indicator
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(vertical = 8.dp)
+                .width(40.dp)
+                .height(4.dp)
+                .background(Color.Gray, RoundedCornerShape(2.dp))
+        )
+
+        // Using your existing LessonList but removing its drag handling
+        ModifiedLessonList(
             homeViewModel = homeViewModel,
-            maxHeight = maxHeight,
-            todayLessonList = todayLessonList,
-            offsetY = offsetY
+            maxHeight = with(LocalDensity.current) { containerHeight.toInt() },
+            todayLessonList = todayLessonList
         )
     }
 }
