@@ -217,7 +217,7 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
             Spacer(modifier = Modifier.height(20.dp))
 
             if (todayLessonList != null) {
-                LessonList(homeViewModel, 330, todayLessonList, 0.0F)
+                ModifiedLessonList(homeViewModel, 330, todayLessonList)
             } else {
                 Column(
                     modifier = Modifier
@@ -510,25 +510,15 @@ fun CheckBox(isChecked: Boolean, onCheckedChange: () -> Unit) {
 }
 
 @Composable
-fun LessonList(
+fun ModifiedLessonList(
     homeViewModel: HomeViewModel,
     maxHeight: Int,
-    todayLessonList: List<LessonScheduleResponse>,
-    offsetY: Float // 드래그 양을 받음
+    todayLessonList: List<LessonScheduleResponse>
 ) {
     LazyColumn(
         modifier = Modifier
-            .offset { IntOffset(x = 0, y = offsetY.toInt()) } // 드래그 한 만큼 위로 이동
-            .pointerInput(Unit) {
-                awaitPointerEventScope {
-                    while (true) {
-                        val event = awaitPointerEvent()
-                        event.changes.forEach { it.consume() } // 제스처 무시
-                    }
-                }
-            }
             .padding(start = 30.dp)
-            .heightIn(max = maxHeight.dp), // 최대 높이 제한
+            .heightIn(max = maxHeight.dp) // Use the dynamic container height
     ) {
         items(todayLessonList) { lesson ->
             var isChecked by remember { mutableStateOf(lesson.completed) }
