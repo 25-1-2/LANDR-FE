@@ -134,7 +134,7 @@ fun CalenderScreen(homeViewModel: HomeViewModel, dailyScheduleViewModel: DailySc
                     // Use the new DraggableLessonContainer
                     DraggableLessonContainer(
                         homeViewModel = homeViewModel,
-                        maxHeight = 330,
+                        maxHeight = 550,
                         todayLessonList = todayLessonList
                     )
                 } else {
@@ -164,8 +164,9 @@ fun DraggableLessonContainer(
     maxHeight: Int,
     todayLessonList: List<LessonScheduleResponse>
 ) {
-    var containerHeight by remember { mutableStateOf(maxHeight.toFloat()) }
-    val maxContainerHeight = with(LocalDensity.current) { LocalConfiguration.current.screenHeightDp.dp.toPx() * 0.8f }
+    // 기본 높이를 더 크게 설정 (maxHeight에서 시작하되 원하는 만큼 조정 가능)
+    var containerHeight by remember { mutableStateOf(maxHeight.toFloat() * 1.5f) } // 기본 높이를 1.5배로 증가
+    val maxContainerHeight = with(LocalDensity.current) { LocalConfiguration.current.screenHeightDp.dp.toPx() * 0.9f } // 최대 높이도 늘림
 
     val dragState = rememberDraggableState { delta ->
         // Expand container based on drag amount, limited between maxHeight and screen height
