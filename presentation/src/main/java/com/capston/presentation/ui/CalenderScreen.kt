@@ -8,7 +8,10 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -60,6 +63,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import com.capston.domain.response.home.LessonScheduleResponse
 import com.capston.presentation.theme.LightGray3
 import com.capston.presentation.theme.LightGray40
 import com.capston.presentation.theme.LightGray60
@@ -125,7 +129,7 @@ fun CalenderScreen(homeViewModel: HomeViewModel, dailyScheduleViewModel: DailySc
 
             Box(modifier = Modifier.weight(1f)) {
                 if (todayLessonList != null) {
-                    LessonList(homeViewModel, 330, todayLessonList)
+                    LessonList(homeViewModel, 330, todayLessonList, 0.0F)
                 } else {
                     Column(
                         modifier = Modifier
@@ -140,15 +144,6 @@ fun CalenderScreen(homeViewModel: HomeViewModel, dailyScheduleViewModel: DailySc
                             fontSize = 14.sp,
                             color = LightGray60
                         )
-                        /* 테스트용 더미 데이터
-                        LazyColumn {
-                            itemsIndexed(
-                                listOf(100, 200, 300) // 1. 아이템 3개 생성
-                            ) { index, item ->
-                                KotlinWorldCard(order = item)
-                            }
-                        }
-                         */
                     }
                 }
             }
@@ -157,7 +152,38 @@ fun CalenderScreen(homeViewModel: HomeViewModel, dailyScheduleViewModel: DailySc
 
 }
 
-/* 테스트용 더미데이터
+@Composable
+fun DraggableLessonContainer(
+    homeViewModel: HomeViewModel,
+    maxHeight: Int,
+    todayLessonList: List<LessonScheduleResponse>
+) {
+    var offsetY by remember { mutableStateOf(0f) }
+
+    val dragState = rememberDraggableState { delta ->
+        // 드래그 한 만큼만 확장되도록 (0 이상 못 올리게 제한)
+        offsetY = (offsetY + delta).coerceAtMost(0f)
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFFF8F8F8))
+            .draggable(
+                state = dragState,
+                orientation = Orientation.Vertical
+            )
+    ) {
+        LessonList(
+            homeViewModel = homeViewModel,
+            maxHeight = maxHeight,
+            todayLessonList = todayLessonList,
+            offsetY = offsetY
+        )
+    }
+}
+
+// 테스트용 더미데이터
 @Composable
 fun KotlinWorldCard(order: Int) {
     Card(
@@ -172,7 +198,6 @@ fun KotlinWorldCard(order: Int) {
         }
     }
 }
-*/
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable

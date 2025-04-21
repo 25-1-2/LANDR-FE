@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -71,6 +72,7 @@ import androidx.compose.ui.graphics.Color.Companion.LightGray
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -79,6 +81,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.capston.domain.request.PatchPlanDto
@@ -214,7 +217,7 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
             Spacer(modifier = Modifier.height(20.dp))
 
             if (todayLessonList != null) {
-                LessonList(homeViewModel, 330, todayLessonList)
+                LessonList(homeViewModel, 330, todayLessonList, 0.0F)
             } else {
                 Column(
                     modifier = Modifier
@@ -507,17 +510,31 @@ fun CheckBox(isChecked: Boolean, onCheckedChange: () -> Unit) {
 }
 
 @Composable
-fun LessonList(homeViewModel: HomeViewModel, maxHeight: Int, todayLessonList: List<LessonScheduleResponse>) {
+fun LessonList(
+    homeViewModel: HomeViewModel,
+    maxHeight: Int,
+    todayLessonList: List<LessonScheduleResponse>,
+    offsetY: Float // 드래그 양을 받음
+) {
     LazyColumn(
         modifier = Modifier
+            .offset { IntOffset(x = 0, y = offsetY.toInt()) } // 드래그 한 만큼 위로 이동
+            .pointerInput(Unit) {
+                awaitPointerEventScope {
+                    while (true) {
+                        val event = awaitPointerEvent()
+                        event.changes.forEach { it.consume() } // 제스처 무시
+                    }
+                }
+            }
             .padding(start = 30.dp)
-            .heightIn(max = maxHeight.dp) // 최대 높이를 설정하여 스크롤 범위를 제한
+            .heightIn(max = maxHeight.dp), // 최대 높이 제한
     ) {
         items(todayLessonList) { lesson ->
             var isChecked by remember { mutableStateOf(lesson.completed) }
 
             Row(
-                verticalAlignment = Alignment.CenterVertically, // 세로로 중앙 정렬
+                verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 10.dp)
