@@ -12,6 +12,8 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -41,6 +43,7 @@ import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.TextFieldDefaults
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -72,6 +75,9 @@ import androidx.compose.ui.graphics.Color.Companion.LightGray
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -515,10 +521,30 @@ fun ModifiedLessonList(
     maxHeight: Int,
     todayLessonList: List<LessonScheduleResponse>
 ) {
+    // 제스처 차단을 위한 InputTransformer 생성
+    val inputModifier = Modifier.pointerInput(Unit) {
+        detectVerticalDragGestures { _, _ ->
+            // 아무것도 하지 않음으로써 드래그 제스처를 소비만 함
+        }
+    }
+
     LazyColumn(
         modifier = Modifier
             .padding(start = 30.dp)
-            .heightIn(max = maxHeight.dp) // Use the dynamic container height
+            .heightIn(max = maxHeight.dp)
+            // 스크롤 가능하지만 드래그는 불가능하도록 설정
+            .nestedScroll(remember {
+                object : NestedScrollConnection {
+                    override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                        // 드래그를 위한 스크롤은 차단
+                        return if (source == NestedScrollSource.Drag) {
+                            available // 드래그 소비
+                        } else {
+                            Offset.Zero // 다른 스크롤은 통과
+                        }
+                    }
+                }
+            })
     ) {
         items(todayLessonList) { lesson ->
             var isChecked by remember { mutableStateOf(lesson.completed) }
@@ -528,6 +554,13 @@ fun ModifiedLessonList(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 10.dp)
+                    // 개별 아이템 드래그 제스처 차단
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null, // ripple 효과 제거
+                        enabled = true,
+                        onClick = { /* 클릭만 허용 */ }
+                    )
             ) {
                 CheckBox(
                     isChecked = isChecked,
