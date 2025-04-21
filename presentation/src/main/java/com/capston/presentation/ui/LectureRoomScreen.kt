@@ -88,7 +88,7 @@ fun LectureItem(lecture: MyLecture, onClick: () -> Unit) {
         ) {
             Text(
                 text = lecture.lectureTitle,
-                style = Typography.bodyMedium,
+                style = Typography.titleMedium,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
