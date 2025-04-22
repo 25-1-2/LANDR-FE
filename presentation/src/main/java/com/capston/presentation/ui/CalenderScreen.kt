@@ -9,8 +9,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -20,6 +22,7 @@ import androidx.compose.material.Divider
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -30,6 +33,7 @@ import androidx.compose.ui.graphics.Color.Companion.LightGray
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
@@ -66,7 +70,7 @@ fun CalenderScreen(homeViewModel: HomeViewModel, dailyScheduleViewModel: DailySc
     // 화면 크기에 맞춘 상대적 높이 설정
     val screenHeight = LocalConfiguration.current.screenHeightDp.dp
     val maxCalendarHeight = screenHeight * 0.35f // 화면 높이의 35%
-    val minCalendarHeight = screenHeight * 0.12f // 화면 높이의 12%
+    val minCalendarHeight = screenHeight * 0.15f // 화면 높이의 15%
 
     // 드래그에 따라 달력 높이를 계산
     val calendarHeight by animateDpAsState(
@@ -78,6 +82,10 @@ fun CalenderScreen(homeViewModel: HomeViewModel, dailyScheduleViewModel: DailySc
     var currentMonth by remember { mutableStateOf(LocalDate.now().monthValue) }
     var selectedDate by remember { mutableStateOf(LocalDate.now().format(DateTimeFormatter.ISO_DATE)) }
     var showDatePickerDialog by remember { mutableStateOf(false) }
+
+    // 마지막 클릭 시간을 추적 - 클릭과 드래그 구분을 위해
+    var lastClickTime by remember { mutableStateOf(0L) }
+    val clickCooldownMs = 200 // 클릭 후 드래그 무시 시간 (ms)
 
     // 선택된 날짜가 변경되면 일정 데이터 로드
     LaunchedEffect(selectedDate) {
@@ -91,10 +99,13 @@ fun CalenderScreen(homeViewModel: HomeViewModel, dailyScheduleViewModel: DailySc
     val nestedScrollConnection = remember {
         object : NestedScrollConnection {
             override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                // 드래그가 의도적인 스크롤인 경우에만 처리
-                if (source == NestedScrollSource.Drag && abs(available.y) > 5f) {
+                // 현재 시간 체크
+                val currentTime = System.currentTimeMillis()
+
+                // 클릭 후 일정 시간 내의 드래그는 무시하지 않음
+                if (source == NestedScrollSource.Drag && abs(available.y) > 3f) {
                     // 드래그 감도 계수
-                    val delta = available.y * 0.005f
+                    val delta = available.y * 0.007f  // 감도 약간 증가
 
                     // 드래그 양에 비례해서 달력 크기 조절 (0.2~1.0 범위)
                     calendarExpandRatio = (calendarExpandRatio + delta).coerceIn(0.2f, 1f)
@@ -105,6 +116,12 @@ fun CalenderScreen(homeViewModel: HomeViewModel, dailyScheduleViewModel: DailySc
         }
     }
 
+    // 날짜 선택 콜백을 클릭 시간과 함께 추적
+    val onDateSelectedWithTracking: (String) -> Unit = { date ->
+        lastClickTime = System.currentTimeMillis()
+        selectedDate = date
+    }
+
     Scaffold(
         modifier = Modifier.fillMaxSize()
     ) {
@@ -112,6 +129,22 @@ fun CalenderScreen(homeViewModel: HomeViewModel, dailyScheduleViewModel: DailySc
             modifier = Modifier
                 .fillMaxSize()
                 .nestedScroll(nestedScrollConnection)
+                // 전체 화면에 포인터 입력 처리 추가 (더 안정적인 드래그 처리)
+                .pointerInput(Unit) {
+                    detectVerticalDragGestures { change, dragAmount ->
+                        change.consume() // 제스처 소비
+
+                        // 현재 시간 체크
+                        val currentTime = System.currentTimeMillis()
+
+                        // 클릭 후 짧은 시간 내의 드래그도 처리하기
+                        if (abs(dragAmount) > 3f) {
+                            // 드래그 방향에 따라 캘린더 크기 조절
+                            val delta = dragAmount * 0.003f  // 드래그 효과 조절 계수
+                            calendarExpandRatio = (calendarExpandRatio + delta).coerceIn(0.2f, 1f)
+                        }
+                    }
+                }
         ) {
             // 달력 부분
             SimpleCalendar(
@@ -124,9 +157,7 @@ fun CalenderScreen(homeViewModel: HomeViewModel, dailyScheduleViewModel: DailySc
                     currentYear = year
                     currentMonth = month
                 },
-                onDateSelected = { date ->
-                    selectedDate = date
-                },
+                onDateSelected = onDateSelectedWithTracking,
                 onDatePickerClick = { showDatePickerDialog = true }
             )
 
@@ -158,7 +189,7 @@ fun CalenderScreen(homeViewModel: HomeViewModel, dailyScheduleViewModel: DailySc
                     // LessonContainer도 화면 크기에 맞게 상대적 높이 조정
                     DraggableLessonContainer(
                         homeViewModel = homeViewModel,
-                        maxHeight = (screenHeight * 0.80f).roundToPx(), // 화면 높이의 45%
+                        maxHeight = (screenHeight * 1f).roundToPx(), // 화면 높이의 45%
                         todayLessonList = todayLessonList
                     )
                 } else {
@@ -339,7 +370,7 @@ fun SimpleCalendar(
                 }
             }
 
-            // 날짜 그리드
+            // 날짜 그리드 - userScrollEnabled를 false로 설정하여 드래그 이벤트가 LazyVerticalGrid에서 소비되지 않도록 함
             Box(modifier = Modifier.weight(1f)) {
                 if (expandRatio > 0.7f) {
                     // 월간 뷰
@@ -353,7 +384,7 @@ fun SimpleCalendar(
                                 // 빈 셀
                                 Box(modifier = Modifier.size(40.dp))
                             } else {
-                                // 현재 월의 날짜 표시
+                                // 현재 월의 날짜 표시 - 클릭 이벤트만 처리하고 드래그 이벤트는 상위 컴포넌트로 전달
                                 val isCurrentMonth = date.monthValue == currentMonth
                                 CalendarDay(
                                     date = date,
@@ -403,6 +434,7 @@ fun SimpleCalendar(
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun CalendarDay(
     date: LocalDate,
@@ -425,7 +457,12 @@ fun CalendarDay(
             .size(40.dp)
             .background(backgroundColor, RoundedCornerShape(20.dp))
             .border(1.dp, borderColor, RoundedCornerShape(20.dp))
-            .clickable(onClick = onClick),
+            // interactionSource만 사용하고 indication은 null로 설정
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null, // ripple 효과 대신 null 사용
+                onClick = onClick
+            ),
         contentAlignment = Alignment.Center
     ) {
         Text(
@@ -533,7 +570,7 @@ fun DraggableLessonContainer(
 
     // 최대 컨테이너 높이도 화면 높이에 상대적으로 설정
     val maxContainerHeight = with(density) {
-        (screenHeight * 0.7f).toPx() // 화면 높이의 70%까지 확장 가능
+        (screenHeight * 0.8f).toPx() // 화면 높이의 80%까지 확장 가능
     }
 
     val dragState = rememberDraggableState { delta ->
