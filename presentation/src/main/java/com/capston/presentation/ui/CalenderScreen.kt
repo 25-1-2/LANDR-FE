@@ -11,17 +11,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -30,21 +20,8 @@ import androidx.compose.material.Divider
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
-import androidx.compose.material3.Button
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Slider
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -71,7 +48,13 @@ import com.capston.presentation.viewmodel.HomeViewModel
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
+import kotlin.math.abs
 import kotlin.math.roundToInt
+
+// Dp to pixels 확장 함수
+fun Dp.roundToPx(): Int {
+    return value.roundToInt()
+}
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @RequiresApi(Build.VERSION_CODES.O)
@@ -90,13 +73,13 @@ fun CalenderScreen(homeViewModel: HomeViewModel, dailyScheduleViewModel: DailySc
         targetValue = minCalendarHeight + (maxCalendarHeight - minCalendarHeight) * calendarExpandRatio
     )
 
-    var selectedDate by remember {
-        mutableStateOf(
-            LocalDate.now().format(DateTimeFormatter.ISO_DATE)
-        )
-    }
+    // 날짜 관련 상태 - 현재 월과 선택된 날짜를 함께 관리
+    var currentYear by remember { mutableStateOf(LocalDate.now().year) }
+    var currentMonth by remember { mutableStateOf(LocalDate.now().monthValue) }
+    var selectedDate by remember { mutableStateOf(LocalDate.now().format(DateTimeFormatter.ISO_DATE)) }
+    var showDatePickerDialog by remember { mutableStateOf(false) }
 
-    Log.d("selected Date", selectedDate)
+    // 선택된 날짜가 변경되면 일정 데이터 로드
     LaunchedEffect(selectedDate) {
         dailyScheduleViewModel.getDailySchedule(selectedDate)
     }
@@ -108,16 +91,16 @@ fun CalenderScreen(homeViewModel: HomeViewModel, dailyScheduleViewModel: DailySc
     val nestedScrollConnection = remember {
         object : NestedScrollConnection {
             override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                // 드래그 양에 비례해서 달력 크기 조절
-                val delta = available.y * 0.005f // 드래그 감도 조절 계수
+                // 드래그가 의도적인 스크롤인 경우에만 처리
+                if (source == NestedScrollSource.Drag && abs(available.y) > 5f) {
+                    // 드래그 감도 계수
+                    val delta = available.y * 0.005f
 
-                if (source == NestedScrollSource.Drag) {
-                    // 0.2에서 1.0 사이로 제한하여 항상 주간 뷰는 보이도록 함
+                    // 드래그 양에 비례해서 달력 크기 조절 (0.2~1.0 범위)
                     calendarExpandRatio = (calendarExpandRatio + delta).coerceIn(0.2f, 1f)
-                    // 드래그 이벤트 소비
-                    return available
+                    return available // 드래그 이벤트 소비
                 }
-                return Offset.Zero
+                return Offset.Zero // 다른 스크롤 이벤트는 무시
             }
         }
     }
@@ -130,29 +113,59 @@ fun CalenderScreen(homeViewModel: HomeViewModel, dailyScheduleViewModel: DailySc
                 .fillMaxSize()
                 .nestedScroll(nestedScrollConnection)
         ) {
-            // 높이 비율을 전달하여 달력이 이에 맞게 표시되도록 함
-            Calendar(
+            // 달력 부분
+            SimpleCalendar(
                 calendarHeight = calendarHeight,
                 expandRatio = calendarExpandRatio,
+                currentYear = currentYear,
+                currentMonth = currentMonth,
                 selectedDate = selectedDate,
+                onYearMonthChanged = { year, month ->
+                    currentYear = year
+                    currentMonth = month
+                },
                 onDateSelected = { date ->
                     selectedDate = date
-                }
+                },
+                onDatePickerClick = { showDatePickerDialog = true }
             )
 
+            // 선택된 날짜 표시 및 구분선
+            Divider(
+                color = LightGray,
+                thickness = 1.dp,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                val localDate = LocalDate.parse(selectedDate)
+                Text(
+                    text = "$selectedDate (${getKoreanDayOfWeek(localDate.dayOfWeek.value)})",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+
+            // 일정 목록
             Box(modifier = Modifier.weight(1f)) {
-                if (todayLessonList != null) {
+                if (todayLessonList != null && todayLessonList.isNotEmpty()) {
                     // LessonContainer도 화면 크기에 맞게 상대적 높이 조정
                     DraggableLessonContainer(
                         homeViewModel = homeViewModel,
-                        maxHeight = (screenHeight * 0.60f).roundToPx(), // 화면 높이의 60%
+                        maxHeight = (screenHeight * 0.80f).roundToPx(), // 화면 높이의 45%
                         todayLessonList = todayLessonList
                     )
                 } else {
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(bottom = screenHeight * 0.05f), // 화면 높이의 5%
+                            .padding(bottom = screenHeight * 0.05f),
                         verticalArrangement = Arrangement.Center,
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
@@ -162,6 +175,341 @@ fun CalenderScreen(homeViewModel: HomeViewModel, dailyScheduleViewModel: DailySc
                             fontSize = 14.sp,
                             color = LightGray60
                         )
+                    }
+                }
+            }
+
+            // DatePickerDialog
+            if (showDatePickerDialog) {
+                DatePickerDialog(
+                    year = currentYear,
+                    month = currentMonth,
+                    onDateSelected = { year, month ->
+                        currentYear = year
+                        currentMonth = month
+                        // 선택한 달의 1일로 날짜 변경
+                        val firstDayOfMonth = LocalDate.of(year, month, 1)
+                        selectedDate = firstDayOfMonth.format(DateTimeFormatter.ISO_DATE)
+                        showDatePickerDialog = false
+                    },
+                    onDismiss = {
+                        showDatePickerDialog = false
+                    }
+                )
+            }
+        }
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun SimpleCalendar(
+    calendarHeight: Dp,
+    expandRatio: Float,
+    currentYear: Int,
+    currentMonth: Int,
+    selectedDate: String,
+    onYearMonthChanged: (Int, Int) -> Unit,
+    onDateSelected: (String) -> Unit,
+    onDatePickerClick: () -> Unit
+) {
+    val selectedLocalDate = LocalDate.parse(selectedDate)
+    val today = LocalDate.now()
+    val formatter = DateTimeFormatter.ISO_DATE
+
+    // 현재 달의 날짜들 계산
+    val firstDayOfMonth = LocalDate.of(currentYear, currentMonth, 1)
+    val daysInMonth = YearMonth.of(currentYear, currentMonth).lengthOfMonth()
+    val firstDayOfWeek = firstDayOfMonth.dayOfWeek.value
+
+    // 날짜 목록 생성 (이전 달의 마지막 날짜들 + 현재 달 + 다음 달의 첫 날짜들)
+    val startOffset = if (firstDayOfWeek == 7) 0 else firstDayOfWeek // 7은 일요일
+
+    val days = (1..daysInMonth).map { day ->
+        LocalDate.of(currentYear, currentMonth, day)
+    }
+
+    val emptyDaysBefore = (0 until startOffset).map { null }
+
+    // 현재 선택된 날짜가 속한 주 계산 - 여기서는 월요일부터 일요일까지
+    val currentWeekDays = getWeekDaysFromMonday(selectedLocalDate)
+
+    // 요일 헤더
+    val dayOfWeekMap = listOf("MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN")
+
+    // 주간 뷰일 때 제목에 표시할 문자열
+    val weekRangeText = if (currentWeekDays.isNotEmpty()) {
+        val start = currentWeekDays.first()
+        val end = currentWeekDays.last()
+        if (start != null && end != null) {
+            "${start.year}년 ${start.monthValue}월 ${start.dayOfMonth}일 - ${end.monthValue}월 ${end.dayOfMonth}일"
+        } else {
+            "${currentYear}년 ${currentMonth}월"
+        }
+    } else {
+        "${currentYear}년 ${currentMonth}월"
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(calendarHeight)
+            .background(color = LightGray3)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp, vertical = 8.dp)
+        ) {
+            // 달력 헤더 - 년월 또는 주간 범위 표시
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // 이전 달/주 버튼
+                IconButton(onClick = {
+                    if (expandRatio <= 0.7f) {
+                        // 주간 뷰일 때: 이전 주로 이동
+                        val prevWeekStart = currentWeekDays.firstOrNull()?.minusDays(7)
+                        if (prevWeekStart != null) {
+                            onDateSelected(prevWeekStart.format(formatter))
+                        }
+                    } else {
+                        // 월간 뷰일 때: 이전 달로 이동
+                        val newMonth = if (currentMonth == 1) {
+                            onYearMonthChanged(currentYear - 1, 12)
+                            12
+                        } else {
+                            onYearMonthChanged(currentYear, currentMonth - 1)
+                            currentMonth - 1
+                        }
+                    }
+                }) {
+                    Icon(Icons.Default.ArrowBack, contentDescription = "이전")
+                }
+
+                // 년월 또는 주간 범위 표시
+                Text(
+                    text = if (expandRatio <= 0.7f) weekRangeText else "${currentYear}년 ${currentMonth}월",
+                    fontSize = if (expandRatio <= 0.7f) 16.sp else 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.clickable { onDatePickerClick() }
+                )
+
+                // 다음 달/주 버튼
+                IconButton(onClick = {
+                    if (expandRatio <= 0.7f) {
+                        // 주간 뷰일 때: 다음 주로 이동
+                        val nextWeekStart = currentWeekDays.lastOrNull()?.plusDays(1)
+                        if (nextWeekStart != null) {
+                            onDateSelected(nextWeekStart.format(formatter))
+                        }
+                    } else {
+                        // 월간 뷰일 때: 다음 달로 이동
+                        val newMonth = if (currentMonth == 12) {
+                            onYearMonthChanged(currentYear + 1, 1)
+                            1
+                        } else {
+                            onYearMonthChanged(currentYear, currentMonth + 1)
+                            currentMonth + 1
+                        }
+                    }
+                }) {
+                    Icon(Icons.Default.ArrowForward, contentDescription = "다음")
+                }
+            }
+
+            // 요일 헤더
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(7),
+                modifier = Modifier.fillMaxWidth(),
+                userScrollEnabled = false
+            ) {
+                items(dayOfWeekMap) { day ->
+                    Text(
+                        text = day,
+                        color = LightGray40,
+                        fontSize = 14.sp,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .padding(vertical = 4.dp)
+                            .fillMaxWidth()
+                    )
+                }
+            }
+
+            // 날짜 그리드
+            Box(modifier = Modifier.weight(1f)) {
+                if (expandRatio > 0.7f) {
+                    // 월간 뷰
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(7),
+                        modifier = Modifier.fillMaxSize(),
+                        userScrollEnabled = false
+                    ) {
+                        items(emptyDaysBefore + days) { date ->
+                            if (date == null) {
+                                // 빈 셀
+                                Box(modifier = Modifier.size(40.dp))
+                            } else {
+                                // 현재 월의 날짜 표시
+                                val isCurrentMonth = date.monthValue == currentMonth
+                                CalendarDay(
+                                    date = date,
+                                    isToday = date == today,
+                                    isSelected = date.format(formatter) == selectedDate,
+                                    isCurrentMonth = isCurrentMonth,
+                                    onClick = { onDateSelected(date.format(formatter)) }
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    // 주간 뷰
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(7),
+                        modifier = Modifier.fillMaxWidth(),
+                        userScrollEnabled = false
+                    ) {
+                        items(currentWeekDays) { date ->
+                            if (date != null) {
+                                CalendarDay(
+                                    date = date,
+                                    isToday = date == today,
+                                    isSelected = date.format(formatter) == selectedDate,
+                                    // 주간 뷰에서는 월 구분을 시각적으로 표시하지 않음
+                                    isCurrentMonth = true,
+                                    onClick = { onDateSelected(date.format(formatter)) }
+                                )
+                            } else {
+                                Box(modifier = Modifier.size(40.dp))
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // 드래그 핸들 (항상 보이도록 Box의 맨 위에 배치)
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 4.dp)
+                .width(60.dp)
+                .height(4.dp)
+                .background(Color.Gray, RoundedCornerShape(2.dp))
+        )
+    }
+}
+
+@Composable
+fun CalendarDay(
+    date: LocalDate,
+    isToday: Boolean,
+    isSelected: Boolean,
+    isCurrentMonth: Boolean,
+    onClick: () -> Unit
+) {
+    val backgroundColor = if (isSelected) MainPurple else Color.Transparent
+    val borderColor = if (isToday) MainPurple else Color.Transparent
+    val textColor = when {
+        isSelected -> Color.White
+        isToday -> MainPurple
+        !isCurrentMonth -> LightGray60
+        else -> Color.Black
+    }
+
+    Box(
+        modifier = Modifier
+            .size(40.dp)
+            .background(backgroundColor, RoundedCornerShape(20.dp))
+            .border(1.dp, borderColor, RoundedCornerShape(20.dp))
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = date.dayOfMonth.toString(),
+            color = textColor,
+            fontSize = 16.sp,
+            textAlign = TextAlign.Center
+        )
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+fun getWeekDaysFromMonday(date: LocalDate): List<LocalDate> {
+    // 월요일(1) ~ 일요일(7)
+    val dayOfWeek = date.dayOfWeek.value
+
+    // 현재 날짜가 속한 주의 월요일 계산
+    val monday = date.minusDays((dayOfWeek - 1).toLong())
+
+    // 월요일부터 일요일까지 7일 반환
+    return (0..6).map { monday.plusDays(it.toLong()) }
+}
+
+@Composable
+fun DatePickerDialog(
+    year: Int,
+    month: Int,
+    onDateSelected: (Int, Int) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var selectedYear by remember { mutableStateOf(year) }
+    var selectedMonth by remember { mutableStateOf(month) }
+
+    Dialog(onDismissRequest = { onDismiss() }) {
+        Surface(
+            modifier = Modifier.padding(16.dp),
+            shape = RoundedCornerShape(16.dp),
+            color = Color.White
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    "이동하려는 연도와 날짜를 선택하세요",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // 연도 선택
+                Text("연도: $selectedYear", fontWeight = FontWeight.Medium)
+                Slider(
+                    value = selectedYear.toFloat(),
+                    onValueChange = { selectedYear = it.toInt() },
+                    valueRange = 2020f..2030f,
+                    steps = 9  // 10년 간격 (2020-2030)
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // 월 선택
+                Text("월: $selectedMonth", fontWeight = FontWeight.Medium)
+                Slider(
+                    value = selectedMonth.toFloat(),
+                    onValueChange = { selectedMonth = it.toInt() },
+                    valueRange = 1f..12f,
+                    steps = 11,  // 12개월
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(onClick = { onDismiss() }) {
+                        Text("취소")
+                    }
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    Button(
+                        onClick = { onDateSelected(selectedYear, selectedMonth) }
+                    ) {
+                        Text("이동")
                     }
                 }
             }
@@ -205,8 +553,6 @@ fun DraggableLessonContainer(
                 orientation = Orientation.Vertical
             )
     ) {
-        // 드래그 핸들 제거 (달력 내부의 핸들만 사용)
-
         // Using your existing LessonList but removing its drag handling
         ModifiedLessonList(
             homeViewModel = homeViewModel,
@@ -216,281 +562,15 @@ fun DraggableLessonContainer(
     }
 }
 
-@RequiresApi(Build.VERSION_CODES.O)
-@Composable
-fun Calendar(calendarHeight: Dp, expandRatio: Float, selectedDate: String, onDateSelected: (String) -> Unit) {
-    var currentYear by remember { mutableStateOf(LocalDate.now().year) }
-    var currentMonth by remember { mutableStateOf(LocalDate.now().monthValue) }
-    var showDatePickerDialog by remember { mutableStateOf(false) }
-
-    fun updateMonth(year: Int, month: Int) {
-        var newYear = year
-        var newMonth = month
-
-        if (newMonth < 1) {
-            newYear -= 1
-            newMonth = 12
-        } else if (newMonth > 12) {
-            newYear += 1
-            newMonth = 1
-        }
-
-        currentYear = newYear
-        currentMonth = newMonth
-    }
-
-    Column {
-        CustomCalendar(
-            year = currentYear,
-            month = currentMonth,
-            selectedDate = selectedDate,
-            onDateSelected = onDateSelected,
-            onMonthChanged = { newYear, newMonth -> updateMonth(newYear, newMonth) },
-            calendarHeight = calendarHeight,
-            expandRatio = expandRatio,
-            onDatePickerClick = { showDatePickerDialog = true }
-        )
-
-        Divider(
-            color = LightGray,
-            thickness = 1.dp,
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        // 선택된 날짜 표시
-        Text(
-            text = "$selectedDate (${getKoreanDayOfWeek(LocalDate.parse(selectedDate).dayOfWeek.value)})",
-            Modifier.padding(start = 20.dp, top = 10.dp), fontSize = 20.sp
-        )
-
-        // DatePickerDialog 다이얼로그
-        if (showDatePickerDialog) {
-            DatePickerDialog(year = currentYear, month = currentMonth, onDateSelected = { year, month ->
-                currentYear = year
-                currentMonth = month
-                showDatePickerDialog = false
-            })
-        }
-    }
-}
-
 fun getKoreanDayOfWeek(dayOfWeek: Int): String {
     return when (dayOfWeek) {
-        1 -> "월" // Sunday
-        2 -> "화" // Monday
-        3 -> "수" // Tuesday
-        4 -> "목" // Wednesday
-        5 -> "금" // Thursday
-        6 -> "토" // Friday
-        7 -> "일" // Saturday
+        1 -> "월" // Monday
+        2 -> "화" // Tuesday
+        3 -> "수" // Wednesday
+        4 -> "목" // Thursday
+        5 -> "금" // Friday
+        6 -> "토" // Saturday
+        7 -> "일" // Sunday
         else -> ""
-    }
-}
-
-// Dp to pixels 확장 함수
-fun Dp.roundToPx(): Int {
-    return value.roundToInt()
-}
-
-@RequiresApi(Build.VERSION_CODES.O)
-@Composable
-fun CustomCalendar(
-    year: Int,
-    month: Int,
-    selectedDate: String,
-    onDateSelected: (String) -> Unit,
-    onMonthChanged: (Int, Int) -> Unit,
-    calendarHeight: Dp,
-    expandRatio: Float,
-    onDatePickerClick: () -> Unit
-) {
-    val today = LocalDate.now()
-    val firstDayOfMonth = LocalDate.of(year, month, 1)
-    val daysInMonth = YearMonth.of(year, month).lengthOfMonth()
-    val firstDayOfWeek = firstDayOfMonth.dayOfWeek.value % 7 // 0(일) ~ 6(토)
-
-    // 달력의 모든 일자 준비
-    val days = (1..daysInMonth).map { firstDayOfMonth.plusDays((it - 1).toLong()) }
-    val emptyDays = List(firstDayOfWeek) { null }
-    val formatter = DateTimeFormatter.ISO_DATE
-    val dayOfWeekMap = listOf("SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT")
-
-    // 현재 주를 계산
-    val todayDate = LocalDate.parse(selectedDate)
-    val currentWeekDays = getWeekDays(todayDate)
-
-    Box(
-        modifier = Modifier
-            .background(color = LightGray3)
-            .height(calendarHeight)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 16.dp, vertical = 8.dp)
-        ) {
-            // 상단 년/월 및 이동 버튼
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(onClick = { onMonthChanged(year, month - 1) }) {
-                    Icon(Icons.Default.ArrowBack, contentDescription = "이전 달")
-                }
-                Text(
-                    text = "${year}년 ${month}월",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.clickable { onDatePickerClick() }
-                )
-                IconButton(onClick = { onMonthChanged(year, month + 1) }) {
-                    Icon(Icons.Default.ArrowForward, contentDescription = "다음 달")
-                }
-            }
-
-            // 요일 표시
-            LazyVerticalGrid(columns = GridCells.Fixed(7), modifier = Modifier.fillMaxWidth()) {
-                items(dayOfWeekMap) { day ->
-                    Text(
-                        text = day,
-                        color = LightGray40,
-                        fontSize = 16.sp,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(4.dp).fillMaxWidth()
-                    )
-                }
-            }
-
-            Box(modifier = Modifier.weight(1f)) {
-                // 날짜 그리드 (전체 달력 또는 주간 달력)
-                if (expandRatio > 0.7f) {
-                    // 전체 달력 표시 (expandRatio가 높을 때)
-                    LazyVerticalGrid(columns = GridCells.Fixed(7), modifier = Modifier.fillMaxSize()) {
-                        items(emptyDays + days) { date ->
-                            if (date == null) {
-                                Box(modifier = Modifier.height(40.dp))
-                            } else {
-                                RenderCalendarDay(date, today, selectedDate, formatter, onDateSelected)
-                            }
-                        }
-                    }
-                } else {
-                    // 주간 달력만 표시 (expandRatio가 낮을 때)
-                    LazyVerticalGrid(columns = GridCells.Fixed(7), modifier = Modifier.fillMaxWidth()) {
-                        items(currentWeekDays) { date ->
-                            if (date != null) {
-                                RenderCalendarDay(date, today, selectedDate, formatter, onDateSelected)
-                            } else {
-                                Box(modifier = Modifier.height(40.dp))
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        // 드래그 핸들 표시 - 항상 표시되도록 Box 내에 배치
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = 4.dp)
-                .width(60.dp)
-                .height(4.dp)
-                .background(Color.Gray, RoundedCornerShape(2.dp))
-        )
-    }
-}
-
-@RequiresApi(Build.VERSION_CODES.O)
-@Composable
-fun RenderCalendarDay(
-    date: LocalDate,
-    today: LocalDate,
-    selectedDate: String,
-    formatter: DateTimeFormatter,
-    onDateSelected: (String) -> Unit
-) {
-    val dateStr = date.format(formatter)
-    val isToday = date == today
-    val isSelected = dateStr == selectedDate
-    val backgroundColor = if (isSelected) MainPurple else Color.Transparent
-    val borderColor = if (isToday) MainPurple else Color.Transparent
-    val textColor = when {
-        isSelected -> Color.White
-        isToday -> MainPurple
-        else -> Color.Black
-    }
-
-    Box(
-        modifier = Modifier
-            .size(40.dp)
-            .background(color = backgroundColor, shape = RoundedCornerShape(20.dp))
-            .border(1.dp, borderColor, shape = RoundedCornerShape(20.dp))
-            .clickable { onDateSelected(dateStr) },
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = date.dayOfMonth.toString(),
-            color = textColor,
-            fontSize = 16.sp,
-            textAlign = TextAlign.Center
-        )
-    }
-}
-
-@RequiresApi(Build.VERSION_CODES.O)
-fun getWeekDays(date: LocalDate): List<LocalDate?> {
-    // 현재 주의 월요일 구하기
-    val monday = date.minusDays((date.dayOfWeek.value).toLong())
-
-    // 월요일부터 시작하는 일주일 날짜 목록
-    return (0..6).map { monday.plusDays(it.toLong()) }
-}
-
-@Composable
-fun DatePickerDialog(year: Int, month: Int, onDateSelected: (Int, Int) -> Unit) {
-    var selectedYear by remember { mutableStateOf(year) }
-    var selectedMonth by remember { mutableStateOf(month) }
-
-    Dialog(onDismissRequest = { /* Handle dismiss */ }) {
-        Surface(
-            modifier = Modifier.padding(16.dp),
-            shape = RoundedCornerShape(16.dp),
-            color = Color.White
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text("이동하려는 연도와 날짜를 선택하세요", style = MaterialTheme.typography.bodyMedium)
-
-                // 연도 선택
-                Text("연도: $selectedYear")
-                Slider(
-                    value = selectedYear.toFloat(),
-                    onValueChange = { selectedYear = it.toInt() },
-                    valueRange = 2024f..2050f,
-                    steps = 100
-                )
-
-                // 월 선택
-                Text("월: $selectedMonth")
-                Slider(
-                    value = selectedMonth.toFloat(),
-                    onValueChange = { selectedMonth = it.toInt() },
-                    valueRange = 1f..12f,
-                    steps = 10,
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Button(
-                    onClick = {
-                        onDateSelected(selectedYear, selectedMonth)
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("이동")
-                }
-            }
-        }
     }
 }
