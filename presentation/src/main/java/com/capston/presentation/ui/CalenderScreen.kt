@@ -563,9 +563,9 @@ fun DraggableLessonContainer(
     val density = LocalDensity.current
     val screenHeight = LocalConfiguration.current.screenHeightDp.dp
 
-    // 기본 높이를 화면 비율로 설정
+    // 기본 높이 설정 - 최소 높이는 40% 이상으로 설정하여 충분한 스크롤 공간 확보
     var containerHeight by remember {
-        mutableStateOf(with(density) { maxHeight.toFloat() * 1.2f })
+        mutableStateOf(with(density) { (screenHeight * 0.4f).toPx() })
     }
 
     // 최대 컨테이너 높이도 화면 높이에 상대적으로 설정
@@ -573,24 +573,21 @@ fun DraggableLessonContainer(
         (screenHeight * 0.8f).toPx() // 화면 높이의 80%까지 확장 가능
     }
 
+    // 드래그 핸들러
     val dragState = rememberDraggableState { delta ->
-        // Expand container based on drag amount, limited between maxHeight and screen height
         containerHeight = (containerHeight - delta).coerceIn(
-            maxHeight.toFloat(),
+            with(density) { (screenHeight * 0.4f).toPx() }, // 최소 높이 유지
             maxContainerHeight
         )
     }
 
+    // 드래그 손잡이만 드래그 가능하도록 설정
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .height(with(density) { containerHeight.toDp() })
-            .draggable(
-                state = dragState,
-                orientation = Orientation.Vertical
-            )
     ) {
-        // Using your existing LessonList but removing its drag handling
+        // 컨텐츠 영역
         ModifiedLessonList(
             homeViewModel = homeViewModel,
             maxHeight = with(density) { containerHeight.toInt() },
@@ -598,7 +595,6 @@ fun DraggableLessonContainer(
         )
     }
 }
-
 fun getKoreanDayOfWeek(dayOfWeek: Int): String {
     return when (dayOfWeek) {
         1 -> "월" // Monday

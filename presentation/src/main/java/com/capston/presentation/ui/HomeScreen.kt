@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -528,10 +529,12 @@ fun ModifiedLessonList(
         }
     }
 
+    // 스크롤 가능한 LazyColumn 사용
     LazyColumn(
         modifier = Modifier
             .padding(start = 30.dp)
-            .heightIn(max = maxHeight.dp)
+            .fillMaxWidth()  // 너비 꽉 채우기
+            .fillMaxHeight() // 가능한 한 높이 모두 사용
             // 스크롤 가능하지만 드래그는 불가능하도록 설정
             .nestedScroll(remember {
                 object : NestedScrollConnection {
@@ -553,7 +556,7 @@ fun ModifiedLessonList(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 10.dp)
+                    .padding(vertical = 10.dp, horizontal = 4.dp)  // 좌우 패딩 추가
                     // 개별 아이템 드래그 제스처 차단
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
