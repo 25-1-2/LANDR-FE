@@ -9,7 +9,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
-import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.Arrangement
@@ -23,13 +22,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Card
 import androidx.compose.material.Divider
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -57,7 +53,6 @@ import androidx.compose.ui.graphics.Color.Companion.LightGray
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
@@ -76,41 +71,51 @@ import com.capston.presentation.viewmodel.HomeViewModel
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
+import kotlin.math.roundToInt
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun CalenderScreen(homeViewModel: HomeViewModel, dailyScheduleViewModel: DailyScheduleViewModel) {
-    var isCollapsed by remember { mutableStateOf(false) }
-    val calendarHeight by animateDpAsState(targetValue = if (isCollapsed) 0.dp else 300.dp)
+    // 0.0 (최소 주간 표시) ~ 1.0 (전체 달력 표시) 사이의 연속적인 값
+    var calendarExpandRatio by remember { mutableStateOf(1f) }
+
+    // 화면 크기에 맞춘 상대적 높이 설정
+    val screenHeight = LocalConfiguration.current.screenHeightDp.dp
+    val maxCalendarHeight = screenHeight * 0.35f // 화면 높이의 35%
+    val minCalendarHeight = screenHeight * 0.12f // 화면 높이의 12%
+
+    // 드래그에 따라 달력 높이를 계산
+    val calendarHeight by animateDpAsState(
+        targetValue = minCalendarHeight + (maxCalendarHeight - minCalendarHeight) * calendarExpandRatio
+    )
 
     var selectedDate by remember {
         mutableStateOf(
             LocalDate.now().format(DateTimeFormatter.ISO_DATE)
         )
-    } // 선택한 날짜 (String)
+    }
 
     Log.d("selected Date", selectedDate)
-    // 선택한 날짜가 변경될 때 ViewModel을 통해 일정 가져오기
     LaunchedEffect(selectedDate) {
         dailyScheduleViewModel.getDailySchedule(selectedDate)
     }
 
     val dailyState by dailyScheduleViewModel.getDailySchedule.collectAsState()
-    val todayLessonList = dailyState.lessonSchedules // 선택한 날짜의 일정
+    val todayLessonList = dailyState.lessonSchedules
 
+    // 드래그로 달력 크기를 조절하기 위한 스크롤 핸들러
     val nestedScrollConnection = remember {
         object : NestedScrollConnection {
             override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                // 위로 스크롤 (접기)
-                if (available.y < -10 && !isCollapsed) {
-                    isCollapsed = true
-                    return Offset.Zero
-                }
-                // 아래로 스크롤 (펼치기)
-                if (available.y > 10 && isCollapsed) {
-                    isCollapsed = false
-                    return Offset.Zero
+                // 드래그 양에 비례해서 달력 크기 조절
+                val delta = available.y * 0.005f // 드래그 감도 조절 계수
+
+                if (source == NestedScrollSource.Drag) {
+                    // 0.2에서 1.0 사이로 제한하여 항상 주간 뷰는 보이도록 함
+                    calendarExpandRatio = (calendarExpandRatio + delta).coerceIn(0.2f, 1f)
+                    // 드래그 이벤트 소비
+                    return available
                 }
                 return Offset.Zero
             }
@@ -125,23 +130,29 @@ fun CalenderScreen(homeViewModel: HomeViewModel, dailyScheduleViewModel: DailySc
                 .fillMaxSize()
                 .nestedScroll(nestedScrollConnection)
         ) {
-            Calendar(calendarHeight, selectedDate, onDateSelected = { date ->
-                selectedDate = date // 선택한 날짜 업데이트
-            })
+            // 높이 비율을 전달하여 달력이 이에 맞게 표시되도록 함
+            Calendar(
+                calendarHeight = calendarHeight,
+                expandRatio = calendarExpandRatio,
+                selectedDate = selectedDate,
+                onDateSelected = { date ->
+                    selectedDate = date
+                }
+            )
 
             Box(modifier = Modifier.weight(1f)) {
                 if (todayLessonList != null) {
-                    // Use the new DraggableLessonContainer
+                    // LessonContainer도 화면 크기에 맞게 상대적 높이 조정
                     DraggableLessonContainer(
                         homeViewModel = homeViewModel,
-                        maxHeight = 550,
+                        maxHeight = (screenHeight * 0.45f).roundToPx(), // 화면 높이의 45%
                         todayLessonList = todayLessonList
                     )
                 } else {
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(bottom = 50.dp),
+                            .padding(bottom = screenHeight * 0.05f), // 화면 높이의 5%
                         verticalArrangement = Arrangement.Center,
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
@@ -164,9 +175,18 @@ fun DraggableLessonContainer(
     maxHeight: Int,
     todayLessonList: List<LessonScheduleResponse>
 ) {
-    // 기본 높이를 더 크게 설정 (maxHeight에서 시작하되 원하는 만큼 조정 가능)
-    var containerHeight by remember { mutableStateOf(maxHeight.toFloat() * 1.5f) } // 기본 높이를 1.5배로 증가
-    val maxContainerHeight = with(LocalDensity.current) { LocalConfiguration.current.screenHeightDp.dp.toPx() * 0.9f } // 최대 높이도 늘림
+    val density = LocalDensity.current
+    val screenHeight = LocalConfiguration.current.screenHeightDp.dp
+
+    // 기본 높이를 화면 비율로 설정
+    var containerHeight by remember {
+        mutableStateOf(with(density) { maxHeight.toFloat() * 1.2f })
+    }
+
+    // 최대 컨테이너 높이도 화면 높이에 상대적으로 설정
+    val maxContainerHeight = with(density) {
+        (screenHeight * 0.7f).toPx() // 화면 높이의 70%까지 확장 가능
+    }
 
     val dragState = rememberDraggableState { delta ->
         // Expand container based on drag amount, limited between maxHeight and screen height
@@ -179,54 +199,29 @@ fun DraggableLessonContainer(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(with(LocalDensity.current) { containerHeight.toDp() })
-            .background(Color(0xFFF8F8F8))
+            .height(with(density) { containerHeight.toDp() })
             .draggable(
                 state = dragState,
                 orientation = Orientation.Vertical
             )
     ) {
-        // Drag handle indicator
-        Box(
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .padding(vertical = 8.dp)
-                .width(40.dp)
-                .height(4.dp)
-                .background(Color.Gray, RoundedCornerShape(2.dp))
-        )
+        // 드래그 핸들 제거 (달력 내부의 핸들만 사용)
 
         // Using your existing LessonList but removing its drag handling
         ModifiedLessonList(
             homeViewModel = homeViewModel,
-            maxHeight = with(LocalDensity.current) { containerHeight.toInt() },
+            maxHeight = with(density) { containerHeight.toInt() },
             todayLessonList = todayLessonList
         )
     }
 }
 
-// 테스트용 더미데이터
-@Composable
-fun KotlinWorldCard(order: Int) {
-    Card(
-        Modifier
-            .padding(12.dp)
-            .border(width = 4.dp, color = Color.Black)
-            .fillMaxWidth()
-            .height(100.dp)
-    ) {
-        Box(contentAlignment = Alignment.Center) {
-            Text("Kotlin World ${order}")
-        }
-    }
-}
-
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun Calendar(calendarHeight: Dp, selectedDate: String, onDateSelected: (String) -> Unit) {
+fun Calendar(calendarHeight: Dp, expandRatio: Float, selectedDate: String, onDateSelected: (String) -> Unit) {
     var currentYear by remember { mutableStateOf(LocalDate.now().year) }
     var currentMonth by remember { mutableStateOf(LocalDate.now().monthValue) }
-    var showDatePickerDialog by remember { mutableStateOf(false) } // 다이얼로그 표시 여부
+    var showDatePickerDialog by remember { mutableStateOf(false) }
 
     fun updateMonth(year: Int, month: Int) {
         var newYear = year
@@ -249,9 +244,10 @@ fun Calendar(calendarHeight: Dp, selectedDate: String, onDateSelected: (String) 
             year = currentYear,
             month = currentMonth,
             selectedDate = selectedDate,
-            onDateSelected = onDateSelected, // 선택한 날짜 업데이트
+            onDateSelected = onDateSelected,
             onMonthChanged = { newYear, newMonth -> updateMonth(newYear, newMonth) },
             calendarHeight = calendarHeight,
+            expandRatio = expandRatio,
             onDatePickerClick = { showDatePickerDialog = true }
         )
 
@@ -291,6 +287,11 @@ fun getKoreanDayOfWeek(dayOfWeek: Int): String {
     }
 }
 
+// Dp to pixels 확장 함수
+fun Dp.roundToPx(): Int {
+    return value.roundToInt()
+}
+
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun CustomCalendar(
@@ -300,6 +301,7 @@ fun CustomCalendar(
     onDateSelected: (String) -> Unit,
     onMonthChanged: (Int, Int) -> Unit,
     calendarHeight: Dp,
+    expandRatio: Float,
     onDatePickerClick: () -> Unit
 ) {
     val today = LocalDate.now()
@@ -307,18 +309,27 @@ fun CustomCalendar(
     val daysInMonth = YearMonth.of(year, month).lengthOfMonth()
     val firstDayOfWeek = firstDayOfMonth.dayOfWeek.value % 7 // 0(일) ~ 6(토)
 
+    // 달력의 모든 일자 준비
     val days = (1..daysInMonth).map { firstDayOfMonth.plusDays((it - 1).toLong()) }
-    val emptyDays = List(firstDayOfWeek) { null } // 빈칸 채우기
-
-    val formatter = DateTimeFormatter.ISO_DATE // "YYYY-MM-DD" 포맷
+    val emptyDays = List(firstDayOfWeek) { null }
+    val formatter = DateTimeFormatter.ISO_DATE
     val dayOfWeekMap = listOf("SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT")
+
+    // 현재 주를 계산
+    val todayDate = LocalDate.parse(selectedDate)
+    val currentWeekDays = getWeekDays(todayDate)
 
     Box(
         modifier = Modifier
             .background(color = LightGray3)
             .height(calendarHeight)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp, vertical = 8.dp)
+        ) {
+            // 상단 년/월 및 이동 버튼
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -338,6 +349,7 @@ fun CustomCalendar(
                 }
             }
 
+            // 요일 표시
             LazyVerticalGrid(columns = GridCells.Fixed(7), modifier = Modifier.fillMaxWidth()) {
                 items(dayOfWeekMap) { day ->
                     Text(
@@ -350,37 +362,90 @@ fun CustomCalendar(
                 }
             }
 
-            LazyVerticalGrid(columns = GridCells.Fixed(7), modifier = Modifier.fillMaxWidth()) {
-                items(emptyDays + days) { date ->
-                    if (date == null) {
-                        Box(modifier = Modifier.height(40.dp))
-                    } else {
-                        val dateStr = date.format(formatter)
-                        val isToday = date == today
-                        val isSelected = dateStr == selectedDate
-                        val backgroundColor = if (isSelected) MainPurple else Color.Transparent
-                        val borderColor = if (isToday) MainPurple else Color.Transparent
-                        val textColor = when {
-                            isSelected -> Color.White
-                            isToday -> MainPurple
-                            else -> Color.Black
+            Box(modifier = Modifier.weight(1f)) {
+                // 날짜 그리드 (전체 달력 또는 주간 달력)
+                if (expandRatio > 0.7f) {
+                    // 전체 달력 표시 (expandRatio가 높을 때)
+                    LazyVerticalGrid(columns = GridCells.Fixed(7), modifier = Modifier.fillMaxSize()) {
+                        items(emptyDays + days) { date ->
+                            if (date == null) {
+                                Box(modifier = Modifier.height(40.dp))
+                            } else {
+                                RenderCalendarDay(date, today, selectedDate, formatter, onDateSelected)
+                            }
                         }
-
-                        Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .background(color = backgroundColor, shape = RoundedCornerShape(20.dp))
-                                .border(1.dp, borderColor, shape = RoundedCornerShape(20.dp))
-                                .clickable { onDateSelected(dateStr) },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(text = date.dayOfMonth.toString(), color = textColor, fontSize = 16.sp, textAlign = TextAlign.Center)
+                    }
+                } else {
+                    // 주간 달력만 표시 (expandRatio가 낮을 때)
+                    LazyVerticalGrid(columns = GridCells.Fixed(7), modifier = Modifier.fillMaxWidth()) {
+                        items(currentWeekDays) { date ->
+                            if (date != null) {
+                                RenderCalendarDay(date, today, selectedDate, formatter, onDateSelected)
+                            } else {
+                                Box(modifier = Modifier.height(40.dp))
+                            }
                         }
                     }
                 }
             }
         }
+
+        // 드래그 핸들 표시 - 항상 표시되도록 Box 내에 배치
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 4.dp)
+                .width(60.dp)
+                .height(4.dp)
+                .background(Color.Gray, RoundedCornerShape(2.dp))
+        )
     }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun RenderCalendarDay(
+    date: LocalDate,
+    today: LocalDate,
+    selectedDate: String,
+    formatter: DateTimeFormatter,
+    onDateSelected: (String) -> Unit
+) {
+    val dateStr = date.format(formatter)
+    val isToday = date == today
+    val isSelected = dateStr == selectedDate
+    val backgroundColor = if (isSelected) MainPurple else Color.Transparent
+    val borderColor = if (isToday) MainPurple else Color.Transparent
+    val textColor = when {
+        isSelected -> Color.White
+        isToday -> MainPurple
+        else -> Color.Black
+    }
+
+    Box(
+        modifier = Modifier
+            .size(40.dp)
+            .background(color = backgroundColor, shape = RoundedCornerShape(20.dp))
+            .border(1.dp, borderColor, shape = RoundedCornerShape(20.dp))
+            .clickable { onDateSelected(dateStr) },
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = date.dayOfMonth.toString(),
+            color = textColor,
+            fontSize = 16.sp,
+            textAlign = TextAlign.Center
+        )
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+fun getWeekDays(date: LocalDate): List<LocalDate?> {
+    // 현재 주의 월요일 구하기
+    val monday = date.minusDays((date.dayOfWeek.value).toLong())
+
+    // 월요일부터 시작하는 일주일 날짜 목록
+    return (0..6).map { monday.plusDays(it.toLong()) }
 }
 
 @Composable
