@@ -145,7 +145,7 @@ fun CalenderScreen(homeViewModel: HomeViewModel, dailyScheduleViewModel: DailySc
                     // LessonContainer도 화면 크기에 맞게 상대적 높이 조정
                     DraggableLessonContainer(
                         homeViewModel = homeViewModel,
-                        maxHeight = (screenHeight * 0.45f).roundToPx(), // 화면 높이의 45%
+                        maxHeight = (screenHeight * 0.60f).roundToPx(), // 화면 높이의 60%
                         todayLessonList = todayLessonList
                     )
                 } else {
