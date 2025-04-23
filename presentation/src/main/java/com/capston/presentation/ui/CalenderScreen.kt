@@ -27,9 +27,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Color.Companion.LightGray
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -189,7 +192,7 @@ fun CalenderScreen(homeViewModel: HomeViewModel, dailyScheduleViewModel: DailySc
                     // LessonContainer도 화면 크기에 맞게 상대적 높이 조정
                     DraggableLessonContainer(
                         homeViewModel = homeViewModel,
-                        maxHeight = (screenHeight * 1f).roundToPx(), // 화면 높이의 45%
+                        maxHeight = (screenHeight * 1f).roundToPx(), // 화면 높이의 100%
                         todayLessonList = todayLessonList
                     )
                 } else {
@@ -480,7 +483,7 @@ fun getWeekDaysFromMonday(date: LocalDate): List<LocalDate> {
     val dayOfWeek = date.dayOfWeek.value
 
     // 현재 날짜가 속한 주의 월요일 계산
-    val monday = date.minusDays((dayOfWeek - 1).toLong())
+    val monday = date.minusDays((dayOfWeek).toLong())
 
     // 월요일부터 일요일까지 7일 반환
     return (0..6).map { monday.plusDays(it.toLong()) }
@@ -563,38 +566,79 @@ fun DraggableLessonContainer(
     val density = LocalDensity.current
     val screenHeight = LocalConfiguration.current.screenHeightDp.dp
 
-    // 기본 높이 설정 - 최소 높이는 40% 이상으로 설정하여 충분한 스크롤 공간 확보
-    var containerHeight by remember {
-        mutableStateOf(with(density) { (screenHeight * 0.4f).toPx() })
-    }
+    // 확장 상태 추적 (드래그로 확장했는지 여부)
+    var isExpanded by remember { mutableStateOf(false) }
 
-    // 최대 컨테이너 높이도 화면 높이에 상대적으로 설정
-    val maxContainerHeight = with(density) {
-        (screenHeight * 0.8f).toPx() // 화면 높이의 80%까지 확장 가능
-    }
+    // 컨테이너 높이 - 확장 상태에 따라 결정
+    val initialHeight = screenHeight * 0.6f // 축소 상태 높이
+    val expandedHeight = screenHeight * 0.9f // 확장 상태 높이
+
+    // 현재 높이 상태
+    val containerHeight by animateDpAsState(
+        targetValue = if (isExpanded) expandedHeight else initialHeight
+    )
 
     // 드래그 핸들러
     val dragState = rememberDraggableState { delta ->
-        containerHeight = (containerHeight - delta).coerceIn(
-            with(density) { (screenHeight * 0.4f).toPx() }, // 최소 높이 유지
-            maxContainerHeight
-        )
+        // 드래그 방향에 따라 확장 상태 변경 (빠른 전환 방식)
+        if (delta < -10) { // 위로 드래그하면 확장
+            isExpanded = true
+        } else if (delta > 10) { // 아래로 드래그하면 축소
+            isExpanded = false
+        }
     }
 
-    // 드래그 손잡이만 드래그 가능하도록 설정
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(with(density) { containerHeight.toDp() })
+            .height(containerHeight)
     ) {
-        // 컨텐츠 영역
-        ModifiedLessonList(
-            homeViewModel = homeViewModel,
-            maxHeight = with(density) { containerHeight.toInt() },
-            todayLessonList = todayLessonList
-        )
+        // 내용 컨테이너
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = 16.dp)
+        ) {
+            // 수정된 ModifiedLessonList를 사용하여 내용 표시
+            ModifiedLessonList(
+                homeViewModel = homeViewModel,
+                maxHeight = containerHeight.value.toInt(),
+                todayLessonList = todayLessonList,
+                isExpanded = isExpanded // 확장 상태 전달
+            )
+
+            // 축소 상태일 때만 그라데이션 오버레이와 힌트 표시
+            if (!isExpanded && todayLessonList.size > 3) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth()
+                        .height(40.dp)
+                        .background(
+                            brush = Brush.verticalGradient(
+                                colors = listOf(
+                                    Color.Transparent,
+                                    Color.White.copy(alpha = 0.9f)
+                                )
+                            )
+                        )
+                ) {
+                    Text(
+                        "↑ 위로 드래그하여 더 보기",
+                        textAlign = TextAlign.Center,
+                        fontSize = 12.sp,
+                        color = LightGray60,
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .padding(bottom = 4.dp)
+                    )
+                }
+            }
+        }
     }
 }
+
+
 fun getKoreanDayOfWeek(dayOfWeek: Int): String {
     return when (dayOfWeek) {
         1 -> "월" // Monday

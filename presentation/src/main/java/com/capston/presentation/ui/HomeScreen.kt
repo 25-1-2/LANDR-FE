@@ -69,10 +69,13 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Color.Companion.LightGray
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
@@ -520,7 +523,8 @@ fun CheckBox(isChecked: Boolean, onCheckedChange: () -> Unit) {
 fun ModifiedLessonList(
     homeViewModel: HomeViewModel,
     maxHeight: Int,
-    todayLessonList: List<LessonScheduleResponse>
+    todayLessonList: List<LessonScheduleResponse>,
+    isExpanded: Boolean = true // 확장 상태 여부를 매개변수로 받음
 ) {
     // 제스처 차단을 위한 InputTransformer 생성
     val inputModifier = Modifier.pointerInput(Unit) {
@@ -535,6 +539,14 @@ fun ModifiedLessonList(
             .padding(start = 30.dp)
             .fillMaxWidth()  // 너비 꽉 채우기
             .fillMaxHeight() // 가능한 한 높이 모두 사용
+            // 확장 상태일 때만 스크롤 가능하도록 설정
+            .then(
+                if (!isExpanded) {
+                    Modifier.disableScrolling()
+                } else {
+                    Modifier
+                }
+            )
             // 스크롤 가능하지만 드래그는 불가능하도록 설정
             .nestedScroll(remember {
                 object : NestedScrollConnection {
@@ -590,6 +602,14 @@ fun ModifiedLessonList(
             }
             Spacer(modifier = Modifier.height(20.dp))
         }
+    }
+}
+
+// 스크롤 비활성화 확장 함수
+fun Modifier.disableScrolling() = composed {
+    val clipModifier = clip(RectangleShape)
+    clipModifier.pointerInput(Unit) {
+        detectVerticalDragGestures { _, _ -> }
     }
 }
 
