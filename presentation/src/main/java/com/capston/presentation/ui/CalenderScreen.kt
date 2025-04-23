@@ -251,6 +251,31 @@ fun SimpleCalendar(
     val today = LocalDate.now()
     val formatter = DateTimeFormatter.ISO_DATE
 
+    // 선택된 날짜의 연도와 월
+    val selectedYear = selectedLocalDate.year
+    val selectedMonth = selectedLocalDate.monthValue
+
+    // 확장 상태 변경 시 선택된 날짜의 연도와 월을 업데이트
+    // 이전 확장 상태 추적
+    var prevExpandRatio by remember { mutableStateOf(expandRatio) }
+
+    // 확장 상태가 변경되었을 때 실행
+    LaunchedEffect(expandRatio) {
+        // 월간 뷰에서 주간 뷰로 전환하거나 주간 뷰에서 월간 뷰로 전환할 때
+        // 기준점은 0.7f (0.7 이하는 주간 뷰, 0.7 초과는 월간 뷰)
+        if ((prevExpandRatio > 0.7f && expandRatio <= 0.7f) ||
+            (prevExpandRatio <= 0.7f && expandRatio > 0.7f)) {
+            // 현재 표시 중인 연도/월과 선택된 날짜의 연도/월이 다른 경우
+            if (currentYear != selectedYear || currentMonth != selectedMonth) {
+                // 선택된 날짜의 연도와 월로 업데이트
+                onYearMonthChanged(selectedYear, selectedMonth)
+            }
+        }
+
+        // 현재 확장 상태 저장
+        prevExpandRatio = expandRatio
+    }
+
     // 현재 달의 날짜들 계산
     val firstDayOfMonth = LocalDate.of(currentYear, currentMonth, 1)
     val daysInMonth = YearMonth.of(currentYear, currentMonth).lengthOfMonth()
@@ -268,9 +293,6 @@ fun SimpleCalendar(
     // 현재 선택된 날짜가 속한 주 계산 - 여기서는 월요일부터 일요일까지
     val currentWeekDays = getWeekDaysFromMonday(selectedLocalDate)
 
-    // 요일 헤더
-    val dayOfWeekMap = listOf("MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN")
-
     // 주간 뷰일 때 제목에 표시할 문자열
     val weekRangeText = if (currentWeekDays.isNotEmpty()) {
         val start = currentWeekDays.first()
@@ -283,6 +305,9 @@ fun SimpleCalendar(
     } else {
         "${currentYear}년 ${currentMonth}월"
     }
+
+    // 요일 헤더
+    val dayOfWeekMap = listOf("MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN")
 
     Box(
         modifier = Modifier
@@ -305,10 +330,8 @@ fun SimpleCalendar(
                 IconButton(onClick = {
                     if (expandRatio <= 0.7f) {
                         // 주간 뷰일 때: 이전 주로 이동
-                        val prevWeekStart = currentWeekDays.firstOrNull()?.minusDays(7)
-                        if (prevWeekStart != null) {
-                            onDateSelected(prevWeekStart.format(formatter))
-                        }
+                        val prevWeekWednesday = currentWeekDays.first().plusDays(2).minusDays(7)
+                        onDateSelected(prevWeekWednesday.format(formatter))
                     } else {
                         // 월간 뷰일 때: 이전 달로 이동
                         val newMonth = if (currentMonth == 1) {
@@ -335,10 +358,8 @@ fun SimpleCalendar(
                 IconButton(onClick = {
                     if (expandRatio <= 0.7f) {
                         // 주간 뷰일 때: 다음 주로 이동
-                        val nextWeekStart = currentWeekDays.lastOrNull()?.plusDays(1)
-                        if (nextWeekStart != null) {
-                            onDateSelected(nextWeekStart.format(formatter))
-                        }
+                        val nextWeekWednesday = currentWeekDays.first().plusDays(2).plusDays(7)
+                        onDateSelected(nextWeekWednesday.format(formatter))
                     } else {
                         // 월간 뷰일 때: 다음 달로 이동
                         val newMonth = if (currentMonth == 12) {
@@ -482,7 +503,7 @@ fun getWeekDaysFromMonday(date: LocalDate): List<LocalDate> {
     // 월요일(1) ~ 일요일(7)
     val dayOfWeek = date.dayOfWeek.value
 
-    // 현재 날짜가 속한 주의 월요일 계산
+    // 현재 날짜가 속한 주의 월요일 계산 (수정)
     val monday = date.minusDays((dayOfWeek).toLong())
 
     // 월요일부터 일요일까지 7일 반환
