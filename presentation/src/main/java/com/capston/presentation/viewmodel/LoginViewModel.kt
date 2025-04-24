@@ -3,6 +3,7 @@ package com.capston.presentation.viewmodel
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.capston.domain.manager.LoadingStateManager
 import com.capston.domain.request.LoginDto
 import com.capston.domain.response.LoginResponse
 import com.capston.domain.usecase.login.PostLoginInfoUseCase
@@ -22,7 +23,8 @@ class LoginViewModel @Inject constructor(
     private val postLoginInfoUseCase: PostLoginInfoUseCase,
     private val saveTokensUseCase: SaveAccessTokenUseCase,
     private val getAccessTokenUseCase: GetAccessTokenUseCase,
-    private val clearTokensUseCase: ClearTokensUseCase
+    private val clearTokensUseCase: ClearTokensUseCase,
+    private val loadingStateManager: LoadingStateManager
 ): ViewModel() {
     // 회원가입 성공 시 받아오는 액세스 토큰
     private val _loginResponse = MutableStateFlow(LoginResponse())
@@ -34,6 +36,7 @@ class LoginViewModel @Inject constructor(
 
     fun postLogin(loginDto: LoginDto) {
         viewModelScope.launch {
+            loadingStateManager.show()
             postLoginInfoUseCase(loginDto)
                 .catch { e ->
                     Log.e("LoginViewModel", "postLogin error: ${e.message}")
@@ -52,23 +55,28 @@ class LoginViewModel @Inject constructor(
 
                     checkAccessToken()
                 }
+                loadingStateManager.hide()
         }
     }
 
     // 토큰 정보 수집 예시
     fun checkAccessToken() {
         viewModelScope.launch {
+            loadingStateManager.show()
             getAccessTokenUseCase().collect { token ->
                 Log.d("LoginViewModel", "현재 저장된 액세스 토큰: $token")
             }
+            loadingStateManager.hide()
         }
     }
 
     // 로그아웃 기능
     fun logout() {
         viewModelScope.launch {
+            loadingStateManager.show()
             clearTokensUseCase()
             Log.d("LoginViewModel", "토큰 삭제 완료")
+            loadingStateManager.hide()
         }
     }
 }
