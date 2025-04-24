@@ -621,11 +621,10 @@ fun ModifiedLessonList(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 10.dp, horizontal = 4.dp)  // 좌우 패딩 추가
-                    // 개별 아이템 드래그 제스처 차단
+                    .padding(vertical = 10.dp, horizontal = 4.dp)
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
-                        indication = null, // ripple 효과 제거
+                        indication = null,
                         enabled = true,
                         onClick = { /* 클릭만 허용 */ }
                     )
@@ -637,23 +636,52 @@ fun ModifiedLessonList(
                         isChecked = !isChecked
                     }
                 )
-                Column {
-                    Text(
-                        text = lesson.lessonTitle,
-                        textDecoration = if (isChecked) TextDecoration.LineThrough else TextDecoration.None,
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontSize = 16.sp
-                    )
-                    Text(
-                        text = "${lesson.lectureName} · 약 ${lesson.adjustedDuration}분",
-                        textDecoration = if (isChecked) TextDecoration.LineThrough else TextDecoration.None,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = LightGray60,
-                        fontSize = 14.sp
-                    )
+
+                // 텍스트 + 시간 박스를 수평으로 정렬
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween // 왼쪽 텍스트, 오른쪽 박스 정렬
+                ) {
+                    Column(
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(
+                            text = lesson.lessonTitle,
+                            textDecoration = if (isChecked) TextDecoration.LineThrough else TextDecoration.None,
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontSize = 16.sp
+                        )
+                        Text(
+                            text = lesson.lectureName,
+                            textDecoration = if (isChecked) TextDecoration.LineThrough else TextDecoration.None,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = LightGray60,
+                            fontSize = 14.sp
+                        )
+                    }
+
+                    // 오른쪽 시간 박스
+                    Box(
+                        modifier = Modifier
+                            .padding(end = 10.dp)
+                            .border(
+                                width = 1.dp,
+                                color = MainPurple,
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                            .background(color = Transparent, shape = RoundedCornerShape(12.dp))
+                            .padding(horizontal = 10.dp, vertical = 4.dp)
+                    ) {
+                        Text(
+                            text = "${lesson.adjustedDuration}분",
+                            fontSize = 12.sp,
+                            color = MainPurple
+                        )
+                    }
                 }
             }
-            Spacer(modifier = Modifier.height(20.dp))
+
         }
     }
 }
