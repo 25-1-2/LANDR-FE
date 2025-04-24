@@ -75,6 +75,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Color.Companion.LightGray
+import androidx.compose.ui.graphics.Color.Companion.Transparent
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -215,15 +216,67 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
                 modifier = Modifier.fillMaxWidth()
             )
 
-            Spacer(modifier = Modifier.height(30.dp)) // 🌟 그래프와 강의 목록 사이 간격 추가
+            Spacer(modifier = Modifier.height(30.dp)) // 그래프와 강의 목록 사이 간격 추가
 
-            Text(
-                text = "⭐ 오늘의 강의 (총 ${todayTotalLesson}강, 약 ${todayTotalDuration}분)",
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Bold,
-                fontSize = 20.sp,
-                modifier = Modifier.padding(start = 20.dp)
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .padding(horizontal = 20.dp)
+            ) {
+                Text(
+                    text = "⭐ 오늘의 강의",
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 20.sp
+                )
+
+                Spacer(modifier = Modifier.weight(1f))
+
+                Box(
+                    modifier = Modifier
+                        .border(width = 1.dp, color = LightGray40, shape = RoundedCornerShape(8.dp))
+                        .background(color = Transparent, shape = RoundedCornerShape(8.dp))
+                        .padding(horizontal = 12.dp, vertical = 6.dp),
+                    contentAlignment = Alignment.TopEnd
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        // 강의 수 아이콘 + 텍스트
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.home_screen_total_count_iv), // 강의 아이콘
+                                contentDescription = "총 강의 수",
+                                modifier = Modifier.size(16.dp),
+                                tint = Color.Unspecified
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "총 ${todayTotalLesson}강",
+                                fontSize = 14.sp,
+                                color = LightGray60
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.width(12.dp))
+
+                        // 시간 아이콘 + 텍스트
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.home_screen_total_duration_iv), // 시간 아이콘
+                                contentDescription = "총 시간",
+                                modifier = Modifier.size(16.dp),
+                                tint = Color.Unspecified
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "약 ${todayTotalDuration}분",
+                                fontSize = 14.sp,
+                                color = LightGray60
+                            )
+                        }
+                    }
+                }
+            }
+
             Spacer(modifier = Modifier.height(20.dp))
 
             if (todayLessonList != null) {
