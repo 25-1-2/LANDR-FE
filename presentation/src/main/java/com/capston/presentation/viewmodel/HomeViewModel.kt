@@ -34,13 +34,7 @@ class HomeViewModel @Inject constructor(
             loadingStateManager.show()
             try {
                 getDistinctHomeUseCase().collect { response ->
-                    // todaySchedule이 null일 경우 빈 객체로 처리
-                    val safeTodaySchedule = response.todaySchedule ?: TodayScheduleResponse()
-                    val safeUserProgress = response.userProgress ?: UserProgressResponse()
-
-                    // userProgress와 todaySchedule을 포함한 응답을 MutableStateFlow에 업데이트
-                    _getDistinctHome.value = response.copy(todaySchedule = safeTodaySchedule, userProgress = safeUserProgress)
-
+                    // ...
                 }
             } catch (e: Exception) {
                 Log.e("getDistinctHome", "에러: ${e.message}", e)
