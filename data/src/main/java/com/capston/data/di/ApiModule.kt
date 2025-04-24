@@ -1,5 +1,6 @@
 package com.capston.data.di
 
+import com.capston.data.loading.LoadingManager
 import com.capston.data.repository.remote.api.DailyScheduleApi
 import com.capston.data.repository.remote.api.ErrorApi
 import com.capston.data.repository.remote.api.HomeApi

@@ -51,6 +51,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.capston.domain.manager.LoadingStateManager
 import com.capston.domain.model.Lecture
 import com.capston.presentation.theme.CapstonTheme
 import com.capston.presentation.theme.LightGray2
@@ -62,9 +63,13 @@ import com.capston.presentation.viewmodel.DailyScheduleViewModel
 import com.capston.presentation.viewmodel.HomeViewModel
 import com.capston.presentation.viewmodel.PlanViewModel
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    @Inject
+    lateinit var loadingStateManager: LoadingStateManager
+
     @SuppressLint("CoroutineCreationDuringComposition")
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -74,11 +79,18 @@ class MainActivity : ComponentActivity() {
             val homeViewModel: HomeViewModel by viewModels()
             val planViewModel: PlanViewModel by viewModels()
             val dailyScheduleViewModel: DailyScheduleViewModel by viewModels()
+
             LaunchedEffect(Unit) {
                 homeViewModel.getDistinctHome()
             }
+
             CapstonTheme {
-                SettingTopBottomBar(homeViewModel, planViewModel, dailyScheduleViewModel)
+                Box(modifier = Modifier.fillMaxSize()) {
+                    SettingTopBottomBar(homeViewModel, planViewModel, dailyScheduleViewModel)
+
+                    // 전역 로딩 인디케이터
+                    LoadingIndicator(loadingStateManager)
+                }
             }
         }
     }
