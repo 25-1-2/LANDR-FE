@@ -28,31 +28,46 @@ class LectureViewModel @Inject constructor(
     private var _allLectureList = MutableStateFlow<List<LectureResponseDto>>(emptyList())
     val allLectureList: StateFlow<List<LectureResponseDto>> = _allLectureList
 
-    fun getDistinctLecture(lectureDto: LectureDto) {
+    fun getDistinctLecture(searchName: String) {
         viewModelScope.launch {
             loadingStateManager.show()
             try {
-                getDistinctLectureUseCase(lectureDto).collect { response ->
+                getDistinctLectureUseCase(searchName).collect { response ->
+                    Log.d("LectureViewModel", "API 응답: ${response.data?.size ?: 0}개 항목")
+                    // 응답 데이터 예시 로깅
+                    if (response.data?.isNotEmpty() == true) {
+                        Log.d("LectureViewModel", "첫 번째 항목: ${response.data?.first()?.title}")
+                    }
                     _distinctLecture.value = response
                 }
             } catch (e: Exception) {
-                Log.e("LectureViewModel", "getDistinctLecture 에러: ${e.message}", e)
+                Log.e("LectureViewModel", "강의 조회 실패: ${e.message}", e)
             } finally {
                 loadingStateManager.hide()
             }
         }
     }
 
-    fun getAllLecture(lectureDto: LectureDto) {
+    fun getAllLecture(lectureDto: LectureDto = LectureDto()) {
         viewModelScope.launch {
             loadingStateManager.show()
             try {
-                // getAllLectureUseCase()가 DistinctLectureResponse를 반환한다고 가정
+                Log.d("LectureViewModel", "강의 목록 조회 API 호출: search=${lectureDto.search}")
+
                 getAllLectureUseCase().collect { response ->
-                    _allLectureList.value = response.data ?: emptyList() // data가 null일 경우 emptyList()로 대체
+                    val lectures = response.data ?: emptyList()
+                    Log.d("LectureViewModel", "강의 목록 응답: ${lectures.size}개 항목")
+
+                    // 개별 강의 로그
+                    lectures.forEach { lecture ->
+                        Log.d("LectureViewModel", "강의: ${lecture.title}, 교사: ${lecture.teacher}")
+                    }
+
+                    _allLectureList.value = lectures
                 }
             } catch (e: Exception) {
-                Log.e("LectureViewModel", "getAllLecture 에러: ${e.message}", e)
+                Log.e("LectureViewModel", "강의 목록 조회 실패: ${e.message}", e)
+                _allLectureList.value = emptyList()
             } finally {
                 loadingStateManager.hide()
             }
