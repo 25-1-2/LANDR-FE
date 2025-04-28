@@ -3,11 +3,13 @@ package com.capston.data.di
 import com.capston.data.repository.remote.api.DailyScheduleApi
 import com.capston.data.repository.remote.api.ErrorApi
 import com.capston.data.repository.remote.api.HomeApi
+import com.capston.data.repository.remote.api.LectureApi
 import com.capston.data.repository.remote.api.LoginApi
 import com.capston.data.repository.remote.api.PlanApi
 import com.capston.data.repository.remote.datasourcelmpl.DailyScheduleDataSourceImpl
 import com.capston.data.repository.remote.datasourcelmpl.ErrorDataSourceImpl
 import com.capston.data.repository.remote.datasourcelmpl.HomeDataSourceImpl
+import com.capston.data.repository.remote.datasourcelmpl.LectureDataSourceImpl
 import com.capston.data.repository.remote.datasourcelmpl.LoginDataSourceImpl
 import com.capston.data.repository.remote.datasourcelmpl.PlanDataSourceImpl
 import com.capston.data.repository.remote.repositoryImpl.DailyScheduleRepositoryImpl
@@ -108,6 +110,14 @@ object RepositoryModule {
         DailyScheduleRepositoryImpl(dailyScheduleDataSource)
 
     // 강의 검색
+    @Provides
+    @Singleton
+    fun provideLectureDataSource(
+        lectureApi: LectureApi
+    ): LectureDataSource {
+        return LectureDataSourceImpl(lectureApi)
+    }
+
     @Provides
     @Singleton
     fun provideLectureRepository(lectureDataSource: LectureDataSource): LectureRepository =
