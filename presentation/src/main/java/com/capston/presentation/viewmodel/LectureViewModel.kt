@@ -9,6 +9,7 @@ import com.capston.domain.response.lecture.DistinctLectureResponse
 import com.capston.domain.response.lecture.LectureResponseDto
 import com.capston.domain.usecase.lecture.GetAllLectureUseCase
 import com.capston.domain.usecase.lecture.GetDistinctLectureUseCase
+import com.capston.presentation.ui.LectureItemDto
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -27,6 +28,9 @@ class LectureViewModel @Inject constructor(
 
     private var _allLectureList = MutableStateFlow<List<LectureResponseDto>>(emptyList())
     val allLectureList: StateFlow<List<LectureResponseDto>> = _allLectureList
+
+    private val _searchLectureItems = MutableStateFlow<List<LectureItemDto>>(emptyList())
+    val searchLectureItems: StateFlow<List<LectureItemDto>> = _searchLectureItems
 
     fun getDistinctLecture(searchName: String) {
         viewModelScope.launch {
@@ -72,6 +76,11 @@ class LectureViewModel @Inject constructor(
                 loadingStateManager.hide()
             }
         }
+    }
+
+    // 저장하는 함수
+    fun updateSearchLectureItems(items: List<LectureItemDto>) {
+        _searchLectureItems.value = items
     }
 
 }

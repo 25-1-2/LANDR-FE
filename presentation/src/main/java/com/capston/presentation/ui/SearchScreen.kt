@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -53,6 +54,11 @@ fun SearchScreen(
     val searchLectureResponse by lectureViewModel.distinctLecture.collectAsState()
     val allLectureResponse by lectureViewModel.allLectureList.collectAsState()
 
+    var shouldReloadData by rememberSaveable { mutableStateOf(true) }
+
+    // 명시적인 로딩 상태 추적
+    var isLoading by remember { mutableStateOf(true) }
+
     // 검색 중인지 여부를 추적
     var isSearching by remember { mutableStateOf(false) }
 
@@ -65,9 +71,28 @@ fun SearchScreen(
     var allItems by remember { mutableStateOf<List<LectureItemDto>>(emptyList()) }
 
     // 컴포넌트가 처음 로드될 때 전체 강의 조회
-    LaunchedEffect(Unit) {
-        Log.d("SearchScreen", "초기 전체 강의 조회")
-        lectureViewModel.getAllLecture()
+    LaunchedEffect(shouldReloadData) {
+        if (shouldReloadData) {
+            Log.d("SearchScreen", "전체 강의 조회 (재로딩) 시작")
+            isLoading = true
+            allItems = emptyList() // 기존 항목 초기화
+            lectureViewModel.getAllLecture()
+            shouldReloadData = false
+        }
+    }
+
+    // 화면에 다시 돌아왔을 때 재로딩 설정
+    DisposableEffect(navController) {
+        val listener = NavController.OnDestinationChangedListener { _, destination, _ ->
+            Log.d("SearchScreen", "네비게이션 감지: ${destination.route}")
+            if (destination.route == "search") {
+                shouldReloadData = true
+            }
+        }
+        navController.addOnDestinationChangedListener(listener)
+        onDispose {
+            navController.removeOnDestinationChangedListener(listener)
+        }
     }
 
     // 검색어 변경 시 API 호출
@@ -87,9 +112,27 @@ fun SearchScreen(
             if (searchQuery.isNotBlank()) {
                 Log.d("SearchScreen", "검색어 변경: $searchQuery")
                 isSearching = true
+                isLoading = true
                 lectureViewModel.getDistinctLecture(searchQuery)
             } else {
                 isSearching = false
+                if (allLectureResponse.isNotEmpty()) {
+                    // 이미 로드된 전체 목록이 있으면 바로 처리
+                    allItems = allLectureResponse.map { lecture ->
+                        LectureItemDto(
+                            title = lecture.title,
+                            platform = lecture.platform.label,
+                            teacher = "${lecture.teacher} · [과목] ${lecture.subject}",
+                            imageResId = getImageForSubject(lecture.subject)
+                        )
+                    }
+                    isLoading = false
+                    Log.d("SearchScreen", "캐시된 전체 목록 처리: ${allItems.size}개 항목")
+                } else {
+                    // 없으면 새로 로드
+                    isLoading = true
+                    lectureViewModel.getAllLecture()
+                }
             }
         }
     }
@@ -119,14 +162,17 @@ fun SearchScreen(
                 cursorLectureId = searchLectureResponse.nextCursor.toString()
             }
             cursorCreatedAt = searchLectureResponse.nextCreateAt
+            isLoading = false
 
             Log.d("SearchScreen", "검색 결과 처리: ${newItems.size}개 항목, 누적 ${allItems.size}개, 다음 페이지 ${hasMoreData}")
         }
     }
 
-    // 전체 목록 처리
+    // 전체 목록 처리 - 더 명확하게 조건 설정
     LaunchedEffect(allLectureResponse) {
-        if (!isSearching && allItems.isEmpty() && allLectureResponse.isNotEmpty()) {
+        Log.d("SearchScreen", "전체 목록 응답 변경 감지: ${allLectureResponse.size}개 항목, 검색 중: $isSearching")
+        if (!isSearching && allLectureResponse.isNotEmpty()) {
+            // 전체 목록 처리 로직
             allItems = allLectureResponse.map { lecture ->
                 LectureItemDto(
                     title = lecture.title,
@@ -135,12 +181,13 @@ fun SearchScreen(
                     imageResId = getImageForSubject(lecture.subject)
                 )
             }
-            Log.d("SearchScreen", "전체 목록 로드: ${allItems.size}개 항목")
+            isLoading = false
+            Log.d("SearchScreen", "전체 목록 처리 완료: ${allItems.size}개 항목")
         }
     }
 
     Column {
-        SearchTopBar(searchQuery = searchQuery, onQueryChanged = { searchQuery = it })
+        SearchTopBar(searchQuery = searchQuery, onQueryChanged = { searchQuery = it }, lectureViewModel = lectureViewModel)
 
         // 검색 결과 표시
         InfiniteScrollList(
@@ -148,6 +195,7 @@ fun SearchScreen(
             lectureItems = allItems,
             searchQuery = searchQuery,
             hasMoreData = hasMoreData,
+            isLoading = isLoading,
             onLoadMore = {
                 if (hasMoreData && isSearching) {
                     scope.launch {
@@ -166,6 +214,7 @@ fun InfiniteScrollList(
     lectureItems: List<LectureItemDto>,
     searchQuery: String,
     hasMoreData: Boolean,
+    isLoading: Boolean,
     onLoadMore: () -> Unit
 ) {
     var loading by remember { mutableStateOf(false) }
@@ -198,7 +247,9 @@ fun InfiniteScrollList(
             if (lectureItems.isEmpty()) {
                 item {
                     Text(
-                        text = if (searchQuery.isBlank()) "강의 목록을 불러오는 중..." else "검색 결과가 없습니다.",
+                        text = if (isLoading) "강의 목록을 불러오는 중..."
+                        else if (searchQuery.isBlank()) "강의 목록이 비어 있습니다."
+                        else "검색 결과가 없습니다.",
                         fontSize = 18.sp,
                         color = Color.Gray,
                         modifier = Modifier.fillMaxWidth().padding(16.dp),
@@ -217,7 +268,7 @@ fun InfiniteScrollList(
                 }
 
                 // 로딩 인디케이터
-                if (hasMoreData) {
+                if (hasMoreData || isLoading) {
                     item {
                         Box(
                             modifier = Modifier
@@ -326,7 +377,8 @@ fun SearchLectureItem(lectureItem: LectureItemDto, searchQuery: String, onClick:
 @Composable
 fun SearchTopBar(
     searchQuery: String,
-    onQueryChanged: (String) -> Unit
+    onQueryChanged: (String) -> Unit,
+    lectureViewModel: LectureViewModel
 ) {
     val context = LocalContext.current
 
@@ -339,7 +391,7 @@ fun SearchTopBar(
                     val intent = Intent(context, MainActivity::class.java)
                     context.startActivity(intent)
                 },
-                onSearchClick = { /* TODO: 검색 동작 */ }
+                onSearchClick = { lectureViewModel.getDistinctLecture(searchQuery) }
             )
         }
     )
