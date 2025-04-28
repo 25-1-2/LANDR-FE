@@ -15,6 +15,5 @@ interface LectureApi {
     //강의 전체 조회
     @GET("/v1/lectures/all")
     suspend fun getAllLecture(
-        @Body lectureDto: LectureDto
     ): DistinctLectureResponse
 }

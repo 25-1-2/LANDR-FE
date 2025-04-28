@@ -20,7 +20,7 @@ class LectureDataSourceImpl @Inject constructor(
         Log.d("LectureDataSourceImpl", "서버 응답: $result")
         if (result == null) {
             val defaultPayload = DistinctLectureResponse(
-                data = LectureResponseDto(),
+                data = emptyList(),
             )
             result = defaultPayload
         }
@@ -32,12 +32,12 @@ class LectureDataSourceImpl @Inject constructor(
         // 오류 처리
     }
 
-    override suspend fun getAllLecture(lectureDto: LectureDto): Flow<DistinctLectureResponse> = flow {
-        var result = lectureApi.getAllLecture(lectureDto)
+    override suspend fun getAllLecture(): Flow<DistinctLectureResponse> = flow {
+        var result = lectureApi.getAllLecture()
         Log.d("LectureDataSourceImpl", "서버 응답: $result")
         if (result == null) {
             val defaultPayload = DistinctLectureResponse(
-                data = LectureResponseDto(),
+                data = emptyList(),
             )
             result = defaultPayload
         }

@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.capston.domain.manager.LoadingStateManager
 import com.capston.domain.request.LectureDto
 import com.capston.domain.response.lecture.DistinctLectureResponse
+import com.capston.domain.response.lecture.LectureResponseDto
 import com.capston.domain.usecase.lecture.GetAllLectureUseCase
 import com.capston.domain.usecase.lecture.GetDistinctLectureUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -21,11 +22,11 @@ class LectureViewModel @Inject constructor(
     private val loadingStateManager: LoadingStateManager
 ) : ViewModel() {
 
-    private val _distinctLecture = MutableStateFlow(DistinctLectureResponse())
+    private val _distinctLecture = MutableStateFlow(DistinctLectureResponse(data = emptyList()))
     val distinctLecture: StateFlow<DistinctLectureResponse> = _distinctLecture
 
-    private val _allLecture = MutableStateFlow(DistinctLectureResponse())
-    val allLecture: StateFlow<DistinctLectureResponse> = _allLecture
+    private val _allLectureList = MutableStateFlow<List<LectureResponseDto>>(emptyList())
+    val allLectureList: StateFlow<List<LectureResponseDto>> = _allLectureList
 
     fun getDistinctLecture(lectureDto: LectureDto) {
         viewModelScope.launch {
@@ -42,12 +43,12 @@ class LectureViewModel @Inject constructor(
         }
     }
 
-    fun getAllLecture(lectureDto: LectureDto) {
+    fun getAllLecture() {
         viewModelScope.launch {
             loadingStateManager.show()
             try {
-                getAllLectureUseCase(lectureDto).collect { response ->
-                    _allLecture.value = response
+                getAllLectureUseCase().collect { response ->
+                    _allLectureList.value = response.data ?: emptyList()
                 }
             } catch (e: Exception) {
                 Log.e("LectureViewModel", "getAllLecture 에러: ${e.message}", e)

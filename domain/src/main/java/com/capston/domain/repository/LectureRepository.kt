@@ -10,5 +10,5 @@ interface LectureRepository {
     suspend fun getDistinctLecture(lectureDto: LectureDto): Flow<DistinctLectureResponse>
 
     // 강의 전체 조회
-    suspend fun getAllLecture(lectureDto: LectureDto): Flow<DistinctLectureResponse>
+    suspend fun getAllLecture(): Flow<DistinctLectureResponse>
 }
