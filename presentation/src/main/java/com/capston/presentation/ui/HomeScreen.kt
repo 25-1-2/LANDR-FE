@@ -94,6 +94,7 @@ import com.capston.presentation.theme.LightGray60
 import com.capston.presentation.theme.MainBlue
 import com.capston.presentation.theme.MainPurple
 import com.capston.presentation.theme.backgroundGray
+import com.capston.presentation.theme.textGray
 import com.capston.presentation.viewmodel.HomeViewModel
 import com.capston.presentation.viewmodel.PlanViewModel
 import kotlinx.coroutines.launch
@@ -244,7 +245,7 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
                             Text(
                                 text = "총 ${todayTotalLesson}강",
                                 fontSize = 14.sp,
-                                color = LightGray60
+                                color = textGray
                             )
                         }
 
@@ -262,7 +263,7 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
                             Text(
                                 text = "약 ${todayTotalDuration}분",
                                 fontSize = 14.sp,
-                                color = LightGray60
+                                color = textGray
                             )
                         }
                     }
