@@ -3,6 +3,7 @@ package com.capston.data.di
 import com.capston.data.repository.remote.api.DailyScheduleApi
 import com.capston.data.repository.remote.api.ErrorApi
 import com.capston.data.repository.remote.api.HomeApi
+import com.capston.data.repository.remote.api.LectureApi
 import com.capston.data.repository.remote.api.LoginApi
 import com.capston.data.repository.remote.api.PlanApi
 import dagger.Module
@@ -44,4 +45,10 @@ object ApiModule {
     fun provideDailyScheduleServer(
         @MainRetrofit retrofit: Retrofit
     ) : DailyScheduleApi = retrofit.create(DailyScheduleApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideLectureServer(
+        @MainRetrofit retrofit: Retrofit
+    ) : LectureApi = retrofit.create(LectureApi::class.java)
 }
