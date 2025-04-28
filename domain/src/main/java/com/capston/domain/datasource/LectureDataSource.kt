@@ -11,5 +11,5 @@ interface LectureDataSource {
     suspend fun getDistinctLecture(lectureDto: LectureDto): Flow<DistinctLectureResponse>
 
     // 홈 들은 강의 체크 수정
-    suspend fun getAllLecture(lectureDto: LectureDto): Flow<DistinctLectureResponse>
+    suspend fun getAllLecture(): Flow<DistinctLectureResponse>
 }

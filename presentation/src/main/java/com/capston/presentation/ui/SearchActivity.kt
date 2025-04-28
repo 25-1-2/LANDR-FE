@@ -7,11 +7,13 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.navigation.compose.rememberNavController
 import com.capston.presentation.theme.CapstonTheme
+import com.capston.presentation.viewmodel.LectureViewModel
 import com.capston.presentation.viewmodel.PlanViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class SearchActivity : ComponentActivity() {
+    val lectureViewModel: LectureViewModel by viewModels()
     val planViewModel: PlanViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -22,7 +24,7 @@ class SearchActivity : ComponentActivity() {
             val navController = rememberNavController()
 
             CapstonTheme {
-                SearchNavHost(navController, planViewModel)
+                SearchNavHost(navController, planViewModel, lectureViewModel)
             }
         }
     }

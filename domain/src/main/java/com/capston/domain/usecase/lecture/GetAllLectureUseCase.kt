@@ -10,8 +10,7 @@ class GetAllLectureUseCase @Inject constructor(
     private val lectureRepository: LectureRepository
 ) {
     suspend operator fun invoke(
-        lectureDto: LectureDto
     ): Flow<DistinctLectureResponse> {
-        return lectureRepository.getAllLecture(lectureDto)
+        return lectureRepository.getAllLecture()
     }
 }
