@@ -53,6 +53,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.capston.domain.manager.LoadingStateManager
 import com.capston.domain.model.Lecture
+import com.capston.domain.response.plan.GetPlanDetailResponse
 import com.capston.presentation.theme.CapstonTheme
 import com.capston.presentation.theme.LightGray2
 import com.capston.presentation.theme.LightGray3
@@ -210,8 +211,8 @@ fun SettingTopBottomBar(homeViewModel: HomeViewModel, planViewModel: PlanViewMod
                 ) { backStackEntry ->
                     val lectureTitle = backStackEntry.arguments?.getString("lectureTitle") ?: "Unknown"
                     // 실제 앱에서는 강의 ID 또는 전체 Lecture 객체를 전달할 수 있도록 개선 필요
-                    val lecture = Lecture()
-                    LectureDetailScreen(lecture = lecture)
+                    val planDetailResponse = GetPlanDetailResponse()
+                    LectureDetailScreen(planDetailResponse = planDetailResponse)
                 }
                 composable(Screen.Profile.title) { ProfileScreen() }
             }
