@@ -91,7 +91,8 @@ fun SearchScreen(
             LectureItemDto(
                 title = lecture.title,
                 platform = lecture.platform.label,
-                teacher = "${lecture.teacher} · [과목] ${lecture.subject}"
+                teacher = lecture.teacher,
+                imageResId = getImageForSubject(lecture.subject)
             )
         }
 
@@ -278,8 +279,9 @@ fun SearchLectureItem(lectureItem: LectureItemDto, searchQuery: String, onClick:
                 )
             }
 
+            // 과목에 맞는 이미지 출력
             Image(
-                painter = painterResource(R.drawable.screen_search_math_iv),
+                painter = painterResource(lectureItem.imageResId),
                 contentDescription = "과목명",
                 modifier = Modifier
                     .padding(start = 8.dp) // 텍스트와 살짝 간격 주기
@@ -309,6 +311,16 @@ fun SearchTopBar(
             )
         }
     )
+}
+
+private fun getImageForSubject(subject: String): Int {
+    return when (subject) {
+        "수학" -> R.drawable.screen_search_math_iv
+        "과학" -> R.drawable.screen_search_science_iv
+        "영어" -> R.drawable.screen_search_english_iv
+        "국어" -> R.drawable.screen_search_korean_iv
+        else -> R.drawable.screen_search_korean_iv // 기본 이미지
+    }
 }
 
 private fun AnnotatedString.Builder.appendAnnotatedString(text: String, color: Color) {
