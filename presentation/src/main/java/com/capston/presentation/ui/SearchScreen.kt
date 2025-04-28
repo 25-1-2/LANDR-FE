@@ -28,13 +28,10 @@ import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.capston.domain.model.Lecture
-import com.capston.presentation.ui.LectureItemDto
-import com.capston.domain.response.lecture.LectureResponseDto
+import com.capston.domain.request.LectureDto
 import com.capston.presentation.R
-import com.capston.presentation.theme.CapstonTheme
 import com.capston.presentation.theme.LightGray40
 import com.capston.presentation.theme.MainPurple
 import com.capston.presentation.viewmodel.LectureViewModel
@@ -53,41 +50,117 @@ fun SearchScreen(
     val scope = rememberCoroutineScope()
     val allLecturesResponse by lectureViewModel.allLectureList.collectAsState()
 
+    // Pagination state
+    var cursorLectureId by remember { mutableStateOf("") }
+    var cursorCreatedAt by remember { mutableStateOf("") }
+    var hasMoreData by remember { mutableStateOf(true) }
+    var isInitialLoad by remember { mutableStateOf(true) }
+
+    // Keep track of lecture items
+    var allItems by remember { mutableStateOf<List<LectureItemDto>>(emptyList()) }
+
     // Call API when search query changes (with debounce)
     var searchJob by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
 
     LaunchedEffect(searchQuery) {
         searchJob?.cancel()
         searchJob = scope.launch {
+            // Reset pagination for new search
+            cursorLectureId = ""
+            cursorCreatedAt = ""
+            allItems = emptyList()
+            isInitialLoad = true
+            hasMoreData = true
+
             delay(500) // Debounce for 500ms
-            lectureViewModel.getAllLecture()
+            lectureViewModel.getAllLecture(
+                LectureDto(
+                    search = searchQuery,
+                    cursorLectureId = cursorLectureId,
+                    cursorCreatedAt = cursorCreatedAt,
+                    offset = "10" // Load 10 items per page
+                )
+            )
         }
     }
 
-    val lectureItems: List<LectureItemDto> = remember(allLecturesResponse) {
-        allLecturesResponse.map { lecture ->
+    // Process API response
+    LaunchedEffect(allLecturesResponse) {
+        // Map API response to UI model
+        val newItems = allLecturesResponse.map { lecture ->
             LectureItemDto(
                 title = lecture.title,
                 platform = lecture.platform.label,
                 teacher = "${lecture.teacher} · [과목] ${lecture.subject}"
             )
-        } ?: emptyList()
+        }
+
+        if (isInitialLoad) {
+            // First load replaces all data
+            allItems = newItems
+            isInitialLoad = false
+        } else {
+            // Subsequent loads append data
+            allItems = allItems + newItems
+        }
     }
 
     Column {
         SearchTopBar(searchQuery = searchQuery, onQueryChanged = { searchQuery = it })
 
-        InfiniteScrollList(navController, lectureItems, searchQuery)
+        InfiniteScrollList(
+            navController = navController,
+            lectureItems = allItems,
+            searchQuery = searchQuery,
+            hasMoreData = hasMoreData,
+            onLoadMore = {
+                if (hasMoreData) {
+                    scope.launch {
+                        lectureViewModel.getAllLecture(
+                            LectureDto(
+                                search = searchQuery,
+                                cursorLectureId = cursorLectureId,
+                                cursorCreatedAt = cursorCreatedAt,
+                                offset = "10" // Load 10 items per page
+                            )
+                        )
+                    }
+                }
+            }
+        )
     }
 }
 
 @Composable
-fun InfiniteScrollList(navController: NavController, lectureItems: List<LectureItemDto>, searchQuery: String) {
+fun InfiniteScrollList(
+    navController: NavController,
+    lectureItems: List<LectureItemDto>,
+    searchQuery: String,
+    hasMoreData: Boolean,
+    onLoadMore: () -> Unit
+) {
     var loading by remember { mutableStateOf(false) }
+    val listState = rememberLazyListState()
+
+    // Detect when we're near the end of the list to load more
+    LaunchedEffect(listState.layoutInfo.visibleItemsInfo) {
+        val lastVisibleItem = listState.layoutInfo.visibleItemsInfo.lastOrNull()
+        if (lastVisibleItem != null) {
+            val lastIndex = lastVisibleItem.index
+            val total = lectureItems.size
+            // Load more when we reach the last 3 items
+            if (hasMoreData && !loading && lastIndex >= total - 3) {
+                loading = true
+                onLoadMore()
+                delay(1000) // Prevent multiple load requests
+                loading = false
+            }
+        }
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
-            state = rememberLazyListState(),
+            state = listState,
             contentPadding = PaddingValues(25.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
@@ -112,20 +185,15 @@ fun InfiniteScrollList(navController: NavController, lectureItems: List<LectureI
                         }
                     )
                 }
-            }
 
-            // 로딩 상태 표시
-            if (!loading && lectureItems.isNotEmpty()) {
-                item {
-                    LaunchedEffect(Unit) {
-                        loading = true
-                        delay(1500)
-                        loading = false
-                    }
-
-                    if (loading) {
+                // Show loading indicator at the bottom when loading more
+                if (hasMoreData) {
+                    item {
                         CircularProgressIndicator(
-                            modifier = Modifier.fillMaxWidth().padding(16.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp)
+                                .wrapContentSize(Alignment.Center),
                             color = MainPurple,
                             strokeWidth = 2.dp
                         )
@@ -143,7 +211,10 @@ fun SearchNavHost(navController: NavHostController, planViewModel: PlanViewModel
         startDestination = "search"
     ) {
         composable("search") {
-            SearchScreen(navController, lectureViewModel)
+            SearchScreen(
+                navController = navController,
+                lectureViewModel = lectureViewModel
+            )
         }
         composable(
             route = "plan/{lectureTitle}",
@@ -160,7 +231,6 @@ fun SearchLectureItem(lectureItem: LectureItemDto, searchQuery: String, onClick:
     // 검색어가 포함된 부분을 하이라이트하는 함수
     val annotatedString = buildAnnotatedString {
         var startIndex = 0
-        var endIndex = 0
 
         if (searchQuery.isNotEmpty()) {
             var searchPos = lectureItem.title.indexOf(searchQuery, ignoreCase = true)

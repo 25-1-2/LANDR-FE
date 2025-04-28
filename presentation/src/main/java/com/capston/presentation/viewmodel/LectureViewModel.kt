@@ -25,7 +25,7 @@ class LectureViewModel @Inject constructor(
     private val _distinctLecture = MutableStateFlow(DistinctLectureResponse(data = emptyList()))
     val distinctLecture: StateFlow<DistinctLectureResponse> = _distinctLecture
 
-    private val _allLectureList = MutableStateFlow<List<LectureResponseDto>>(emptyList())
+    private var _allLectureList = MutableStateFlow<List<LectureResponseDto>>(emptyList())
     val allLectureList: StateFlow<List<LectureResponseDto>> = _allLectureList
 
     fun getDistinctLecture(lectureDto: LectureDto) {
@@ -43,12 +43,13 @@ class LectureViewModel @Inject constructor(
         }
     }
 
-    fun getAllLecture() {
+    fun getAllLecture(lectureDto: LectureDto) {
         viewModelScope.launch {
             loadingStateManager.show()
             try {
+                // getAllLectureUseCase()가 DistinctLectureResponse를 반환한다고 가정
                 getAllLectureUseCase().collect { response ->
-                    _allLectureList.value = response.data ?: emptyList()
+                    _allLectureList.value = response.data ?: emptyList() // data가 null일 경우 emptyList()로 대체
                 }
             } catch (e: Exception) {
                 Log.e("LectureViewModel", "getAllLecture 에러: ${e.message}", e)
@@ -57,4 +58,5 @@ class LectureViewModel @Inject constructor(
             }
         }
     }
+
 }
