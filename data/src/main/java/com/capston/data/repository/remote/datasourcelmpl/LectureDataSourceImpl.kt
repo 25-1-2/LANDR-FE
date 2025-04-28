@@ -3,9 +3,7 @@ package com.capston.data.repository.remote.datasourcelmpl
 import android.util.Log
 import com.capston.data.repository.remote.api.LectureApi
 import com.capston.domain.datasource.LectureDataSource
-import com.capston.domain.request.LectureDto
 import com.capston.domain.response.lecture.DistinctLectureResponse
-import com.capston.domain.response.lecture.LectureResponseDto
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
@@ -15,8 +13,8 @@ class LectureDataSourceImpl @Inject constructor(
     private val lectureApi: LectureApi
 ) : LectureDataSource {
 
-    override suspend fun getDistinctLecture(lectureDto: LectureDto): Flow<DistinctLectureResponse> = flow {
-        var result = lectureApi.getDistinctLecture(lectureDto)
+    override suspend fun getDistinctLecture(searchName: String): Flow<DistinctLectureResponse> = flow {
+        var result = lectureApi.getDistinctLecture(searchName)
         Log.d("LectureDataSourceImpl", "서버 응답: $result")
         if (result == null) {
             val defaultPayload = DistinctLectureResponse(

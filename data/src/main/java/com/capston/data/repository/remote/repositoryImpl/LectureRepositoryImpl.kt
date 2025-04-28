@@ -12,8 +12,8 @@ class LectureRepositoryImpl @Inject constructor(
     private val lectureDataSource: LectureDataSource
 ) : LectureRepository {
 
-    override suspend fun getDistinctLecture(lectureDto: LectureDto): Flow<DistinctLectureResponse> {
-        return lectureDataSource.getDistinctLecture(lectureDto)
+    override suspend fun getDistinctLecture(searchName: String): Flow<DistinctLectureResponse> {
+        return lectureDataSource.getDistinctLecture(searchName)
     }
 
     override suspend fun getAllLecture(): Flow<DistinctLectureResponse> {

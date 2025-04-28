@@ -9,7 +9,7 @@ import javax.inject.Inject
 class GetDistinctLectureUseCase @Inject constructor(
     private val lectureRepository: LectureRepository
 ) {
-    suspend operator fun invoke(lectureDto: LectureDto): Flow<DistinctLectureResponse> {
-        return lectureRepository.getDistinctLecture(lectureDto)
+    suspend operator fun invoke(searchName: String): Flow<DistinctLectureResponse> {
+        return lectureRepository.getDistinctLecture(searchName)
     }
 }
