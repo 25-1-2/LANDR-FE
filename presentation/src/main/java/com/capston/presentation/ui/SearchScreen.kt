@@ -21,7 +21,6 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -29,11 +28,9 @@ import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.capston.domain.model.Lecture
 import com.capston.presentation.R
-import com.capston.presentation.theme.CapstonTheme
 import com.capston.presentation.theme.LightGray40
 import com.capston.presentation.theme.MainPurple
 import com.capston.presentation.viewmodel.PlanViewModel
@@ -145,7 +142,7 @@ fun SearchNavHost(navController: NavHostController, planViewModel: PlanViewModel
             arguments = listOf(navArgument("lectureTitle") { type = NavType.StringType })
         ) { backStackEntry ->
             val title = backStackEntry.arguments?.getString("lectureTitle") ?: ""
-            PlanScreen(Lecture(), planViewModel)
+            MakePlanScreen(Lecture(), planViewModel)
         }
     }
 }
