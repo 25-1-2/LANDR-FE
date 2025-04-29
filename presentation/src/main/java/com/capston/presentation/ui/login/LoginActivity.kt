@@ -8,6 +8,9 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.Modifier
 import androidx.credentials.ClearCredentialStateRequest
 import androidx.credentials.Credential
 import androidx.credentials.CredentialManager
@@ -15,9 +18,11 @@ import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.ClearCredentialException
 import androidx.credentials.exceptions.GetCredentialException
 import androidx.lifecycle.lifecycleScope
+import com.capston.domain.manager.LoadingStateManager
 import com.capston.domain.request.LoginDto
 import com.capston.presentation.R
 import com.capston.presentation.theme.CapstonTheme
+import com.capston.presentation.ui.LoadingIndicator
 import com.capston.presentation.ui.MainActivity
 import com.capston.presentation.viewmodel.LoginViewModel
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
@@ -30,10 +35,13 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 import kotlin.math.sign
 
 @AndroidEntryPoint
 class LoginActivity : ComponentActivity() {
+    @Inject
+    lateinit var loadingStateManager: LoadingStateManager
     private lateinit var auth: FirebaseAuth
 
     val loginViewModel: LoginViewModel by viewModels()
@@ -59,14 +67,20 @@ class LoginActivity : ComponentActivity() {
 
         setContent {
             CapstonTheme {
-                LoginScreen(
-                    onLoginButtonClick = {
-                        googleLogin(
-                            credentialManager = CredentialManager.create(this),
-                            activityContext = this,
-                        )
-                    }
-                )
+                Box(modifier = Modifier.fillMaxSize()) {
+                    LoginScreen(
+                        onLoginButtonClick = {
+                            loadingStateManager.show() // 로그인 시작 시 로딩 표시
+                            googleLogin(
+                                credentialManager = CredentialManager.create(this@LoginActivity),
+                                activityContext = this@LoginActivity,
+                            )
+                        }
+                    )
+
+                    // 전역 로딩 인디케이터
+                    LoadingIndicator(loadingStateManager)
+                }
             }
         }
     }
@@ -110,6 +124,7 @@ class LoginActivity : ComponentActivity() {
             val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
             // Sign in to Firebase with using the token
             firebaseAuthWithGoogle(googleIdTokenCredential.idToken)
+            loadingStateManager.hide() // 로딩 숨기기
         } else {
             // Catch any unrecognized custom credential type here.
             Log.w("LoginActivity", "handleSignIn: Credential is not of type Google ID!")

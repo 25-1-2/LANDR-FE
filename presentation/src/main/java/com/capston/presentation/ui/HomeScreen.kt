@@ -2,8 +2,6 @@ package com.capston.presentation.ui
 
 import android.annotation.SuppressLint
 import android.content.Intent
-import android.hardware.lights.Light
-import android.util.Log
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
@@ -17,7 +15,6 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -26,9 +23,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBars
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -37,17 +32,14 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Divider
 import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.TextFieldDefaults
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -55,13 +47,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SheetState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -75,6 +67,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Color.Companion.LightGray
+import androidx.compose.ui.graphics.Color.Companion.Transparent
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -86,29 +79,22 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.capston.domain.request.PatchPlanDto
-import com.capston.domain.response.home.DistinctHomeIdResponse
 import com.capston.domain.response.home.LectureProgressResponse
 import com.capston.domain.response.home.LessonScheduleResponse
 import com.capston.presentation.R
-import com.capston.presentation.theme.LightGray2
 import com.capston.presentation.theme.LightGray40
-import com.capston.presentation.theme.LightGray3
-import com.capston.presentation.theme.LightGray4
 import com.capston.presentation.theme.LightGray60
-import com.capston.presentation.theme.LightPurple
 import com.capston.presentation.theme.MainBlue
 import com.capston.presentation.theme.MainPurple
-import com.capston.presentation.theme.Purple40
 import com.capston.presentation.theme.backgroundGray
+import com.capston.presentation.theme.textGray
 import com.capston.presentation.viewmodel.HomeViewModel
 import com.capston.presentation.viewmodel.PlanViewModel
 import kotlinx.coroutines.launch
@@ -148,62 +134,70 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
                 .fillMaxSize()
         ) {
 
-            Box(
+            Surface(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .background(backgroundGray)
+                    .fillMaxWidth(),
+                shape = RoundedCornerShape(8.dp),
+                color = backgroundGray,
+                shadowElevation = 10.dp
             ) {
-                Column(
+                Box(
                     modifier = Modifier
-                        .padding(start = 20.dp)
+                        .fillMaxWidth()
+                        .background(backgroundGray)
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically, // 세로로 정렬
-                        horizontalArrangement = Arrangement.SpaceBetween, // 양 끝에 배치
-                        modifier = Modifier.fillMaxWidth() // Row를 최대 너비로 설정
-                    ) {
-                        Text(
-                            text = stringResource(R.string.home_status),
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier
-                                .padding(top = 10.dp)
-                        )
-                        Text(
-                            text = stringResource(R.string.home_edit),
-                            color = MainPurple,
-                            modifier = Modifier
-                                .padding(top = 25.dp, end = 20.dp)
-                                .clickable {
-                                    // 편집 버튼 클릭 시 동작
-                                    isBottomSheetVisible = true // 편집 버튼 클릭 시 bottom sheet 열기
-                                }
-                        )
-                    }
-
-                    LazyRow(
+                    Column(
                         modifier = Modifier
-                            .fillMaxWidth(),
-
+                            .padding(start = 20.dp)
                     ) {
-                        item {
-                            CircleGraph("전체", totalCompletedLessons, totalLessons)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically, // 세로로 정렬
+                            horizontalArrangement = Arrangement.SpaceBetween, // 양 끝에 배치
+                            modifier = Modifier.fillMaxWidth() // Row를 최대 너비로 설정
+                        ) {
+                            Text(
+                                text = stringResource(R.string.home_status),
+                                fontSize = 24.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier
+                                    .padding(top = 10.dp)
+                            )
+                            Text(
+                                text = stringResource(R.string.home_edit),
+                                color = MainPurple,
+                                modifier = Modifier
+                                    .padding(top = 25.dp, end = 20.dp)
+                                    .clickable {
+                                        // 편집 버튼 클릭 시 동작
+                                        isBottomSheetVisible = true // 편집 버튼 클릭 시 bottom sheet 열기
+                                    }
+                            )
                         }
 
-                        items(lectureProgressList) { item ->
-                            Spacer(modifier = Modifier.width(16.dp)) // 그래프 간격 추가
+                        LazyRow(
+                            modifier = Modifier
+                                .fillMaxWidth(),
 
-                            // PATCH 요청 응답을 받아서 name 업데이트
-                            val currentLectureName = if (item.planId == patchData.planId) {
-                                patchData.lectureAlias
-                            } else {
-                                item.lectureAlias
+                            ) {
+                            item {
+                                CircleGraph("전체", totalCompletedLessons, totalLessons)
                             }
-                            CircleGraph(
-                                name = currentLectureName,
-                                cleared = item.completedLessons,
-                                total = item.totalLessons
-                            )
+
+                            items(lectureProgressList) { item ->
+                                Spacer(modifier = Modifier.width(16.dp)) // 그래프 간격 추가
+
+                                // PATCH 요청 응답을 받아서 name 업데이트
+                                val currentLectureName = if (item.planId == patchData.planId) {
+                                    patchData.lectureAlias
+                                } else {
+                                    item.lectureAlias
+                                }
+                                CircleGraph(
+                                    name = currentLectureName,
+                                    cleared = item.completedLessons,
+                                    total = item.totalLessons
+                                )
+                            }
                         }
                     }
                 }
@@ -215,15 +209,67 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
                 modifier = Modifier.fillMaxWidth()
             )
 
-            Spacer(modifier = Modifier.height(30.dp)) // 🌟 그래프와 강의 목록 사이 간격 추가
+            Spacer(modifier = Modifier.height(30.dp)) // 그래프와 강의 목록 사이 간격 추가
 
-            Text(
-                text = "⭐ 오늘의 강의 (총 ${todayTotalLesson}강, 약 ${todayTotalDuration}분)",
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Bold,
-                fontSize = 20.sp,
-                modifier = Modifier.padding(start = 20.dp)
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .padding(horizontal = 20.dp)
+            ) {
+                Text(
+                    text = "⭐ 오늘의 강의",
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 20.sp
+                )
+
+                Spacer(modifier = Modifier.weight(1f))
+
+                Box(
+                    modifier = Modifier
+                        .border(width = 1.dp, color = LightGray40, shape = RoundedCornerShape(8.dp))
+                        .background(color = Transparent, shape = RoundedCornerShape(8.dp))
+                        .padding(horizontal = 12.dp, vertical = 6.dp),
+                    contentAlignment = Alignment.TopEnd
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        // 강의 수 아이콘 + 텍스트
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.home_screen_total_count_iv), // 강의 아이콘
+                                contentDescription = "총 강의 수",
+                                modifier = Modifier.size(16.dp),
+                                tint = Color.Unspecified
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "총 ${todayTotalLesson}강",
+                                fontSize = 14.sp,
+                                color = textGray
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.width(12.dp))
+
+                        // 시간 아이콘 + 텍스트
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.home_screen_total_duration_iv), // 시간 아이콘
+                                contentDescription = "총 시간",
+                                modifier = Modifier.size(16.dp),
+                                tint = Color.Unspecified
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "약 ${todayTotalDuration}분",
+                                fontSize = 14.sp,
+                                color = textGray
+                            )
+                        }
+                    }
+                }
+            }
+
             Spacer(modifier = Modifier.height(20.dp))
 
             if (todayLessonList != null) {
@@ -568,11 +614,10 @@ fun ModifiedLessonList(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 10.dp, horizontal = 4.dp)  // 좌우 패딩 추가
-                    // 개별 아이템 드래그 제스처 차단
+                    .padding(vertical = 10.dp, horizontal = 4.dp)
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
-                        indication = null, // ripple 효과 제거
+                        indication = null,
                         enabled = true,
                         onClick = { /* 클릭만 허용 */ }
                     )
@@ -584,23 +629,52 @@ fun ModifiedLessonList(
                         isChecked = !isChecked
                     }
                 )
-                Column {
-                    Text(
-                        text = lesson.lessonTitle,
-                        textDecoration = if (isChecked) TextDecoration.LineThrough else TextDecoration.None,
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontSize = 16.sp
-                    )
-                    Text(
-                        text = "${lesson.lectureName} · 약 ${lesson.adjustedDuration}분",
-                        textDecoration = if (isChecked) TextDecoration.LineThrough else TextDecoration.None,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = LightGray60,
-                        fontSize = 14.sp
-                    )
+
+                // 텍스트 + 시간 박스를 수평으로 정렬
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween // 왼쪽 텍스트, 오른쪽 박스 정렬
+                ) {
+                    Column(
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(
+                            text = lesson.lessonTitle,
+                            textDecoration = if (isChecked) TextDecoration.LineThrough else TextDecoration.None,
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontSize = 16.sp
+                        )
+                        Text(
+                            text = lesson.lectureName,
+                            textDecoration = if (isChecked) TextDecoration.LineThrough else TextDecoration.None,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = LightGray60,
+                            fontSize = 14.sp
+                        )
+                    }
+
+                    // 오른쪽 시간 박스
+                    Box(
+                        modifier = Modifier
+                            .padding(end = 10.dp)
+                            .border(
+                                width = 1.dp,
+                                color = MainPurple,
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                            .background(color = Transparent, shape = RoundedCornerShape(12.dp))
+                            .padding(horizontal = 10.dp, vertical = 4.dp)
+                    ) {
+                        Text(
+                            text = "${lesson.adjustedDuration}분",
+                            fontSize = 12.sp,
+                            color = MainPurple
+                        )
+                    }
                 }
             }
-            Spacer(modifier = Modifier.height(20.dp))
+
         }
     }
 }

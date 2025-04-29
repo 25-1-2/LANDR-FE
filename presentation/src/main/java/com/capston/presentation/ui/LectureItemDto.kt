@@ -1,7 +1,10 @@
 package com.capston.presentation.ui
 
 data class LectureItemDto (
+    val id: Int,
     val title: String,
-    val com: String,
-    val teach: String
+    val platform: String,
+    val teacher: String,
+    val imageResId: Int,
+    val createdAt: String
 )

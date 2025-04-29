@@ -3,26 +3,31 @@ package com.capston.data.di
 import com.capston.data.repository.remote.api.DailyScheduleApi
 import com.capston.data.repository.remote.api.ErrorApi
 import com.capston.data.repository.remote.api.HomeApi
+import com.capston.data.repository.remote.api.LectureApi
 import com.capston.data.repository.remote.api.LoginApi
 import com.capston.data.repository.remote.api.PlanApi
 import com.capston.data.repository.remote.datasourcelmpl.DailyScheduleDataSourceImpl
 import com.capston.data.repository.remote.datasourcelmpl.ErrorDataSourceImpl
 import com.capston.data.repository.remote.datasourcelmpl.HomeDataSourceImpl
+import com.capston.data.repository.remote.datasourcelmpl.LectureDataSourceImpl
 import com.capston.data.repository.remote.datasourcelmpl.LoginDataSourceImpl
 import com.capston.data.repository.remote.datasourcelmpl.PlanDataSourceImpl
 import com.capston.data.repository.remote.repositoryImpl.DailyScheduleRepositoryImpl
 import com.capston.data.repository.remote.repositoryImpl.ErrorRepositoryImpl
 import com.capston.data.repository.remote.repositoryImpl.HomeRepositoryImpl
+import com.capston.data.repository.remote.repositoryImpl.LectureRepositoryImpl
 import com.capston.data.repository.remote.repositoryImpl.LoginRepositoryImpl
 import com.capston.data.repository.remote.repositoryImpl.PlanRepositoryImpl
 import com.capston.domain.datasource.DailyScheduleDataSource
 import com.capston.domain.datasource.ErrorDataSource
 import com.capston.domain.datasource.HomeDataSource
+import com.capston.domain.datasource.LectureDataSource
 import com.capston.domain.datasource.LoginDataSource
 import com.capston.domain.datasource.PlanDataSource
 import com.capston.domain.repository.DailyScheduleRepository
 import com.capston.domain.repository.ErrorRepository
 import com.capston.domain.repository.HomeRepository
+import com.capston.domain.repository.LectureRepository
 import com.capston.domain.repository.LoginRepository
 import com.capston.domain.repository.PlanRepository
 import dagger.Module
@@ -103,4 +108,18 @@ object RepositoryModule {
     @Singleton
     fun provideDailyScheduleRepository(dailyScheduleDataSource: DailyScheduleDataSource): DailyScheduleRepository =
         DailyScheduleRepositoryImpl(dailyScheduleDataSource)
+
+    // 강의 검색
+    @Provides
+    @Singleton
+    fun provideLectureDataSource(
+        lectureApi: LectureApi
+    ): LectureDataSource {
+        return LectureDataSourceImpl(lectureApi)
+    }
+
+    @Provides
+    @Singleton
+    fun provideLectureRepository(lectureDataSource: LectureDataSource): LectureRepository =
+        LectureRepositoryImpl(lectureDataSource)
 }
