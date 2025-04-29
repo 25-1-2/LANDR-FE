@@ -177,10 +177,10 @@ fun SettingTopBottomBar(homeViewModel: HomeViewModel, planViewModel: PlanViewMod
                     )
                 }
                 composable(
-                    route = "${Screen.PlanDetail.title}/{lectureTitle}",
-                    arguments = listOf(navArgument("lectureTitle") { type = NavType.StringType })
+                    route = "${Screen.PlanDetail.title}/{planId}",
+                    arguments = listOf(navArgument("planId") { type = NavType.StringType })
                 ) { backStackEntry ->
-                    val lectureTitle = backStackEntry.arguments?.getString("lectureTitle") ?: "Unknown"
+                    val planId = backStackEntry.arguments?.getString("planId") ?: ""
                     // 실제 앱에서는 강의 ID 또는 전체 Lecture 객체를 전달할 수 있도록 개선 필요
                     val planDetailResponse = GetPlanDetailResponse()
                     PlanDetailScreen(planDetailResponse = planDetailResponse)
