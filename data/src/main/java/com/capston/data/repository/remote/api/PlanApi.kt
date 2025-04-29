@@ -28,4 +28,10 @@ interface PlanApi {
     // 나의 강의실 조회
     @GET("/v1/plans/me")
     suspend fun getPlanLectureRoom(): List<MyLecture>
+
+    // 계획 상세 조회
+    @GET("/v1/plans/{planId}")
+    suspend fun getPlanDetail(
+        @Path("planId") planId: Int
+    ): List<MyLecture>
 }
