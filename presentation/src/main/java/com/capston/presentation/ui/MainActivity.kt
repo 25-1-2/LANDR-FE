@@ -169,21 +169,24 @@ fun SettingTopBottomBar(homeViewModel: HomeViewModel, planViewModel: PlanViewMod
                 composable(Screen.Calender.title) { CalenderScreen(homeViewModel, dailyScheduleViewModel) }
                 composable(Screen.LectureRoom.title) {
                     LectureRoomScreen(
-                        planViewModel,
+                        viewModel = planViewModel,
                         onPlanClick = { plan ->
-                            // lecture.title을 경로 파라미터로 사용하여 상세 화면으로 이동
+                            // plan.planId를 경로 파라미터로 사용하여 상세 화면으로 이동
                             navController.navigate("${Screen.PlanDetail.title}/${plan.planId}")
                         }
                     )
                 }
                 composable(
                     route = "${Screen.PlanDetail.title}/{planId}",
-                    arguments = listOf(navArgument("planId") { type = NavType.StringType })
+                    arguments = listOf(navArgument("planId") { type = NavType.IntType })
                 ) { backStackEntry ->
-                    val planId = backStackEntry.arguments?.getString("planId") ?: ""
+                    val planId = backStackEntry.arguments?.getInt("planId") ?: 0
                     // 실제 앱에서는 강의 ID 또는 전체 Lecture 객체를 전달할 수 있도록 개선 필요
                     val planDetailResponse = GetPlanDetailResponse()
-                    PlanDetailScreen(planDetailResponse = planDetailResponse)
+                    PlanDetailScreen(
+                        planId = planId,
+                        viewModel = planViewModel
+                    )
                 }
                 composable(Screen.Profile.title) { ProfileScreen() }
             }

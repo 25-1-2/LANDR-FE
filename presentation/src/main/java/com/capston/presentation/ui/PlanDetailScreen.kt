@@ -18,10 +18,17 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
 import com.capston.domain.model.LessonSchedule
 import com.capston.domain.response.plan.GetPlanDetailResponse
+import com.capston.presentation.viewmodel.PlanViewModel
 
 
 @Composable
-fun PlanDetailScreen(planDetailResponse: GetPlanDetailResponse) {
+fun PlanDetailScreen(
+    planId: Int,
+    viewModel: PlanViewModel
+) {
+    val planDetailResponse by viewModel.getPlanDetail.collectAsState()
+    viewModel.getPlanDetail(planId)
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -102,10 +109,10 @@ fun TaskItem(lessonSchedule: LessonSchedule) {
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun DetailScreenPreview() {
-    CapstonTheme {
-        PlanDetailScreen(GetPlanDetailResponse())
-    }
-}
+//@Preview(showBackground = true)
+//@Composable
+//fun DetailScreenPreview() {
+//    CapstonTheme {
+//        PlanDetailScreen(0, PlanViewModel())
+//    }
+//}
