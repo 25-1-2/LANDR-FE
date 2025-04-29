@@ -16,13 +16,12 @@ import com.capston.presentation.R
 import com.capston.presentation.theme.CapstonTheme
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
-import com.capston.domain.model.Lecture
 import com.capston.domain.model.LessonSchedule
 import com.capston.domain.response.plan.GetPlanDetailResponse
 
 
 @Composable
-fun LectureDetailScreen(planDetailResponse: GetPlanDetailResponse) {
+fun PlanDetailScreen(planDetailResponse: GetPlanDetailResponse) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -107,6 +106,6 @@ fun TaskItem(lessonSchedule: LessonSchedule) {
 @Composable
 fun DetailScreenPreview() {
     CapstonTheme {
-        LectureDetailScreen(GetPlanDetailResponse())
+        PlanDetailScreen(GetPlanDetailResponse())
     }
 }

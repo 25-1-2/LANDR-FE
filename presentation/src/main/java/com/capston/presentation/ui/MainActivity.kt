@@ -26,11 +26,8 @@ import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -41,8 +38,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -51,12 +46,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.capston.domain.model.Lecture
 import com.capston.domain.response.plan.GetPlanDetailResponse
 import com.capston.presentation.theme.CapstonTheme
 import com.capston.presentation.theme.LightGray2
-import com.capston.presentation.theme.LightGray3
-import com.capston.presentation.theme.LightGray4
 import com.capston.presentation.theme.LightGray4_40
 import com.capston.presentation.theme.MainPurple
 import com.capston.presentation.viewmodel.DailyScheduleViewModel
@@ -180,18 +172,18 @@ fun SettingTopBottomBar(homeViewModel: HomeViewModel, planViewModel: PlanViewMod
                         planViewModel,
                         onLectureClick = { lecture ->
                             // lecture.title을 경로 파라미터로 사용하여 상세 화면으로 이동
-                            navController.navigate("${Screen.LectureDetail.title}/${lecture.lectureTitle}")
+                            navController.navigate("${Screen.PlanDetail.title}/${lecture.lectureTitle}")
                         }
                     )
                 }
                 composable(
-                    route = "${Screen.LectureDetail.title}/{lectureTitle}",
+                    route = "${Screen.PlanDetail.title}/{lectureTitle}",
                     arguments = listOf(navArgument("lectureTitle") { type = NavType.StringType })
                 ) { backStackEntry ->
                     val lectureTitle = backStackEntry.arguments?.getString("lectureTitle") ?: "Unknown"
                     // 실제 앱에서는 강의 ID 또는 전체 Lecture 객체를 전달할 수 있도록 개선 필요
                     val planDetailResponse = GetPlanDetailResponse()
-                    LectureDetailScreen(planDetailResponse = planDetailResponse)
+                    PlanDetailScreen(planDetailResponse = planDetailResponse)
                 }
                 composable(Screen.Profile.title) { ProfileScreen() }
             }
