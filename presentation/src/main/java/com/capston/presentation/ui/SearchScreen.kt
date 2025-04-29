@@ -191,30 +191,17 @@ fun SearchScreen(
                 Log.d("SearchScreen", "기존 아이템: ${allItems.size - uniqueNewItems.size}, 새 아이템: ${uniqueNewItems.size}")
             }
 
-            // 페이지네이션 정보 업데이트
-            // 응답에서 hasNext가 명시적으로 false인 경우에만 더 이상 없는 것으로 처리
+            // 페이지네이션 정보 업데이트 - API의 hasNext 값을 직접 사용
             hasMoreData = searchLectureResponse.hasNext
 
-            // 데이터가 비어있으면 더 이상 없는 것으로 처리
-            if (newItems.isEmpty() && !isLoading) {
-                hasMoreData = false
-                Log.d("SearchScreen", "더 이상 데이터가 없음: 빈 응답")
-            }
-
-            // 다음 페이지 커서 정보 업데이트 - null 안전하게
+            // API로부터 온 커서 정보 사용 (null 안전하게)
             if (searchLectureResponse.nextCursor > 0) {
                 cursorLectureId = searchLectureResponse.nextCursor.toString()
                 Log.d("SearchScreen", "다음 커서 업데이트: $cursorLectureId")
-            } else {
-                // nextCursor가 0이면 더 이상 데이터가 없는 것으로 간주
-                if (!isLoading) {
-                    hasMoreData = false
-                    Log.d("SearchScreen", "더 이상 데이터가 없음: nextCursor가 0")
-                }
             }
 
-            // null 체크 추가
-            val nextCreatedAt = searchLectureResponse.nextCreateAt
+            // API에서 제공한 생성일자 사용
+            val nextCreatedAt = searchLectureResponse.nextCreatedAt
             if (nextCreatedAt != null && nextCreatedAt.isNotEmpty()) {
                 cursorCreatedAt = nextCreatedAt
                 Log.d("SearchScreen", "다음 생성일자 업데이트: $cursorCreatedAt")
@@ -262,39 +249,29 @@ fun SearchScreen(
                 Log.d("SearchScreen", "전체 목록 - 기존 아이템: ${allItems.size - uniqueNewItems.size}, 새 아이템: ${uniqueNewItems.size}")
             }
 
-            // 더 많은 데이터가 있는지 여부 판단
-            // 받아온 아이템 수가 요청한 수보다 적으면 더 이상 없는 것으로 처리
-            val requestedCount = offset.toIntOrNull() ?: 20
-            hasMoreData = newItems.size >= requestedCount
+            // 전체 목록은 항상 더 많은 데이터가 있다고 가정
+            // API에서 명시적인 hasNext가 없지만, 빈 응답이 오지 않는 한 계속 로드
+            hasMoreData = newItems.isNotEmpty()
 
-            if (newItems.isEmpty() && !isLoading) {
+            if (newItems.isEmpty()) {
                 hasMoreData = false
                 Log.d("SearchScreen", "더 이상 데이터가 없음: 빈 응답")
+            } else {
+                Log.d("SearchScreen", "더 데이터 있음: 항목 ${newItems.size}개 받음")
             }
 
-            // 다음 페이지 요청을 위한 커서 정보 업데이트
+            // 마지막 아이템의 ID와 생성일자를 커서로 사용
             if (newItems.isNotEmpty()) {
                 val lastItem = newItems.last()
                 cursorLectureId = lastItem.id.toString()
                 cursorCreatedAt = lastItem.createdAt ?: ""
                 Log.d("SearchScreen", "다음 페이지 커서 설정: id=${cursorLectureId}, createdAt=${cursorCreatedAt}")
-            } else {
-                // 더 이상 데이터가 없는 경우
-                hasMoreData = false
             }
 
             isLoading = false
             isLoadingMore = false
 
             Log.d("SearchScreen", "전체 목록 처리 완료: ${allItems.size}개 항목, 다음 페이지 있음: $hasMoreData")
-        }
-    }
-
-    // 현재 데이터 상태를 콘솔에 주기적으로 로깅 (디버깅용)
-    LaunchedEffect(Unit) {
-        while (true) {
-            delay(5000)  // 5초마다 로그
-            Log.d("SearchScreen", "현재 상태: 항목=${allItems.size}개, 다음페이지=${hasMoreData}, 커서ID=${cursorLectureId}, 로딩=${isLoading}, 추가로딩=${isLoadingMore}")
         }
     }
 
@@ -354,46 +331,39 @@ fun InfiniteScrollList(
 ) {
     var loading by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
+    val coroutineScope = rememberCoroutineScope()
 
-    // 스크롤 위치 감지 - 더 민감하게
-    LaunchedEffect(listState.layoutInfo.visibleItemsInfo, hasMoreData, isLoading, lectureItems.size) {
-        // 현재 보이는 아이템 중 마지막 아이템
-        val lastVisibleItem = listState.layoutInfo.visibleItemsInfo.lastOrNull()
-        val total = lectureItems.size
+    // 스크롤 위치 감지를 더 효율적으로 개선
+    LaunchedEffect(listState) {
+        snapshotFlow {
+            val layoutInfo = listState.layoutInfo
+            val visibleItemsInfo = layoutInfo.visibleItemsInfo
+            val lastVisibleItemIndex = visibleItemsInfo.lastOrNull()?.index ?: 0
+            val totalItemsCount = lectureItems.size
 
-        // 스크롤 위치가 마지막에 가까워지거나, 아이템이 적을 경우 더 로드
-        if (lastVisibleItem != null && total > 0 && !loading && !isLoading && hasMoreData) {
-            val lastIndex = lastVisibleItem.index
-
-            // 마지막에서 3개 아이템 이내에 도달하면 더 로드
-            if (lastIndex >= total - 3) {
-                Log.d("InfiniteScrollList", "하단에 도달: 더 많은 데이터 로드 요청 (${lastIndex}/${total})")
+            // 마지막 아이템에서 5개 이내로 접근하면 더 로드
+            lastVisibleItemIndex >= totalItemsCount - 5
+        }.collect { shouldLoadMore ->
+            // 더 로드해야 하고, 더 로드할 데이터가 있고, 현재 로딩 중이 아닐 때만 로드
+            if (shouldLoadMore && hasMoreData && !isLoading && !loading && lectureItems.isNotEmpty()) {
+                Log.d("InfiniteScrollList", "스크롤 감지: 더 많은 데이터 로드 요청")
                 loading = true
                 onLoadMore()
-                delay(300) // 연속 호출 방지 (더 짧게)
+                delay(500) // 연속 호출 방지
                 loading = false
             }
         }
     }
 
-    // 추가: 초기 로드 시나 아이템이 적을 때 자동 로드
+    // 초기 데이터 로드 후 자동으로 더 로드
     LaunchedEffect(lectureItems.size, hasMoreData, isLoading) {
-        if (lectureItems.isNotEmpty() && lectureItems.size < 10 && hasMoreData && !isLoading && !loading) {
-            Log.d("InfiniteScrollList", "아이템 수가 적음 (${lectureItems.size}): 자동으로 더 로드")
+        // 첫 페이지 데이터가 로드된 후 && 더 데이터가 있고 && 로딩 중이 아님
+        if (lectureItems.isNotEmpty() && hasMoreData && !isLoading && !loading) {
+            Log.d("InfiniteScrollList", "자동 더 로드 트리거: 항목 ${lectureItems.size}개, 더 로드할 데이터 있음")
+            delay(300) // 첫 데이터 표시 후 잠시 대기
             loading = true
             onLoadMore()
-            delay(300)
-            loading = false
-        }
-    }
-
-    // 목록이 비어있을 때 자동 로드
-    LaunchedEffect(lectureItems.isEmpty(), hasMoreData, isLoading) {
-        if (lectureItems.isEmpty() && hasMoreData && !isLoading && !loading) {
-            Log.d("InfiniteScrollList", "빈 목록: 데이터 자동 로드")
-            loading = true
-            onLoadMore()
-            delay(300)
+            delay(500)
             loading = false
         }
     }
