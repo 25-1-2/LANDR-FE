@@ -16,10 +16,10 @@ class LectureDataSourceImpl @Inject constructor(
 
     override suspend fun getDistinctLecture(lectureDto: LectureDto): Flow<DistinctLectureResponse> = flow {
         var result = lectureApi.getDistinctLecture(
-            search = lectureDto.search.takeIf { it.isNotEmpty() },
-            cursorLectureId = lectureDto.cursorLectureId.takeIf { it.isNotEmpty() },
-            cursorCreatedAt = lectureDto.cursorCreatedAt.takeIf { it.isNotEmpty() },
-            offset = lectureDto.offset.takeIf { it.isNotEmpty() } ?: "10"
+            search = lectureDto.search,
+            cursorLectureId = lectureDto.cursorLectureId,
+            cursorCreatedAt = lectureDto.cursorCreatedAt ?: "", // null 체크 추가
+            offset = lectureDto.offset
         )
 
         Log.d("LectureDataSourceImpl", "서버 응답: $result")
@@ -39,10 +39,10 @@ class LectureDataSourceImpl @Inject constructor(
 
     override suspend fun getAllLecture(lectureDto: LectureDto): Flow<DistinctLectureResponse> = flow {
         var result = lectureApi.getDistinctLecture(
-            search = lectureDto.search.takeIf { it.isNotEmpty() },
-            cursorLectureId = lectureDto.cursorLectureId.takeIf { it.isNotEmpty() },
-            cursorCreatedAt = lectureDto.cursorCreatedAt.takeIf { it.isNotEmpty() },
-            offset = lectureDto.offset.takeIf { it.isNotEmpty() } ?: "10"
+            search = lectureDto.search,
+            cursorLectureId = lectureDto.cursorLectureId,
+            cursorCreatedAt = lectureDto.cursorCreatedAt ?: "", // null 체크 추가
+            offset = lectureDto.offset
         )
 
         Log.d("LectureDataSourceImpl", "서버 응답: $result")
