@@ -115,9 +115,9 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
     val totalLessons = homeState.userProgress.totalLessons // 전체 강의 개수
 
     // 오늘의 강의
-    var todayLessonList = homeState.todaySchedule.lessonSchedules
-    var todayTotalLesson = homeState.todaySchedule.totalLessons
-    var todayTotalDuration = homeState.todaySchedule.totalDuration
+    val todayLessonList = homeState.todaySchedule?.lessonSchedules
+    val todayTotalLesson = homeState.todaySchedule?.totalLessons ?: 0
+    val todayTotalDuration = homeState.todaySchedule?.totalDuration ?: 0
 
     val lectureProgressList = homeState.userProgress.lectureProgress
     val patchData by planViewModel.patchPlanName.collectAsState()
@@ -133,7 +133,7 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
             modifier = Modifier
                 .fillMaxSize()
         ) {
-
+            // 학습 현황 부분 - UserProgress 표시 영역
             Surface(
                 modifier = Modifier
                     .fillMaxWidth(),
@@ -174,29 +174,31 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
                             )
                         }
 
+                        // lectureProgressList가 비어있지 않은지 확인 후 표시
                         LazyRow(
-                            modifier = Modifier
-                                .fillMaxWidth(),
-
-                            ) {
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
                             item {
                                 CircleGraph("전체", totalCompletedLessons, totalLessons)
                             }
 
-                            items(lectureProgressList) { item ->
-                                Spacer(modifier = Modifier.width(16.dp)) // 그래프 간격 추가
+                            // lectureProgressList가 null이 아니고 비어있지 않을 때만 항목 표시
+                            if (lectureProgressList.isNotEmpty()) {
+                                items(lectureProgressList) { item ->
+                                    Spacer(modifier = Modifier.width(16.dp)) // 그래프 간격 추가
 
-                                // PATCH 요청 응답을 받아서 name 업데이트
-                                val currentLectureName = if (item.planId == patchData.planId) {
-                                    patchData.lectureAlias
-                                } else {
-                                    item.lectureAlias
+                                    // PATCH 요청 응답을 받아서 name 업데이트
+                                    val currentLectureName = if (item.planId == patchData.planId) {
+                                        patchData.lectureAlias
+                                    } else {
+                                        item.lectureAlias
+                                    }
+                                    CircleGraph(
+                                        name = currentLectureName,
+                                        cleared = item.completedLessons,
+                                        total = item.totalLessons
+                                    )
                                 }
-                                CircleGraph(
-                                    name = currentLectureName,
-                                    cleared = item.completedLessons,
-                                    total = item.totalLessons
-                                )
                             }
                         }
                     }
@@ -211,6 +213,7 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
 
             Spacer(modifier = Modifier.height(30.dp)) // 그래프와 강의 목록 사이 간격 추가
 
+            // 오늘의 강의 제목 섹션
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
@@ -272,14 +275,16 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            if (todayLessonList != null) {
+            // 오늘의 강의 목록 섹션 - todayLessonList에 따라 조건부 렌더링
+            if (todayLessonList != null && todayLessonList.isNotEmpty()) {
                 ModifiedLessonList(homeViewModel, 330, todayLessonList)
             } else {
                 Column(
                     modifier = Modifier
-                        .fillMaxSize().padding(bottom = 50.dp), // 화면 전체를 차지하도록 설정
-                    verticalArrangement = Arrangement.Center, // 세로 중앙 정렬
-                    horizontalAlignment = Alignment.CenterHorizontally // 가로 중앙 정렬
+                        .fillMaxSize()
+                        .padding(bottom = 50.dp),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Image(
                         painter = painterResource(R.drawable.home_screen_empty),
@@ -308,13 +313,11 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
                     )
                 }
             }
-
         }
     }
 
     // 바텀 시트
     if (isBottomSheetVisible) {
-
         ModalBottomSheet(
             sheetState = modalBottomSheetState,
             onDismissRequest = { isBottomSheetVisible = false }
@@ -324,12 +327,11 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
                 description = "수강 중인 강의를 선택하세요.",
                 modalBottomSheetState = modalBottomSheetState,
                 onDismiss = { isBottomSheetVisible = false },
-                lectureProgressList = lectureProgressList?: emptyList(),
+                lectureProgressList = lectureProgressList ?: emptyList(),
                 planViewModel = planViewModel,
             )
         }
     }
-
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
