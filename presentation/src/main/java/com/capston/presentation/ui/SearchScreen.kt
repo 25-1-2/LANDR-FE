@@ -486,7 +486,7 @@ fun SearchLectureItem(lectureItem: LectureItemDto, searchQuery: String, onClick:
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 10.dp)
+            .padding(vertical = 10.dp, horizontal = 16.dp)
             .clickable{ onClick() }
     ) {
         Row(
@@ -567,6 +567,11 @@ private fun getImageForSubject(subject: String): Int {
     return when (subject) {
         "MATH" -> R.drawable.screen_search_math_iv
         "SCI" -> R.drawable.screen_search_science_iv
+        "SOC" -> R.drawable.screen_search_social_iv
+        "HIST" -> R.drawable.screen_search_history_iv
+        "UNIV" -> R.drawable.screen_search_common_iv
+        "LANG2" -> R.drawable.screen_search_foriegn_iv
+        "VOC" -> R.drawable.screen_search_voca_iv
         "ENG" -> R.drawable.screen_search_english_iv
         "KOR" -> R.drawable.screen_search_korean_iv
         else -> R.drawable.screen_search_korean_iv // 기본 이미지
