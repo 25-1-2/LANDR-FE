@@ -170,9 +170,9 @@ fun SettingTopBottomBar(homeViewModel: HomeViewModel, planViewModel: PlanViewMod
                 composable(Screen.LectureRoom.title) {
                     LectureRoomScreen(
                         planViewModel,
-                        onLectureClick = { lecture ->
+                        onPlanClick = { plan ->
                             // lecture.title을 경로 파라미터로 사용하여 상세 화면으로 이동
-                            navController.navigate("${Screen.PlanDetail.title}/${lecture.lectureTitle}")
+                            navController.navigate("${Screen.PlanDetail.title}/${plan.planId}")
                         }
                     )
                 }
