@@ -66,8 +66,7 @@ fun SearchScreen(
     var cursorCreatedAt by remember { mutableStateOf("") }
     var hasMoreData by remember { mutableStateOf(true) }
 
-    // 페이지 사이즈를 20으로 늘립니다 (기존 10에서 변경)
-    var offset by remember { mutableStateOf("20") }
+    var offset by remember { mutableStateOf("10") }
 
     // 모든 아이템을 누적해서 저장
     var allItems by remember { mutableStateOf<List<LectureItemDto>>(emptyList()) }
@@ -123,7 +122,7 @@ fun SearchScreen(
             hasMoreData = true
             allItems = emptyList()
 
-            delay(300) // 타이핑하는 동안 여러 번 API 호출하지 않도록 지연
+            delay(300) // 타이핑하는 동안 여러 번 API 호출하지 않도록 지연 (디바운싱)
 
             // 검색어가 비어있지 않은 경우만 검색 수행
             if (searchQuery.isNotBlank()) {
@@ -173,7 +172,7 @@ fun SearchScreen(
                 LectureItemDto(
                     id = lecture.id,
                     title = lecture.title ?: "",
-                    platform = lecture.platform?.label ?: "",
+                    platform = lecture.platform.label ?: "",
                     teacher = "${lecture.teacher ?: ""} · [과목] ${lecture.subject ?: ""}",
                     imageResId = getImageForSubject(lecture.subject ?: ""),
                     createdAt = lecture.createdAt ?: ""
@@ -227,7 +226,7 @@ fun SearchScreen(
                 LectureItemDto(
                     id = lecture.id,
                     title = lecture.title ?: "",
-                    platform = lecture.platform?.label ?: "",
+                    platform = lecture.platform.label ?: "",
                     teacher = "${lecture.teacher ?: ""} · [과목] ${lecture.subject ?: ""}",
                     imageResId = getImageForSubject(lecture.subject ?: ""),
                     createdAt = lecture.createdAt ?: ""
