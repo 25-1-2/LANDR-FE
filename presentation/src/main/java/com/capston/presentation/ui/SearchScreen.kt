@@ -66,6 +66,7 @@ fun SearchScreen(
     var cursorLectureId by remember { mutableStateOf("") }
     var cursorCreatedAt by remember { mutableStateOf("") }
     var hasMoreData by remember { mutableStateOf(true) }
+    var offset by remember { mutableStateOf("10") } // 기본 페이지 사이즈
 
     // 모든 아이템을 누적해서 저장
     var allItems by remember { mutableStateOf<List<LectureItemDto>>(emptyList()) }
@@ -76,7 +77,9 @@ fun SearchScreen(
             Log.d("SearchScreen", "전체 강의 조회 (재로딩) 시작")
             isLoading = true
             allItems = emptyList() // 기존 항목 초기화
-            lectureViewModel.getAllLecture()
+            cursorLectureId = "" // 커서 초기화
+            cursorCreatedAt = "" // 커서 초기화
+            lectureViewModel.getAllLecture(LectureDto(offset = "10"))
             shouldReloadData = false
         }
     }
@@ -113,7 +116,15 @@ fun SearchScreen(
                 Log.d("SearchScreen", "검색어 변경: $searchQuery")
                 isSearching = true
                 isLoading = true
-                lectureViewModel.getDistinctLecture(searchQuery)
+                // 검색 API 호출 시 파라미터 전달
+                lectureViewModel.getDistinctLecture(
+                    LectureDto(
+                        search = searchQuery,
+                        cursorLectureId = cursorLectureId,
+                        cursorCreatedAt = cursorCreatedAt,
+                        offset = offset
+                    )
+                )
             } else {
                 isSearching = false
                 if (allLectureResponse.isNotEmpty()) {
@@ -133,9 +144,42 @@ fun SearchScreen(
                 } else {
                     // 없으면 새로 로드
                     isLoading = true
-                    lectureViewModel.getAllLecture()
+                    lectureViewModel.getAllLecture(LectureDto(offset = offset))
                 }
             }
+        }
+    }
+
+    // 검색 결과 처리
+    LaunchedEffect(searchLectureResponse) {
+        if (isSearching) {
+            val newItems = searchLectureResponse.data?.map { lecture ->
+                LectureItemDto(
+                    id = lecture.id,
+                    title = lecture.title,
+                    platform = lecture.platform.label,
+                    teacher = "${lecture.teacher} · [과목] ${lecture.subject}",
+                    imageResId = getImageForSubject(lecture.subject),
+                    createdAt = lecture.createdAt
+                )
+            } ?: emptyList()
+
+            // 첫 페이지인 경우 교체, 아닌 경우 추가
+            if (cursorLectureId.isEmpty()) {
+                allItems = newItems
+            } else {
+                allItems = allItems + newItems
+            }
+
+            // 페이지네이션 정보 업데이트
+            hasMoreData = searchLectureResponse.hasNext
+            if (searchLectureResponse.nextCursor > 0) {
+                cursorLectureId = searchLectureResponse.nextCursor.toString()
+            }
+            cursorCreatedAt = searchLectureResponse.nextCreateAt
+            isLoading = false
+
+            Log.d("SearchScreen", "검색 결과 처리: ${newItems.size}개 항목, 누적 ${allItems.size}개, 다음 페이지 ${hasMoreData}")
         }
     }
 
@@ -177,7 +221,7 @@ fun SearchScreen(
         Log.d("SearchScreen", "전체 목록 응답 변경 감지: ${allLectureResponse.size}개 항목, 검색 중: $isSearching")
         if (!isSearching && allLectureResponse.isNotEmpty()) {
             // 전체 목록 처리 로직
-            allItems = allLectureResponse.map { lecture ->
+            val newItems = allLectureResponse.map { lecture ->
                 LectureItemDto(
                     id = lecture.id,
                     title = lecture.title,
@@ -187,8 +231,26 @@ fun SearchScreen(
                     createdAt = lecture.createdAt
                 )
             }
+
+            // 첫 요청이면 목록 교체, 아니면 추가
+            if (cursorLectureId.isEmpty()) {
+                allItems = newItems
+            } else {
+                allItems = allItems + newItems
+            }
+
+            // 받아온 아이템이 없거나 API 명시한 것보다 적으면 더 이상 없는 것으로 처리
+            hasMoreData = newItems.isNotEmpty() && newItems.size >= (offset.toIntOrNull() ?: 10)
+
+            // 다음 페이지 요청을 위한 커서 정보 업데이트
+            if (newItems.isNotEmpty()) {
+                val lastItem = newItems.last()
+                cursorLectureId = lastItem.id.toString()
+                cursorCreatedAt = lastItem.createdAt
+            }
+
             isLoading = false
-            Log.d("SearchScreen", "전체 목록 처리 완료: ${allItems.size}개 항목")
+            Log.d("SearchScreen", "전체 목록 처리 완료: ${allItems.size}개 항목, 다음 페이지: $hasMoreData")
         }
     }
 
@@ -203,10 +265,30 @@ fun SearchScreen(
             hasMoreData = hasMoreData,
             isLoading = isLoading,
             onLoadMore = {
-                if (hasMoreData && isSearching) {
+                if (hasMoreData && !isLoading) {
                     scope.launch {
-                        Log.d("SearchScreen", "추가 데이터 로드: cursor=${cursorLectureId}")
-                        lectureViewModel.getDistinctLecture(searchQuery)
+                        isLoading = true
+                        Log.d("SearchScreen", "추가 데이터 로드: cursor=${cursorLectureId}, createdAt=${cursorCreatedAt}")
+                        if (isSearching) {
+                            // 검색 모드에서 다음 페이지 로드
+                            lectureViewModel.getDistinctLecture(
+                                LectureDto(
+                                    search = searchQuery,
+                                    cursorLectureId = cursorLectureId,
+                                    cursorCreatedAt = cursorCreatedAt,
+                                    offset = offset
+                                )
+                            )
+                        } else {
+                            // 전체 목록 모드에서 다음 페이지 로드
+                            lectureViewModel.getAllLecture(
+                                LectureDto(
+                                    cursorLectureId = cursorLectureId,
+                                    cursorCreatedAt = cursorCreatedAt,
+                                    offset = offset
+                                )
+                            )
+                        }
                     }
                 }
             }
@@ -226,15 +308,18 @@ fun InfiniteScrollList(
     var loading by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
 
-    // 스크롤 위치 감지 및 추가 데이터 로드
-    LaunchedEffect(listState.layoutInfo.visibleItemsInfo) {
+    // 스크롤 위치 감지 및 추가 데이터 로드 - 개선된 로직
+    LaunchedEffect(listState.layoutInfo.visibleItemsInfo, hasMoreData, isLoading) {
+        // 현재 보이는 아이템 중 마지막 아이템
         val lastVisibleItem = listState.layoutInfo.visibleItemsInfo.lastOrNull()
-        if (lastVisibleItem != null) {
-            val lastIndex = lastVisibleItem.index
-            val total = lectureItems.size
+        val total = lectureItems.size
 
-            // 마지막 3개 아이템에 도달하면 추가 데이터 로드
-            if (hasMoreData && !loading && total > 0 && lastIndex >= total - 3) {
+        // 스크롤 위치가 마지막 아이템에 가까워지면 로드
+        if (lastVisibleItem != null && total > 0 && !loading && !isLoading && hasMoreData) {
+            val lastIndex = lastVisibleItem.index
+
+            // 마지막에서 3개 아이템 이내에 도달하면 더 로드
+            if (lastIndex >= total - 3) {
                 loading = true
                 onLoadMore()
                 delay(1000) // 연속 호출 방지
@@ -273,7 +358,7 @@ fun InfiniteScrollList(
                     )
                 }
 
-                // 로딩 인디케이터
+                // 로딩 인디케이터 - 하단에 표시
                 if (hasMoreData || isLoading) {
                     item {
                         Box(
@@ -287,6 +372,17 @@ fun InfiniteScrollList(
                                 strokeWidth = 2.dp
                             )
                         }
+                    }
+                } else if (lectureItems.isNotEmpty()) {
+                    // 더 이상 로드할 항목이 없음을 표시
+                    item {
+                        Text(
+                            text = "더 이상 강의가 없습니다",
+                            fontSize = 14.sp,
+                            color = Color.Gray,
+                            modifier = Modifier.fillMaxWidth().padding(16.dp),
+                            textAlign = TextAlign.Center
+                        )
                     }
                 }
             }
@@ -405,10 +501,10 @@ fun SearchTopBar(
 
 private fun getImageForSubject(subject: String): Int {
     return when (subject) {
-        "수학" -> R.drawable.screen_search_math_iv
-        "과학" -> R.drawable.screen_search_science_iv
-        "영어" -> R.drawable.screen_search_english_iv
-        "국어" -> R.drawable.screen_search_korean_iv
+        "MATH" -> R.drawable.screen_search_math_iv
+        "SCI" -> R.drawable.screen_search_science_iv
+        "ENG" -> R.drawable.screen_search_english_iv
+        "KOR" -> R.drawable.screen_search_korean_iv
         else -> R.drawable.screen_search_korean_iv // 기본 이미지
     }
 }
