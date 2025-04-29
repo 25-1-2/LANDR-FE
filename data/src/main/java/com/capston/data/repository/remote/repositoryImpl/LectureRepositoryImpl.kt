@@ -12,11 +12,11 @@ class LectureRepositoryImpl @Inject constructor(
     private val lectureDataSource: LectureDataSource
 ) : LectureRepository {
 
-    override suspend fun getDistinctLecture(searchName: String): Flow<DistinctLectureResponse> {
-        return lectureDataSource.getDistinctLecture(searchName)
+    override suspend fun getDistinctLecture(lectureDto: LectureDto): Flow<DistinctLectureResponse> {
+        return lectureDataSource.getDistinctLecture(lectureDto)
     }
 
-    override suspend fun getAllLecture(): Flow<DistinctLectureResponse> {
-        return lectureDataSource.getAllLecture()
+    override suspend fun getAllLecture(lectureDto: LectureDto): Flow<DistinctLectureResponse> {
+        return lectureDataSource.getAllLecture(lectureDto)
     }
 }
