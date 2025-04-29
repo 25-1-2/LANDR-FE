@@ -6,8 +6,10 @@ import androidx.lifecycle.viewModelScope
 import com.capston.domain.model.MyLecture
 import com.capston.domain.request.PatchPlanDto
 import com.capston.domain.request.PostPlanDto
+import com.capston.domain.response.plan.GetPlanDetailResponse
 import com.capston.domain.response.plan.LectureAliasResponse
 import com.capston.domain.response.plan.PostPlanResponse
+import com.capston.domain.usecase.plan.GetPlanDetailUseCase
 import com.capston.domain.usecase.plan.GetPlanLectureRoomUseCase
 import com.capston.domain.usecase.plan.PatchPlanNameUseCase
 import com.capston.domain.usecase.plan.PostPlanDetailUseCase
@@ -23,7 +25,8 @@ import javax.inject.Inject
 class PlanViewModel @Inject constructor(
     private val postPlanDetailUseCase: PostPlanDetailUseCase,
     private val patchPlanNameUseCase: PatchPlanNameUseCase,
-    private val getPlanLectureRoomUseCase: GetPlanLectureRoomUseCase
+    private val getPlanLectureRoomUseCase: GetPlanLectureRoomUseCase,
+    private val getPlanDetailUseCase: GetPlanDetailUseCase,
 ) : ViewModel() {
     private val _postPlanDetail = MutableStateFlow(PostPlanResponse())  // 기본값 ""
     val postPlanDetail: StateFlow<PostPlanResponse> = _postPlanDetail.asStateFlow()
@@ -33,6 +36,9 @@ class PlanViewModel @Inject constructor(
 
     private val _getPlanLectureRoom = MutableStateFlow(emptyList<MyLecture>())  // 기본값 ""
     val getPlanLectureRoom: StateFlow<List<MyLecture>> = _getPlanLectureRoom.asStateFlow()
+
+    private val _getPlanDetail = MutableStateFlow(GetPlanDetailResponse())  // 기본값 ""
+    val getPlanDetail: StateFlow<GetPlanDetailResponse> = _getPlanDetail.asStateFlow()
 
     fun postPlanDetail(postPlanDto: PostPlanDto) {
         viewModelScope.launch {
@@ -69,6 +75,19 @@ class PlanViewModel @Inject constructor(
                 .collect { response ->  // 값 저장
                     _getPlanLectureRoom.value = response // 공백 제거 후 저장
                     Log.d("PlanViewModel", "getPlanLectureRoom 업데이트됨: $response")
+                }
+        }
+    }
+
+    fun getPlanDetail(planId: Int) {
+        viewModelScope.launch {
+            getPlanDetailUseCase(planId)
+                .catch { e ->
+                    Log.e("PlanViewModel", "getPlanDetail 에러: ${e.message}")
+                }
+                .collect { response ->  // 값 저장
+                    _getPlanDetail.value = response // 공백 제거 후 저장
+                    Log.d("PlanViewModel", "getPlanDetail 업데이트됨: $response")
                 }
         }
     }
