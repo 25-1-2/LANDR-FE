@@ -32,13 +32,26 @@ class LectureViewModel @Inject constructor(
     private val _searchLectureItems = MutableStateFlow<List<LectureItemDto>>(emptyList())
     val searchLectureItems: StateFlow<List<LectureItemDto>> = _searchLectureItems
 
+    // 검색어만 받는 함수 (기존 코드와의 호환성 유지)
     fun getDistinctLecture(searchName: String) {
+        val lectureDto = LectureDto(
+            search = searchName,
+            cursorLectureId = "",
+            cursorCreatedAt = "",
+            offset = "10"
+        )
+        getDistinctLecture(lectureDto)
+    }
+
+    // LectureDto를 직접 받는 함수
+    fun getDistinctLecture(lectureDto: LectureDto) {
         viewModelScope.launch {
             loadingStateManager.show()
             try {
-                getDistinctLectureUseCase(searchName).collect { response ->
+                Log.d("LectureViewModel", "강의 검색 API 호출: search=${lectureDto.search}, cursor=${lectureDto.cursorLectureId}")
+
+                getDistinctLectureUseCase(lectureDto).collect { response ->
                     Log.d("LectureViewModel", "API 응답: ${response.data?.size ?: 0}개 항목")
-                    // 응답 데이터 예시 로깅
                     if (response.data?.isNotEmpty() == true) {
                         Log.d("LectureViewModel", "첫 번째 항목: ${response.data?.first()?.title}")
                     }
@@ -52,19 +65,31 @@ class LectureViewModel @Inject constructor(
         }
     }
 
-    fun getAllLecture(lectureDto: LectureDto = LectureDto()) {
+    // 기본 파라미터만 받는 함수 (기존 코드와의 호환성 유지)
+    fun getAllLecture() {
+        val lectureDto = LectureDto(
+            search = "",
+            cursorLectureId = "",
+            cursorCreatedAt = "",
+            offset = "10"
+        )
+        getAllLecture(lectureDto)
+    }
+
+    // LectureDto를 직접 받는 함수
+    fun getAllLecture(lectureDto: LectureDto) {
         viewModelScope.launch {
             loadingStateManager.show()
             try {
-                Log.d("LectureViewModel", "강의 목록 조회 API 호출: search=${lectureDto.search}")
+                Log.d("LectureViewModel", "강의 목록 조회 API 호출: cursor=${lectureDto.cursorLectureId}")
 
-                getAllLectureUseCase().collect { response ->
+                getAllLectureUseCase(lectureDto).collect { response ->
                     val lectures = response.data ?: emptyList()
                     Log.d("LectureViewModel", "강의 목록 응답: ${lectures.size}개 항목")
 
                     // 개별 강의 로그
-                    lectures.forEach { lecture ->
-                        Log.d("LectureViewModel", "강의: ${lecture.title}, 교사: ${lecture.teacher}")
+                    if (lectures.isNotEmpty()) {
+                        Log.d("LectureViewModel", "첫 번째 강의: ${lectures.first().title}, 교사: ${lectures.first().teacher}")
                     }
 
                     _allLectureList.value = lectures
@@ -82,5 +107,4 @@ class LectureViewModel @Inject constructor(
     fun updateSearchLectureItems(items: List<LectureItemDto>) {
         _searchLectureItems.value = items
     }
-
 }

@@ -7,8 +7,8 @@ import kotlinx.coroutines.flow.Flow
 
 interface LectureRepository {
     // 강의 단 건 조회
-    suspend fun getDistinctLecture(searchName: String): Flow<DistinctLectureResponse>
+    suspend fun getDistinctLecture(lectureDto: LectureDto): Flow<DistinctLectureResponse>
 
     // 강의 전체 조회
-    suspend fun getAllLecture(): Flow<DistinctLectureResponse>
+    suspend fun getAllLecture(lectureDto: LectureDto): Flow<DistinctLectureResponse>
 }

@@ -9,8 +9,7 @@ import javax.inject.Inject
 class GetAllLectureUseCase @Inject constructor(
     private val lectureRepository: LectureRepository
 ) {
-    suspend operator fun invoke(
-    ): Flow<DistinctLectureResponse> {
-        return lectureRepository.getAllLecture()
+    suspend operator fun invoke(lectureDto: LectureDto): Flow<DistinctLectureResponse> {
+        return lectureRepository.getAllLecture(lectureDto)
     }
 }

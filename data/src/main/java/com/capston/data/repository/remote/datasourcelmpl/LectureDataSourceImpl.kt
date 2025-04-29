@@ -3,6 +3,7 @@ package com.capston.data.repository.remote.datasourcelmpl
 import android.util.Log
 import com.capston.data.repository.remote.api.LectureApi
 import com.capston.domain.datasource.LectureDataSource
+import com.capston.domain.request.LectureDto
 import com.capston.domain.response.lecture.DistinctLectureResponse
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
@@ -13,8 +14,14 @@ class LectureDataSourceImpl @Inject constructor(
     private val lectureApi: LectureApi
 ) : LectureDataSource {
 
-    override suspend fun getDistinctLecture(searchName: String): Flow<DistinctLectureResponse> = flow {
-        var result = lectureApi.getDistinctLecture(searchName)
+    override suspend fun getDistinctLecture(lectureDto: LectureDto): Flow<DistinctLectureResponse> = flow {
+        var result = lectureApi.getDistinctLecture(
+            search = lectureDto.search.takeIf { it.isNotEmpty() },
+            cursorLectureId = lectureDto.cursorLectureId.takeIf { it.isNotEmpty() },
+            cursorCreatedAt = lectureDto.cursorCreatedAt.takeIf { it.isNotEmpty() },
+            offset = lectureDto.offset.takeIf { it.isNotEmpty() } ?: "10"
+        )
+
         Log.d("LectureDataSourceImpl", "서버 응답: $result")
         if (result == null) {
             val defaultPayload = DistinctLectureResponse(
@@ -30,8 +37,14 @@ class LectureDataSourceImpl @Inject constructor(
         // 오류 처리
     }
 
-    override suspend fun getAllLecture(): Flow<DistinctLectureResponse> = flow {
-        var result = lectureApi.getAllLecture()
+    override suspend fun getAllLecture(lectureDto: LectureDto): Flow<DistinctLectureResponse> = flow {
+        var result = lectureApi.getDistinctLecture(
+            search = lectureDto.search.takeIf { it.isNotEmpty() },
+            cursorLectureId = lectureDto.cursorLectureId.takeIf { it.isNotEmpty() },
+            cursorCreatedAt = lectureDto.cursorCreatedAt.takeIf { it.isNotEmpty() },
+            offset = lectureDto.offset.takeIf { it.isNotEmpty() } ?: "10"
+        )
+
         Log.d("LectureDataSourceImpl", "서버 응답: $result")
         if (result == null) {
             val defaultPayload = DistinctLectureResponse(

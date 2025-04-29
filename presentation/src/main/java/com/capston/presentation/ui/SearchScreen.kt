@@ -120,10 +120,12 @@ fun SearchScreen(
                     // 이미 로드된 전체 목록이 있으면 바로 처리
                     allItems = allLectureResponse.map { lecture ->
                         LectureItemDto(
+                            id = lecture.id,
                             title = lecture.title,
                             platform = lecture.platform.label,
                             teacher = "${lecture.teacher} · [과목] ${lecture.subject}",
-                            imageResId = getImageForSubject(lecture.subject)
+                            imageResId = getImageForSubject(lecture.subject),
+                            createdAt = lecture.createdAt
                         )
                     }
                     isLoading = false
@@ -142,10 +144,12 @@ fun SearchScreen(
         if (isSearching) {
             val newItems = searchLectureResponse.data?.map { lecture ->
                 LectureItemDto(
+                    id = lecture.id,
                     title = lecture.title,
                     platform = lecture.platform.label,
                     teacher = "${lecture.teacher} · [과목] ${lecture.subject}",
-                    imageResId = getImageForSubject(lecture.subject)
+                    imageResId = getImageForSubject(lecture.subject),
+                    createdAt = lecture.createdAt
                 )
             } ?: emptyList()
 
@@ -175,10 +179,12 @@ fun SearchScreen(
             // 전체 목록 처리 로직
             allItems = allLectureResponse.map { lecture ->
                 LectureItemDto(
+                    id = lecture.id,
                     title = lecture.title,
                     platform = lecture.platform.label,
                     teacher = "${lecture.teacher} · [과목] ${lecture.subject}",
-                    imageResId = getImageForSubject(lecture.subject)
+                    imageResId = getImageForSubject(lecture.subject),
+                    createdAt = lecture.createdAt
                 )
             }
             isLoading = false
