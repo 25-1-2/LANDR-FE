@@ -45,6 +45,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import com.capston.domain.response.enum_class.DayOfWeek
 import com.capston.domain.response.home.LessonScheduleResponse
 import com.capston.presentation.theme.LightGray3
 import com.capston.presentation.theme.LightGray40
@@ -307,7 +308,7 @@ fun SimpleCalendar(
     }
 
     // 요일 헤더
-    val dayOfWeekMap = listOf("MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN")
+    val dayOfWeekMap = DayOfWeek.entries.toTypedArray()
 
     Box(
         modifier = Modifier
@@ -383,7 +384,7 @@ fun SimpleCalendar(
             ) {
                 items(dayOfWeekMap) { day ->
                     Text(
-                        text = day,
+                        text = day.name,
                         color = LightGray40,
                         fontSize = 14.sp,
                         textAlign = TextAlign.Center,
@@ -661,14 +662,5 @@ fun DraggableLessonContainer(
 
 
 fun getKoreanDayOfWeek(dayOfWeek: Int): String {
-    return when (dayOfWeek) {
-        1 -> "월" // Monday
-        2 -> "화" // Tuesday
-        3 -> "수" // Wednesday
-        4 -> "목" // Thursday
-        5 -> "금" // Friday
-        6 -> "토" // Saturday
-        7 -> "일" // Sunday
-        else -> ""
-    }
+    return DayOfWeek.entries.getOrNull((dayOfWeek).coerceIn(0, 6))?.label ?: ""
 }
