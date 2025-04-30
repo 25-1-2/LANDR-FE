@@ -32,6 +32,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.capston.domain.model.Lecture
 import com.capston.domain.request.LectureDto
+import com.capston.domain.response.enum_class.Subject
 import com.capston.presentation.R
 import com.capston.presentation.theme.LightGray40
 import com.capston.presentation.theme.MainPurple
@@ -143,12 +144,14 @@ fun SearchScreen(
                 if (allLectureResponse.isNotEmpty()) {
                     // 이미 로드된 전체 목록이 있으면 바로 처리
                     allItems = allLectureResponse.map { lecture ->
+                        val subjectEnum = runCatching { Subject.valueOf(lecture.subject ?: "") }.getOrNull()
+
                         LectureItemDto(
                             id = lecture.id,
                             title = lecture.title ?: "",
                             platform = lecture.platform?.label ?: "",
                             teacher = "${lecture.teacher ?: ""} · [과목] ${lecture.subject ?: ""}",
-                            imageResId = getImageForSubject(lecture.subject ?: ""),
+                            imageResId = subjectEnum?.getImageRes() ?: R.drawable.screen_search_korean_iv,
                             createdAt = lecture.createdAt ?: ""
                         )
                     }
@@ -169,12 +172,14 @@ fun SearchScreen(
             Log.d("SearchScreen", "검색 응답 처리 시작: nextCursor=${searchLectureResponse.nextCursor}, hasNext=${searchLectureResponse.hasNext}")
 
             val newItems = searchLectureResponse.data?.filterNotNull()?.map { lecture ->
+                val subjectEnum = runCatching { Subject.valueOf(lecture.subject ?: "") }.getOrNull()
+
                 LectureItemDto(
                     id = lecture.id,
                     title = lecture.title ?: "",
                     platform = lecture.platform.label ?: "",
                     teacher = "${lecture.teacher ?: ""} · [과목] ${lecture.subject ?: ""}",
-                    imageResId = getImageForSubject(lecture.subject ?: ""),
+                    imageResId = subjectEnum?.getImageRes() ?: R.drawable.screen_search_korean_iv,
                     createdAt = lecture.createdAt ?: ""
                 )
             } ?: emptyList()
@@ -223,12 +228,14 @@ fun SearchScreen(
             Log.d("SearchScreen", "전체 목록 응답 변경 감지: ${allLectureResponse.size}개 항목")
             // 전체 목록 처리 로직
             val newItems = allLectureResponse.map { lecture ->
+                val subjectEnum = runCatching { Subject.valueOf(lecture.subject ?: "") }.getOrNull()
+
                 LectureItemDto(
                     id = lecture.id,
                     title = lecture.title ?: "",
                     platform = lecture.platform.label ?: "",
                     teacher = "${lecture.teacher ?: ""} · [과목] ${lecture.subject ?: ""}",
-                    imageResId = getImageForSubject(lecture.subject ?: ""),
+                    imageResId = subjectEnum?.getImageRes() ?: R.drawable.screen_search_korean_iv,
                     createdAt = lecture.createdAt ?: ""
                 )
             }
@@ -563,17 +570,16 @@ fun SearchTopBar(
     )
 }
 
-private fun getImageForSubject(subject: String): Int {
-    return when (subject) {
-        "MATH" -> R.drawable.screen_search_math_iv
-        "SCI" -> R.drawable.screen_search_science_iv
-        "SOC" -> R.drawable.screen_search_social_iv
-        "HIST" -> R.drawable.screen_search_history_iv
-        "UNIV" -> R.drawable.screen_search_common_iv
-        "LANG2" -> R.drawable.screen_search_foriegn_iv
-        "VOC" -> R.drawable.screen_search_voca_iv
-        "ENG" -> R.drawable.screen_search_english_iv
-        "KOR" -> R.drawable.screen_search_korean_iv
-        else -> R.drawable.screen_search_korean_iv // 기본 이미지
+fun Subject.getImageRes(): Int {
+    return when (this) {
+        Subject.MATH -> R.drawable.screen_search_math_iv
+        Subject.SCI -> R.drawable.screen_search_science_iv
+        Subject.SOC -> R.drawable.screen_search_social_iv
+        Subject.HIST -> R.drawable.screen_search_history_iv
+        Subject.UNIV -> R.drawable.screen_search_common_iv
+        Subject.LANG2 -> R.drawable.screen_search_foriegn_iv
+        Subject.VOC -> R.drawable.screen_search_voca_iv
+        Subject.ENG -> R.drawable.screen_search_english_iv
+        Subject.KOR -> R.drawable.screen_search_korean_iv
     }
 }
