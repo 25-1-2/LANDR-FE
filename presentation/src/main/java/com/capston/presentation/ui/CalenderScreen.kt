@@ -331,7 +331,7 @@ fun SimpleCalendar(
                 IconButton(onClick = {
                     if (expandRatio <= 0.7f) {
                         // 주간 뷰일 때: 이전 주로 이동
-                        val prevWeekWednesday = currentWeekDays.first().plusDays(2).minusDays(7)
+                        val prevWeekWednesday = currentWeekDays.first().plusDays(3).minusDays(7)
                         onDateSelected(prevWeekWednesday.format(formatter))
                     } else {
                         // 월간 뷰일 때: 이전 달로 이동
@@ -359,7 +359,7 @@ fun SimpleCalendar(
                 IconButton(onClick = {
                     if (expandRatio <= 0.7f) {
                         // 주간 뷰일 때: 다음 주로 이동
-                        val nextWeekWednesday = currentWeekDays.first().plusDays(2).plusDays(7)
+                        val nextWeekWednesday = currentWeekDays.first().plusDays(3).plusDays(7)
                         onDateSelected(nextWeekWednesday.format(formatter))
                     } else {
                         // 월간 뷰일 때: 다음 달로 이동
@@ -501,14 +501,9 @@ fun CalendarDay(
 
 @RequiresApi(Build.VERSION_CODES.O)
 fun getWeekDaysFromMonday(date: LocalDate): List<LocalDate> {
-    // 월요일(1) ~ 일요일(7)
-    val dayOfWeek = date.dayOfWeek.value
-
-    // 현재 날짜가 속한 주의 월요일 계산 (수정)
-    val monday = date.minusDays((dayOfWeek).toLong())
-
-    // 월요일부터 일요일까지 7일 반환
-    return (0..6).map { monday.plusDays(it.toLong()) }
+    val dayOfWeek = date.dayOfWeek.value  // 월=1 ~ 일=7
+    val monday = date.minusDays((dayOfWeek).toLong()) // 월요일 기준으로 보정
+    return (0..6).map { monday.plusDays(it.toLong()) } // 월 ~ 일
 }
 
 @Composable
