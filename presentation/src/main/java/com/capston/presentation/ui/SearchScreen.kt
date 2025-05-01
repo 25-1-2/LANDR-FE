@@ -149,7 +149,7 @@ fun SearchScreen(
                         LectureItemDto(
                             id = lecture.id,
                             title = lecture.title ?: "",
-                            platform = lecture.platform?.label ?: "",
+                            platform = lecture.platform,
                             teacher = "${lecture.teacher ?: ""} · [과목] ${lecture.subject ?: ""}",
                             imageResId = subjectEnum?.getImageRes() ?: R.drawable.screen_search_korean_iv,
                             createdAt = lecture.createdAt ?: ""
@@ -177,7 +177,7 @@ fun SearchScreen(
                 LectureItemDto(
                     id = lecture.id,
                     title = lecture.title ?: "",
-                    platform = lecture.platform.label ?: "",
+                    platform = lecture.platform,
                     teacher = "${lecture.teacher ?: ""} · [과목] ${lecture.subject ?: ""}",
                     imageResId = subjectEnum?.getImageRes() ?: R.drawable.screen_search_korean_iv,
                     createdAt = lecture.createdAt ?: ""
@@ -233,7 +233,7 @@ fun SearchScreen(
                 LectureItemDto(
                     id = lecture.id,
                     title = lecture.title ?: "",
-                    platform = lecture.platform.label ?: "",
+                    platform = lecture.platform,
                     teacher = "${lecture.teacher ?: ""} · [과목] ${lecture.subject ?: ""}",
                     imageResId = subjectEnum?.getImageRes() ?: R.drawable.screen_search_korean_iv,
                     createdAt = lecture.createdAt ?: ""
@@ -504,7 +504,7 @@ fun SearchLectureItem(lectureItem: LectureItemDto, searchQuery: String, onClick:
                 modifier = Modifier.weight(1f)
             ) {
                 Text(
-                    text = lectureItem.platform ?: "",
+                    text = lectureItem.platform.toString(),
                     color = MainPurple,
                     fontSize = 14.sp
                 )
