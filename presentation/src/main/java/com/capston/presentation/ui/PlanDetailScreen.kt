@@ -19,8 +19,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.capston.presentation.R
 import com.capston.presentation.theme.CapstonTheme
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.FirstBaseline
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.sp
 import com.capston.domain.model.LessonSchedule
 import com.capston.domain.response.plan.GetPlanDetailResponse
 import com.capston.presentation.viewmodel.PlanViewModel
@@ -37,7 +39,7 @@ fun PlanDetailScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
+            .padding(horizontal = 16.dp)
             .verticalScroll(rememberScrollState())
     ) {
         TitleSection(planDetailResponse = planDetailResponse)
@@ -57,7 +59,7 @@ fun TitleSection(planDetailResponse: GetPlanDetailResponse) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(bottom = 32.dp),
+            .padding(vertical = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.Top
     ) {
@@ -78,11 +80,12 @@ fun TitleSection(planDetailResponse: GetPlanDetailResponse) {
 @Composable
 fun OneDaySection(date: String, lessonSchedules: List<LessonSchedule>) {
     Column(
-        modifier = Modifier.padding(start = 8.dp)
+        modifier = Modifier.padding(vertical = 16.dp, horizontal = 8.dp)
     ) {
         Text(
             text = date,
             style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Medium,
             modifier = Modifier.padding(bottom = 8.dp)
         )
         lessonSchedules.forEach { lessonSchedule ->
@@ -97,23 +100,29 @@ fun TaskItem(lessonSchedule: LessonSchedule) {
     // 각 체크박스의 상태를 기억합니다.
     var checked by remember { mutableStateOf(lessonSchedule.completed) }
     Row(
-        verticalAlignment = Alignment.CenterVertically,
+        verticalAlignment = Alignment.Top,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp)
+            .padding(vertical = 8.dp)
     ) {
         CompositionLocalProvider(
             LocalMinimumInteractiveComponentEnforcement provides false
         ) {
             Checkbox(
                 checked = checked,
-                onCheckedChange = { checked = it }
+                onCheckedChange = { checked = it },
+                modifier = Modifier
+//                    .alignBy(FirstBaseline)
+//                    .padding(top = 4.dp)
             )
         }
         Spacer(modifier = Modifier.width(8.dp))
         Text(
             text = lessonSchedule.lessonTitle,
-            style = MaterialTheme.typography.bodySmall
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Normal,
+            lineHeight = 28.sp,
+            modifier = Modifier.padding(top = 2.dp)
         )
     }
 }
