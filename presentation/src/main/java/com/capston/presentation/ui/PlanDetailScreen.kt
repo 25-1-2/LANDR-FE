@@ -2,8 +2,12 @@ package com.capston.presentation.ui
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalMinimumInteractiveComponentEnforcement
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -16,6 +20,7 @@ import com.capston.presentation.R
 import com.capston.presentation.theme.CapstonTheme
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.unit.Dp
 import com.capston.domain.model.LessonSchedule
 import com.capston.domain.response.plan.GetPlanDetailResponse
 import com.capston.presentation.viewmodel.PlanViewModel
@@ -33,6 +38,7 @@ fun PlanDetailScreen(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
+            .verticalScroll(rememberScrollState())
     ) {
         TitleSection(planDetailResponse = planDetailResponse)
 
@@ -58,7 +64,6 @@ fun TitleSection(planDetailResponse: GetPlanDetailResponse) {
         Text(
             text = planDetailResponse.lectureTitle,
             style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold,
             modifier = Modifier.weight(10f),
         )
         Icon(
@@ -78,7 +83,6 @@ fun OneDaySection(date: String, lessonSchedules: List<LessonSchedule>) {
         Text(
             text = date,
             style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Medium,
             modifier = Modifier.padding(bottom = 8.dp)
         )
         lessonSchedules.forEach { lessonSchedule ->
@@ -87,6 +91,7 @@ fun OneDaySection(date: String, lessonSchedules: List<LessonSchedule>) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TaskItem(lessonSchedule: LessonSchedule) {
     // 각 체크박스의 상태를 기억합니다.
@@ -97,10 +102,14 @@ fun TaskItem(lessonSchedule: LessonSchedule) {
             .fillMaxWidth()
             .padding(vertical = 4.dp)
     ) {
-        Checkbox(
-            checked = checked,
-            onCheckedChange = { checked = it }
-        )
+        CompositionLocalProvider(
+            LocalMinimumInteractiveComponentEnforcement provides false
+        ) {
+            Checkbox(
+                checked = checked,
+                onCheckedChange = { checked = it }
+            )
+        }
         Spacer(modifier = Modifier.width(8.dp))
         Text(
             text = lessonSchedule.lessonTitle,
