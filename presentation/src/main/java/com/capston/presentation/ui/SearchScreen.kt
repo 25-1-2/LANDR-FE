@@ -144,13 +144,13 @@ fun SearchScreen(
                 if (allLectureResponse.isNotEmpty()) {
                     // 이미 로드된 전체 목록이 있으면 바로 처리
                     allItems = allLectureResponse.map { lecture ->
-                        val subjectEnum = runCatching { Subject.valueOf(lecture.subject ?: "") }.getOrNull()
+                        val subjectEnum = runCatching { Subject.valueOf(lecture.subject.name) }.getOrNull()
 
                         LectureItemDto(
                             id = lecture.id,
                             title = lecture.title ?: "",
                             platform = lecture.platform,
-                            teacher = "${lecture.teacher ?: ""} · [과목] ${lecture.subject ?: ""}",
+                            teacher = "${lecture.teacher ?: ""} · [과목] ${lecture.subject.label}",
                             imageResId = subjectEnum?.getImageRes() ?: R.drawable.screen_search_korean_iv,
                             createdAt = lecture.createdAt ?: ""
                         )
@@ -172,13 +172,13 @@ fun SearchScreen(
             Log.d("SearchScreen", "검색 응답 처리 시작: nextCursor=${searchLectureResponse.nextCursor}, hasNext=${searchLectureResponse.hasNext}")
 
             val newItems = searchLectureResponse.data?.filterNotNull()?.map { lecture ->
-                val subjectEnum = runCatching { Subject.valueOf(lecture.subject ?: "") }.getOrNull()
+                val subjectEnum = runCatching { Subject.valueOf(lecture.subject.name) }.getOrNull()
 
                 LectureItemDto(
                     id = lecture.id,
                     title = lecture.title ?: "",
                     platform = lecture.platform,
-                    teacher = "${lecture.teacher ?: ""} · [과목] ${lecture.subject ?: ""}",
+                    teacher = "${lecture.teacher ?: ""} · [과목] ${lecture.subject.label}",
                     imageResId = subjectEnum?.getImageRes() ?: R.drawable.screen_search_korean_iv,
                     createdAt = lecture.createdAt ?: ""
                 )
@@ -228,13 +228,13 @@ fun SearchScreen(
             Log.d("SearchScreen", "전체 목록 응답 변경 감지: ${allLectureResponse.size}개 항목")
             // 전체 목록 처리 로직
             val newItems = allLectureResponse.map { lecture ->
-                val subjectEnum = runCatching { Subject.valueOf(lecture.subject ?: "") }.getOrNull()
+                val subjectEnum = runCatching { Subject.valueOf(lecture.subject.name) }.getOrNull()
 
                 LectureItemDto(
                     id = lecture.id,
                     title = lecture.title ?: "",
                     platform = lecture.platform,
-                    teacher = "${lecture.teacher ?: ""} · [과목] ${lecture.subject ?: ""}",
+                    teacher = "${lecture.teacher ?: ""} · [과목] ${lecture.subject.label}",
                     imageResId = subjectEnum?.getImageRes() ?: R.drawable.screen_search_korean_iv,
                     createdAt = lecture.createdAt ?: ""
                 )
