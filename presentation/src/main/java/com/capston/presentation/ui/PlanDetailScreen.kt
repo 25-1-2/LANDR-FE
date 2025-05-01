@@ -1,5 +1,8 @@
 package com.capston.presentation.ui
 
+import android.os.Build
+import android.widget.ImageButton
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -11,6 +14,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.capston.presentation.R
@@ -22,7 +26,17 @@ import com.capston.domain.response.plan.GetPlanDetailResponse
 import com.capston.presentation.viewmodel.HomeViewModel
 import com.capston.presentation.viewmodel.PlanViewModel
 
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
+@RequiresApi(Build.VERSION_CODES.O)
+fun formatDate(dateString: String): String {
+    val parsedDate = LocalDate.parse(dateString) // "2025-03-22"
+    val formatter = DateTimeFormatter.ofPattern("yyyy년 MM월 dd일")
+    return parsedDate.format(formatter)
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun PlanDetailScreen(
     planId: Int,
@@ -68,12 +82,14 @@ fun TitleSection(planDetailResponse: GetPlanDetailResponse) {
         Icon(
             imageVector = ImageVector.vectorResource(R.drawable.icon_reschedule),
             contentDescription = "일정 변경",
+            tint = Color(0xFF3F15EA),
             modifier = Modifier
                 .clickable { /*…*/ }
         )
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun OneDaySection(
     date: String,
@@ -84,7 +100,7 @@ fun OneDaySection(
         modifier = Modifier.padding(vertical = 16.dp, horizontal = 8.dp)
     ) {
         Text(
-            text = date,
+            text = formatDate(date),
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Medium,
             modifier = Modifier.padding(bottom = 8.dp)
