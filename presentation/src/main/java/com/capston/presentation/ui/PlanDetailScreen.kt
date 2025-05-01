@@ -6,7 +6,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LocalMinimumInteractiveComponentEnforcement
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -113,24 +112,19 @@ fun TaskItem(
             .fillMaxWidth()
             .padding(vertical = 8.dp)
     ) {
-        CompositionLocalProvider(
-            LocalMinimumInteractiveComponentEnforcement provides false
-        ) {
-            CustomCheckBox (
-                isChecked = isChecked,
-                onCheckedChange = {
-                    homeViewModel.patchLessonSchedulesCheckToggle(lessonSchedule.id)
-                    isChecked = !isChecked
-                }
-            )
-        }
-        Spacer(modifier = Modifier.width(8.dp))
+        CustomCheckBox (
+            isChecked = isChecked,
+            onCheckedChange = {
+                homeViewModel.patchLessonSchedulesCheckToggle(lessonSchedule.id)
+                isChecked = !isChecked
+            }
+        )
         Text(
             text = lessonSchedule.lessonTitle,
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.Normal,
             lineHeight = 28.sp,
-            modifier = Modifier.padding(top = 2.dp)
+            modifier = Modifier.padding(top = 10.dp)
         )
     }
 }
