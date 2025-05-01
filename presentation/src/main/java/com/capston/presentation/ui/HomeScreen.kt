@@ -624,7 +624,7 @@ fun ModifiedLessonList(
                         onClick = { /* 클릭만 허용 */ }
                     )
             ) {
-                CheckBox(
+                CustomCheckBox (
                     isChecked = isChecked,
                     onCheckedChange = {
                         homeViewModel.patchLessonSchedulesCheckToggle(lesson.id)

@@ -4,7 +4,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalMinimumInteractiveComponentEnforcement
@@ -15,26 +14,24 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.tooling.preview.Preview
 import com.capston.presentation.R
-import com.capston.presentation.theme.CapstonTheme
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.FirstBaseline
 import androidx.compose.ui.res.vectorResource
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.sp
 import com.capston.domain.model.LessonSchedule
 import com.capston.domain.response.plan.GetPlanDetailResponse
+import com.capston.presentation.viewmodel.HomeViewModel
 import com.capston.presentation.viewmodel.PlanViewModel
 
 
 @Composable
 fun PlanDetailScreen(
     planId: Int,
-    viewModel: PlanViewModel
+    homeViewModel: HomeViewModel,
+    planViewModel: PlanViewModel
 ) {
-    val planDetailResponse by viewModel.getPlanDetail.collectAsState()
-    viewModel.getPlanDetail(planId)
+    val planDetailResponse by planViewModel.getPlanDetail.collectAsState()
+    planViewModel.getPlanDetail(planId)
 
     Column(
         modifier = Modifier
@@ -48,7 +45,8 @@ fun PlanDetailScreen(
         planDetailResponse.dailySchedules.forEach { schedule ->
             OneDaySection(
                 date = schedule.date,
-                lessonSchedules = schedule.lessonSchedules
+                lessonSchedules = schedule.lessonSchedules,
+                homeViewModel = homeViewModel
             )
         }
     }
@@ -78,7 +76,11 @@ fun TitleSection(planDetailResponse: GetPlanDetailResponse) {
 }
 
 @Composable
-fun OneDaySection(date: String, lessonSchedules: List<LessonSchedule>) {
+fun OneDaySection(
+    date: String,
+    lessonSchedules: List<LessonSchedule>,
+    homeViewModel: HomeViewModel
+) {
     Column(
         modifier = Modifier.padding(vertical = 16.dp, horizontal = 8.dp)
     ) {
@@ -89,16 +91,22 @@ fun OneDaySection(date: String, lessonSchedules: List<LessonSchedule>) {
             modifier = Modifier.padding(bottom = 8.dp)
         )
         lessonSchedules.forEach { lessonSchedule ->
-            TaskItem(lessonSchedule = lessonSchedule)
+            TaskItem(
+                lessonSchedule = lessonSchedule,
+                homeViewModel = homeViewModel
+            )
         }
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TaskItem(lessonSchedule: LessonSchedule) {
+fun TaskItem(
+    lessonSchedule: LessonSchedule,
+    homeViewModel: HomeViewModel
+) {
     // 각 체크박스의 상태를 기억합니다.
-    var checked by remember { mutableStateOf(lessonSchedule.completed) }
+    var isChecked by remember { mutableStateOf(lessonSchedule.completed) }
     Row(
         verticalAlignment = Alignment.Top,
         modifier = Modifier
@@ -108,12 +116,12 @@ fun TaskItem(lessonSchedule: LessonSchedule) {
         CompositionLocalProvider(
             LocalMinimumInteractiveComponentEnforcement provides false
         ) {
-            Checkbox(
-                checked = checked,
-                onCheckedChange = { checked = it },
-                modifier = Modifier
-//                    .alignBy(FirstBaseline)
-//                    .padding(top = 4.dp)
+            CustomCheckBox (
+                isChecked = isChecked,
+                onCheckedChange = {
+                    homeViewModel.patchLessonSchedulesCheckToggle(lessonSchedule.id)
+                    isChecked = !isChecked
+                }
             )
         }
         Spacer(modifier = Modifier.width(8.dp))
