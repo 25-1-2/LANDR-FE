@@ -4,23 +4,28 @@ import android.annotation.SuppressLint
 import android.content.Intent
 import android.util.Log
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Color.Companion.Transparent
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -36,6 +41,7 @@ import com.capston.domain.response.enum_class.Subject
 import com.capston.presentation.R
 import com.capston.presentation.theme.LightGray40
 import com.capston.presentation.theme.MainPurple
+import com.capston.presentation.theme.materialGray
 import com.capston.presentation.viewmodel.LectureViewModel
 import com.capston.presentation.viewmodel.PlanViewModel
 import kotlinx.coroutines.delay
@@ -144,14 +150,13 @@ fun SearchScreen(
                 if (allLectureResponse.isNotEmpty()) {
                     // 이미 로드된 전체 목록이 있으면 바로 처리
                     allItems = allLectureResponse.map { lecture ->
-                        val subjectEnum = runCatching { Subject.valueOf(lecture.subject.name) }.getOrNull()
 
                         LectureItemDto(
                             id = lecture.id,
                             title = lecture.title,
                             platform = lecture.platform,
-                            teacher = "${lecture.teacher}",
-                            imageResId = subjectEnum?.getImageRes() ?: R.drawable.screen_search_korean_iv,
+                            teacher = lecture.teacher,
+                            subject = lecture.subject,
                             createdAt = lecture.createdAt,
                             tag = lecture.tag,
                             totalLessons = lecture.totalLessons
@@ -174,15 +179,14 @@ fun SearchScreen(
             Log.d("SearchScreen", "검색 응답 처리 시작: nextCursor=${searchLectureResponse.nextCursor}, hasNext=${searchLectureResponse.hasNext}")
 
             val newItems = searchLectureResponse.data?.filterNotNull()?.map { lecture ->
-                val subjectEnum = runCatching { Subject.valueOf(lecture.subject.name) }.getOrNull()
 
                 LectureItemDto(
                     id = lecture.id,
                     title = lecture.title,
                     platform = lecture.platform,
                     teacher = lecture.teacher,
-                    imageResId = subjectEnum?.getImageRes() ?: R.drawable.screen_search_korean_iv,
                     createdAt = lecture.createdAt,
+                    subject = lecture.subject,
                     tag = lecture.tag,
                     totalLessons = lecture.totalLessons
                 )
@@ -232,14 +236,12 @@ fun SearchScreen(
             Log.d("SearchScreen", "전체 목록 응답 변경 감지: ${allLectureResponse.size}개 항목")
             // 전체 목록 처리 로직
             val newItems = allLectureResponse.map { lecture ->
-                val subjectEnum = runCatching { Subject.valueOf(lecture.subject.name) }.getOrNull()
-
                 LectureItemDto(
                     id = lecture.id,
                     title = lecture.title,
                     platform = lecture.platform,
                     teacher = lecture.teacher,
-                    imageResId = subjectEnum?.getImageRes() ?: R.drawable.screen_search_korean_iv,
+                    subject = lecture.subject,
                     createdAt = lecture.createdAt,
                     tag = lecture.tag,
                     totalLessons = lecture.totalLessons
@@ -507,25 +509,87 @@ fun SearchLectureItem(lectureItem: LectureItemDto, searchQuery: String, onClick:
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
-                Text(
-                    text = lectureItem.platform.label,
-                    color = MainPurple,
-                    fontSize = 14.sp
-                )
-
-                Text(
-                    text = annotatedString,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold
-                )
-
-                // 가로로 나열되는 정보 - FlowRow: Row는 기본적으로 한 줄 고정이어서 자동 줄바꿈 위함
-                FlowRow(
+            Column() {
+                // platform + totalLessons Row
+                Row(
                     modifier = Modifier.fillMaxWidth(),
-                    maxItemsInEachRow = 32
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .padding(end = 5.dp)
+                            .border(
+                                width = 1.dp,
+                                color = MainPurple,
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                            .background(color = Transparent, shape = RoundedCornerShape(12.dp))
+                            .padding(horizontal = 10.dp, vertical = 4.dp)
+                    ) {
+                        Text(
+                            text = lectureItem.platform.label,
+                            fontSize = 12.sp,
+                            color = MainPurple
+                        )
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .padding(end = 5.dp)
+                            .border(
+                                width = 1.dp,
+                                color = lectureItem.subject.borderColor,
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                            .background(color = lectureItem.subject.bgColor, shape = RoundedCornerShape(12.dp))
+                            .padding(horizontal = 5.dp, vertical = 4.dp)
+                    ) {
+                        Text(
+                            text = lectureItem.subject.label,
+                            fontSize = 12.sp,
+                            color = lectureItem.subject.borderColor
+                        )
+                    }
+                }
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 4.dp),
+                    verticalAlignment = Alignment.Top
+                ) {
+                    Text(
+                        text = annotatedString,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier
+                            .weight(1f) // 제목이 차지할 공간 확보
+                            .padding(end = 8.dp) // "몇 강"과의 간격
+                    )
+
+                    Box(
+                        modifier = Modifier
+                            .border(
+                                width = 1.dp,
+                                color = materialGray,
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                            .background(color = Transparent, shape = RoundedCornerShape(12.dp))
+                            .padding(horizontal = 6.dp, vertical = 4.dp)
+                    ) {
+                        Text(
+                            text = "${lectureItem.totalLessons}강",
+                            color = materialGray,
+                            fontSize = 12.sp
+                        )
+                    }
+                }
+
+                FlowRow(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 2.dp),
                 ) {
                     Text(
                         text = lectureItem.teacher,
@@ -534,26 +598,12 @@ fun SearchLectureItem(lectureItem: LectureItemDto, searchQuery: String, onClick:
                     )
 
                     Text(
-                        text = "· [${lectureItem.tag}]",
-                        color = LightGray40,
-                        fontSize = 14.sp
-                    )
-
-                    Text(
-                        text = "· ${lectureItem.totalLessons}강",
+                        text = " · [${lectureItem.tag}]",
                         color = LightGray40,
                         fontSize = 14.sp
                     )
                 }
             }
-
-            Image(
-                painter = painterResource(lectureItem.imageResId),
-                contentDescription = "과목명",
-                modifier = Modifier
-                    .padding(start = 8.dp)
-                    .size(40.dp)
-            )
         }
     }
 }
@@ -594,16 +644,28 @@ fun SearchTopBar(
     )
 }
 
-fun Subject.getImageRes(): Int {
-    return when (this) {
-        Subject.MATH -> R.drawable.screen_search_math_iv
-        Subject.SCI -> R.drawable.screen_search_science_iv
-        Subject.SOC -> R.drawable.screen_search_social_iv
-        Subject.HIST -> R.drawable.screen_search_history_iv
-        Subject.UNIV -> R.drawable.screen_search_common_iv
-        Subject.LANG2 -> R.drawable.screen_search_foriegn_iv
-        Subject.VOC -> R.drawable.screen_search_voca_iv
-        Subject.ENG -> R.drawable.screen_search_english_iv
-        Subject.KOR -> R.drawable.screen_search_korean_iv
+val Subject.bgColor: Color
+    get() = when (this) {
+        Subject.KOR -> Color(0xFFFFD8D8)   // 연한 핑크
+        Subject.ENG -> Color(0xFFC5D9FF)   // 연한 하늘색
+        Subject.MATH -> Color(0xFFD3F7D3)  // 연한 민트
+        Subject.SOC -> Color(0xFFFFF4C6)   // 연한 노랑
+        Subject.SCI -> Color(0xFFC1E8F7)   // 연한 파랑
+        Subject.HIST -> Color(0xFFE1B5E8)  // 연한 보라
+        Subject.UNIV -> Color(0xFFC7F6F9)  // 연한 청록
+        Subject.LANG2 -> Color(0xFFFFD8E6) // 연한 분홍
+        Subject.VOC -> Color(0xFFF0F0F0)   // 연한 회색
     }
-}
+
+val Subject.borderColor: Color
+    get() = when (this) {
+        Subject.KOR -> Color(0xFFFF6B6B)   // 부드러운 빨강
+        Subject.ENG -> Color(0xFF5D9CFF)    // 부드러운 파랑
+        Subject.MATH -> Color(0xFF5BBF63)   // 부드러운 초록
+        Subject.SOC -> Color(0xFFFFC046)    // 부드러운 노랑
+        Subject.SCI -> Color(0xFF1EB0D2)    // 부드러운 하늘색
+        Subject.HIST -> Color(0xFF9E4FB0)   // 부드러운 보라
+        Subject.UNIV -> Color(0xFF00A7B4)   // 부드러운 청록
+        Subject.LANG2 -> Color(0xFFF08C8C)  // 부드러운 분홍
+        Subject.VOC -> Color(0xFFB0B0B0)    // 부드러운 회색
+    }
