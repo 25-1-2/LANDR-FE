@@ -91,7 +91,6 @@ import com.capston.domain.response.home.LessonScheduleResponse
 import com.capston.presentation.R
 import com.capston.presentation.theme.LightGray40
 import com.capston.presentation.theme.LightGray60
-import com.capston.presentation.theme.MainBlue
 import com.capston.presentation.theme.MainPurple
 import com.capston.presentation.theme.backgroundGray
 import com.capston.presentation.theme.textGray
@@ -115,9 +114,9 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
     val totalLessons = homeState.userProgress.totalLessons // 전체 강의 개수
 
     // 오늘의 강의
-    val todayLessonList = homeState.todaySchedule?.lessonSchedules
-    val todayTotalLesson = homeState.todaySchedule?.totalLessons ?: 0
-    val todayTotalDuration = homeState.todaySchedule?.totalDuration ?: 0
+    val todayLessonList = homeState.todaySchedule.lessonSchedules
+    val todayTotalLesson = homeState.todaySchedule.totalLessons
+    val todayTotalDuration = homeState.todaySchedule.totalDuration
 
     val lectureProgressList = homeState.userProgress.lectureProgress
     val patchData by planViewModel.patchPlanName.collectAsState()
@@ -145,6 +144,7 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(backgroundGray)
+                        .padding(bottom = 10.dp)
                 ) {
                     Column(
                         modifier = Modifier
@@ -324,7 +324,7 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
         ) {
             CustomBottomSheetDialog(
                 title = "강의 목록",
-                description = "수강 중인 강의를 선택하세요.",
+                description = "강의 별칭을 작성해 주세요.",
                 modalBottomSheetState = modalBottomSheetState,
                 onDismiss = { isBottomSheetVisible = false },
                 lectureProgressList = lectureProgressList ?: emptyList(),
@@ -470,9 +470,9 @@ fun LectureList(
                                     }
                                 },
                                 colors = TextFieldDefaults.outlinedTextFieldColors(
-                                    focusedBorderColor = if (aliasState.length == 8) Color.Red else MainBlue,
-                                    unfocusedBorderColor = if (showError) Color.Red else MainBlue,
-                                    textColor = LightGray60,
+                                    focusedBorderColor = if (aliasState.length == 8) Color.Red else MainPurple,
+                                    unfocusedBorderColor = if (showError) Color.Red else MainPurple,
+                                    textColor = textGray,
                                 ),
                                 textStyle = TextStyle(fontSize = 14.sp),
                                 modifier = Modifier
@@ -490,7 +490,7 @@ fun LectureList(
                                     lecture.lectureAlias = aliasState
                                 },
                                 colors = ButtonDefaults.buttonColors(
-                                    containerColor = MainBlue,
+                                    containerColor = MainPurple,
                                     contentColor = Color.White
                                 ),
                                 shape = RoundedCornerShape(12.dp),
@@ -507,7 +507,7 @@ fun LectureList(
                             // 글자 수 표시
                             Text(
                                 text = "${aliasState.length} / 8(자)",
-                                color = if (aliasState.length == 8) Color.Red else Color.Gray,
+                                color = if (aliasState.length == 8) Color.Red else textGray,
                                 fontSize = 12.sp,
                                 modifier = Modifier.padding(start = 10.dp)
                             )
@@ -546,24 +546,6 @@ fun LectureList(
                 }
             }
         }
-    }
-}
-
-@Composable
-fun CheckBox(isChecked: Boolean, onCheckedChange: () -> Unit) {
-    IconButton(
-        onClick = onCheckedChange,
-        modifier = Modifier
-            .size(40.dp) // 이미지 버튼 크기 설정
-            .padding(end = 16.dp) // 이미지와 텍스트 간의 간격 설정
-    ) {
-        val imageRes = if (isChecked) R.drawable.home_screen_check_on
-        else R.drawable.home_screen_check_off
-
-        Image(
-            painter = painterResource(id = imageRes),
-            contentDescription = "Lecture Icon"
-        )
     }
 }
 
@@ -634,9 +616,9 @@ fun ModifiedLessonList(
 
                 // 텍스트 + 시간 박스를 수평으로 정렬
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween // 왼쪽 텍스트, 오른쪽 박스 정렬
+                    horizontalArrangement = Arrangement.SpaceBetween, // 왼쪽 텍스트, 오른쪽 박스 정렬
                 ) {
                     Column(
                         modifier = Modifier.weight(1f)
