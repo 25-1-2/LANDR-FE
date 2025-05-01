@@ -23,7 +23,9 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -68,6 +70,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Color.Companion.LightGray
 import androidx.compose.ui.graphics.Color.Companion.Transparent
+import androidx.compose.ui.graphics.Color.Companion.White
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -93,6 +96,7 @@ import com.capston.presentation.theme.LightGray40
 import com.capston.presentation.theme.LightGray60
 import com.capston.presentation.theme.MainPurple
 import com.capston.presentation.theme.backgroundGray
+import com.capston.presentation.theme.materialGray
 import com.capston.presentation.theme.textGray
 import com.capston.presentation.viewmodel.HomeViewModel
 import com.capston.presentation.viewmodel.PlanViewModel
@@ -320,7 +324,9 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
     if (isBottomSheetVisible) {
         ModalBottomSheet(
             sheetState = modalBottomSheetState,
-            onDismissRequest = { isBottomSheetVisible = false }
+            onDismissRequest = { isBottomSheetVisible = false },
+            containerColor = White,
+            dragHandle = null
         ) {
             CustomBottomSheetDialog(
                 title = "강의 목록",
@@ -345,92 +351,103 @@ fun CustomBottomSheetDialog(
     planViewModel: PlanViewModel,
 ) {
     val scope = rememberCoroutineScope()
-    val bottomPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-
-    var errorMessage by remember { mutableStateOf("") }
-    var vibrationTrigger by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
-            .padding(top = 10.dp, start = 10.dp, end = 10.dp, bottom = bottomPadding)
             .fillMaxWidth()
-            .height(280.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .background(White) // 전체 배경
+            .navigationBarsPadding() // 소프트 키패드 영역까지 패딩 적용
+            .imePadding() // 키보드 올라올 때 고려
     ) {
+        // 커스텀 drag handle
         Box(
             modifier = Modifier
+                .padding(top = 20.dp, bottom = 8.dp)
+                .size(width = 36.dp, height = 4.dp)
+                .background(materialGray, RoundedCornerShape(2.dp))
+                .align(Alignment.CenterHorizontally)
+        )
+
+        // 컨텐츠 영역
+        Column(
+            modifier = Modifier
+                .padding(horizontal = 16.dp)
                 .fillMaxWidth()
-                .padding(horizontal = 10.dp),
+                .height(268.dp - 12.dp - 8.dp), // 전체 높이에서 drag handle 높이 제외
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Title 중앙 정렬
+            // 상단 제목 박스
+            Box(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = title,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.align(Alignment.Center),
+                    style = TextStyle(
+                        color = Color.Black,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                )
+                Row(
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .clickable {
+                            scope.launch {
+                                modalBottomSheetState.hide()
+                            }.invokeOnCompletion {
+                                onDismiss()
+                            }
+                        },
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "뒤로가기",
+                        color = MainPurple,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Icon(
+                        imageVector = Icons.Default.ArrowBack,
+                        contentDescription = "뒤로가기",
+                        tint = MainPurple,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
             Text(
-                text = title,
+                text = description,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.align(Alignment.Center),
                 style = TextStyle(
-                    color = Color.Black,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold
+                    color = Color.Gray,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Normal
                 )
             )
 
-            // 뒤로가기 텍스트 + 아이콘 (우측 정렬)
-            Row(
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Column(
                 modifier = Modifier
-                    .align(Alignment.CenterEnd)
-                    .clickable {
-                        scope.launch {
-                            modalBottomSheetState.hide()
-                        }.invokeOnCompletion {
-                            onDismiss()
-                        }
-                    },
-                verticalAlignment = Alignment.CenterVertically
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 10.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(
-                    text = "뒤로가기",
-                    color = MainPurple,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium
-                )
-                Icon(
-                    imageVector = Icons.Default.ArrowBack,
-                    contentDescription = "뒤로가기",
-                    tint = MainPurple,
-                    modifier = Modifier.size(18.dp)
+                LectureList(
+                    lectureProgressList = lectureProgressList,
+                    planViewModel = planViewModel,
                 )
             }
         }
-
-        Spacer(modifier = Modifier.height(10.dp))
-
-        Text(
-            text = description,
-            textAlign = TextAlign.Center,
-            style = TextStyle(
-                color = Color.Gray,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Normal
-            )
-        )
-
-        Spacer(modifier = Modifier.height(10.dp))
-
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(180.dp)
-                .padding(10.dp)
-                .verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            LectureList(
-                lectureProgressList = lectureProgressList,
-                planViewModel = planViewModel,
-            )
-        }
     }
 }
+
 
 @Composable
 fun LectureList(
@@ -491,7 +508,7 @@ fun LectureList(
                                 },
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = MainPurple,
-                                    contentColor = Color.White
+                                    contentColor = White
                                 ),
                                 shape = RoundedCornerShape(12.dp),
                                 modifier = Modifier
@@ -697,7 +714,7 @@ fun CircleGraph(name: String, cleared: Int, total: Int) {
 
         // 내부 색 채우기
         drawCircle(
-            color = Color.White,
+            color = White,
             radius = (sizeArc.minDimension / 2f) - (arcStrokeWidth / 2f),
             center = center
         )
