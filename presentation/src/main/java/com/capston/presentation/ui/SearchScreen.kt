@@ -504,7 +504,7 @@ fun SearchLectureItem(lectureItem: LectureItemDto, searchQuery: String, onClick:
                 modifier = Modifier.weight(1f)
             ) {
                 Text(
-                    text = lectureItem.platform.toString(),
+                    text = lectureItem.platform.label,
                     color = MainPurple,
                     fontSize = 14.sp
                 )
