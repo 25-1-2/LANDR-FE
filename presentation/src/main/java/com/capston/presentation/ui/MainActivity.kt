@@ -197,7 +197,8 @@ fun SettingTopBottomBar(homeViewModel: HomeViewModel, planViewModel: PlanViewMod
                     val planDetailResponse = GetPlanDetailResponse()
                     PlanDetailScreen(
                         planId = planId,
-                        planViewModel = planViewModel
+                        planViewModel = planViewModel,
+                        homeViewModel = homeViewModel
                     )
                 }
                 composable(Screen.Profile.title) { ProfileScreen() }
