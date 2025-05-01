@@ -148,11 +148,13 @@ fun SearchScreen(
 
                         LectureItemDto(
                             id = lecture.id,
-                            title = lecture.title ?: "",
+                            title = lecture.title,
                             platform = lecture.platform,
-                            teacher = "${lecture.teacher ?: ""} · [과목] ${lecture.subject.label}",
+                            teacher = "${lecture.teacher}",
                             imageResId = subjectEnum?.getImageRes() ?: R.drawable.screen_search_korean_iv,
-                            createdAt = lecture.createdAt ?: ""
+                            createdAt = lecture.createdAt,
+                            tag = lecture.tag,
+                            totalLessons = lecture.totalLessons
                         )
                     }
                     isLoading = false
@@ -176,11 +178,13 @@ fun SearchScreen(
 
                 LectureItemDto(
                     id = lecture.id,
-                    title = lecture.title ?: "",
+                    title = lecture.title,
                     platform = lecture.platform,
-                    teacher = "${lecture.teacher ?: ""} · [과목] ${lecture.subject.label}",
+                    teacher = lecture.teacher,
                     imageResId = subjectEnum?.getImageRes() ?: R.drawable.screen_search_korean_iv,
-                    createdAt = lecture.createdAt ?: ""
+                    createdAt = lecture.createdAt,
+                    tag = lecture.tag,
+                    totalLessons = lecture.totalLessons
                 )
             } ?: emptyList()
 
@@ -232,11 +236,13 @@ fun SearchScreen(
 
                 LectureItemDto(
                     id = lecture.id,
-                    title = lecture.title ?: "",
+                    title = lecture.title,
                     platform = lecture.platform,
-                    teacher = "${lecture.teacher ?: ""} · [과목] ${lecture.subject.label}",
+                    teacher = lecture.teacher,
                     imageResId = subjectEnum?.getImageRes() ?: R.drawable.screen_search_korean_iv,
-                    createdAt = lecture.createdAt ?: ""
+                    createdAt = lecture.createdAt,
+                    tag = lecture.tag,
+                    totalLessons = lecture.totalLessons
                 )
             }
 
@@ -464,11 +470,12 @@ fun SearchNavHost(navController: NavHostController, planViewModel: PlanViewModel
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun SearchLectureItem(lectureItem: LectureItemDto, searchQuery: String, onClick: () -> Unit) {
     // null 안전하게 처리
-    val title = lectureItem.title ?: ""
-    val query = searchQuery ?: ""
+    val title = lectureItem.title
+    val query = searchQuery
 
     // 검색어가 포함된 부분을 하이라이트하는 함수
     val annotatedString = buildAnnotatedString {
@@ -494,7 +501,7 @@ fun SearchLectureItem(lectureItem: LectureItemDto, searchQuery: String, onClick:
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 10.dp, horizontal = 16.dp)
-            .clickable{ onClick() }
+            .clickable { onClick() }
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -515,19 +522,36 @@ fun SearchLectureItem(lectureItem: LectureItemDto, searchQuery: String, onClick:
                     fontWeight = FontWeight.Bold
                 )
 
-                Text(
-                    text = lectureItem.teacher ?: "",
-                    color = LightGray40,
-                    fontSize = 14.sp
-                )
+                // 가로로 나열되는 정보 - FlowRow: Row는 기본적으로 한 줄 고정이어서 자동 줄바꿈 위함
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    maxItemsInEachRow = 32
+                ) {
+                    Text(
+                        text = lectureItem.teacher,
+                        color = LightGray40,
+                        fontSize = 14.sp
+                    )
+
+                    Text(
+                        text = "· [${lectureItem.tag}]",
+                        color = LightGray40,
+                        fontSize = 14.sp
+                    )
+
+                    Text(
+                        text = "· ${lectureItem.totalLessons}강",
+                        color = LightGray40,
+                        fontSize = 14.sp
+                    )
+                }
             }
 
-            // 과목에 맞는 이미지 출력
             Image(
                 painter = painterResource(lectureItem.imageResId),
                 contentDescription = "과목명",
                 modifier = Modifier
-                    .padding(start = 8.dp) // 텍스트와 살짝 간격 주기
+                    .padding(start = 8.dp)
                     .size(40.dp)
             )
         }

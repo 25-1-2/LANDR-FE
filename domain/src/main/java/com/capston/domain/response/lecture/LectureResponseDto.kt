@@ -9,5 +9,7 @@ data class LectureResponseDto(
     val teacher: String = "",
     val platform: Platform = Platform.DAESANG,
     val subject: Subject = Subject.UNIV,
-    val createdAt: String = ""
+    val createdAt: String = "",
+    val tag: String = "",
+    val totalLessons: Int = 0
 )

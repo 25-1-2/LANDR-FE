@@ -8,5 +8,7 @@ data class LectureItemDto(
     val platform: Platform,
     val teacher: String,
     val imageResId: Int,
-    val createdAt: String
+    val createdAt: String,
+    val tag: String,
+    val totalLessons: Int
 )
