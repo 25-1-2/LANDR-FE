@@ -21,12 +21,10 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.tooling.preview.Preview
 import com.capston.domain.model.Lecture
 import com.capston.domain.request.PostPlanDto
 import com.capston.domain.response.enum_class.DayOfWeek
 import com.capston.presentation.R
-import com.capston.presentation.theme.CapstonTheme
 import com.capston.presentation.theme.LightPurple
 import com.capston.presentation.theme.MainPurple
 import com.capston.presentation.theme.backgroundGray
@@ -51,7 +49,7 @@ fun formatDate(millis: Long?): String {
 }
 
 @Composable
-fun PlanScreen(
+fun MakePlanScreen(
     lecture: Lecture,
     viewModel: PlanViewModel
 ) {

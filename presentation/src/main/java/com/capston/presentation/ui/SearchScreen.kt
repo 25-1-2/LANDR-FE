@@ -459,7 +459,7 @@ fun SearchNavHost(navController: NavHostController, planViewModel: PlanViewModel
             arguments = listOf(navArgument("lectureTitle") { type = NavType.StringType })
         ) { backStackEntry ->
             val title = backStackEntry.arguments?.getString("lectureTitle") ?: ""
-            PlanScreen(Lecture(), planViewModel)
+            MakePlanScreen(Lecture(), planViewModel)
         }
     }
 }
