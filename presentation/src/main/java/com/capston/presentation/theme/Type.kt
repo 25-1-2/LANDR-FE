@@ -24,28 +24,28 @@ val Typography = Typography(
     ),
     headlineMedium = TextStyle(
         fontFamily = pretendard,
-        fontWeight = FontWeight.SemiBold,
+        fontWeight = FontWeight.Bold,
         fontSize = 24.sp
     ),
     headlineSmall = TextStyle(
         fontFamily = pretendard,
-        fontWeight = FontWeight.Medium,
+        fontWeight = FontWeight.Bold,
         fontSize = 22.sp
     ),
     titleLarge = TextStyle(
         fontFamily = pretendard,
         fontWeight = FontWeight.SemiBold,
-        fontSize = 18.sp
+        fontSize = 20.sp
     ),
     titleMedium = TextStyle(
         fontFamily = pretendard,
         fontWeight = FontWeight.SemiBold,
-        fontSize = 16.sp,
+        fontSize = 18.sp,
     ),
     titleSmall = TextStyle(
         fontFamily = pretendard,
         fontWeight = FontWeight.SemiBold,
-        fontSize = 14.sp,
+        fontSize = 16.sp,
     ),
     bodyLarge = TextStyle(
         fontFamily = pretendard,
