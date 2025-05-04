@@ -30,8 +30,21 @@ class HomeViewModel @Inject constructor(
     private val _patchLessonSchedulesCheckToggle = MutableStateFlow(CheckResponse())
     val patchLessonSchedulesCheckToggle = _patchLessonSchedulesCheckToggle
 
+    // 캐시된 데이터 유지
+    private var lastLoadTime: Long = 0
+    private val cacheValidDuration = 30_000 // 30초
+
     fun getDistinctHome() {
         viewModelScope.launch {
+
+            val currentTime = System.currentTimeMillis()
+            val isCacheValid = currentTime - lastLoadTime < cacheValidDuration
+
+            if (isCacheValid) {
+                // 캐시된 데이터 사용, 로딩 인디케이터 표시 안 함
+                return@launch
+            }
+
             loadingStateManager.show()
             try {
                 getDistinctHomeUseCase().catch { e ->
@@ -77,6 +90,15 @@ class HomeViewModel @Inject constructor(
         lessonScheduleId: Int
     ) {
         viewModelScope.launch {
+
+            val currentTime = System.currentTimeMillis()
+            val isCacheValid = currentTime - lastLoadTime < cacheValidDuration
+
+            if (isCacheValid) {
+                // 캐시된 데이터 사용, 로딩 인디케이터 표시 안 함
+                return@launch
+            }
+
             loadingStateManager.show()
             try {
                 patchLessonSchedulesCheckToggleUseCase(lessonScheduleId).collect {
@@ -88,6 +110,16 @@ class HomeViewModel @Inject constructor(
                 Log.e("patch lesson schedule toggle 에러", e.message.toString())
             } finally {
                 loadingStateManager.hide()
+            }
+        }
+    }
+
+    // 백그라운드 갱신 (deeplink나 다른 화면에서 돌아왔을 때)
+    fun refreshInBackground() {
+        viewModelScope.launch {
+            // 로딩 인디케이터 없이 백그라운드 갱신
+            getDistinctHomeUseCase().collect { response ->
+                _getDistinctHome.value = response
             }
         }
     }
