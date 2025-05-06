@@ -1,12 +1,12 @@
 package com.capston.presentation.ui
 
 import android.annotation.SuppressLint
-import android.graphics.drawable.Drawable
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -16,8 +16,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.foundation.layout.offset
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -27,7 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
@@ -38,6 +40,7 @@ import androidx.compose.ui.unit.sp
 import com.capston.presentation.R
 import com.capston.presentation.theme.LightGray5
 import com.capston.presentation.theme.MainPurple
+import com.capston.presentation.theme.SubPurple
 
 // 마이페이지 스크린
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
@@ -47,47 +50,142 @@ fun ProfileScreen() {
         modifier = Modifier.fillMaxSize()
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 20.dp, start = 20.dp) // 최상단 + 왼쪽 정렬
+            modifier = Modifier.fillMaxSize(), // 전체 화면 사용
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // 상단 프로필 정보
             Row(
-                verticalAlignment = Alignment.CenterVertically
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 20.dp, start = 20.dp), // 최상단 + 왼쪽 여백
+                verticalAlignment = Alignment.CenterVertically // 세로 가운데 정렬
             ) {
                 Image(
                     painter = painterResource(R.drawable.screen_profile_basic_profile_iv),
                     contentDescription = "기본 프로필",
+                    modifier = Modifier
+                        .padding(end = 10.dp)
+                )
+                Text(
+                    text = stringResource(R.string.mypage_title),
+                    fontSize = 20.sp,
+                    style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.padding(end = 10.dp)
                 )
-                Column {
-                    Text(
-                        text = stringResource(R.string.mypage_title),
-                        fontSize = 20.sp,
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                    Text(
-                        text = "조은채님",
-                        fontSize = 14.sp,
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
+                Text(
+                    text = "조은채님",
+                    fontSize = 14.sp,
+                    style = MaterialTheme.typography.bodyMedium
+                )
             }
 
-            // 마이페이지 아래 여백 추가 - 충분한 공간 확보를 위해 여백 늘림
             Spacer(modifier = Modifier.height(20.dp))
 
             // 오늘 계획 원형 그래프 추가 - 중앙 정렬
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(start = 20.dp, end = 20.dp),
+                    .padding(horizontal = 20.dp),
                 contentAlignment = Alignment.Center
             ) {
                 TodayCircleGraph(
-                    name = "오늘 계획",
+                    name = stringResource(R.string.mypage_today_plan),
                     cleared = 7,
                     total = 10
                 )
+            }
+
+            // 그래프와 보라색 박스 사이의 여백
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // 보라색 박스 - 둥근 모서리
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp)
+                    .height(120.dp), // 직접 높이 설정
+                shape = RoundedCornerShape(10.dp), // 둥근 모서리
+                colors = CardDefaults.cardColors(
+                    containerColor = SubPurple // 보라색 배경
+                )
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 40.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // 첫 번째 - 완료한 강의
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Image(
+                            painter = painterResource(R.drawable.screen_profile_completed_iv),
+                            contentDescription = "완료한 강의",
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = stringResource(R.string.mypage_completed_lecture),
+                            color = Color.White,
+                            style = MaterialTheme.typography.labelMedium,
+                            fontSize = 12.sp
+                        )
+                        Text(
+                            text = "5개",
+                            color = Color.White,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontSize = 18.sp
+                        )
+                    }
+
+                    // 두 번째 - 연속 일수
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Image(
+                            painter = painterResource(R.drawable.screen_profile_sequence_iv),
+                            contentDescription = "연속 n일째",
+                        )
+                        Text(
+                            text = stringResource(R.string.mypage_sequence_day),
+                            color = Color.White,
+                            style = MaterialTheme.typography.labelMedium,
+                            fontSize = 12.sp
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "3일째",
+                            color = Color.White,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontSize = 18.sp
+                        )
+                    }
+
+                    // 세 번째 - 수강중인 강의
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Image(
+                            painter = painterResource(R.drawable.screen_profile_course_iv),
+                            contentDescription = "수강 중인 강의",
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = stringResource(R.string.mypage_current_lecture),
+                            color = Color.White,
+                            style = MaterialTheme.typography.labelMedium,
+                            fontSize = 12.sp
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "3개",
+                            color = Color.White,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontSize = 18.sp
+                        )
+                    }
+                }
             }
         }
     }
