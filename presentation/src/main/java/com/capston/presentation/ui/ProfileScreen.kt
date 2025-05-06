@@ -11,6 +11,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,12 +30,15 @@ import androidx.compose.material.Icon
 import androidx.compose.material.icons.Icons
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -47,6 +51,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -55,10 +60,12 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.capston.domain.response.enum_class.DayOfWeek
 import com.capston.domain.response.enum_class.Subject
 import com.capston.presentation.R
 import com.capston.presentation.theme.CoolGray
@@ -66,12 +73,14 @@ import com.capston.presentation.theme.DustyRose
 import com.capston.presentation.theme.LavenderGray
 import com.capston.presentation.theme.LightGray5
 import com.capston.presentation.theme.LightGray60
+import com.capston.presentation.theme.LightPurple
 import com.capston.presentation.theme.MainPurple
 import com.capston.presentation.theme.MutePurple
 import com.capston.presentation.theme.SkyLavender
 import com.capston.presentation.theme.SoftPink
 import com.capston.presentation.theme.SubPurple
 import com.capston.presentation.theme.WarmPurple
+import com.capston.presentation.theme.chipGray
 
 // 마이페이지 스크린
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
@@ -80,6 +89,9 @@ fun ProfileScreen() {
     // 완료한 강의 및 공부 시간 컴포넌트의 확장 상태 관리
     var isLecturesExpanded by remember { mutableStateOf(false) }
     var isStudyTimeExpanded by remember { mutableStateOf(true) } // 기본값을 true로 설정하여 처음에는 펼쳐진 상태로 시작
+    var isStudyStatusExpanded by remember { mutableStateOf(true) }
+    var isWeeklyExpanded by remember { mutableStateOf(true) }
+    var isSubjectExpanded by remember { mutableStateOf(true) }
 
     Scaffold(
         modifier = Modifier.fillMaxSize()
@@ -298,8 +310,42 @@ fun ProfileScreen() {
             ) {
                 // 접기/펼치기 기능이 있는 WeeklyStudyStatisticsGraph 컴포넌트 호출
                 WeeklyStudyStatisticsGraph(
-                    isExpanded = isStudyTimeExpanded,
-                    onToggle = { isStudyTimeExpanded = it }
+                    isExpanded = isStudyStatusExpanded,
+                    onToggle = { isStudyStatusExpanded = it }
+                )
+            }
+
+            // 회색 테두리 박스 - 둥근 모서리 (배경색 없음)
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp),
+                shape = RoundedCornerShape(10.dp), // 둥근 모서리
+                colors = CardDefaults.cardColors(
+                    containerColor = Color.White // 흰색 배경
+                ),
+                border = BorderStroke(1.dp, color = LightGray60)
+            ) {
+                WeeklyAchievementGraph(
+                    isExpanded = isWeeklyExpanded,
+                    onToggle = { isWeeklyExpanded = it }
+                )
+            }
+
+            // 회색 테두리 박스 - 둥근 모서리 (배경색 없음)
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp),
+                shape = RoundedCornerShape(10.dp), // 둥근 모서리
+                colors = CardDefaults.cardColors(
+                    containerColor = Color.White // 흰색 배경
+                ),
+                border = BorderStroke(1.dp, color = LightGray60)
+            ) {
+                SubjectAchievementGraph(
+                    isExpanded = isSubjectExpanded,
+                    onToggle = { isSubjectExpanded = it }
                 )
             }
         }
@@ -883,6 +929,7 @@ fun TodayCircleGraph(name: String, cleared: Int, total: Int) {
     }
 }
 
+@SuppressLint("DefaultLocale")
 @Composable
 fun WeeklyStudyStatisticsGraph(
     isExpanded: Boolean,
@@ -1171,4 +1218,565 @@ fun ImprovedWeeklyBarChart(
 data class WeeklyData(
     val week: String,
     val hours: Int
+)
+
+@SuppressLint("DefaultLocale")
+@Composable
+fun WeeklyAchievementGraph(
+    isExpanded: Boolean,
+    onToggle: (Boolean) -> Unit
+) {
+    // 요일별 학습 성취 데이터 (true: 달성, false: 미달성)
+    val weekDaysData = listOf(
+        DayAchievement(DayOfWeek.MON, true),
+        DayAchievement(DayOfWeek.TUE, true),
+        DayAchievement(DayOfWeek.WED, true),
+        DayAchievement(DayOfWeek.THU, false),
+        DayAchievement(DayOfWeek.FRI, true),
+        DayAchievement(DayOfWeek.SAT, false),
+        DayAchievement(DayOfWeek.SUN, true)
+    )
+
+    // 성취율 계산
+    val achievedDays = weekDaysData.count { it.isAchieved }
+    val totalDays = weekDaysData.size
+    val achievementRate = (achievedDays.toFloat() / totalDays) * 100
+
+    // 연속 달성일 계산
+    var currentStreak = 0
+    var maxStreak = 0
+
+    weekDaysData.forEach { dayData ->
+        if (dayData.isAchieved) {
+            currentStreak++
+            maxStreak = maxOf(maxStreak, currentStreak)
+        } else {
+            currentStreak = 0
+        }
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 16.dp),
+        horizontalAlignment = Alignment.Start
+    ) {
+        // 제목 행 (아이콘 추가)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = if (isExpanded) 20.dp else 0.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // 아이콘
+            Image(
+                painter = painterResource(id = R.drawable.screen_profile_week_completion),
+                contentDescription = "이번주 학습 성취율 아이콘",
+                modifier = Modifier
+                    .size(24.dp)
+                    .padding(end = 5.dp)
+            )
+
+            // 제목
+            Text(
+                text = "이번주 학습 성취율",
+                style = MaterialTheme.typography.titleMedium,
+                color = Color.Black,
+                modifier = Modifier.padding(end = 5.dp)
+            )
+
+            // 오른쪽 화살표 - 클릭 가능한 토글 버튼으로 변경
+            IconButton(
+                onClick = { onToggle(!isExpanded) },
+                modifier = Modifier.size(24.dp)
+            ) {
+                // 회전 애니메이션 추가
+                val rotationState by animateFloatAsState(
+                    targetValue = if (isExpanded) 90f else 0f,
+                    label = "rotationAnimation"
+                )
+
+                Image(
+                    painter = painterResource(id = R.drawable.screen_profile_see_more_iv),
+                    contentDescription = if (isExpanded) "접기" else "펼치기",
+                    modifier = Modifier.rotate(rotationState)
+                )
+            }
+
+            // 나머지 공간 채우기
+            Spacer(modifier = Modifier.weight(1f))
+
+            // 성취율 표시 (펼치기 상태에 관계없이 표시)
+            Text(
+                text = "성취율 ${String.format("%.0f", achievementRate)}%",
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.Gray,
+                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+            )
+        }
+
+        // 회색 테두리 박스 - 중앙 정렬로 변경
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 10.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Card(
+                modifier = Modifier
+                    .padding(10.dp),
+                shape = RoundedCornerShape(5.dp), // 둥근 모서리
+                colors = CardDefaults.cardColors(
+                    containerColor = Color.White // 흰색 배경
+                ),
+                border = BorderStroke(1.dp, color = LightGray60)
+            ) {
+                // 연속 달성일 정보 텍스트
+                Text(
+                    buildAnnotatedString {
+                        append("이번주 ")
+                        withStyle(style = SpanStyle(color = MainPurple)) {
+                            append("${achievedDays}일")
+                        }
+                        append(" 학습 목표를 달성했어요")
+                    },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.Black,
+                    fontSize = 12.sp,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                )
+            }
+        }
+
+        // 확장된 경우에만 요일별 체크 아이콘 표시
+        AnimatedVisibility(visible = isExpanded) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // 요일별 체크 표시
+                DayAchievementChecks(weekDaysData = weekDaysData)
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                // 추가 정보 표시
+                Text(
+                    text = "최대 연속 달성: ${maxStreak}일",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MainPurple,
+                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun DayAchievementChecks(weekDaysData: List<DayAchievement>) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        // 요일별 체크 아이콘 표시를 위해 너비를 제한하여 모든 요일이 표시되도록 함
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 16.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // 각 요일별 아이템
+                weekDaysData.forEach { dayData ->
+                    // 각 아이템은 고정된 너비를 가지도록 설정
+                    Box(
+                        modifier = Modifier.weight(1f),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        DayAchievementItem(
+                            day = dayData.day,
+                            isAchieved = dayData.isAchieved
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun DayAchievementItem(day: DayOfWeek, isAchieved: Boolean) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+        modifier = Modifier.padding(horizontal = 2.dp) // 여백 줄임
+    ) {
+        // 요일 표시
+        Text(
+            text = day.label,
+            style = MaterialTheme.typography.bodyMedium,
+            fontSize = 12.sp,
+            color = Color.Gray
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // 체크 아이콘 배경
+        Box(
+            modifier = Modifier
+                .size(36.dp) // 크기 약간 줄임
+                .background(
+                    color = if (isAchieved) MainPurple else LightGray5,
+                    shape = androidx.compose.foundation.shape.CircleShape
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            // 달성했을 경우에만 체크 아이콘 표시
+            if (isAchieved) {
+                Image(
+                    painter = painterResource(R.drawable.screen_profile_check_iv),
+                    contentDescription = "달성 완료",
+                    modifier = Modifier.size(18.dp) // 아이콘 크기 조정
+                )
+            }
+        }
+    }
+}
+
+// 일별 성취 데이터 클래스
+data class DayAchievement(
+    val day: DayOfWeek,
+    val isAchieved: Boolean
+)
+
+@Composable
+fun SubjectAchievementGraph(
+    isExpanded: Boolean,
+    onToggle: (Boolean) -> Unit
+) {
+    // 과목별 성취 데이터
+    val subjectData = listOf(
+        SubjectAchievement(
+            subject = Subject.MATH,
+            startDate = "2024.01.15",
+            endDate = "2024.05.15",
+            progressPercent = 65f
+        ),
+        SubjectAchievement(
+            subject = Subject.KOR,
+            startDate = "2024.02.10",
+            endDate = "2024.06.10",
+            progressPercent = 42f
+        ),
+        SubjectAchievement(
+            subject = Subject.ENG,
+            startDate = "2024.03.05",
+            endDate = "2024.07.05",
+            progressPercent = 30f
+        ),
+        SubjectAchievement(
+            subject = Subject.SCI,
+            startDate = "2024.02.20",
+            endDate = "2024.05.20",
+            progressPercent = 85f
+        )
+    )
+
+    // 평균 성취율 계산
+    val averageProgress = subjectData.map { it.progressPercent }.average().toFloat()
+
+    // 가장 높은 성취율의 과목 찾기
+    val highestSubject = subjectData.maxByOrNull { it.progressPercent }
+    val highestPercent = highestSubject?.progressPercent ?: 0f
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 16.dp),
+        horizontalAlignment = Alignment.Start
+    ) {
+        // 제목 행 (아이콘 추가)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = if (isExpanded) 20.dp else 0.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // 아이콘
+            Image(
+                painter = painterResource(id = R.drawable.screen_profile_study_time_iv),
+                contentDescription = "과목별 성취율 아이콘",
+                modifier = Modifier
+                    .size(24.dp)
+                    .padding(end = 5.dp)
+            )
+
+            // 제목
+            Text(
+                text = "과목별 성취율",
+                style = MaterialTheme.typography.titleMedium,
+                color = Color.Black,
+                modifier = Modifier.padding(end = 5.dp)
+            )
+
+            // 오른쪽 화살표 - 클릭 가능한 토글 버튼으로 변경
+            IconButton(
+                onClick = { onToggle(!isExpanded) },
+                modifier = Modifier.size(24.dp)
+            ) {
+                // 회전 애니메이션 추가
+                val rotationState by animateFloatAsState(
+                    targetValue = if (isExpanded) 90f else 0f,
+                    label = "rotationAnimation"
+                )
+
+                Image(
+                    painter = painterResource(id = R.drawable.screen_profile_see_more_iv),
+                    contentDescription = if (isExpanded) "접기" else "펼치기",
+                    modifier = Modifier.rotate(rotationState)
+                )
+            }
+
+            // 나머지 공간 채우기
+            Spacer(modifier = Modifier.weight(1f))
+
+            // 평균 성취율 표시 (펼치기 상태에 관계없이 표시)
+            Text(
+                text = "평균 ${String.format("%.1f", averageProgress)}%",
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.Gray,
+                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+            )
+        }
+
+        // 회색 테두리 박스 - 중앙 정렬로 변경
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 10.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Card(
+                modifier = Modifier
+                    .padding(10.dp),
+                shape = RoundedCornerShape(5.dp), // 둥근 모서리
+                colors = CardDefaults.cardColors(
+                    containerColor = Color.White // 흰색 배경
+                ),
+                border = BorderStroke(1.dp, color = LightGray60)
+            ) {
+                // 정보 텍스트
+                if (highestSubject != null) {
+                    Text(
+                        buildAnnotatedString {
+                            withStyle(style = SpanStyle(color = MainPurple)) {
+                                append(highestSubject.subject.label)
+                            }
+                            append("은 ${String.format("%.0f", highestSubject.progressPercent)}%로 ")
+                            append("가장 높은 성취율을 보이고 있어요")
+                        },
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.Black,
+                        fontSize = 12.sp,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                    )
+                }
+            }
+        }
+
+        // 확장된 경우에만 과목별 성취율 표시
+        AnimatedVisibility(visible = isExpanded) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // 과목별 성취율 진행 바
+                SubjectProgressBars(
+                    subjectData = subjectData,
+                    highestPercent = highestPercent
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun SubjectProgressBars(
+    subjectData: List<SubjectAchievement>,
+    highestPercent: Float
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 10.dp)
+    ) {
+        // 각 과목별 진행 바
+        subjectData.forEach { subject ->
+            // 가장 높은 성취율 과목만 MainPurple 컬러로
+            val subjectColor = if (subject.progressPercent == highestPercent) SubPurple else WarmPurple
+
+            SubjectProgressItem(
+                subjectAchievement = subject,
+                barColor = subjectColor,
+                highestPercent = highestPercent
+            )
+            Spacer(modifier = Modifier.height(24.dp))
+        }
+    }
+}
+
+@SuppressLint("DefaultLocale")
+@Composable
+fun SubjectProgressItem(
+    subjectAchievement: SubjectAchievement,
+    barColor: Color,
+    highestPercent: Float
+) {
+    val animatedProgress = remember { Animatable(0f) }
+
+    // 애니메이션 적용
+    LaunchedEffect(subjectAchievement) {
+        animatedProgress.animateTo(
+            targetValue = subjectAchievement.progressPercent / 100f,
+            animationSpec = tween(
+                durationMillis = 1000,
+                easing = LinearEasing
+            )
+        )
+    }
+
+    Column(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        // 과목명과 수강 기간
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 4.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // 과목명
+            Text(
+                text = subjectAchievement.subject.label,
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.Black,
+                fontWeight = FontWeight.Bold
+            )
+
+            // 수강 기간
+            Text(
+                text = "${subjectAchievement.startDate} ~ ${subjectAchievement.endDate}",
+                style = MaterialTheme.typography.bodySmall,
+                color = Color.Gray,
+                fontSize = 10.sp
+            )
+        }
+
+        // 프로그레스 바 (상대적 위치 계산을 위한 Box)
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(16.dp)
+        ) {
+            // 배경 프로그레스 바
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(8.dp)
+                    .background(LightGray5, RoundedCornerShape(4.dp))
+                    .align(Alignment.Center)
+            )
+
+            // 진행률 프로그레스 바
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(animatedProgress.value)
+                    .height(8.dp)
+                    .background(barColor, RoundedCornerShape(4.dp))
+                    .align(Alignment.CenterStart)
+            )
+
+            // 현재 위치 표시 (역삼각형 + 점선)
+            Canvas(
+                modifier = Modifier
+                    .fillMaxSize()
+            ) {
+                val triangleWidth = 12.dp.toPx()
+                val triangleHeight = 6.dp.toPx()
+                val currentX = size.width * animatedProgress.value
+
+                // 역삼각형 그리기
+                val trianglePath = Path().apply {
+                    moveTo(currentX, 0f) // 상단 중앙 지점
+                    lineTo(currentX - triangleWidth / 2, -triangleHeight) // 좌측 상단
+                    lineTo(currentX + triangleWidth / 2, -triangleHeight) // 우측 상단
+                    close()
+                }
+
+                drawPath(
+                    path = trianglePath,
+                    color = barColor
+                )
+
+                // 점선 그리기
+                val dashPathEffect = PathEffect.dashPathEffect(floatArrayOf(4f, 4f), 0f)
+
+                drawLine(
+                    color = barColor,
+                    start = Offset(currentX, 0f),
+                    end = Offset(currentX, size.height),
+                    strokeWidth = 1.dp.toPx(),
+                    pathEffect = dashPathEffect
+                )
+            }
+        }
+
+        // 진행률 퍼센트 표시
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 4.dp),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = "0%",
+                style = MaterialTheme.typography.bodySmall,
+                color = Color.Gray,
+                fontSize = 10.sp
+            )
+
+            Text(
+                text = "${String.format("%.0f", subjectAchievement.progressPercent)}%",
+                style = MaterialTheme.typography.bodySmall,
+                color = if (subjectAchievement.progressPercent == highestPercent) Color.Black else LightGray60,
+                fontWeight = FontWeight.Bold,
+                fontSize = 12.sp
+            )
+
+            Text(
+                text = "100%",
+                style = MaterialTheme.typography.bodySmall,
+                color = Color.Gray,
+                fontSize = 10.sp
+            )
+        }
+    }
+}
+
+// 과목별 성취 데이터 클래스
+data class SubjectAchievement(
+    val subject: Subject,
+    val startDate: String,
+    val endDate: String,
+    val progressPercent: Float
 )
