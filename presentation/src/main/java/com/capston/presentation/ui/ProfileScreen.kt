@@ -71,7 +71,7 @@ import com.capston.presentation.theme.MutePurple
 import com.capston.presentation.theme.SkyLavender
 import com.capston.presentation.theme.SoftPink
 import com.capston.presentation.theme.SubPurple
-import com.capston.presentation.theme.WarmBeige
+import com.capston.presentation.theme.WarmPurple
 
 // 마이페이지 스크린
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
@@ -284,6 +284,24 @@ fun ProfileScreen() {
                     onToggle = { isStudyTimeExpanded = it }
                 )
             }
+
+            // 회색 테두리 박스 - 둥근 모서리 (배경색 없음)
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp),
+                shape = RoundedCornerShape(10.dp), // 둥근 모서리
+                colors = CardDefaults.cardColors(
+                    containerColor = Color.White // 흰색 배경
+                ),
+                border = BorderStroke(1.dp, color = LightGray60)
+            ) {
+                // 접기/펼치기 기능이 있는 WeeklyStudyStatisticsGraph 컴포넌트 호출
+                WeeklyStudyStatisticsGraph(
+                    isExpanded = isStudyTimeExpanded,
+                    onToggle = { isStudyTimeExpanded = it }
+                )
+            }
         }
     }
 }
@@ -490,7 +508,7 @@ fun SubjectDistributionGraph(
         SubjectData(Subject.ENG, 0, MainPurple),
         SubjectData(Subject.UNIV, 0, MutePurple),
         SubjectData(Subject.KOR, 5, SubPurple),
-        SubjectData(Subject.SCI, 5, WarmBeige),
+        SubjectData(Subject.SCI, 5, WarmPurple),
         SubjectData(Subject.SOC, 5, SoftPink),
         SubjectData(Subject.HIST, 10, LavenderGray),
         SubjectData(Subject.LANG2, 5, DustyRose),
@@ -864,3 +882,293 @@ fun TodayCircleGraph(name: String, cleared: Int, total: Int) {
         }
     }
 }
+
+@Composable
+fun WeeklyStudyStatisticsGraph(
+    isExpanded: Boolean,
+    onToggle: (Boolean) -> Unit
+) {
+    // 주차별 학습 시간 데이터
+    val weeklyData = listOf(
+        WeeklyData("1주", 3),
+        WeeklyData("2주", 5),
+        WeeklyData("3주", 8),
+        WeeklyData("4주", 6),
+        WeeklyData("5주", 10)
+    )
+
+    // 최대 시간 값
+    val maxHours = weeklyData.maxOf { it.hours }
+
+    // 가장 많은 공부를 한 주 찾기
+    val mostStudiedWeeks = weeklyData.filter { it.hours == maxHours }
+    val mostStudiedWeeksText = mostStudiedWeeks.joinToString(", ") { it.week }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 16.dp),
+        horizontalAlignment = Alignment.Start
+    ) {
+        // 제목 행 (아이콘 추가)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = if (isExpanded) 20.dp else 0.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // 아이콘
+            Image(
+                painter = painterResource(id = R.drawable.screen_profile_learning_status_iv),
+                contentDescription = "학습 통계 아이콘",
+                modifier = Modifier
+                    .size(24.dp)
+                    .padding(end = 5.dp)
+            )
+
+            // 제목
+            Text(
+                text = "학습 통계",
+                style = MaterialTheme.typography.titleMedium,
+                color = Color.Black,
+                modifier = Modifier.padding(end = 5.dp)
+            )
+
+            // 오른쪽 화살표 - 클릭 가능한 토글 버튼으로 변경
+            IconButton(
+                onClick = { onToggle(!isExpanded) },
+                modifier = Modifier.size(24.dp)
+            ) {
+                // 회전 애니메이션 추가
+                val rotationState by animateFloatAsState(
+                    targetValue = if (isExpanded) 90f else 0f,
+                    label = "rotationAnimation"
+                )
+
+                Image(
+                    painter = painterResource(id = R.drawable.screen_profile_see_more_iv),
+                    contentDescription = if (isExpanded) "접기" else "펼치기",
+                    modifier = Modifier.rotate(rotationState)
+                )
+            }
+
+            // 나머지 공간 채우기
+            Spacer(modifier = Modifier.weight(1f))
+
+            // 평균 공부 시간 표시 (펼치기 상태에 관계없이 표시)
+            val averageHours = weeklyData.map { it.hours }.average()
+            Text(
+                text = "평균 ${String.format("%.1f", averageHours)}시간/주",
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.Gray,
+                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+            )
+        }
+
+        // 회색 테두리 박스 - 중앙 정렬로 변경
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 10.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Card(
+                modifier = Modifier
+                    .padding(10.dp),
+                shape = RoundedCornerShape(5.dp), // 둥근 모서리
+                colors = CardDefaults.cardColors(
+                    containerColor = Color.White // 흰색 배경
+                ),
+                border = BorderStroke(1.dp, color = LightGray60)
+            ) {
+                // 완강 정보 텍스트
+                Text(
+                    buildAnnotatedString {
+                        withStyle(style = SpanStyle(color = MainPurple)) { // 강조색을 MainPurple로 통일
+                            append(mostStudiedWeeksText)
+                        }
+                        append("차에 가장 많은 강의를 수강했어요")
+                    },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.Black,
+                    fontSize = 12.sp,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                )
+            }
+        }
+
+        // 확장된 경우에만 막대 그래프와 범례 표시
+        AnimatedVisibility(visible = isExpanded) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // 세로 막대 그래프
+                ImprovedWeeklyBarChart(
+                    weeklyData = weeklyData,
+                    maxHoursValue = maxHours
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun ImprovedWeeklyBarChart(
+    weeklyData: List<WeeklyData>,
+    maxHoursValue: Int
+) {
+    // 애니메이션 값들
+    val animatedValues = List(weeklyData.size) {
+        remember { Animatable(0f) }
+    }
+
+    // 애니메이션 적용
+    LaunchedEffect(weeklyData) {
+        animatedValues.forEachIndexed { index, animatable ->
+            animatable.snapTo(0f)
+            animatable.animateTo(
+                targetValue = weeklyData[index].hours.toFloat(),
+                animationSpec = tween(
+                    durationMillis = 1000,
+                    easing = LinearEasing,
+                    delayMillis = index * 100
+                )
+            )
+        }
+    }
+
+    // 차트 높이와 최대 시간
+    val chartHeight = 200.dp
+    val maxHours = 10f // 고정된 최대값 (0, 5, 10 표시 위해)
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(chartHeight + 60.dp)
+            .padding(start = 8.dp, end = 16.dp)
+    ) {
+        // 왼쪽 시간 표시 (0시간, 5시간, 10시간)
+        Column(
+            modifier = Modifier
+                .width(40.dp)
+                .height(chartHeight),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            // 시간 표시는 위에서부터 아래로
+            Text(
+                text = "10시간",
+                fontSize = 10.sp,
+                color = Color.Gray,
+                textAlign = TextAlign.End,
+                modifier = Modifier.padding(top = 4.dp)
+            )
+
+            Text(
+                text = "5시간",
+                fontSize = 10.sp,
+                color = Color.Gray,
+                textAlign = TextAlign.End
+            )
+
+            Text(
+                text = "0시간",
+                fontSize = 10.sp,
+                color = Color.Gray,
+                textAlign = TextAlign.End,
+                modifier = Modifier.padding(bottom = 4.dp)
+            )
+        }
+
+        // 그래프 영역
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .height(chartHeight)
+                .background(Color.White)
+        ) {
+            // 수평 그리드 라인 (0시간, 5시간, 10시간)
+            Canvas(
+                modifier = Modifier.fillMaxSize()
+            ) {
+                // 10시간 선 (맨 위)
+                drawLine(
+                    color = LightGray5,
+                    start = Offset(0f, 0f),
+                    end = Offset(size.width, 0f),
+                    strokeWidth = 1.dp.toPx()
+                )
+
+                // 5시간 선 (중간)
+                drawLine(
+                    color = LightGray5,
+                    start = Offset(0f, size.height / 2),
+                    end = Offset(size.width, size.height / 2),
+                    strokeWidth = 1.dp.toPx()
+                )
+
+                // 0시간 선 (맨 아래)
+                drawLine(
+                    color = LightGray5,
+                    start = Offset(0f, size.height),
+                    end = Offset(size.width, size.height),
+                    strokeWidth = 1.dp.toPx()
+                )
+            }
+
+            // 막대 그래프
+            Row(
+                modifier = Modifier.fillMaxSize(),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.Bottom
+            ) {
+                weeklyData.forEachIndexed { index, data ->
+                    val animatedHeight = animatedValues[index].value
+                    val barHeight = (animatedHeight / maxHours) * chartHeight.value
+
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        // 가장 높은 막대만 다른 색상
+                        val barColor = if (data.hours == maxHoursValue) SubPurple else WarmPurple
+
+                        Box(
+                            modifier = Modifier
+                                .width(16.dp)
+                                .height(barHeight.dp)
+                                .background(
+                                    color = barColor,
+                                    shape = RoundedCornerShape(20.dp)
+                                )
+                        ) {
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // 주차 레이블
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 8.dp, start = 40.dp, end = 16.dp),
+        horizontalArrangement = Arrangement.SpaceEvenly
+    ) {
+        weeklyData.forEach { data ->
+            Text(
+                text = data.week,
+                fontSize = 12.sp,
+                color = Color.Black
+            )
+        }
+    }
+}
+
+// 주차별 데이터 클래스
+data class WeeklyData(
+    val week: String,
+    val hours: Int
+)
