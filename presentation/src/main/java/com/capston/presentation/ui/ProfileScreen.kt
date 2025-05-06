@@ -22,7 +22,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Icon
 import androidx.compose.material.icons.Icons
 import androidx.compose.material3.Card
@@ -40,37 +42,52 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.capston.domain.response.enum_class.Subject
 import com.capston.presentation.R
+import com.capston.presentation.theme.CoolGray
+import com.capston.presentation.theme.DustyRose
+import com.capston.presentation.theme.LavenderGray
 import com.capston.presentation.theme.LightGray5
 import com.capston.presentation.theme.LightGray60
 import com.capston.presentation.theme.MainPurple
+import com.capston.presentation.theme.MutePurple
+import com.capston.presentation.theme.SkyLavender
+import com.capston.presentation.theme.SoftPink
 import com.capston.presentation.theme.SubPurple
+import com.capston.presentation.theme.WarmBeige
 
 // 마이페이지 스크린
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun ProfileScreen() {
-    // Remember expanded state to share between components
+    // 완료한 강의 및 공부 시간 컴포넌트의 확장 상태 관리
     var isLecturesExpanded by remember { mutableStateOf(false) }
+    var isStudyTimeExpanded by remember { mutableStateOf(true) } // 기본값을 true로 설정하여 처음에는 펼쳐진 상태로 시작
 
     Scaffold(
         modifier = Modifier.fillMaxSize()
     ) {
         Column(
-            modifier = Modifier.fillMaxSize(), // 전체 화면 사용
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState()), // 전체 화면 사용
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // 상단 프로필 정보
@@ -239,6 +256,8 @@ fun ProfileScreen() {
             }
 
             Spacer(modifier = Modifier.height(20.dp))
+
+            // 내 공부 기록 통계 제목
             Text(
                 text = "내 공부 기록 통계",
                 style = MaterialTheme.typography.titleMedium,
@@ -247,6 +266,24 @@ fun ProfileScreen() {
                     .padding(horizontal = 20.dp)
                     .align(Alignment.Start)
             )
+
+            // 회색 테두리 박스 - 둥근 모서리 (배경색 없음)
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp),
+                shape = RoundedCornerShape(10.dp), // 둥근 모서리
+                colors = CardDefaults.cardColors(
+                    containerColor = Color.White // 흰색 배경
+                ),
+                border = BorderStroke(1.dp, color = LightGray60)
+            ) {
+                // 접기/펼치기 기능이 있는 SubjectDistributionGraph 컴포넌트 호출
+                SubjectDistributionGraph(
+                    isExpanded = isStudyTimeExpanded,
+                    onToggle = { isStudyTimeExpanded = it }
+                )
+            }
         }
     }
 }
@@ -269,7 +306,8 @@ fun CompletedLecturesToggle(
                         Modifier.padding(horizontal = 24.dp, vertical = 16.dp)
                     else
                     // 접혔을 때는 Card 높이(60dp)에 맞춰 중앙 정렬
-                        Modifier.padding(horizontal = 24.dp)
+                        Modifier
+                            .padding(horizontal = 24.dp)
                             .height(60.dp)
                 ),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -353,7 +391,10 @@ fun LectureItem(lecture: String, isLastItem: Boolean) {
             Box(
                 modifier = Modifier
                     .size(20.dp)
-                    .background(color = MainPurple, shape = androidx.compose.foundation.shape.CircleShape),
+                    .background(
+                        color = MainPurple,
+                        shape = androidx.compose.foundation.shape.CircleShape
+                    ),
                 contentAlignment = Alignment.Center
             ) {
                 Image(
@@ -395,6 +436,325 @@ fun LectureItem(lecture: String, isLastItem: Boolean) {
         }
     }
 }
+
+// Canvas 컨텍스트 내에서 말풍선 그리기 함수
+private fun DrawScope.drawBubbleWithText(text: String, position: Offset) {
+    // 말풍선 배경
+    val bubbleWidth = 50.dp.toPx()
+    val bubbleHeight = 30.dp.toPx()
+    val cornerRadius = 10.dp.toPx()
+
+    drawRoundRect(
+        color = Color.White,
+        topLeft = Offset(position.x - bubbleWidth / 2, position.y - bubbleHeight / 2),
+        size = Size(bubbleWidth, bubbleHeight),
+        cornerRadius = CornerRadius(cornerRadius, cornerRadius)
+    )
+
+    // 말풍선 꼬리 부분 (삼각형)
+    val trianglePath = Path().apply {
+        val tipX = position.x
+        val tipY = position.y + bubbleHeight / 2 + 5.dp.toPx()
+
+        moveTo(tipX, tipY)
+        lineTo(tipX - 5.dp.toPx(), position.y + bubbleHeight / 2)
+        lineTo(tipX + 5.dp.toPx(), position.y + bubbleHeight / 2)
+        close()
+    }
+
+    drawPath(
+        path = trianglePath,
+        color = Color.White
+    )
+
+    // 텍스트 그리기
+    drawContext.canvas.nativeCanvas.drawText(
+        text,
+        position.x,
+        position.y + 5.dp.toPx(), // 약간의 수직 중앙 정렬 조정
+        android.graphics.Paint().apply {
+            color = android.graphics.Color.BLACK
+            textAlign = android.graphics.Paint.Align.CENTER
+            textSize = 12.sp.toPx()
+            isFakeBoldText = true
+        }
+    )
+}
+
+@Composable
+fun SubjectDistributionGraph(
+    isExpanded: Boolean,
+    onToggle: (Boolean) -> Unit
+) {
+    val rawSubjects = listOf(
+        SubjectData(Subject.ENG, 0, MainPurple),
+        SubjectData(Subject.UNIV, 0, MutePurple),
+        SubjectData(Subject.KOR, 5, SubPurple),
+        SubjectData(Subject.SCI, 5, WarmBeige),
+        SubjectData(Subject.SOC, 5, SoftPink),
+        SubjectData(Subject.HIST, 10, LavenderGray),
+        SubjectData(Subject.LANG2, 5, DustyRose),
+        SubjectData(Subject.MATH, 5, CoolGray),
+        SubjectData(Subject.VOC, 5, SkyLavender),
+    )
+
+    //  0시간인 과목 제거
+    val subjects = rawSubjects.filter { it.hours > 0 }
+
+    // 총 공부 시간
+    val totalHours = subjects.sumOf { it.hours }
+
+    // 각 과목의 각도 계산 (비율 * 360도)
+    val angles = subjects.map { (it.hours.toFloat() / totalHours) * 360f }
+
+    // 각 과목의 퍼센트 계산
+    val percentages = subjects.map { (it.hours.toFloat() / totalHours) * 100f }
+
+    // 가장 많은 시간을 투자하는 과목 찾기
+    val maxHours = subjects.maxOf { it.hours }
+    val topSubjects = subjects.filter { it.hours == maxHours }
+
+    // 가장 많은 시간을 투자하는 과목들의 이름을 쉼표로 구분하여 문자열 생성
+    val topSubjectsText = topSubjects.joinToString(", ") { it.subject.label }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 16.dp),
+        horizontalAlignment = Alignment.Start // 전체 컬럼을 왼쪽 정렬로 변경
+    ) {
+        // 제목 행 (아이콘 추가)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = if (isExpanded) 20.dp else 0.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // 아이콘
+            Image(
+                painter = painterResource(id = R.drawable.screen_profile_study_time_iv),
+                contentDescription = "공부 시간 아이콘",
+                modifier = Modifier
+                    .size(24.dp)
+                    .padding(end = 5.dp)
+            )
+
+            // 제목
+            Text(
+                text = "공부 시간",
+                style = MaterialTheme.typography.titleMedium,
+                color = Color.Black,
+                modifier = Modifier.padding(end = 5.dp)
+            )
+
+            // 오른쪽 화살표 - 클릭 가능한 토글 버튼으로 변경
+            IconButton(
+                onClick = { onToggle(!isExpanded) },
+                modifier = Modifier.size(24.dp)
+            ) {
+                // 회전 애니메이션 추가
+                val rotationState by animateFloatAsState(
+                    targetValue = if (isExpanded) 90f else 0f,
+                    label = "rotationAnimation"
+                )
+
+                Image(
+                    painter = painterResource(id = R.drawable.screen_profile_see_more_iv),
+                    contentDescription = if (isExpanded) "접기" else "펼치기",
+                    modifier = Modifier.rotate(rotationState)
+                )
+            }
+
+            // 나머지 공간 채우기
+            Spacer(modifier = Modifier.weight(1f))
+
+            // 총 공부 시간 표시 (펼치기 상태에 관계없이 표시)
+            Text(
+                text = "총 ${totalHours}시간",
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.Gray,
+                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+            )
+        }
+
+        // 회색 테두리 박스 - 중앙 정렬로 변경
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 10.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Card(
+                modifier = Modifier
+                    .padding(10.dp),
+                shape = RoundedCornerShape(5.dp), // 둥근 모서리
+                colors = CardDefaults.cardColors(
+                    containerColor = Color.White // 흰색 배경
+                ),
+                border = BorderStroke(1.dp, color = LightGray60)
+            ) {
+                // 완강 정보 텍스트
+                Text(
+                    buildAnnotatedString {
+                        withStyle(style = SpanStyle(color = SubPurple)) {
+                            append(topSubjectsText)
+                        }
+                        append("에 가장 많은 시간을 투자하고 있어요")
+                    },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.Black,
+                    fontSize = 12.sp,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                )
+            }
+        }
+
+        // 확장된 경우에만 원형 그래프와 범례 표시
+        AnimatedVisibility(visible = isExpanded) {
+            Column {
+                // 원형 그래프는 중앙 정렬
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .size(240.dp)
+                        .padding(top = 40.dp)
+                ) {
+                    // 도넛 차트 (말풍선 포함)
+                    SubjectPieChartWithBubbles(subjects, angles)
+                }
+
+                Spacer(modifier = Modifier.height(40.dp))
+
+                // 범례 (퍼센트로 표시)
+                SubjectLegendWithPercentage(subjects, percentages)
+            }
+        }
+    }
+}
+
+@Composable
+fun SubjectPieChartWithBubbles(subjects: List<SubjectData>, angles: List<Float>) {
+    val animatedValues = List(subjects.size) { remember { Animatable(0f) } }
+
+    // 애니메이션 적용
+    LaunchedEffect(subjects) {
+        animatedValues.forEachIndexed { index, animatable ->
+            animatable.snapTo(0f)
+            animatable.animateTo(
+                targetValue = angles[index],
+                animationSpec = tween(
+                    durationMillis = 1000, // 애니메이션 시간 복원
+                    easing = LinearEasing,
+                )
+            )
+        }
+    }
+
+    Canvas(
+        modifier = Modifier.size(240.dp)
+    ) {
+        val center = Offset(size.width / 2, size.height / 2)
+        val radius = size.width * 0.6f
+        val innerRadius = radius * 0.4f // 도넛 모양을 위한 내부 반지름
+
+        var startAngle = -90f // 12시 방향에서 시작
+
+        // 각 과목별 부분 그리기
+        subjects.forEachIndexed { index, subject ->
+            val sweepAngle = animatedValues[index].value
+
+            // 과목별 부분 그리기
+            drawArc(
+                color = subject.color,
+                startAngle = startAngle,
+                sweepAngle = sweepAngle,
+                useCenter = true,
+                topLeft = Offset(center.x - radius, center.y - radius),
+                size = Size(radius * 2, radius * 2)
+            )
+
+            // 말풍선 위치 계산 (각 부분의 중간 지점, 도넛 안쪽)
+            if (sweepAngle > 20f) { // 충분히 넓은 영역에만 말풍선 표시
+                val midAngle = startAngle + (sweepAngle / 2)
+                val midAngleRad = Math.toRadians(midAngle.toDouble())
+
+                // 말풍선 위치 계산 (도넛 차트 바깥쪽과 중심 사이)
+                val bubbleDistance = (innerRadius + radius) / 2f
+                val bubbleX = center.x + bubbleDistance * kotlin.math.cos(midAngleRad).toFloat()
+                val bubbleY = center.y + bubbleDistance * kotlin.math.sin(midAngleRad).toFloat()
+
+                // 말풍선 배경 그리기
+                drawBubbleWithText(subject.subject.label, Offset(bubbleX, bubbleY))
+            }
+
+            // 다음 시작 각도 업데이트
+            startAngle += sweepAngle
+        }
+
+        // 도넛 모양을 위한 중앙 흰색 원
+        drawCircle(
+            color = Color.White,
+            radius = innerRadius,
+            center = center
+        )
+    }
+}
+
+@Composable
+fun SubjectLegendWithPercentage(
+    subjects: List<SubjectData>,
+    percentages: List<Float>
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        subjects.forEachIndexed { index, subject ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // 색상 표시
+                Box(
+                    modifier = Modifier
+                        .size(12.dp)
+                        .background(
+                            subject.color,
+                            shape = androidx.compose.foundation.shape.CircleShape
+                        )
+                )
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                // 과목명 - 왼쪽 정렬
+                Text(
+                    text = subject.subject.label,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.Black,
+                    modifier = Modifier.weight(1f)
+                )
+
+                // 퍼센트로 표시 (소수점 1자리)
+                Text(
+                    text = "${String.format("%.1f", percentages[index])}%",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.Black,
+                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                    modifier = Modifier.padding(end = 16.dp)
+                )
+            }
+        }
+    }
+}
+
+// 과목 데이터 클래스
+data class SubjectData(
+    val subject: Subject,
+    val hours: Int,
+    val color: Color
+)
 
 @Composable
 fun TodayCircleGraph(name: String, cleared: Int, total: Int) {

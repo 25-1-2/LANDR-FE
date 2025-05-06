@@ -9,5 +9,5 @@ enum class Subject(val label: String) {
     HIST("한국사"),
     UNIV("대학 공통"),
     LANG2("제2외국어"),
-    VOC("VOC")
+    VOC("어휘")
 }
