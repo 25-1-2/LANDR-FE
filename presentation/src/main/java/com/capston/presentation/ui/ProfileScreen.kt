@@ -1,12 +1,16 @@
 package com.capston.presentation.ui
 
 import android.annotation.SuppressLint
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,6 +23,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.Icon
+import androidx.compose.material.icons.Icons
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.IconButton
@@ -27,9 +33,13 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -53,6 +63,9 @@ import com.capston.presentation.theme.SubPurple
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun ProfileScreen() {
+    // Remember expanded state to share between components
+    var isLecturesExpanded by remember { mutableStateOf(false) }
+
     Scaffold(
         modifier = Modifier.fillMaxSize()
     ) {
@@ -202,48 +215,183 @@ fun ProfileScreen() {
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp)
-                    .height(60.dp), // 직접 높이 설정
+                    .padding(horizontal = 20.dp),
                 shape = RoundedCornerShape(10.dp), // 둥근 모서리
                 colors = CardDefaults.cardColors(
                     containerColor = Color.White // 흰색 배경
                 ),
                 border = BorderStroke(1.dp, color = LightGray60)
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 24.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    // 왼쪽 텍스트
-                    Text(
-                        text = "완료한 강의 보기",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = Color.Black
-                    )
+                val lectures = listOf(
+                    "Java 프로그래밍 기초",
+                    "Kotlin 입문",
+                    "Android 개발 입문",
+                    "Jetpack Compose 기초",
+                    "UI/UX 디자인 기초"
+                )
 
-                    IconButton(onClick = {}, modifier = Modifier.padding(start = 5.dp)) {
-                        Image(
-                            painter = painterResource(id = R.drawable.screen_profile_see_more_iv),
-                            contentDescription = "Edit Mode"
-                        )
+                // isLecturesExpanded 상태를 CompletedLecturesToggle로 전달
+                CompletedLecturesToggle(
+                    lectures = lectures,
+                    isExpanded = isLecturesExpanded,
+                    onToggle = { isLecturesExpanded = it }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+            Text(
+                text = "내 공부 기록 통계",
+                style = MaterialTheme.typography.titleMedium,
+                color = Color.Black,
+                modifier = Modifier
+                    .padding(horizontal = 20.dp)
+                    .align(Alignment.Start)
+            )
+        }
+    }
+}
+
+@Composable
+fun CompletedLecturesToggle(
+    lectures: List<String>,
+    isExpanded: Boolean,
+    onToggle: (Boolean) -> Unit
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        // 헤더 부분 - 항상 표시
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .then(
+                    if (isExpanded)
+                        Modifier.padding(horizontal = 24.dp, vertical = 16.dp)
+                    else
+                    // 접혔을 때는 Card 높이(60dp)에 맞춰 중앙 정렬
+                        Modifier.padding(horizontal = 24.dp)
+                            .height(60.dp)
+                ),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically // 세로 중앙 정렬
+        ) {
+            // 왼쪽 텍스트
+            Text(
+                text = "완료한 강의 보기",
+                style = MaterialTheme.typography.titleMedium,
+                color = Color.Black
+            )
+
+            // 토글 버튼
+            IconButton(
+                onClick = { onToggle(!isExpanded) },
+                modifier = Modifier.size(24.dp)
+            ) {
+                // 회전 애니메이션 추가
+                val rotationState by animateFloatAsState(
+                    targetValue = if (isExpanded) 90f else 0f,
+                    label = "rotationAnimation"
+                )
+
+                Image(
+                    painter = painterResource(id = R.drawable.screen_profile_see_more_iv),
+                    contentDescription = if (isExpanded) "접기" else "펼치기",
+                    modifier = Modifier.rotate(rotationState)
+                )
+            }
+
+            // 가운데 공간
+            Spacer(modifier = Modifier.weight(1f))
+
+            // 완강 정보 텍스트
+            Text(
+                buildAnnotatedString {
+                    append("총 ")
+                    withStyle(style = SpanStyle(color = SubPurple)) {
+                        append("${lectures.size}개")
                     }
+                    append("를 완강했어요!")
+                },
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.Gray,
+                modifier = Modifier.padding(end = 8.dp)
+            )
+        }
 
-                    Text(
-                        buildAnnotatedString {
-                            append("총 ")
-                            withStyle(style = SpanStyle(color = SubPurple)) { // 원하는 색상 코드
-                                append("5개")
-                            }
-                            append("를 완강했어요!")
-                        },
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color.Gray // 나머지 텍스트 색상
+        // 확장된 경우 강의 목록 표시
+        AnimatedVisibility(visible = isExpanded) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp, vertical = 8.dp)
+            ) {
+                lectures.forEachIndexed { index, lecture ->
+                    LectureItem(
+                        lecture = lecture,
+                        isLastItem = index == lectures.size - 1
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun LectureItem(lecture: String, isLastItem: Boolean) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { /* 강의 상세 페이지로 이동하는 로직 추가 가능 */ },
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // 체크 마크 이미지 (보라색 배경의 원형 체크 아이콘)
+            Box(
+                modifier = Modifier
+                    .size(20.dp)
+                    .background(color = MainPurple, shape = androidx.compose.foundation.shape.CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Image(
+                    painter = painterResource(R.drawable.screen_profile_completed_iv),
+                    contentDescription = "완료됨",
+                    modifier = Modifier.size(12.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            // 강의 제목
+            Text(
+                text = lecture,
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.Black
+            )
+
+            // 오른쪽 여백을 채우는 스페이서
+            Spacer(modifier = Modifier.weight(1f))
+
+            // 오른쪽 화살표 (옵션)
+            Image(
+                painter = painterResource(id = R.drawable.screen_profile_see_more_iv),
+                contentDescription = "강의 상세보기",
+                modifier = Modifier.size(16.dp)
+            )
+        }
+
+        // 마지막 아이템이 아닌 경우에만 구분선 추가
+        if (!isLastItem) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .background(LightGray5)
+            )
         }
     }
 }
