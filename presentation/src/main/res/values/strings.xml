@@ -21,4 +21,7 @@
     <string name="calender_fri">FRI</string>
     <string name="calender_sat">SAT</string>
     <string name="calender_sun">SUN</string>
+
+    <!-- 마이페이지 관련 -->
+    <string name="mypage_title">마이페이지</string>
 </resources>
