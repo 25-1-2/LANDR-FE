@@ -1,6 +1,8 @@
 package com.capston.presentation.ui
 
 import android.annotation.SuppressLint
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
@@ -11,7 +13,6 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,8 +27,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.Icon
-import androidx.compose.material.icons.Icons
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
@@ -38,7 +37,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -65,6 +63,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupProperties
+import androidx.compose.ui.zIndex
 import com.capston.domain.response.enum_class.DayOfWeek
 import com.capston.domain.response.enum_class.Subject
 import com.capston.presentation.R
@@ -81,8 +82,11 @@ import com.capston.presentation.theme.SoftPink
 import com.capston.presentation.theme.SubPurple
 import com.capston.presentation.theme.WarmPurple
 import com.capston.presentation.theme.chipGray
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 // 마이페이지 스크린
+@RequiresApi(Build.VERSION_CODES.O)
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun ProfileScreen() {
@@ -269,21 +273,14 @@ fun ProfileScreen() {
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // 내 공부 기록 통계 제목
-            Text(
-                text = "내 공부 기록 통계",
-                style = MaterialTheme.typography.titleMedium,
-                color = Color.Black,
-                modifier = Modifier
-                    .padding(horizontal = 20.dp)
-                    .align(Alignment.Start)
-            )
+            // 내 공부 기록 통계 섹션 (제목 + 달력 선택 박스)
+            CalendarSelectionRow()
 
             // 회색 테두리 박스 - 둥근 모서리 (배경색 없음)
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(20.dp),
+                    .padding(horizontal = 20.dp, vertical = 10.dp),
                 shape = RoundedCornerShape(10.dp), // 둥근 모서리
                 colors = CardDefaults.cardColors(
                     containerColor = Color.White // 흰색 배경
@@ -301,7 +298,7 @@ fun ProfileScreen() {
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(20.dp),
+                    .padding(horizontal = 20.dp, vertical = 10.dp),
                 shape = RoundedCornerShape(10.dp), // 둥근 모서리
                 colors = CardDefaults.cardColors(
                     containerColor = Color.White // 흰색 배경
@@ -319,7 +316,7 @@ fun ProfileScreen() {
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(20.dp),
+                    .padding(horizontal = 20.dp, vertical = 10.dp),
                 shape = RoundedCornerShape(10.dp), // 둥근 모서리
                 colors = CardDefaults.cardColors(
                     containerColor = Color.White // 흰색 배경
@@ -336,7 +333,7 @@ fun ProfileScreen() {
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(20.dp),
+                    .padding(horizontal = 20.dp, vertical = 10.dp),
                 shape = RoundedCornerShape(10.dp), // 둥근 모서리
                 colors = CardDefaults.cardColors(
                     containerColor = Color.White // 흰색 배경
@@ -348,7 +345,380 @@ fun ProfileScreen() {
                     onToggle = { isSubjectExpanded = it }
                 )
             }
+
+            // 하단 여백
+            Spacer(modifier = Modifier.height(20.dp))
         }
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun CalendarSelectionRow() {
+    var isCalenderExpanded by remember { mutableStateOf(false) }
+    // 제목과 날짜 선택 박스를 가로로 배치
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 30.dp, end = 20.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // 내 공부 기록 통계 제목
+        Text(
+            text = "내 공부 기록 통계",
+            style = MaterialTheme.typography.titleMedium,
+            color = Color.Black
+        )
+
+        Spacer(modifier = Modifier.weight(1f))
+
+        // 날짜 선택 박스
+        CalendarSelectionBox(
+            isExpanded = isCalenderExpanded,
+            onToggle = { isCalenderExpanded = it }
+        )
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun CalendarSelectionBox(
+    isExpanded: Boolean,
+    onToggle: (Boolean) -> Unit
+) {
+    // 현재 날짜 가져오기
+    val currentDate = LocalDate.now()
+    val currentYear = currentDate.format(DateTimeFormatter.ofPattern("yyyy"))
+    val currentMonth = currentDate.format(DateTimeFormatter.ofPattern("MM"))
+
+    var selectedYear by remember { mutableStateOf(currentYear) }
+    var selectedMonth by remember { mutableStateOf(currentMonth) }
+
+    // 달력 표시 여부
+    var showCalendar by remember { mutableStateOf(false) }
+
+    // 상대적인 위치 계산을 위한 박스
+    Box(
+        modifier = Modifier.zIndex(if (showCalendar) 1f else 0f)
+    ) {
+        // 날짜 선택 박스
+        Card(
+            modifier = Modifier
+                .width(100.dp),
+            shape = RoundedCornerShape(10.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = Color.White
+            ),
+            border = BorderStroke(1.dp, color = LightGray60)
+        ) {
+            Row(
+                modifier = Modifier
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                // 선택된 날짜 표시
+                Text(
+                    text = "$selectedYear.$selectedMonth",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontSize = 14.sp,
+                    color = Color.Black
+                )
+
+                Spacer(modifier = Modifier.width(4.dp))
+
+                // 토글 버튼
+                IconButton(
+                    onClick = {
+                        // 토글 버튼 클릭 시 달력 표시/숨김 토글
+                        showCalendar = !showCalendar
+                        onToggle(!isExpanded)
+                    },
+                    modifier = Modifier.size(24.dp)
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.screen_profile_see_more_iv),
+                        contentDescription = if (isExpanded) "접기" else "펼치기",
+                    )
+                }
+            }
+        }
+
+        // 달력 팝업 - Popup 컴포넌트를 사용하여 절대 위치에 표시
+        if (showCalendar) {
+            Popup(
+                alignment = Alignment.TopEnd,
+                properties = PopupProperties(focusable = true),
+                onDismissRequest = { showCalendar = false }
+            ) {
+                CalendarPopup(
+                    initialYear = selectedYear,
+                    initialMonth = selectedMonth,
+                    onDateSelected = { year, month ->
+                        selectedYear = year
+                        selectedMonth = month
+                        showCalendar = false
+                    },
+                    onDismiss = { showCalendar = false }
+                )
+            }
+        }
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun CalendarPopup(
+    initialYear: String,
+    initialMonth: String,
+    onDateSelected: (String, String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    // 달력 상태 - 년도 범위 확장
+    val currentYear = LocalDate.now().year
+    val years = (currentYear - 5..currentYear + 5).map { it.toString() }
+    val months = listOf("01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12")
+
+    var selectedYear by remember { mutableStateOf(initialYear) }
+    var selectedMonth by remember { mutableStateOf(initialMonth) }
+
+    Card(
+        modifier = Modifier
+            .width(240.dp),
+        shape = RoundedCornerShape(10.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White // 명시적으로 흰색 배경 설정
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 4.dp
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .background(Color.White) // 내부 컴포넌트에도 흰색 배경 명시적 설정
+                .padding(16.dp)
+        ) {
+            // 년/월 선택 헤더
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // 년도 선택
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(
+                        onClick = {
+                            val currentIndex = years.indexOf(selectedYear)
+                            if (currentIndex > 0) {
+                                selectedYear = years[currentIndex - 1]
+                            }
+                        },
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.screen_profile_see_more_iv),
+                            contentDescription = "이전 년도",
+                            modifier = Modifier
+                                .size(16.dp)
+                                .rotate(180f) // 왼쪽 방향으로 회전
+                        )
+                    }
+
+                    Text(
+                        text = selectedYear,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    IconButton(
+                        onClick = {
+                            val currentIndex = years.indexOf(selectedYear)
+                            if (currentIndex < years.size - 1) {
+                                selectedYear = years[currentIndex + 1]
+                            }
+                        },
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.screen_profile_see_more_iv),
+                            contentDescription = "다음 년도",
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                }
+
+                // 년/월 구분선
+                Box(
+                    modifier = Modifier
+                        .height(16.dp)
+                        .width(1.dp)
+                        .background(LightGray5)
+                )
+
+                // 월 선택
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(
+                        onClick = {
+                            val currentIndex = months.indexOf(selectedMonth)
+                            if (currentIndex > 0) {
+                                selectedMonth = months[currentIndex - 1]
+                            }
+                        },
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.screen_profile_see_more_iv),
+                            contentDescription = "이전 월",
+                            modifier = Modifier
+                                .size(16.dp)
+                                .rotate(180f) // 왼쪽 방향으로 회전
+                        )
+                    }
+
+                    Text(
+                        text = selectedMonth,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    IconButton(
+                        onClick = {
+                            val currentIndex = months.indexOf(selectedMonth)
+                            if (currentIndex < months.size - 1) {
+                                selectedMonth = months[currentIndex + 1]
+                            }
+                        },
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.screen_profile_see_more_iv),
+                            contentDescription = "다음 월",
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                }
+            }
+
+            // 월 선택 그리드
+            MonthGrid(
+                selectedMonth = selectedMonth,
+                onMonthSelected = { month ->
+                    selectedMonth = month
+                }
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // 확인/취소 버튼
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
+            ) {
+                // 취소 버튼
+                FilterChip(
+                    selected = false,
+                    onClick = { onDismiss() },
+                    label = {
+                        Text(
+                            text = "취소",
+                            fontSize = 12.sp
+                        )
+                    },
+                    colors = FilterChipDefaults.filterChipColors(
+                        containerColor = chipGray,
+                        labelColor = Color.Black
+                    ),
+                    border = null
+                )
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                // 확인 버튼
+                FilterChip(
+                    selected = false,
+                    onClick = {
+                        onDateSelected(selectedYear, selectedMonth)
+                    },
+                    label = {
+                        Text(
+                            text = "확인",
+                            fontSize = 12.sp
+                        )
+                    },
+                    colors = FilterChipDefaults.filterChipColors(
+                        containerColor = MainPurple,
+                        labelColor = Color.White
+                    ),
+                    border = null
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun MonthGrid(
+    selectedMonth: String,
+    onMonthSelected: (String) -> Unit
+) {
+    val months = listOf("01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12")
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color.White) // 명시적으로 흰색 배경 설정
+    ) {
+        for (i in 0 until 3) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                for (j in 0 until 4) {
+                    val index = i * 4 + j
+                    if (index < months.size) {
+                        val month = months[index]
+                        MonthItem(
+                            month = month,
+                            isSelected = month == selectedMonth,
+                            onSelected = { onMonthSelected(month) }
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun MonthItem(
+    month: String,
+    isSelected: Boolean,
+    onSelected: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .size(40.dp)
+            .background(
+                color = if (isSelected) LightPurple else Color.Transparent,
+                shape = RoundedCornerShape(8.dp)
+            )
+            .clickable { onSelected() },
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = month,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+            color = if (isSelected) MainPurple else Color.Black
+        )
     }
 }
 
@@ -1456,35 +1826,42 @@ data class DayAchievement(
     val isAchieved: Boolean
 )
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun SubjectAchievementGraph(
     isExpanded: Boolean,
     onToggle: (Boolean) -> Unit
 ) {
+    // 현재 날짜 가져오기
+    val currentDate = LocalDate.now()
+    val currentYear = currentDate.format(DateTimeFormatter.ofPattern("yyyy"))
+    val currentMonth = currentDate.format(DateTimeFormatter.ofPattern("MM"))
+    val previousMonth = currentDate.minusMonths(2)
+
     // 과목별 성취 데이터
     val subjectData = listOf(
         SubjectAchievement(
             subject = Subject.MATH,
-            startDate = "2024.01.15",
-            endDate = "2024.05.15",
+            startDate = "${previousMonth.format(DateTimeFormatter.ofPattern("yyyy"))}.${previousMonth.format(DateTimeFormatter.ofPattern("MM"))}.15",
+            endDate = "$currentYear.$currentMonth.15",
             progressPercent = 65f
         ),
         SubjectAchievement(
             subject = Subject.KOR,
-            startDate = "2024.02.10",
-            endDate = "2024.06.10",
+            startDate = "${previousMonth.format(DateTimeFormatter.ofPattern("yyyy"))}.${previousMonth.plusMonths(1).format(DateTimeFormatter.ofPattern("MM"))}.10",
+            endDate = "$currentYear.${currentDate.plusMonths(1).format(DateTimeFormatter.ofPattern("MM"))}.10",
             progressPercent = 42f
         ),
         SubjectAchievement(
             subject = Subject.ENG,
-            startDate = "2024.03.05",
-            endDate = "2024.07.05",
+            startDate = "${previousMonth.plusMonths(1).format(DateTimeFormatter.ofPattern("yyyy"))}.${previousMonth.plusMonths(1).format(DateTimeFormatter.ofPattern("MM"))}.05",
+            endDate = "$currentYear.${currentDate.plusMonths(2).format(DateTimeFormatter.ofPattern("MM"))}.05",
             progressPercent = 30f
         ),
         SubjectAchievement(
             subject = Subject.SCI,
-            startDate = "2024.02.20",
-            endDate = "2024.05.20",
+            startDate = "${previousMonth.format(DateTimeFormatter.ofPattern("yyyy"))}.${previousMonth.plusMonths(1).format(DateTimeFormatter.ofPattern("MM"))}.20",
+            endDate = "$currentYear.$currentMonth.20",
             progressPercent = 85f
         )
     )
