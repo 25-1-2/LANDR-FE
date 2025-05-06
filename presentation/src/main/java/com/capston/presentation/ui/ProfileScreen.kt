@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
@@ -16,9 +17,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -35,10 +38,14 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.capston.presentation.R
 import com.capston.presentation.theme.LightGray5
+import com.capston.presentation.theme.LightGray60
 import com.capston.presentation.theme.MainPurple
 import com.capston.presentation.theme.SubPurple
 
@@ -185,6 +192,56 @@ fun ProfileScreen() {
                             fontSize = 18.sp
                         )
                     }
+                }
+            }
+
+            // 보라색 박스와 회색 테두리 박스 사이의 여백
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // 회색 테두리 박스 - 둥근 모서리 (배경색 없음)
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp)
+                    .height(60.dp), // 직접 높이 설정
+                shape = RoundedCornerShape(10.dp), // 둥근 모서리
+                colors = CardDefaults.cardColors(
+                    containerColor = Color.White // 흰색 배경
+                ),
+                border = BorderStroke(1.dp, color = LightGray60)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 24.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // 왼쪽 텍스트
+                    Text(
+                        text = "완료한 강의 보기",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = Color.Black
+                    )
+
+                    IconButton(onClick = {}, modifier = Modifier.padding(start = 5.dp)) {
+                        Image(
+                            painter = painterResource(id = R.drawable.screen_profile_see_more_iv),
+                            contentDescription = "Edit Mode"
+                        )
+                    }
+
+                    Text(
+                        buildAnnotatedString {
+                            append("총 ")
+                            withStyle(style = SpanStyle(color = SubPurple)) { // 원하는 색상 코드
+                                append("5개")
+                            }
+                            append("를 완강했어요!")
+                        },
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.Gray // 나머지 텍스트 색상
+                    )
                 }
             }
         }
