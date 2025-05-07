@@ -225,8 +225,8 @@ fun HeaderSection(
                 },
                 shape = RoundedCornerShape(8.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isPeriodSelected) materialGray else Color.White,
-                    contentColor = if (isPeriodSelected) Color.White else materialGray
+                    containerColor = if (isPeriodSelected) MainPurple else Color.White,
+                    contentColor = if (isPeriodSelected) Color.White else textGray
                 ),
                 border = if (isPeriodSelected) null else ButtonDefaults.outlinedButtonBorder,
                 modifier = Modifier.weight(1f),
@@ -242,7 +242,7 @@ fun HeaderSection(
                 },
                 shape = RoundedCornerShape(8.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isTimeSelected) materialGray else Color.White,
+                    containerColor = if (isTimeSelected) MainPurple else Color.White,
                     contentColor = if (isTimeSelected) Color.White else textGray
                 ),
                 border = if (isTimeSelected) null else ButtonDefaults.outlinedButtonBorder,
