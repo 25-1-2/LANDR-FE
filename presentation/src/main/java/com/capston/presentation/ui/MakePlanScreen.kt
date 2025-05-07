@@ -32,6 +32,7 @@ import com.capston.presentation.theme.chipGray
 import com.capston.presentation.theme.dividerGray
 import com.capston.presentation.theme.materialGray
 import com.capston.presentation.theme.textGray
+import com.capston.presentation.viewmodel.LectureViewModel
 import com.capston.presentation.viewmodel.PlanViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -50,9 +51,27 @@ fun formatDate(millis: Long?): String {
 
 @Composable
 fun MakePlanScreen(
-    lecture: Lecture,
-    viewModel: PlanViewModel
+    lectureViewModel: LectureViewModel,
+    planViewModel: PlanViewModel
 ) {
+    val selectedLectureDto by lectureViewModel.selectedLecture.collectAsState()
+
+    // Convert LectureResponseDto to Lecture model
+    val lecture = remember(selectedLectureDto) {
+        selectedLectureDto?.let {
+            Lecture(
+                id = it.id,
+                title = it.title,
+                teacher = it.teacher,
+                platform = it.platform.label,
+                subject = it.subject.label,
+                totalLessons = it.totalLessons,
+                totalDuration = 0, // Default since not available in DTO
+                tag = it.tag
+            )
+        } ?: Lecture() // Fallback to empty lecture if none selected
+    }
+
     val planType = remember { mutableStateOf("") }
     val startLessonId = remember { mutableIntStateOf(0) }
     val endLessonId = remember { mutableIntStateOf(0) }
@@ -124,7 +143,7 @@ fun MakePlanScreen(
                         )
 
                         // TODO: 서버에 dto 전달하는 API 호출 작성
-                        viewModel.postPlanDetail(dto)
+                        planViewModel.postPlanDetail(dto)
                         // 이후 원래 화면으로 돌아온다
                     },
                     shape = RoundedCornerShape(8.dp),

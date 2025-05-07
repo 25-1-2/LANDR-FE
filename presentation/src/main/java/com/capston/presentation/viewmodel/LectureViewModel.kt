@@ -34,8 +34,8 @@ class LectureViewModel @Inject constructor(
     private val _searchLectureItems = MutableStateFlow<List<LectureItemDto>>(emptyList())
     val searchLectureItems: StateFlow<List<LectureItemDto>> = _searchLectureItems
 
-    private val _selectedLecture = MutableStateFlow<Lecture?>(null)
-    val selectedLecture: StateFlow<Lecture?> = _selectedLecture.asStateFlow()
+    private val _selectedLecture = MutableStateFlow<LectureItemDto?>(null)
+    val selectedLecture: StateFlow<LectureItemDto?> = _selectedLecture.asStateFlow()
 
     // 검색어만 받는 함수 (기존 코드와의 호환성 유지)
     fun getDistinctLecture(searchName: String) {
@@ -113,16 +113,16 @@ class LectureViewModel @Inject constructor(
         _searchLectureItems.value = items
     }
 
-    fun selectLecture(lecture: Lecture) {
-        _selectedLecture.value = Lecture(
+    fun selectLecture(lecture: LectureItemDto) {
+        _selectedLecture.value = LectureItemDto(
             id = lecture.id,
             title = lecture.title,
             teacher = lecture.teacher,
             platform = lecture.platform,
             subject = lecture.subject,
             totalLessons = lecture.totalLessons,
-            totalDuration = lecture.totalDuration,
             tag = lecture.tag,
+            createdAt = lecture.createdAt
         )
     }
 }
