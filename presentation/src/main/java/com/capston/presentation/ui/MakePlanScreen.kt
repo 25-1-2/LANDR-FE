@@ -11,8 +11,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -30,7 +28,6 @@ import com.capston.presentation.theme.MainPurple
 import com.capston.presentation.theme.backgroundGray
 import com.capston.presentation.theme.chipGray
 import com.capston.presentation.theme.dividerGray
-import com.capston.presentation.theme.materialGray
 import com.capston.presentation.theme.textGray
 import com.capston.presentation.viewmodel.LectureViewModel
 import com.capston.presentation.viewmodel.PlanViewModel
@@ -408,7 +405,7 @@ fun DatePickerModal(
 @Composable
 fun StudyTimeSection(dailyTime: MutableState<Int>) {
     // 하루에 공부할 시간
-    var input by remember { mutableStateOf(dailyTime.value.toString()) }
+    var studyMins by remember { mutableStateOf(dailyTime.value.toString()) }
 
     Row(
         modifier = Modifier
@@ -426,11 +423,11 @@ fun StudyTimeSection(dailyTime: MutableState<Int>) {
             )
 
             OutlinedTextField(
-                value = input,
+                value = studyMins,
                 onValueChange = { newValue ->
                     // 숫자만 허용
                     if (newValue.all { it.isDigit() }) {
-                        input = newValue
+                        studyMins = newValue
                         dailyTime.value = newValue.toIntOrNull() ?: 0
                     }
                 },
@@ -438,14 +435,7 @@ fun StudyTimeSection(dailyTime: MutableState<Int>) {
                 keyboardOptions = KeyboardOptions.Default.copy(
                     keyboardType = KeyboardType.Number
                 ),
-                trailingIcon = {
-                    IconButton(onClick = { /* 드롭다운 등 동작 */ }) {
-                        Icon(
-                            imageVector = Icons.Default.KeyboardArrowDown,
-                            contentDescription = "Select value"
-                        )
-                    }
-                },
+                textStyle = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.fillMaxWidth()
             )
         }
