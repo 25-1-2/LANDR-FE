@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.capston.domain.manager.LoadingStateManager
+import com.capston.domain.model.Lecture
 import com.capston.domain.request.LectureDto
 import com.capston.domain.response.lecture.DistinctLectureResponse
 import com.capston.domain.response.lecture.LectureResponseDto
@@ -13,6 +14,7 @@ import com.capston.presentation.ui.LectureItemDto
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -31,6 +33,9 @@ class LectureViewModel @Inject constructor(
 
     private val _searchLectureItems = MutableStateFlow<List<LectureItemDto>>(emptyList())
     val searchLectureItems: StateFlow<List<LectureItemDto>> = _searchLectureItems
+
+    private val _selectedLecture = MutableStateFlow<Lecture?>(null)
+    val selectedLecture: StateFlow<Lecture?> = _selectedLecture.asStateFlow()
 
     // 검색어만 받는 함수 (기존 코드와의 호환성 유지)
     fun getDistinctLecture(searchName: String) {
@@ -106,5 +111,18 @@ class LectureViewModel @Inject constructor(
     // 저장하는 함수
     fun updateSearchLectureItems(items: List<LectureItemDto>) {
         _searchLectureItems.value = items
+    }
+
+    fun selectLecture(lecture: Lecture) {
+        _selectedLecture.value = Lecture(
+            id = lecture.id,
+            title = lecture.title,
+            teacher = lecture.teacher,
+            platform = lecture.platform,
+            subject = lecture.subject,
+            totalLessons = lecture.totalLessons,
+            totalDuration = lecture.totalDuration,
+            tag = lecture.tag,
+        )
     }
 }
