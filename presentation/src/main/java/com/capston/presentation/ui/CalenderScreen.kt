@@ -639,17 +639,7 @@ fun DraggableLessonContainer(
                                 )
                             )
                         )
-                ) {
-                    Text(
-                        "↑ 위로 드래그하여 더 보기",
-                        textAlign = TextAlign.Center,
-                        fontSize = 12.sp,
-                        color = LightGray60,
-                        modifier = Modifier
-                            .align(Alignment.Center)
-                            .padding(bottom = 4.dp)
-                    )
-                }
+                )
             }
         }
     }

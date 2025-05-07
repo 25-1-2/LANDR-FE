@@ -23,7 +23,9 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -68,6 +70,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Color.Companion.LightGray
 import androidx.compose.ui.graphics.Color.Companion.Transparent
+import androidx.compose.ui.graphics.Color.Companion.White
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -91,9 +94,9 @@ import com.capston.domain.response.home.LessonScheduleResponse
 import com.capston.presentation.R
 import com.capston.presentation.theme.LightGray40
 import com.capston.presentation.theme.LightGray60
-import com.capston.presentation.theme.MainBlue
 import com.capston.presentation.theme.MainPurple
 import com.capston.presentation.theme.backgroundGray
+import com.capston.presentation.theme.materialGray
 import com.capston.presentation.theme.textGray
 import com.capston.presentation.viewmodel.HomeViewModel
 import com.capston.presentation.viewmodel.PlanViewModel
@@ -115,9 +118,9 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
     val totalLessons = homeState.userProgress.totalLessons // 전체 강의 개수
 
     // 오늘의 강의
-    val todayLessonList = homeState.todaySchedule?.lessonSchedules
-    val todayTotalLesson = homeState.todaySchedule?.totalLessons ?: 0
-    val todayTotalDuration = homeState.todaySchedule?.totalDuration ?: 0
+    val todayLessonList = homeState.todaySchedule.lessonSchedules
+    val todayTotalLesson = homeState.todaySchedule.totalLessons
+    val todayTotalDuration = homeState.todaySchedule.totalDuration
 
     val lectureProgressList = homeState.userProgress.lectureProgress
     val patchData by planViewModel.patchPlanName.collectAsState()
@@ -145,6 +148,7 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(backgroundGray)
+                        .padding(bottom = 10.dp)
                 ) {
                     Column(
                         modifier = Modifier
@@ -320,11 +324,13 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
     if (isBottomSheetVisible) {
         ModalBottomSheet(
             sheetState = modalBottomSheetState,
-            onDismissRequest = { isBottomSheetVisible = false }
+            onDismissRequest = { isBottomSheetVisible = false },
+            containerColor = White,
+            dragHandle = null
         ) {
             CustomBottomSheetDialog(
                 title = "강의 목록",
-                description = "수강 중인 강의를 선택하세요.",
+                description = "강의 별칭을 작성해 주세요.",
                 modalBottomSheetState = modalBottomSheetState,
                 onDismiss = { isBottomSheetVisible = false },
                 lectureProgressList = lectureProgressList ?: emptyList(),
@@ -345,92 +351,103 @@ fun CustomBottomSheetDialog(
     planViewModel: PlanViewModel,
 ) {
     val scope = rememberCoroutineScope()
-    val bottomPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-
-    var errorMessage by remember { mutableStateOf("") }
-    var vibrationTrigger by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
-            .padding(top = 10.dp, start = 10.dp, end = 10.dp, bottom = bottomPadding)
             .fillMaxWidth()
-            .height(280.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .background(White) // 전체 배경
+            .navigationBarsPadding() // 소프트 키패드 영역까지 패딩 적용
+            .imePadding() // 키보드 올라올 때 고려
     ) {
+        // 커스텀 drag handle
         Box(
             modifier = Modifier
+                .padding(top = 20.dp, bottom = 8.dp)
+                .size(width = 36.dp, height = 4.dp)
+                .background(materialGray, RoundedCornerShape(2.dp))
+                .align(Alignment.CenterHorizontally)
+        )
+
+        // 컨텐츠 영역
+        Column(
+            modifier = Modifier
+                .padding(horizontal = 16.dp)
                 .fillMaxWidth()
-                .padding(horizontal = 10.dp),
+                .height(268.dp - 12.dp - 8.dp), // 전체 높이에서 drag handle 높이 제외
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Title 중앙 정렬
+            // 상단 제목 박스
+            Box(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = title,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.align(Alignment.Center),
+                    style = TextStyle(
+                        color = Color.Black,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                )
+                Row(
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .clickable {
+                            scope.launch {
+                                modalBottomSheetState.hide()
+                            }.invokeOnCompletion {
+                                onDismiss()
+                            }
+                        },
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "뒤로가기",
+                        color = MainPurple,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Icon(
+                        imageVector = Icons.Default.ArrowBack,
+                        contentDescription = "뒤로가기",
+                        tint = MainPurple,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
             Text(
-                text = title,
+                text = description,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.align(Alignment.Center),
                 style = TextStyle(
-                    color = Color.Black,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold
+                    color = Color.Gray,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Normal
                 )
             )
 
-            // 뒤로가기 텍스트 + 아이콘 (우측 정렬)
-            Row(
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Column(
                 modifier = Modifier
-                    .align(Alignment.CenterEnd)
-                    .clickable {
-                        scope.launch {
-                            modalBottomSheetState.hide()
-                        }.invokeOnCompletion {
-                            onDismiss()
-                        }
-                    },
-                verticalAlignment = Alignment.CenterVertically
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 10.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(
-                    text = "뒤로가기",
-                    color = MainPurple,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium
-                )
-                Icon(
-                    imageVector = Icons.Default.ArrowBack,
-                    contentDescription = "뒤로가기",
-                    tint = MainPurple,
-                    modifier = Modifier.size(18.dp)
+                LectureList(
+                    lectureProgressList = lectureProgressList,
+                    planViewModel = planViewModel,
                 )
             }
         }
-
-        Spacer(modifier = Modifier.height(10.dp))
-
-        Text(
-            text = description,
-            textAlign = TextAlign.Center,
-            style = TextStyle(
-                color = Color.Gray,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Normal
-            )
-        )
-
-        Spacer(modifier = Modifier.height(10.dp))
-
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(180.dp)
-                .padding(10.dp)
-                .verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            LectureList(
-                lectureProgressList = lectureProgressList,
-                planViewModel = planViewModel,
-            )
-        }
     }
 }
+
 
 @Composable
 fun LectureList(
@@ -470,9 +487,9 @@ fun LectureList(
                                     }
                                 },
                                 colors = TextFieldDefaults.outlinedTextFieldColors(
-                                    focusedBorderColor = if (aliasState.length == 8) Color.Red else MainBlue,
-                                    unfocusedBorderColor = if (showError) Color.Red else MainBlue,
-                                    textColor = LightGray60,
+                                    focusedBorderColor = if (aliasState.length == 8) Color.Red else MainPurple,
+                                    unfocusedBorderColor = if (showError) Color.Red else MainPurple,
+                                    textColor = textGray,
                                 ),
                                 textStyle = TextStyle(fontSize = 14.sp),
                                 modifier = Modifier
@@ -490,8 +507,8 @@ fun LectureList(
                                     lecture.lectureAlias = aliasState
                                 },
                                 colors = ButtonDefaults.buttonColors(
-                                    containerColor = MainBlue,
-                                    contentColor = Color.White
+                                    containerColor = MainPurple,
+                                    contentColor = White
                                 ),
                                 shape = RoundedCornerShape(12.dp),
                                 modifier = Modifier
@@ -507,7 +524,7 @@ fun LectureList(
                             // 글자 수 표시
                             Text(
                                 text = "${aliasState.length} / 8(자)",
-                                color = if (aliasState.length == 8) Color.Red else Color.Gray,
+                                color = if (aliasState.length == 8) Color.Red else textGray,
                                 fontSize = 12.sp,
                                 modifier = Modifier.padding(start = 10.dp)
                             )
@@ -546,24 +563,6 @@ fun LectureList(
                 }
             }
         }
-    }
-}
-
-@Composable
-fun CheckBox(isChecked: Boolean, onCheckedChange: () -> Unit) {
-    IconButton(
-        onClick = onCheckedChange,
-        modifier = Modifier
-            .size(40.dp) // 이미지 버튼 크기 설정
-            .padding(end = 16.dp) // 이미지와 텍스트 간의 간격 설정
-    ) {
-        val imageRes = if (isChecked) R.drawable.home_screen_check_on
-        else R.drawable.home_screen_check_off
-
-        Image(
-            painter = painterResource(id = imageRes),
-            contentDescription = "Lecture Icon"
-        )
     }
 }
 
@@ -634,9 +633,9 @@ fun ModifiedLessonList(
 
                 // 텍스트 + 시간 박스를 수평으로 정렬
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween // 왼쪽 텍스트, 오른쪽 박스 정렬
+                    horizontalArrangement = Arrangement.SpaceBetween, // 왼쪽 텍스트, 오른쪽 박스 정렬
                 ) {
                     Column(
                         modifier = Modifier.weight(1f)
@@ -715,7 +714,7 @@ fun CircleGraph(name: String, cleared: Int, total: Int) {
 
         // 내부 색 채우기
         drawCircle(
-            color = Color.White,
+            color = White,
             radius = (sizeArc.minDimension / 2f) - (arcStrokeWidth / 2f),
             center = center
         )
