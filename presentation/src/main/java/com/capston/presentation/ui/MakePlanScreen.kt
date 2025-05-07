@@ -189,16 +189,22 @@ fun HeaderSection(
 
     ) {
         // 인강 플랫폼
-        Text(lecture.platform, color = MainPurple)
+        Text(
+            text = lecture.platform,
+            style = MaterialTheme.typography.labelLarge,
+            color = MainPurple,
+            modifier = Modifier.padding(bottom = 4.dp)
+        )
         // 제목
         Text(
             text = lecture.title,
-            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(bottom = 4.dp)
         )
         // 세부정보
         Text(
-            text = "${lecture.teacher}· ${lecture.tag} · ${lecture.totalLessons}강",
+            text = "${lecture.teacher} · ${lecture.tag} · ${lecture.totalLessons}강",
             style = MaterialTheme.typography.bodyMedium,
             color = textGray,
             modifier = Modifier.padding(bottom = 16.dp)
