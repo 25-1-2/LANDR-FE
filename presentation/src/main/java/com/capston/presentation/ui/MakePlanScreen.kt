@@ -315,11 +315,13 @@ fun DurationSection(
         ) {
             Text(
                 text = "학습 시작일",
-                modifier = Modifier.padding(bottom = 4.dp)
+                modifier = Modifier.padding(bottom = 4.dp),
+                style = MaterialTheme.typography.titleSmall,
             )
 
             OutlinedTextField(
                 value = startDate.value,
+                textStyle = MaterialTheme.typography.bodyMedium,
                 onValueChange = { },
                 readOnly = true,
                 trailingIcon = {
@@ -336,17 +338,20 @@ fun DurationSection(
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = "목표 완강일",
-                modifier = Modifier.padding(bottom = 4.dp)
+                modifier = Modifier.padding(bottom = 4.dp),
+                style = MaterialTheme.typography.titleSmall,
             )
             OutlinedTextField(
                 value = endDate.value,
+                textStyle = MaterialTheme.typography.bodyMedium,
                 onValueChange = { },
                 readOnly = true,
                 trailingIcon = {
                     IconButton(onClick = { showEndDatePicker = !showEndDatePicker }) {
                         Image(
                             painter = painterResource(id = R.drawable.icon_calendar), // 너가 추가한 xml 이름
-                            contentDescription = "종료일 선택")
+                            contentDescription = "종료일 선택"
+                        )
                     }
                 }
             )
@@ -416,7 +421,8 @@ fun StudyTimeSection(dailyTime: MutableState<Int>) {
         ) {
             Text(
                 text = "일일 학습 시간 (분)",
-                modifier = Modifier.padding(bottom = 4.dp)
+                modifier = Modifier.padding(bottom = 4.dp),
+                style = MaterialTheme.typography.titleSmall,
             )
 
             OutlinedTextField(
@@ -455,6 +461,7 @@ fun StudyDaysOfWeekSection(studyDayOfWeeks: MutableState<List<String>>) {
     ) {
         Text(
             text = "공부 일정",
+            style = MaterialTheme.typography.titleSmall,
             modifier = Modifier.padding(bottom = 4.dp)
         )
 
@@ -504,11 +511,12 @@ fun StartEndLectureSection(
     ) {
         Text(
             text = "시작 강의",
-//            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
+            style = MaterialTheme.typography.titleSmall,
         )
         Spacer(modifier = Modifier.height(4.dp))
         OutlinedTextField(
             value = "강의 선택",
+            textStyle = MaterialTheme.typography.bodyMedium,
             onValueChange = { },
             readOnly = true,
             trailingIcon = {
@@ -527,11 +535,12 @@ fun StartEndLectureSection(
     ) {
         Text(
             text = "마지막 강의",
-//            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
+            style = MaterialTheme.typography.titleSmall
         )
         Spacer(modifier = Modifier.height(4.dp))
         OutlinedTextField(
             value = "강의 선택",
+            textStyle = MaterialTheme.typography.bodyMedium,
             onValueChange = { },
             readOnly = true,
             trailingIcon = {
@@ -561,9 +570,11 @@ fun PlaybackSpeedSection(playbackSpeed: MutableState<Double>) {
         ) {
             Text(
                 text = "배속",
+                style = MaterialTheme.typography.titleSmall,
             )
             Text(
                 text = String.format("%.1fx", speed),
+                style = MaterialTheme.typography.titleSmall,
                 color = MainPurple,
             )
         }
@@ -573,8 +584,8 @@ fun PlaybackSpeedSection(playbackSpeed: MutableState<Double>) {
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text("1.0x", color = Color.Gray)
-            Text("2.0x", color = Color.Gray)
+            Text("1.0x", color = Color.Gray, style = MaterialTheme.typography.titleSmall)
+            Text("2.0x", color = Color.Gray, style = MaterialTheme.typography.titleSmall)
         }
 
         Slider(
