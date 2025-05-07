@@ -284,7 +284,9 @@ fun TimePlanPage(
     dailyTime: MutableState<Int>,
     playbackSpeed: MutableState<Double>
 ) {
-    Column {
+    Column(
+        modifier = Modifier.padding(16.dp)
+    ) {
         StudyTimeSection(dailyTime)
         StudyDaysOfWeekSection(studyDayOfWeeks)
         StartEndLectureSection(startLessonId, endLessonId)
