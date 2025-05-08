@@ -21,4 +21,11 @@
     <string name="calender_fri">FRI</string>
     <string name="calender_sat">SAT</string>
     <string name="calender_sun">SUN</string>
+
+    <!-- 마이페이지 관련 -->
+    <string name="mypage_title">마이페이지</string>
+    <string name="mypage_today_plan">오늘 계획</string>
+    <string name="mypage_completed_lecture">완료한 강의</string>
+    <string name="mypage_sequence_day">연속</string>
+    <string name="mypage_current_lecture">수강 중인 강의</string>
 </resources>
