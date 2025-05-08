@@ -136,15 +136,22 @@ class LectureViewModel @Inject constructor(
     fun getLessonsByLectureId(lectureId: Int) {
         viewModelScope.launch {
             loadingStateManager.show()
-            getLessonsByLectureIdUseCase(lectureId)
-                .catch { e ->
-                    Log.e("LectureViewModel", "getLessonsByLectureId 에러: ${e.message}")
-                }
-                .collect { response ->  // 값 저장
-                    _lessonsByLectureId.value = response // 공백 제거 후 저장
-                    Log.d("LectureViewModel", "getLessonsByLectureId 업데이트됨: $response")
-                }
-            loadingStateManager.hide()
+            try {
+                getLessonsByLectureIdUseCase(lectureId)
+                    .catch { e ->
+                        Log.e("LectureViewModel", "getLessonsByLectureId 에러: ${e.message}")
+                        _lessonsByLectureId.value = emptyList() // Set empty list on error
+                    }
+                    .collect { response ->
+                        _lessonsByLectureId.value = response.lessons // Extract data field
+                        Log.d("LectureViewModel", "getLessonsByLectureId 업데이트됨: ${response.lessons.size ?: 0}개 항목")
+                    }
+            } catch (e: Exception) {
+                Log.e("LectureViewModel", "getLessonsByLectureId 예외 발생: ${e.message}", e)
+                _lessonsByLectureId.value = emptyList()
+            } finally {
+                loadingStateManager.hide()
+            }
         }
     }
 }

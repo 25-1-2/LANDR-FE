@@ -6,6 +6,7 @@ import com.capston.domain.datasource.LectureDataSource
 import com.capston.domain.model.NewPlanLesson
 import com.capston.domain.request.LectureDto
 import com.capston.domain.response.lecture.DistinctLectureResponse
+import com.capston.domain.response.lecture.GetLessonsByLectureIdResponse
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
@@ -117,7 +118,7 @@ class LectureDataSourceImpl @Inject constructor(
         // 오류 처리
     }
 
-    override suspend fun getLessonsByLectureId(lectureId: Int): List<NewPlanLesson> {
+    override suspend fun getLessonsByLectureId(lectureId: Int): GetLessonsByLectureIdResponse {
         return lectureApi.getLessonsByLectureId(lectureId)
     }
 }
