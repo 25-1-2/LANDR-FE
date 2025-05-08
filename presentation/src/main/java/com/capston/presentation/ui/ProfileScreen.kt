@@ -27,6 +27,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
@@ -44,6 +46,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -63,6 +67,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import androidx.compose.ui.zIndex
@@ -97,6 +103,27 @@ fun ProfileScreen() {
     var isWeeklyExpanded by remember { mutableStateOf(true) }
     var isSubjectExpanded by remember { mutableStateOf(true) }
 
+    // 유저 이름과 다이얼로그 상태 관리
+    var userName by remember { mutableStateOf("조은채") }
+    var showEditDialog by remember { mutableStateOf(false) }
+
+    // 다이얼로그에서 편집 중인 이름
+    var editUserName by remember { mutableStateOf("") }
+
+    // 이름 수정 다이얼로그
+    if (showEditDialog) {
+        EditNameDialog(
+            initialName = userName,
+            onDismiss = { showEditDialog = false },
+            onConfirm = { newName ->
+                if (newName.isNotBlank()) {
+                    userName = newName
+                }
+                showEditDialog = false
+            }
+        )
+    }
+
     Scaffold(
         modifier = Modifier.fillMaxSize()
     ) {
@@ -126,10 +153,39 @@ fun ProfileScreen() {
                     modifier = Modifier.padding(end = 10.dp)
                 )
                 Text(
-                    text = "조은채님",
+                    text = "${userName}님",
                     fontSize = 14.sp,
                     style = MaterialTheme.typography.bodyMedium
                 )
+
+                Spacer(modifier = Modifier.weight(1f))
+
+                // 내 정보 수정 텍스트 버튼
+                Text(
+                    text = "내 정보 수정",
+                    fontSize = 14.sp,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.clickable {
+                        editUserName = userName  // 현재 이름으로 초기화
+                        showEditDialog = true    // 다이얼로그 표시
+                    }
+                )
+
+                // 토글 버튼
+                IconButton(
+                    onClick = {
+                        editUserName = userName  // 현재 이름으로 초기화
+                        showEditDialog = true    // 다이얼로그 표시
+                    },
+                    modifier = Modifier
+                        .padding(end = 20.dp)
+                        .size(24.dp)
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.screen_profile_see_more_iv),
+                        contentDescription = "내 정보 수정"
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(20.dp))
@@ -349,6 +405,138 @@ fun ProfileScreen() {
             // 하단 여백
             Spacer(modifier = Modifier.height(20.dp))
         }
+    }
+}
+
+// 이름 수정 다이얼로그 컴포넌트 - 달력 디자인 스타일 적용
+@Composable
+fun EditNameDialog(
+    initialName: String,
+    onDismiss: () -> Unit,
+    onConfirm: (String) -> Unit
+) {
+    var name by remember { mutableStateOf(initialName) }
+
+    // 포커스 요청을 위한 FocusRequester
+    val focusRequester = remember { FocusRequester() }
+
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(
+            dismissOnBackPress = true,
+            dismissOnClickOutside = true
+        )
+    ) {
+        Card(
+            modifier = Modifier
+                .width(240.dp), // 달력 팝업과 동일한 너비
+            shape = RoundedCornerShape(10.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = Color.White
+            ),
+            elevation = CardDefaults.cardElevation(
+                defaultElevation = 4.dp
+            )
+        ) {
+            Column(
+                modifier = Modifier
+                    .background(Color.White)
+                    .padding(16.dp)
+            ) {
+                // 헤더 부분 - 달력 팝업의 년/월 선택 헤더와 유사한 스타일
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "이름 수정",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                // 구분선 추가 (달력 팝업처럼)
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(1.dp)
+                        .background(LightGray5)
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // 이름 입력 영역
+                TextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    singleLine = true,
+                    placeholder = { Text("이름을 입력하세요", fontSize = 14.sp, color = Color.Gray) },
+                    textStyle = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = Color.White,
+                        unfocusedContainerColor = Color.White,
+                        disabledContainerColor = Color.White,
+                        focusedIndicatorColor = MainPurple,
+                        unfocusedIndicatorColor = LightGray60
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .focusRequester(focusRequester)
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // 확인/취소 버튼 - 달력 팝업과 동일한 스타일
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    // 취소 버튼
+                    FilterChip(
+                        selected = false,
+                        onClick = { onDismiss() },
+                        label = {
+                            Text(
+                                text = "취소",
+                                fontSize = 12.sp
+                            )
+                        },
+                        colors = FilterChipDefaults.filterChipColors(
+                            containerColor = chipGray,
+                            labelColor = Color.Black
+                        ),
+                        border = null
+                    )
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    // 확인 버튼
+                    FilterChip(
+                        selected = false,
+                        onClick = { onConfirm(name) },
+                        label = {
+                            Text(
+                                text = "확인",
+                                fontSize = 12.sp
+                            )
+                        },
+                        colors = FilterChipDefaults.filterChipColors(
+                            containerColor = MainPurple,
+                            labelColor = Color.White
+                        ),
+                        border = null
+                    )
+                }
+            }
+        }
+    }
+
+    // 다이얼로그가 표시되면 자동으로 텍스트 필드에 포커스 요청
+    LaunchedEffect(Unit) {
+        focusRequester.requestFocus()
     }
 }
 
@@ -627,7 +815,7 @@ fun CalendarPopup(
                     label = {
                         Text(
                             text = "취소",
-                            fontSize = 12.sp
+                            fontSize = 14.sp
                         )
                     },
                     colors = FilterChipDefaults.filterChipColors(
@@ -648,7 +836,7 @@ fun CalendarPopup(
                     label = {
                         Text(
                             text = "확인",
-                            fontSize = 12.sp
+                            fontSize = 14.sp
                         )
                     },
                     colors = FilterChipDefaults.filterChipColors(
@@ -909,7 +1097,7 @@ private fun DrawScope.drawBubbleWithText(text: String, position: Offset) {
         android.graphics.Paint().apply {
             color = android.graphics.Color.BLACK
             textAlign = android.graphics.Paint.Align.CENTER
-            textSize = 12.sp.toPx()
+            textSize = 14.sp.toPx()
             isFakeBoldText = true
         }
     )
@@ -1007,7 +1195,7 @@ fun SubjectDistributionGraph(
                 text = "총 ${totalHours}시간",
                 style = MaterialTheme.typography.bodyMedium,
                 color = Color.Gray,
-                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                fontWeight = FontWeight.Bold
             )
         }
 
@@ -1037,7 +1225,7 @@ fun SubjectDistributionGraph(
                     },
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.Black,
-                    fontSize = 12.sp,
+                    fontSize = 14.sp,
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
                 )
             }
@@ -1175,7 +1363,7 @@ fun SubjectLegendWithPercentage(
                     text = "${String.format("%.1f", percentages[index])}%",
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.Black,
-                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                    fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(end = 16.dp)
                 )
             }
@@ -1291,7 +1479,7 @@ fun TodayCircleGraph(name: String, cleared: Int, total: Int) {
 
             // 인디케이터의 내부 흰색 원 그리기 (도넛 모양을 만들기 위함)
             drawCircle(
-                color = androidx.compose.ui.graphics.Color.White,
+                color = Color.White,
                 radius = indicatorOuterRadius * 0.5f,
                 center = Offset(indicatorX, indicatorY)
             )
@@ -1378,7 +1566,7 @@ fun WeeklyStudyStatisticsGraph(
                 text = "평균 ${String.format("%.1f", averageHours)}시간/주",
                 style = MaterialTheme.typography.bodyMedium,
                 color = Color.Gray,
-                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                fontWeight = FontWeight.Bold
             )
         }
 
@@ -1408,7 +1596,7 @@ fun WeeklyStudyStatisticsGraph(
                     },
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.Black,
-                    fontSize = 12.sp,
+                    fontSize = 14.sp,
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
                 )
             }
@@ -1477,7 +1665,7 @@ fun ImprovedWeeklyBarChart(
             // 시간 표시는 위에서부터 아래로
             Text(
                 text = "10시간",
-                fontSize = 10.sp,
+                fontSize = 12.sp,
                 color = Color.Gray,
                 textAlign = TextAlign.End,
                 modifier = Modifier.padding(top = 4.dp)
@@ -1485,14 +1673,14 @@ fun ImprovedWeeklyBarChart(
 
             Text(
                 text = "5시간",
-                fontSize = 10.sp,
+                fontSize = 12.sp,
                 color = Color.Gray,
                 textAlign = TextAlign.End
             )
 
             Text(
                 text = "0시간",
-                fontSize = 10.sp,
+                fontSize = 12.sp,
                 color = Color.Gray,
                 textAlign = TextAlign.End,
                 modifier = Modifier.padding(bottom = 4.dp)
@@ -1559,8 +1747,7 @@ fun ImprovedWeeklyBarChart(
                                     color = barColor,
                                     shape = RoundedCornerShape(20.dp)
                                 )
-                        ) {
-                        }
+                        ) {}
                     }
                 }
             }
@@ -1577,7 +1764,7 @@ fun ImprovedWeeklyBarChart(
         weeklyData.forEach { data ->
             Text(
                 text = data.week,
-                fontSize = 12.sp,
+                fontSize = 14.sp,
                 color = Color.Black
             )
         }
@@ -1681,7 +1868,7 @@ fun WeeklyAchievementGraph(
                 text = "성취율 ${String.format("%.0f", achievementRate)}%",
                 style = MaterialTheme.typography.bodyMedium,
                 color = Color.Gray,
-                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                fontWeight = FontWeight.Bold
             )
         }
 
@@ -1712,7 +1899,7 @@ fun WeeklyAchievementGraph(
                     },
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.Black,
-                    fontSize = 12.sp,
+                    fontSize = 14.sp,
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
                 )
             }
@@ -1736,7 +1923,7 @@ fun WeeklyAchievementGraph(
                     text = "최대 연속 달성: ${maxStreak}일",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MainPurple,
-                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                    fontWeight = FontWeight.Bold
                 )
             }
         }
@@ -1792,7 +1979,7 @@ fun DayAchievementItem(day: DayOfWeek, isAchieved: Boolean) {
         Text(
             text = day.label,
             style = MaterialTheme.typography.bodyMedium,
-            fontSize = 12.sp,
+            fontSize = 14.sp,
             color = Color.Gray
         )
 
@@ -1929,7 +2116,7 @@ fun SubjectAchievementGraph(
                 text = "평균 ${String.format("%.1f", averageProgress)}%",
                 style = MaterialTheme.typography.bodyMedium,
                 color = Color.Gray,
-                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                fontWeight = FontWeight.Bold
             )
         }
 
@@ -1961,7 +2148,7 @@ fun SubjectAchievementGraph(
                         },
                         style = MaterialTheme.typography.bodyMedium,
                         color = Color.Black,
-                        fontSize = 12.sp,
+                        fontSize = 14.sp,
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
                     )
                 }
@@ -2055,7 +2242,7 @@ fun SubjectProgressItem(
                 text = "${subjectAchievement.startDate} ~ ${subjectAchievement.endDate}",
                 style = MaterialTheme.typography.bodySmall,
                 color = Color.Gray,
-                fontSize = 10.sp
+                fontSize = 12.sp
             )
         }
 
@@ -2129,7 +2316,7 @@ fun SubjectProgressItem(
                 text = "0%",
                 style = MaterialTheme.typography.bodySmall,
                 color = Color.Gray,
-                fontSize = 10.sp
+                fontSize = 12.sp
             )
 
             Text(
@@ -2137,14 +2324,14 @@ fun SubjectProgressItem(
                 style = MaterialTheme.typography.bodySmall,
                 color = if (subjectAchievement.progressPercent == highestPercent) Color.Black else LightGray60,
                 fontWeight = FontWeight.Bold,
-                fontSize = 12.sp
+                fontSize = 14.sp
             )
 
             Text(
                 text = "100%",
                 style = MaterialTheme.typography.bodySmall,
                 color = Color.Gray,
-                fontSize = 10.sp
+                fontSize = 12.sp
             )
         }
     }
