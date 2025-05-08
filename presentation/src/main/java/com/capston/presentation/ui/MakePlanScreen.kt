@@ -590,10 +590,13 @@ fun StartEndLectureSection(
             DropdownMenu(
                 expanded = startDropdownExpanded,
                 onDismissRequest = { startDropdownExpanded = false },
-                modifier = Modifier.heightIn(max = 250.dp).width(with(LocalDensity.current) {
-                    // Calculate width to match the text field
-                    (LocalConfiguration.current.screenWidthDp.dp - 32.dp).toPx().toInt().toDp()
-                })
+                modifier = Modifier
+                    .background(Color.White)
+                    .heightIn(max = 250.dp)
+                    .width(with(LocalDensity.current) {
+                        // Calculate width to match the text field
+                        (LocalConfiguration.current.screenWidthDp.dp - 32.dp).toPx().toInt().toDp()
+                    }),
             ) {
                 if (lessons.isEmpty()) {
                     DropdownMenuItem(
@@ -644,10 +647,13 @@ fun StartEndLectureSection(
             DropdownMenu(
                 expanded = endDropdownExpanded,
                 onDismissRequest = { endDropdownExpanded = false },
-                modifier = Modifier.heightIn(max = 250.dp).width(with(LocalDensity.current) {
-                    // Calculate width to match the text field
-                    (LocalConfiguration.current.screenWidthDp.dp - 32.dp).toPx().toInt().toDp()
-                })
+                modifier = Modifier
+                    .background(Color.White)
+                    .heightIn(max = 250.dp)
+                    .width(with(LocalDensity.current) {
+                        // Calculate width to match the text field
+                        (LocalConfiguration.current.screenWidthDp.dp - 32.dp).toPx().toInt().toDp()
+                    })
             ) {
                 if (lessons.isEmpty()) {
                     DropdownMenuItem(
