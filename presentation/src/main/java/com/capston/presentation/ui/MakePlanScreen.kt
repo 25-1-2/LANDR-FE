@@ -69,7 +69,7 @@ fun MakePlanScreen(
         } ?: Lecture() // Fallback to empty lecture if none selected
     }
 
-    val planType = remember { mutableStateOf("") }
+    val planType = remember { mutableStateOf("PERIOD") }
     val startLessonId = remember { mutableIntStateOf(0) }
     val endLessonId = remember { mutableIntStateOf(0) }
     val studyDayOfWeeks = remember { mutableStateOf(emptyList<String>()) }
@@ -85,6 +85,11 @@ fun MakePlanScreen(
         lectureId = lecture.id,
     )
 
+    // Initialize planType based on initial pager page
+    LaunchedEffect(Unit) {
+        planType.value = if (pagerState.currentPage == 0) "PERIOD" else "TIME"
+    }
+
     Scaffold(
         topBar = { PlanTopBar() }
     ) { innerPadding ->
@@ -97,7 +102,8 @@ fun MakePlanScreen(
             HeaderSection(
                 lecture = lecture,
                 pagerState = pagerState,
-                coroutineScope = coroutineScope
+                coroutineScope = coroutineScope,
+                planType = planType
             )
             HorizontalDivider(color = dividerGray)
 
@@ -129,14 +135,14 @@ fun MakePlanScreen(
                     onClick = {
                         val dto = PostPlanDto(
                             lectureId = lecture.id,
-                            planType = if (pagerState.currentPage == 0) "PERIOD" else "TIME",
-                            startLessonId = startLessonId.value,
-                            endLessonId = endLessonId.value,
+                            planType = planType.value,
+                            startLessonId = startLessonId.intValue,
+                            endLessonId = endLessonId.intValue,
                             studyDayOfWeeks = studyDayOfWeeks.value,
                             dailyTime = 120, // 시간 방식일 때 설정된 시간 (예시 값)
                             startDate = startDate.value,
                             endDate = endDate.value,
-                            playbackSpeed = playbackSpeed.value
+                            playbackSpeed = playbackSpeed.doubleValue
                         )
 
                         // TODO: 서버에 dto 전달하는 API 호출 작성
@@ -177,7 +183,8 @@ fun PlanTopBar() {
 fun HeaderSection(
     lecture: Lecture,
     pagerState: PagerState,
-    coroutineScope: CoroutineScope
+    coroutineScope: CoroutineScope,
+    planType: MutableState<String>
 ) {
     Column(
         modifier = Modifier
@@ -218,6 +225,7 @@ fun HeaderSection(
                 onClick = {
                     coroutineScope.launch {
                         pagerState.scrollToPage(0)
+                        planType.value = "PERIOD"
                     }
                 },
                 shape = RoundedCornerShape(8.dp),
@@ -235,6 +243,7 @@ fun HeaderSection(
                 onClick = {
                     coroutineScope.launch {
                         pagerState.scrollToPage(1)
+                        planType.value = "TIME"
                     }
                 },
                 shape = RoundedCornerShape(8.dp),
