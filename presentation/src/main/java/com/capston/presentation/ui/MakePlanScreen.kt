@@ -3,6 +3,7 @@ package com.capston.presentation.ui
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
@@ -655,7 +656,6 @@ fun StartEndLectureSection(
         Box {
             OutlinedTextField(
                 value = startLessonTitle,
-                textStyle = MaterialTheme.typography.bodyMedium,
                 onValueChange = { },
                 readOnly = true,
                 trailingIcon = {
@@ -666,6 +666,8 @@ fun StartEndLectureSection(
                         )
                     }
                 },
+                textStyle = MaterialTheme.typography.bodyMedium,
+                singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -712,7 +714,6 @@ fun StartEndLectureSection(
         Box {
             OutlinedTextField(
                 value = endLessonTitle,
-                textStyle = MaterialTheme.typography.bodyMedium,
                 onValueChange = { },
                 readOnly = true,
                 trailingIcon = {
@@ -723,6 +724,8 @@ fun StartEndLectureSection(
                         )
                     }
                 },
+                textStyle = MaterialTheme.typography.bodyMedium,
+                singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
 
