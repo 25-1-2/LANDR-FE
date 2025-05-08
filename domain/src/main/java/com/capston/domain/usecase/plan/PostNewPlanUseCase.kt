@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 
-class PostPlanDetailUseCase @Inject constructor(
+class PostNewPlanUseCase @Inject constructor(
     private val repository: PlanRepository
 ) {
     operator fun invoke(postNewPlanDto: PostNewPlanDto): Flow<PostNewPlanResponse> = flow {
