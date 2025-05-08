@@ -4,17 +4,17 @@ import com.capston.data.repository.remote.api.PlanApi
 import com.capston.domain.datasource.PlanDataSource
 import com.capston.domain.model.MyLecture
 import com.capston.domain.request.PatchPlanDto
-import com.capston.domain.request.PostPlanDto
+import com.capston.domain.request.PostNewPlanDto
 import com.capston.domain.response.plan.GetPlanDetailResponse
 import com.capston.domain.response.plan.LectureAliasResponse
-import com.capston.domain.response.plan.PostPlanResponse
+import com.capston.domain.response.plan.PostNewPlanResponse
 import javax.inject.Inject
 
 class PlanDataSourceImpl @Inject constructor(
     private val planApi: PlanApi
 ) : PlanDataSource {
-    override suspend fun postPlanDetail(postPlanDto: PostPlanDto): PostPlanResponse {
-        return planApi.postPlanDetail(postPlanDto)
+    override suspend fun postNewPlan(postNewPlanDto: PostNewPlanDto): PostNewPlanResponse {
+        return planApi.postNewPlan(postNewPlanDto)
     }
 
     override suspend fun patchPlanName(planId: Int, patchPlanDto: PatchPlanDto): LectureAliasResponse {

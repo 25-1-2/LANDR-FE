@@ -2,16 +2,16 @@ package com.capston.domain.repository
 
 import com.capston.domain.model.MyLecture
 import com.capston.domain.request.PatchPlanDto
-import com.capston.domain.request.PostPlanDto
+import com.capston.domain.request.PostNewPlanDto
 import com.capston.domain.response.plan.GetPlanDetailResponse
 import com.capston.domain.response.plan.LectureAliasResponse
-import com.capston.domain.response.plan.PostPlanResponse
+import com.capston.domain.response.plan.PostNewPlanResponse
 
 interface PlanRepository {
     // 강의 생성
-    suspend fun postPlanDetail(
-        postPlanDto: PostPlanDto
-    ): PostPlanResponse
+    suspend fun postNewPlan(
+        postNewPlanDto: PostNewPlanDto
+    ): PostNewPlanResponse
 
     // 강의 별명 수정
     suspend fun patchPlanName(

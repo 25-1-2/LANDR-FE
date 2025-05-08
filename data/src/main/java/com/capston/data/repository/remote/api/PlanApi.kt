@@ -2,10 +2,10 @@ package com.capston.data.repository.remote.api
 
 import com.capston.domain.model.MyLecture
 import com.capston.domain.request.PatchPlanDto
-import com.capston.domain.request.PostPlanDto
+import com.capston.domain.request.PostNewPlanDto
 import com.capston.domain.response.plan.GetPlanDetailResponse
 import com.capston.domain.response.plan.LectureAliasResponse
-import com.capston.domain.response.plan.PostPlanResponse
+import com.capston.domain.response.plan.PostNewPlanResponse
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.PATCH
@@ -15,9 +15,9 @@ import retrofit2.http.Path
 interface PlanApi {
     // 강의 생성
     @POST("/v1/plans")
-    suspend fun postPlanDetail(
-        @Body postPlanDto: PostPlanDto
-    ): PostPlanResponse
+    suspend fun postNewPlan(
+        @Body postNewPlanDto: PostNewPlanDto
+    ): PostNewPlanResponse
 
     // 강의 별명 수정
     @PATCH("/v1/plans/{planId}/lecture-name")
