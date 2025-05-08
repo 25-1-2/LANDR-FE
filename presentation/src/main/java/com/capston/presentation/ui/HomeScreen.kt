@@ -1,7 +1,12 @@
 package com.capston.presentation.ui
 
 import android.annotation.SuppressLint
+import android.content.ActivityNotFoundException
+import android.content.Context
 import android.content.Intent
+import android.net.Uri
+import android.util.Log
+import android.widget.Toast
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
@@ -30,10 +35,12 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Divider
@@ -140,12 +147,13 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .verticalScroll(rememberScrollState()), // 전체 화면 사용
         ) {
             // 학습 현황 부분 - UserProgress 표시 영역
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp),
+                    .padding(15.dp),
                 shape = RoundedCornerShape(20.dp),
                 colors = CardDefaults.cardColors(
                     containerColor = WarmPurple_20
@@ -164,10 +172,13 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween,
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp)
                         ) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(vertical = 16.dp, horizontal = 10.dp)
                             ) {
                                 Icon(
                                     painter = painterResource(id = R.drawable.screen_profile_learning_status_iv),
@@ -175,24 +186,37 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
                                     tint = Color.Unspecified, // 컬러 적용 원하지 않으면 Unspecified
                                     modifier = Modifier
                                         .size(32.dp)
-                                        .padding(end = 8.dp)
+                                        .padding(end = 12.dp)
                                 )
 
                                 Text(
                                     text = stringResource(R.string.home_status),
                                     fontSize = 24.sp,
                                     fontWeight = FontWeight.Bold,
+                                    style = MaterialTheme.typography.headlineMedium
                                 )
                             }
-                            Text(
-                                text = stringResource(R.string.home_edit),
-                                color = MainPurple,
+
+                            // 편집 버튼
+                            Card(
                                 modifier = Modifier
-                                    .padding(top = 25.dp, end = 20.dp)
-                                    .clickable {
-                                        isBottomSheetVisible = true
-                                    }
-                            )
+                                    .wrapContentSize()
+                                    .clickable { /* 편집 기능 */ },
+                                shape = RoundedCornerShape(8.dp),
+                                border = BorderStroke(1.dp, LightGray60),
+                                colors = CardDefaults.cardColors(containerColor = White)
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.home_edit),
+                                    color = MainPurple,
+                                    modifier = Modifier
+                                        .padding(5.dp)
+                                        .clickable {
+                                            isBottomSheetVisible = true
+                                        },
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
                         }
 
                         // lectureProgressList가 비어있지 않은지 확인 후 표시
@@ -340,6 +364,234 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
                                         context.startActivity(intent)
                                     }
                             )
+                        }
+                    }
+                }
+            }
+
+            // 오늘의 강의 Card 다음에 추가
+            Spacer(modifier = Modifier.height(5.dp))
+
+
+            // 시험 디데이와 인강사이트 목록을 가로로 나란히 배치
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                // 시험 디데이 카드
+                Card(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(180.dp),
+                    shape = RoundedCornerShape(10.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MainPurple
+                    ),
+                    border = BorderStroke(1.dp, color = LightGray4_40)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(16.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.screen_profile_learning_status_iv),
+                                    contentDescription = null,
+                                    tint = Color.Unspecified,
+                                    modifier = Modifier
+                                        .size(24.dp)
+                                        .padding(end = 8.dp)
+                                )
+
+                                Text(
+                                    text = "시험 디데이",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 18.sp,
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
+
+                            // 편집 버튼
+                            Card(
+                                modifier = Modifier
+                                    .wrapContentSize()
+                                    .clickable { /* 편집 기능 */ },
+                                shape = RoundedCornerShape(8.dp),
+                                border = BorderStroke(1.dp, MainPurple),
+                                colors = CardDefaults.cardColors(containerColor = White)
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.home_edit),
+                                    fontSize = 12.sp,
+                                    color = MainPurple,
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        // 디데이 내용 (예시)
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Text(
+                                text = "D-7",
+                                fontSize = 48.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = White
+                            )
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            Text(
+                                text = "알고리즘 중간고사",
+                                fontSize = 14.sp,
+                                color = White
+                            )
+                        }
+                    }
+                }
+
+                // 인강사이트 목록 카드
+                Card(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(180.dp),
+                    shape = RoundedCornerShape(10.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = White
+                    ),
+                    border = BorderStroke(1.dp, color = LightGray60)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(16.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.home_screen_total_count_iv),
+                                contentDescription = null,
+                                tint = Color.Unspecified,
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .padding(end = 8.dp)
+                            )
+
+                            Text(
+                                text = "인강 사이트",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 18.sp
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        // 인강사이트 목록 (각각 카드로 구현)
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth(1f) // 너비 85%로 제한하여 가운데 정렬 효과
+                                .wrapContentSize(), // 내용물에 맞게 크기 조정
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally // 가운데 정렬
+                        ) {
+                            val etoosPackageName = stringResource(R.string.package_etoos)
+                            val megaPackageName = stringResource(R.string.package_megastudy)
+                            val mimacPackageName = stringResource(R.string.package_mimac)
+
+                            // 이투스 카드
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        // 앱으로 이동 시도
+                                        openAppOrPlayStore(context, etoosPackageName)
+                                    },
+                                colors = CardDefaults.cardColors(containerColor = WarmPurple_20.copy(alpha = 0.2f)),
+                                shape = RoundedCornerShape(8.dp),
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.Center // 중앙 정렬
+                                ) {
+                                    Text(
+                                        text = "이투스",
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                }
+                            }
+
+                            // 메가스터디 카드
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        // 앱으로 이동 시도
+                                        openAppOrPlayStore(context, megaPackageName)
+                                    },
+                                colors = CardDefaults.cardColors(containerColor = WarmPurple_20.copy(alpha = 0.2f)),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.Center // 중앙 정렬
+                                ) {
+                                    Text(
+                                        text = "메가스터디",
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                }
+                            }
+
+                            // 대성마이맥 카드
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        // 앱으로 이동 시도
+                                        openAppOrPlayStore(context, mimacPackageName)
+                                    },
+                                colors = CardDefaults.cardColors(containerColor = WarmPurple_20.copy(alpha = 0.2f)),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.Center // 중앙 정렬
+                                ) {
+                                    Text(
+                                        text = "대성마이맥",
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -797,3 +1049,17 @@ fun CircleGraph(name: String, cleared: Int, total: Int) {
     }
 }
 
+// 앱 실행 또는 Play Store 이동을 위한 함수
+fun openAppOrPlayStore(context: Context, packageName: String) {
+    var intent = context.packageManager.getLaunchIntentForPackage(packageName)
+    if (intent==null) {
+        val link = "https://play.google.com/store/apps/details?id=$packageName"
+        intent = Intent(Intent.ACTION_VIEW).apply {
+            data = Uri.parse(link)
+        }
+        context.startActivity(intent)
+        return
+    }
+    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    context.startActivity(intent)
+}

@@ -12,6 +12,10 @@
 
     <string name="home_status">나의 학습 현황</string>
     <string name="home_edit">편집</string>
+    
+    <string name="package_megastudy">net.megastudy.smartplay.main</string>
+    <string name="package_mimac">com.ds.mimacstudy.smartnplayer</string>
+    <string name="package_etoos">com.etoos.etoosstudyapp</string>
 
     <!-- 캘린더 관련 -->
     <string name="calender_mon">MON</string>

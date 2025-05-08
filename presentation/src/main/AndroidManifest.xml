@@ -11,4 +11,11 @@
             android:exported="true" />
     </application>
 
+    <!--실제 패키지 이름 문자열이 직접 들어가야 함-->
+    <queries>
+        <package android:name="com.etoos.etoosstudyapp" />
+        <package android:name="net.megastudy.smartplay.main" />
+        <package android:name="com.ds.mimacstudy.smartnplayer" />
+    </queries>
+
 </manifest>
