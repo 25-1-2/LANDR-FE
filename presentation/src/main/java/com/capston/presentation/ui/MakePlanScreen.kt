@@ -85,6 +85,13 @@ fun MakePlanScreen(
         lectureId = lecture.id,
     )
 
+    // Load lessons when lecture is selected
+    LaunchedEffect(lecture.id) {
+        if (lecture.id != 0) {  // Check if a valid lecture is selected
+            lectureViewModel.getLessonsByLectureId(lecture.id)
+        }
+    }
+
     // Initialize planType based on initial pager page
     LaunchedEffect(Unit) {
         planType.value = if (pagerState.currentPage == 0) "PERIOD" else "TIME"
@@ -118,14 +125,16 @@ fun MakePlanScreen(
                         studyDayOfWeeks = studyDayOfWeeks,
                         startDate = startDate,
                         endDate = endDate,
-                        playbackSpeed = playbackSpeed
+                        playbackSpeed = playbackSpeed,
+                        lectureViewModel = lectureViewModel
                     )
                     1 -> TimePlanPage(
                         startLessonId = startLessonId,
                         endLessonId = endLessonId,
                         studyDayOfWeeks = studyDayOfWeeks,
                         dailyTime = dailyTime,
-                        playbackSpeed = playbackSpeed
+                        playbackSpeed = playbackSpeed,
+                        lectureViewModel = lectureViewModel
                     )
                 }
             }
@@ -260,7 +269,6 @@ fun HeaderSection(
     }
 }
 
-
 @Composable
 fun PeriodPlanPage(
     startLessonId: MutableState<Int>,
@@ -268,19 +276,18 @@ fun PeriodPlanPage(
     studyDayOfWeeks: MutableState<List<String>>,
     startDate: MutableState<String>,
     endDate: MutableState<String>,
-    playbackSpeed: MutableState<Double>
+    playbackSpeed: MutableState<Double>,
+    lectureViewModel: LectureViewModel
 ) {
     Column(
         modifier = Modifier.padding(16.dp)
     ) {
         DurationSection(startDate, endDate)
         StudyDaysOfWeekSection(studyDayOfWeeks)
-        StartEndLectureSection(startLessonId, endLessonId)
+        StartEndLectureSection(startLessonId, endLessonId, lectureViewModel)
         PlaybackSpeedSection(playbackSpeed)
     }
 }
-
-
 
 @Composable
 fun TimePlanPage(
@@ -288,14 +295,15 @@ fun TimePlanPage(
     endLessonId: MutableState<Int>,
     studyDayOfWeeks: MutableState<List<String>>,
     dailyTime: MutableState<Int>,
-    playbackSpeed: MutableState<Double>
+    playbackSpeed: MutableState<Double>,
+    lectureViewModel: LectureViewModel
 ) {
     Column(
         modifier = Modifier.padding(16.dp)
     ) {
         StudyTimeSection(dailyTime)
         StudyDaysOfWeekSection(studyDayOfWeeks)
-        StartEndLectureSection(startLessonId, endLessonId)
+        StartEndLectureSection(startLessonId, endLessonId, lectureViewModel)
         PlaybackSpeedSection(playbackSpeed)
     }
 }
@@ -517,8 +525,20 @@ fun StudyDaysOfWeekSection(studyDayOfWeeks: MutableState<List<String>>) {
 @Composable
 fun StartEndLectureSection(
     startLessonId: MutableState<Int>,
-    endLessonId: MutableState<Int>
+    endLessonId: MutableState<Int>,
+    lectureViewModel: LectureViewModel
 ) {
+    // Collect lessons from viewModel
+    val lessons by lectureViewModel.lessonsByLectureId.collectAsState()
+
+    // States to store selected lesson titles
+    var startLessonTitle by remember { mutableStateOf("강의 선택") }
+    var endLessonTitle by remember { mutableStateOf("강의 선택") }
+
+    // Dropdown visibility states
+    var startDropdownExpanded by remember { mutableStateOf(false) }
+    var endDropdownExpanded by remember { mutableStateOf(false) }
+
     // 시작 강의 / 마지막 강의
     Column(
         modifier = Modifier.padding(bottom = 16.dp)
@@ -534,7 +554,7 @@ fun StartEndLectureSection(
             onValueChange = { },
             readOnly = true,
             trailingIcon = {
-                IconButton(onClick = { /* 강의 목록 드롭다운 */ }) {
+                IconButton(onClick = { startDropdownExpanded = true }) {
                     Image(
                         painter = painterResource(id = R.drawable.icon_nav_arrow_down),
                         contentDescription = "시작 강의 선택"
@@ -543,6 +563,23 @@ fun StartEndLectureSection(
             },
             modifier = Modifier.fillMaxSize()
         )
+
+        DropdownMenu(
+            expanded = startDropdownExpanded,
+            onDismissRequest = { startDropdownExpanded = false },
+            modifier = Modifier.fillMaxWidth(0.9f)
+        ) {
+            lessons.forEach { lesson ->
+                DropdownMenuItem(
+                    text = { Text(lesson.title) },
+                    onClick = {
+                        startLessonId.value = lesson.id
+                        startLessonTitle = lesson.title
+                        startDropdownExpanded = false
+                    }
+                )
+            }
+        }
     }
     Column(
         modifier = Modifier.padding(bottom = 16.dp)
@@ -558,7 +595,7 @@ fun StartEndLectureSection(
             onValueChange = { },
             readOnly = true,
             trailingIcon = {
-                IconButton(onClick = { /* 강의 목록 드롭다운 */ }) {
+                IconButton(onClick = { endDropdownExpanded = true }) {
                     Image(
                         painter = painterResource(id = R.drawable.icon_nav_arrow_down),
                         contentDescription = "마지막 강의 선택"
@@ -567,6 +604,23 @@ fun StartEndLectureSection(
             },
             modifier = Modifier.fillMaxSize()
         )
+
+        DropdownMenu(
+            expanded = endDropdownExpanded,
+            onDismissRequest = { endDropdownExpanded = false },
+            modifier = Modifier.fillMaxWidth(0.9f)
+        ) {
+            lessons.forEach { lesson ->
+                DropdownMenuItem(
+                    text = { Text(lesson.title) },
+                    onClick = {
+                        endLessonId.value = lesson.id
+                        endLessonTitle = lesson.title
+                        endDropdownExpanded = false
+                    }
+                )
+            }
+        }
     }
 }
 

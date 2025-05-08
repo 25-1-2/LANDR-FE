@@ -5,16 +5,19 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.capston.domain.manager.LoadingStateManager
 import com.capston.domain.model.Lecture
+import com.capston.domain.model.NewPlanLesson
 import com.capston.domain.request.LectureDto
 import com.capston.domain.response.lecture.DistinctLectureResponse
 import com.capston.domain.response.lecture.LectureResponseDto
 import com.capston.domain.usecase.lecture.GetAllLectureUseCase
 import com.capston.domain.usecase.lecture.GetDistinctLectureUseCase
+import com.capston.domain.usecase.lecture.GetLessonsByLectureIdUseCase
 import com.capston.presentation.ui.LectureItemDto
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -22,6 +25,7 @@ import javax.inject.Inject
 class LectureViewModel @Inject constructor(
     private val getDistinctLectureUseCase: GetDistinctLectureUseCase,
     private val getAllLectureUseCase: GetAllLectureUseCase,
+    private val getLessonsByLectureIdUseCase: GetLessonsByLectureIdUseCase,
     private val loadingStateManager: LoadingStateManager
 ) : ViewModel() {
 
@@ -36,6 +40,9 @@ class LectureViewModel @Inject constructor(
 
     private val _selectedLecture = MutableStateFlow<LectureItemDto?>(null)
     val selectedLecture: StateFlow<LectureItemDto?> = _selectedLecture.asStateFlow()
+
+    private val _lessonsByLectureId = MutableStateFlow<List<NewPlanLesson>>(emptyList())
+    val lessonsByLectureId: StateFlow<List<NewPlanLesson>> = _lessonsByLectureId
 
     // 검색어만 받는 함수 (기존 코드와의 호환성 유지)
     fun getDistinctLecture(searchName: String) {
@@ -124,5 +131,20 @@ class LectureViewModel @Inject constructor(
             tag = lecture.tag,
             createdAt = lecture.createdAt
         )
+    }
+
+    fun getLessonsByLectureId(lectureId: Int) {
+        viewModelScope.launch {
+            loadingStateManager.show()
+            getLessonsByLectureIdUseCase(lectureId)
+                .catch { e ->
+                    Log.e("LectureViewModel", "getLessonsByLectureId 에러: ${e.message}")
+                }
+                .collect { response ->  // 값 저장
+                    _lessonsByLectureId.value = response // 공백 제거 후 저장
+                    Log.d("LectureViewModel", "getLessonsByLectureId 업데이트됨: $response")
+                }
+            loadingStateManager.hide()
+        }
     }
 }
