@@ -2,6 +2,7 @@ package com.capston.data.repository.remote.api
 
 import com.capston.domain.model.NewPlanLesson
 import com.capston.domain.response.lecture.DistinctLectureResponse
+import com.capston.domain.response.lecture.GetLessonsByLectureIdResponse
 import retrofit2.http.GET
 import retrofit2.http.Path
 import retrofit2.http.Query
@@ -29,5 +30,5 @@ interface LectureApi {
     @GET("/v1/lectures/{lectureId}/lessons")
     suspend fun getLessonsByLectureId(
         @Path("lectureId") lectureId: Int
-    ): List<NewPlanLesson>
+    ): GetLessonsByLectureIdResponse
 }

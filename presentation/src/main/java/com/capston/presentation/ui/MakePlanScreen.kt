@@ -15,6 +15,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -539,6 +541,25 @@ fun StartEndLectureSection(
     var startDropdownExpanded by remember { mutableStateOf(false) }
     var endDropdownExpanded by remember { mutableStateOf(false) }
 
+    // Update titles when IDs change or lessons load
+    LaunchedEffect(startLessonId.value, lessons) {
+        if (startLessonId.value > 0) {
+            val selectedLesson = lessons.find { it.id == startLessonId.value }
+            if (selectedLesson != null) {
+                startLessonTitle = selectedLesson.title
+            }
+        }
+    }
+
+    LaunchedEffect(endLessonId.value, lessons) {
+        if (endLessonId.value > 0) {
+            val selectedLesson = lessons.find { it.id == endLessonId.value }
+            if (selectedLesson != null) {
+                endLessonTitle = selectedLesson.title
+            }
+        }
+    }
+
     // 시작 강의 / 마지막 강의
     Column(
         modifier = Modifier.padding(bottom = 16.dp)
@@ -546,38 +567,51 @@ fun StartEndLectureSection(
         Text(
             text = "시작 강의",
             style = MaterialTheme.typography.titleSmall,
-        )
-        Spacer(modifier = Modifier.height(4.dp))
-        OutlinedTextField(
-            value = "강의 선택",
-            textStyle = MaterialTheme.typography.bodyMedium,
-            onValueChange = { },
-            readOnly = true,
-            trailingIcon = {
-                IconButton(onClick = { startDropdownExpanded = true }) {
-                    Image(
-                        painter = painterResource(id = R.drawable.icon_nav_arrow_down),
-                        contentDescription = "시작 강의 선택"
-                    )
-                }
-            },
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.padding(bottom = 4.dp)
         )
 
-        DropdownMenu(
-            expanded = startDropdownExpanded,
-            onDismissRequest = { startDropdownExpanded = false },
-            modifier = Modifier.fillMaxWidth(0.9f)
-        ) {
-            lessons.forEach { lesson ->
-                DropdownMenuItem(
-                    text = { Text(lesson.title) },
-                    onClick = {
-                        startLessonId.value = lesson.id
-                        startLessonTitle = lesson.title
-                        startDropdownExpanded = false
+        Box {
+            OutlinedTextField(
+                value = startLessonTitle,
+                textStyle = MaterialTheme.typography.bodyMedium,
+                onValueChange = { },
+                readOnly = true,
+                trailingIcon = {
+                    IconButton(onClick = { startDropdownExpanded = true }) {
+                        Image(
+                            painter = painterResource(id = R.drawable.icon_nav_arrow_down),
+                            contentDescription = "시작 강의 선택"
+                        )
                     }
-                )
+                },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            DropdownMenu(
+                expanded = startDropdownExpanded,
+                onDismissRequest = { startDropdownExpanded = false },
+                modifier = Modifier.heightIn(max = 250.dp).width(with(LocalDensity.current) {
+                    // Calculate width to match the text field
+                    (LocalConfiguration.current.screenWidthDp.dp - 32.dp).toPx().toInt().toDp()
+                })
+            ) {
+                if (lessons.isEmpty()) {
+                    DropdownMenuItem(
+                        text = { Text("강의를 불러오는 중...") },
+                        onClick = { }
+                    )
+                } else {
+                    lessons.forEach { lesson ->
+                        DropdownMenuItem(
+                            text = { Text(lesson.title) },
+                            onClick = {
+                                startLessonId.value = lesson.id
+                                startLessonTitle = lesson.title
+                                startDropdownExpanded = false
+                            }
+                        )
+                    }
+                }
             }
         }
     }
@@ -586,39 +620,52 @@ fun StartEndLectureSection(
     ) {
         Text(
             text = "마지막 강의",
-            style = MaterialTheme.typography.titleSmall
-        )
-        Spacer(modifier = Modifier.height(4.dp))
-        OutlinedTextField(
-            value = "강의 선택",
-            textStyle = MaterialTheme.typography.bodyMedium,
-            onValueChange = { },
-            readOnly = true,
-            trailingIcon = {
-                IconButton(onClick = { endDropdownExpanded = true }) {
-                    Image(
-                        painter = painterResource(id = R.drawable.icon_nav_arrow_down),
-                        contentDescription = "마지막 강의 선택"
-                    )
-                }
-            },
-            modifier = Modifier.fillMaxSize()
+            style = MaterialTheme.typography.titleSmall,
+            modifier = Modifier.padding(bottom = 4.dp)
         )
 
-        DropdownMenu(
-            expanded = endDropdownExpanded,
-            onDismissRequest = { endDropdownExpanded = false },
-            modifier = Modifier.fillMaxWidth(0.9f)
-        ) {
-            lessons.forEach { lesson ->
-                DropdownMenuItem(
-                    text = { Text(lesson.title) },
-                    onClick = {
-                        endLessonId.value = lesson.id
-                        endLessonTitle = lesson.title
-                        endDropdownExpanded = false
+        Box {
+            OutlinedTextField(
+                value = endLessonTitle,
+                textStyle = MaterialTheme.typography.bodyMedium,
+                onValueChange = { },
+                readOnly = true,
+                trailingIcon = {
+                    IconButton(onClick = { endDropdownExpanded = true }) {
+                        Image(
+                            painter = painterResource(id = R.drawable.icon_nav_arrow_down),
+                            contentDescription = "마지막 강의 선택"
+                        )
                     }
-                )
+                },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            DropdownMenu(
+                expanded = endDropdownExpanded,
+                onDismissRequest = { endDropdownExpanded = false },
+                modifier = Modifier.heightIn(max = 250.dp).width(with(LocalDensity.current) {
+                    // Calculate width to match the text field
+                    (LocalConfiguration.current.screenWidthDp.dp - 32.dp).toPx().toInt().toDp()
+                })
+            ) {
+                if (lessons.isEmpty()) {
+                    DropdownMenuItem(
+                        text = { Text("강의를 불러오는 중...") },
+                        onClick = { }
+                    )
+                } else {
+                    lessons.forEach { lesson ->
+                        DropdownMenuItem(
+                            text = { Text(lesson.title) },
+                            onClick = {
+                                endLessonId.value = lesson.id
+                                endLessonTitle = lesson.title
+                                endDropdownExpanded = false
+                            }
+                        )
+                    }
+                }
             }
         }
     }
