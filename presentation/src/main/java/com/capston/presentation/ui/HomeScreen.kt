@@ -5,6 +5,7 @@ import android.content.Intent
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -42,6 +43,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -93,8 +96,10 @@ import com.capston.domain.response.home.LectureProgressResponse
 import com.capston.domain.response.home.LessonScheduleResponse
 import com.capston.presentation.R
 import com.capston.presentation.theme.LightGray40
+import com.capston.presentation.theme.LightGray4_40
 import com.capston.presentation.theme.LightGray60
 import com.capston.presentation.theme.MainPurple
+import com.capston.presentation.theme.WarmPurple_20
 import com.capston.presentation.theme.backgroundGray
 import com.capston.presentation.theme.materialGray
 import com.capston.presentation.theme.textGray
@@ -137,17 +142,19 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
                 .fillMaxSize()
         ) {
             // 학습 현황 부분 - UserProgress 표시 영역
-            Surface(
+            Card(
                 modifier = Modifier
-                    .fillMaxWidth(),
-                shape = RoundedCornerShape(8.dp),
-                color = backgroundGray,
-                shadowElevation = 10.dp
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = WarmPurple_20
+                ),
+                border = BorderStroke(1.dp, color = MainPurple)
             ) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(backgroundGray)
                         .padding(bottom = 10.dp)
                 ) {
                     Column(
@@ -155,25 +162,35 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
                             .padding(start = 20.dp)
                     ) {
                         Row(
-                            verticalAlignment = Alignment.CenterVertically, // 세로로 정렬
-                            horizontalArrangement = Arrangement.SpaceBetween, // 양 끝에 배치
-                            modifier = Modifier.fillMaxWidth() // Row를 최대 너비로 설정
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text(
-                                text = stringResource(R.string.home_status),
-                                fontSize = 24.sp,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier
-                                    .padding(top = 10.dp)
-                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.screen_profile_learning_status_iv),
+                                    contentDescription = null,
+                                    tint = Color.Unspecified, // 컬러 적용 원하지 않으면 Unspecified
+                                    modifier = Modifier
+                                        .size(32.dp)
+                                        .padding(end = 8.dp)
+                                )
+
+                                Text(
+                                    text = stringResource(R.string.home_status),
+                                    fontSize = 24.sp,
+                                    fontWeight = FontWeight.Bold,
+                                )
+                            }
                             Text(
                                 text = stringResource(R.string.home_edit),
                                 color = MainPurple,
                                 modifier = Modifier
                                     .padding(top = 25.dp, end = 20.dp)
                                     .clickable {
-                                        // 편집 버튼 클릭 시 동작
-                                        isBottomSheetVisible = true // 편집 버튼 클릭 시 bottom sheet 열기
+                                        isBottomSheetVisible = true
                                     }
                             )
                         }
@@ -209,112 +226,122 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
                 }
             }
 
-            Divider(
-                color = LightGray,
-                thickness = 1.dp,
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(modifier = Modifier.height(30.dp)) // 그래프와 강의 목록 사이 간격 추가
-
-            // 오늘의 강의 제목 섹션
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
+            // 오늘의 강의 부분 - 카드로 감싸기
+            Card(
                 modifier = Modifier
-                    .padding(horizontal = 20.dp)
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                shape = RoundedCornerShape(10.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = White
+                ),
+                border = BorderStroke(1.dp, color = LightGray60)
             ) {
-                Text(
-                    text = "⭐ 오늘의 강의",
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 20.sp
-                )
-
-                Spacer(modifier = Modifier.weight(1f))
-
-                Box(
+                Column(
                     modifier = Modifier
-                        .border(width = 1.dp, color = LightGray40, shape = RoundedCornerShape(8.dp))
-                        .background(color = Transparent, shape = RoundedCornerShape(8.dp))
-                        .padding(horizontal = 12.dp, vertical = 6.dp),
-                    contentAlignment = Alignment.TopEnd
+                        .fillMaxWidth()
+                        .padding(16.dp)
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        // 강의 수 아이콘 + 텍스트
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.home_screen_total_count_iv), // 강의 아이콘
-                                contentDescription = "총 강의 수",
-                                modifier = Modifier.size(16.dp),
-                                tint = Color.Unspecified
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = "총 ${todayTotalLesson}강",
-                                fontSize = 14.sp,
-                                color = textGray
-                            )
+                    // 오늘의 강의 제목 섹션
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                    ) {
+                        Text(
+                            text = "⭐ 오늘의 강의",
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 20.sp
+                        )
+
+                        Spacer(modifier = Modifier.weight(1f))
+
+                        Box(
+                            modifier = Modifier
+                                .border(width = 1.dp, color = LightGray40, shape = RoundedCornerShape(8.dp))
+                                .padding(horizontal = 12.dp, vertical = 6.dp),
+                            contentAlignment = Alignment.TopEnd
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                // 강의 수 아이콘 + 텍스트
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        painter = painterResource(id = R.drawable.home_screen_total_count_iv),
+                                        contentDescription = "총 강의 수",
+                                        modifier = Modifier.size(16.dp),
+                                        tint = Color.Unspecified
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(
+                                        text = "총 ${todayTotalLesson}강",
+                                        fontSize = 14.sp,
+                                        color = textGray
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.width(12.dp))
+
+                                // 시간 아이콘 + 텍스트
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        painter = painterResource(id = R.drawable.home_screen_total_duration_iv),
+                                        contentDescription = "총 시간",
+                                        modifier = Modifier.size(16.dp),
+                                        tint = Color.Unspecified
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(
+                                        text = "약 ${todayTotalDuration}분",
+                                        fontSize = 14.sp,
+                                        color = textGray
+                                    )
+                                }
+                            }
                         }
+                    }
 
-                        Spacer(modifier = Modifier.width(12.dp))
+                    Spacer(modifier = Modifier.height(20.dp))
 
-                        // 시간 아이콘 + 텍스트
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.home_screen_total_duration_iv), // 시간 아이콘
-                                contentDescription = "총 시간",
-                                modifier = Modifier.size(16.dp),
-                                tint = Color.Unspecified
+                    // 오늘의 강의 목록 섹션 - todayLessonList에 따라 조건부 렌더링
+                    if (todayLessonList != null && todayLessonList.isNotEmpty()) {
+                        ModifiedLessonList(homeViewModel, 330, todayLessonList)
+                    } else {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(200.dp)
+                                .padding(bottom = 16.dp),
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Image(
+                                painter = painterResource(R.drawable.home_screen_empty),
+                                contentDescription = "과목명",
+                                modifier = Modifier.size(80.dp)
                             )
-                            Spacer(modifier = Modifier.width(4.dp))
                             Text(
-                                text = "약 ${todayTotalDuration}분",
+                                text = "오늘 강의가 없어요",
+                                textAlign = TextAlign.Center,
+                                fontSize = 16.sp,
+                                color = LightGray60
+                            )
+                            Spacer(Modifier.height(10.dp))
+
+                            Text(
+                                text = "계획 생성하러 가기",
+                                textAlign = TextAlign.Center,
                                 fontSize = 14.sp,
-                                color = textGray
+                                color = MainPurple,
+                                textDecoration = TextDecoration.Underline,
+                                modifier = Modifier
+                                    .clickable {
+                                        val intent = Intent(context, SearchActivity::class.java)
+                                        context.startActivity(intent)
+                                    }
                             )
                         }
                     }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            // 오늘의 강의 목록 섹션 - todayLessonList에 따라 조건부 렌더링
-            if (todayLessonList != null && todayLessonList.isNotEmpty()) {
-                ModifiedLessonList(homeViewModel, 330, todayLessonList)
-            } else {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(bottom = 50.dp),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Image(
-                        painter = painterResource(R.drawable.home_screen_empty),
-                        contentDescription = "과목명",
-                        modifier = Modifier.size(100.dp)
-                    )
-                    Text(
-                        text = "오늘 강의가 없어요",
-                        textAlign = TextAlign.Center,
-                        fontSize = 16.sp,
-                        color = LightGray60
-                    )
-                    Spacer(Modifier.height(10.dp))
-
-                    Text(
-                        text = "계획 생성하러 가기",
-                        textAlign = TextAlign.Center,
-                        fontSize = 14.sp,
-                        color = MainPurple,
-                        textDecoration = TextDecoration.Underline,
-                        modifier = Modifier
-                            .clickable {
-                                val intent = Intent(context, SearchActivity::class.java)
-                                context.startActivity(intent)
-                            }
-                    )
                 }
             }
         }
