@@ -4,15 +4,20 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.capston.domain.manager.LoadingStateManager
+import com.capston.domain.model.Lecture
+import com.capston.domain.model.NewPlanLesson
 import com.capston.domain.request.LectureDto
 import com.capston.domain.response.lecture.DistinctLectureResponse
 import com.capston.domain.response.lecture.LectureResponseDto
 import com.capston.domain.usecase.lecture.GetAllLectureUseCase
 import com.capston.domain.usecase.lecture.GetDistinctLectureUseCase
+import com.capston.domain.usecase.lecture.GetLessonsByLectureIdUseCase
 import com.capston.presentation.ui.LectureItemDto
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -20,6 +25,7 @@ import javax.inject.Inject
 class LectureViewModel @Inject constructor(
     private val getDistinctLectureUseCase: GetDistinctLectureUseCase,
     private val getAllLectureUseCase: GetAllLectureUseCase,
+    private val getLessonsByLectureIdUseCase: GetLessonsByLectureIdUseCase,
     private val loadingStateManager: LoadingStateManager
 ) : ViewModel() {
 
@@ -31,6 +37,12 @@ class LectureViewModel @Inject constructor(
 
     private val _searchLectureItems = MutableStateFlow<List<LectureItemDto>>(emptyList())
     val searchLectureItems: StateFlow<List<LectureItemDto>> = _searchLectureItems
+
+    private val _selectedLecture = MutableStateFlow<LectureItemDto?>(null)
+    val selectedLecture: StateFlow<LectureItemDto?> = _selectedLecture.asStateFlow()
+
+    private val _lessonsByLectureId = MutableStateFlow<List<NewPlanLesson>>(emptyList())
+    val lessonsByLectureId: StateFlow<List<NewPlanLesson>> = _lessonsByLectureId
 
     // 검색어만 받는 함수 (기존 코드와의 호환성 유지)
     fun getDistinctLecture(searchName: String) {
@@ -106,5 +118,40 @@ class LectureViewModel @Inject constructor(
     // 저장하는 함수
     fun updateSearchLectureItems(items: List<LectureItemDto>) {
         _searchLectureItems.value = items
+    }
+
+    fun selectLecture(lecture: LectureItemDto) {
+        _selectedLecture.value = LectureItemDto(
+            id = lecture.id,
+            title = lecture.title,
+            teacher = lecture.teacher,
+            platform = lecture.platform,
+            subject = lecture.subject,
+            totalLessons = lecture.totalLessons,
+            tag = lecture.tag,
+            createdAt = lecture.createdAt
+        )
+    }
+
+    fun getLessonsByLectureId(lectureId: Int) {
+        viewModelScope.launch {
+            loadingStateManager.show()
+            try {
+                getLessonsByLectureIdUseCase(lectureId)
+                    .catch { e ->
+                        Log.e("LectureViewModel", "getLessonsByLectureId 에러: ${e.message}")
+                        _lessonsByLectureId.value = emptyList() // Set empty list on error
+                    }
+                    .collect { response ->
+                        _lessonsByLectureId.value = response.lessons // Extract data field
+                        Log.d("LectureViewModel", "getLessonsByLectureId 업데이트됨: ${response.lessons.size ?: 0}개 항목")
+                    }
+            } catch (e: Exception) {
+                Log.e("LectureViewModel", "getLessonsByLectureId 예외 발생: ${e.message}", e)
+                _lessonsByLectureId.value = emptyList()
+            } finally {
+                loadingStateManager.hide()
+            }
+        }
     }
 }

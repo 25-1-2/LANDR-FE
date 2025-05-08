@@ -1,7 +1,9 @@
 package com.capston.presentation.ui
 
+import androidx.activity.ComponentActivity
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
@@ -11,18 +13,21 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import com.capston.domain.model.Lecture
-import com.capston.domain.request.PostPlanDto
+import com.capston.domain.request.PostNewPlanDto
 import com.capston.domain.response.enum_class.DayOfWeek
 import com.capston.presentation.R
 import com.capston.presentation.theme.LightPurple
@@ -30,11 +35,12 @@ import com.capston.presentation.theme.MainPurple
 import com.capston.presentation.theme.backgroundGray
 import com.capston.presentation.theme.chipGray
 import com.capston.presentation.theme.dividerGray
-import com.capston.presentation.theme.materialGray
 import com.capston.presentation.theme.textGray
+import com.capston.presentation.viewmodel.LectureViewModel
 import com.capston.presentation.viewmodel.PlanViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -50,14 +56,37 @@ fun formatDate(millis: Long?): String {
 
 @Composable
 fun MakePlanScreen(
-    lecture: Lecture,
-    viewModel: PlanViewModel
+    lectureViewModel: LectureViewModel,
+    planViewModel: PlanViewModel
 ) {
-    val planType = remember { mutableStateOf("") }
+    val context = LocalContext.current
+    val selectedLectureDto by lectureViewModel.selectedLecture.collectAsState()
+
+    // Convert LectureResponseDto to Lecture model
+    val lecture = remember(selectedLectureDto) {
+        selectedLectureDto?.let {
+            Lecture(
+                id = it.id,
+                title = it.title,
+                teacher = it.teacher,
+                platform = it.platform.label,
+                subject = it.subject.label,
+                totalLessons = it.totalLessons,
+                totalDuration = 0, // Default since not available in DTO
+                tag = it.tag
+            )
+        } ?: Lecture() // Fallback to empty lecture if none selected
+    }
+
+    // State for validation error messages
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    var showErrorDialog by remember { mutableStateOf(false) }
+
+    val planType = remember { mutableStateOf("PERIOD") }
     val startLessonId = remember { mutableIntStateOf(0) }
     val endLessonId = remember { mutableIntStateOf(0) }
     val studyDayOfWeeks = remember { mutableStateOf(emptyList<String>()) }
-    val dailyTime = remember { mutableIntStateOf(0) }
+    val dailyTime = remember { mutableIntStateOf(120) } // Default to 120 mins
     val startDate = remember { mutableStateOf("시작일 선택") }
     val endDate = remember { mutableStateOf("종료일 선택") }
     val playbackSpeed = remember { mutableDoubleStateOf(1.0) }
@@ -65,9 +94,53 @@ fun MakePlanScreen(
     val pagerState = rememberPagerState(pageCount = { 2 }) // 0: 기간, 1: 시간
     val coroutineScope = rememberCoroutineScope()
 
-    val postPlanDto = PostPlanDto(
-        lectureId = lecture.id,
-    )
+    // Load lessons when lecture is selected
+    LaunchedEffect(lecture.id) {
+        if (lecture.id != 0) {  // Check if a valid lecture is selected
+            lectureViewModel.getLessonsByLectureId(lecture.id)
+        }
+    }
+
+    // Initialize planType based on initial pager page
+    LaunchedEffect(Unit) {
+        planType.value = if (pagerState.currentPage == 0) "PERIOD" else "TIME"
+    }
+
+    // Update planType when page changes
+    LaunchedEffect(pagerState.currentPage) {
+        planType.value = if (pagerState.currentPage == 0) "PERIOD" else "TIME"
+    }
+
+    // Validation functions
+    val validateInputs = {
+        when {
+            startDate.value == "시작일 선택" || endDate.value == "종료일 선택" -> {
+                errorMessage = "시작일과 종료일을 모두 선택해주세요."
+                false
+            }
+            !isStartDateBeforeEndDate(startDate.value, endDate.value) -> {
+                errorMessage = "시작일은 종료일보다 이전이어야 합니다."
+                false
+            }
+            startLessonId.intValue == 0 || endLessonId.intValue == 0 -> {
+                errorMessage = "시작 강의와 마지막 강의를 모두 선택해주세요."
+                false
+            }
+            startLessonId.intValue > endLessonId.intValue -> {
+                errorMessage = "시작 강의는 마지막 강의보다 먼저여야 합니다."
+                false
+            }
+            studyDayOfWeeks.value.isEmpty() -> {
+                errorMessage = "최소 하나 이상의 요일을 선택해주세요."
+                false
+            }
+            dailyTime.intValue <= 0 && planType.value == "TIME" -> {
+                errorMessage = "일일 학습 시간을 설정해주세요."
+                false
+            }
+            else -> true
+        }
+    }
 
     Scaffold(
         topBar = { PlanTopBar() }
@@ -81,7 +154,8 @@ fun MakePlanScreen(
             HeaderSection(
                 lecture = lecture,
                 pagerState = pagerState,
-                coroutineScope = coroutineScope
+                coroutineScope = coroutineScope,
+                planType = planType
             )
             HorizontalDivider(color = dividerGray)
 
@@ -96,14 +170,16 @@ fun MakePlanScreen(
                         studyDayOfWeeks = studyDayOfWeeks,
                         startDate = startDate,
                         endDate = endDate,
-                        playbackSpeed = playbackSpeed
+                        playbackSpeed = playbackSpeed,
+                        lectureViewModel = lectureViewModel
                     )
                     1 -> TimePlanPage(
                         startLessonId = startLessonId,
                         endLessonId = endLessonId,
                         studyDayOfWeeks = studyDayOfWeeks,
                         dailyTime = dailyTime,
-                        playbackSpeed = playbackSpeed
+                        playbackSpeed = playbackSpeed,
+                        lectureViewModel = lectureViewModel
                     )
                 }
             }
@@ -111,21 +187,26 @@ fun MakePlanScreen(
             Column(modifier = Modifier.padding(horizontal = 16.dp)) {
                 Button(
                     onClick = {
-                        val dto = PostPlanDto(
-                            lectureId = lecture.id,
-                            planType = if (pagerState.currentPage == 0) "PERIOD" else "TIME",
-                            startLessonId = startLessonId.value,
-                            endLessonId = endLessonId.value,
-                            studyDayOfWeeks = studyDayOfWeeks.value,
-                            dailyTime = 120, // 시간 방식일 때 설정된 시간 (예시 값)
-                            startDate = startDate.value,
-                            endDate = endDate.value,
-                            playbackSpeed = playbackSpeed.value
-                        )
+                        if (validateInputs()) {
+                            val dto = PostNewPlanDto(
+                                lectureId = lecture.id,
+                                planType = planType.value,
+                                startLessonId = startLessonId.intValue,
+                                endLessonId = endLessonId.intValue,
+                                studyDayOfWeeks = studyDayOfWeeks.value,
+                                dailyTime = dailyTime.intValue,
+                                startDate = startDate.value,
+                                endDate = endDate.value,
+                                playbackSpeed = playbackSpeed.doubleValue
+                            )
 
-                        // TODO: 서버에 dto 전달하는 API 호출 작성
-                        viewModel.postPlanDetail(dto)
-                        // 이후 원래 화면으로 돌아온다
+                            planViewModel.postNewPlan(dto)
+
+                            // 액티비티 종료 추가
+                            (context as? ComponentActivity)?.finish()
+                        } else {
+                            showErrorDialog = true
+                        }
                     },
                     shape = RoundedCornerShape(8.dp),
                     modifier = Modifier.fillMaxWidth()
@@ -134,6 +215,35 @@ fun MakePlanScreen(
                 }
             }
         }
+    }
+
+    // Error dialog
+    if (showErrorDialog) {
+        AlertDialog(
+            onDismissRequest = { showErrorDialog = false },
+            title = { Text("입력 오류") },
+            text = { Text(errorMessage ?: "입력 정보를 확인해주세요.") },
+            confirmButton = {
+                TextButton(onClick = { showErrorDialog = false }) {
+                    Text("확인")
+                }
+            }
+        )
+    }
+}
+
+// Helper function to validate date order
+fun isStartDateBeforeEndDate(startDateStr: String, endDateStr: String): Boolean {
+    if (startDateStr == "시작일 선택" || endDateStr == "종료일 선택") return false
+
+    try {
+        val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+        val startDate = dateFormat.parse(startDateStr)
+        val endDate = dateFormat.parse(endDateStr)
+
+        return startDate?.before(endDate) ?: false
+    } catch (e: ParseException) {
+        return false
     }
 }
 
@@ -148,7 +258,7 @@ fun PlanTopBar() {
                     // 뒤로가기 or 닫기 로직
                 }) {
                     Image(
-                        painter = painterResource(id = R.drawable.icon_arrow_back), // 너가 추가한 xml 이름
+                        painter = painterResource(id = R.drawable.icon_arrow_back),
                         contentDescription = "뒤로 가기")
                 }
             }
@@ -161,7 +271,8 @@ fun PlanTopBar() {
 fun HeaderSection(
     lecture: Lecture,
     pagerState: PagerState,
-    coroutineScope: CoroutineScope
+    coroutineScope: CoroutineScope,
+    planType: MutableState<String>
 ) {
     Column(
         modifier = Modifier
@@ -170,16 +281,22 @@ fun HeaderSection(
 
     ) {
         // 인강 플랫폼
-        Text(lecture.platform, color = MainPurple)
+        Text(
+            text = lecture.platform,
+            style = MaterialTheme.typography.labelLarge,
+            color = MainPurple,
+            modifier = Modifier.padding(bottom = 4.dp)
+        )
         // 제목
         Text(
             text = lecture.title,
-            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(bottom = 4.dp)
         )
         // 세부정보
         Text(
-            text = "${lecture.teacher}· ${lecture.tag} · ${lecture.totalLessons}강",
+            text = "${lecture.teacher} · ${lecture.tag} · ${lecture.totalLessons}강",
             style = MaterialTheme.typography.bodyMedium,
             color = textGray,
             modifier = Modifier.padding(bottom = 16.dp)
@@ -196,12 +313,13 @@ fun HeaderSection(
                 onClick = {
                     coroutineScope.launch {
                         pagerState.scrollToPage(0)
+                        planType.value = "PERIOD"
                     }
                 },
                 shape = RoundedCornerShape(8.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isPeriodSelected) materialGray else Color.White,
-                    contentColor = if (isPeriodSelected) Color.White else materialGray
+                    containerColor = if (isPeriodSelected) MainPurple else Color.White,
+                    contentColor = if (isPeriodSelected) Color.White else textGray
                 ),
                 border = if (isPeriodSelected) null else ButtonDefaults.outlinedButtonBorder,
                 modifier = Modifier.weight(1f),
@@ -213,11 +331,12 @@ fun HeaderSection(
                 onClick = {
                     coroutineScope.launch {
                         pagerState.scrollToPage(1)
+                        planType.value = "TIME"
                     }
                 },
                 shape = RoundedCornerShape(8.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isTimeSelected) materialGray else Color.White,
+                    containerColor = if (isTimeSelected) MainPurple else Color.White,
                     contentColor = if (isTimeSelected) Color.White else textGray
                 ),
                 border = if (isTimeSelected) null else ButtonDefaults.outlinedButtonBorder,
@@ -229,7 +348,6 @@ fun HeaderSection(
     }
 }
 
-
 @Composable
 fun PeriodPlanPage(
     startLessonId: MutableState<Int>,
@@ -237,19 +355,18 @@ fun PeriodPlanPage(
     studyDayOfWeeks: MutableState<List<String>>,
     startDate: MutableState<String>,
     endDate: MutableState<String>,
-    playbackSpeed: MutableState<Double>
+    playbackSpeed: MutableState<Double>,
+    lectureViewModel: LectureViewModel
 ) {
     Column(
         modifier = Modifier.padding(16.dp)
     ) {
         DurationSection(startDate, endDate)
         StudyDaysOfWeekSection(studyDayOfWeeks)
-        StartEndLectureSection(startLessonId, endLessonId)
+        StartEndLectureSection(startLessonId, endLessonId, lectureViewModel)
         PlaybackSpeedSection(playbackSpeed)
     }
 }
-
-
 
 @Composable
 fun TimePlanPage(
@@ -257,12 +374,15 @@ fun TimePlanPage(
     endLessonId: MutableState<Int>,
     studyDayOfWeeks: MutableState<List<String>>,
     dailyTime: MutableState<Int>,
-    playbackSpeed: MutableState<Double>
+    playbackSpeed: MutableState<Double>,
+    lectureViewModel: LectureViewModel
 ) {
-    Column {
+    Column(
+        modifier = Modifier.padding(16.dp)
+    ) {
         StudyTimeSection(dailyTime)
         StudyDaysOfWeekSection(studyDayOfWeeks)
-        StartEndLectureSection(startLessonId, endLessonId)
+        StartEndLectureSection(startLessonId, endLessonId, lectureViewModel)
         PlaybackSpeedSection(playbackSpeed)
     }
 }
@@ -288,17 +408,19 @@ fun DurationSection(
         ) {
             Text(
                 text = "학습 시작일",
-                modifier = Modifier.padding(bottom = 4.dp)
+                modifier = Modifier.padding(bottom = 4.dp),
+                style = MaterialTheme.typography.titleSmall,
             )
 
             OutlinedTextField(
                 value = startDate.value,
+                textStyle = MaterialTheme.typography.bodyMedium,
                 onValueChange = { },
                 readOnly = true,
                 trailingIcon = {
                     IconButton(onClick = { showStartDatePicker = !showStartDatePicker }) {
                         Image(
-                            painter = painterResource(id = R.drawable.icon_calendar), // 너가 추가한 xml 이름
+                            painter = painterResource(id = R.drawable.icon_calendar),
                             contentDescription = "시작일 선택"
                         )
                     }
@@ -309,17 +431,20 @@ fun DurationSection(
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = "목표 완강일",
-                modifier = Modifier.padding(bottom = 4.dp)
+                modifier = Modifier.padding(bottom = 4.dp),
+                style = MaterialTheme.typography.titleSmall,
             )
             OutlinedTextField(
                 value = endDate.value,
+                textStyle = MaterialTheme.typography.bodyMedium,
                 onValueChange = { },
                 readOnly = true,
                 trailingIcon = {
                     IconButton(onClick = { showEndDatePicker = !showEndDatePicker }) {
                         Image(
-                            painter = painterResource(id = R.drawable.icon_calendar), // 너가 추가한 xml 이름
-                            contentDescription = "종료일 선택")
+                            painter = painterResource(id = R.drawable.icon_calendar),
+                            contentDescription = "종료일 선택"
+                        )
                     }
                 }
             )
@@ -351,32 +476,48 @@ fun DatePickerModal(
     onDateSelected: (Long?) -> Unit,
     onDismiss: () -> Unit
 ) {
-    val datePickerState = rememberDatePickerState()
+    val datePickerState = rememberDatePickerState(
+        initialSelectedDateMillis = System.currentTimeMillis()
+    )
 
     DatePickerDialog(
+        colors = DatePickerDefaults.colors(
+            containerColor = Color.White,
+            selectedDayContainerColor = MainPurple,
+        ),
+        tonalElevation = 0.dp, // 이걸 추가해줘야 배경에 투명 레이어 없음
         onDismissRequest = onDismiss,
         confirmButton = {
             TextButton(onClick = {
                 onDateSelected(datePickerState.selectedDateMillis)
                 onDismiss()
             }) {
-                Text("OK")
+                Text("확인", color = Color.Black)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text("취소", color = Color.Black)
             }
-        }
+        },
     ) {
-        DatePicker(state = datePickerState)
+        DatePicker(
+            title = null,
+            state = datePickerState,
+            colors = DatePickerDefaults.colors(
+                containerColor = Color.White
+            ),
+            modifier = Modifier
+                .background(Color.White)
+                .padding(top = 32.dp)
+        )
     }
 }
 
 @Composable
 fun StudyTimeSection(dailyTime: MutableState<Int>) {
     // 하루에 공부할 시간
-    var input by remember { mutableStateOf(dailyTime.value.toString()) }
+    var studyMins by remember { mutableStateOf(dailyTime.value.toString()) }
 
     Row(
         modifier = Modifier
@@ -389,15 +530,16 @@ fun StudyTimeSection(dailyTime: MutableState<Int>) {
         ) {
             Text(
                 text = "일일 학습 시간 (분)",
-                modifier = Modifier.padding(bottom = 4.dp)
+                modifier = Modifier.padding(bottom = 4.dp),
+                style = MaterialTheme.typography.titleSmall,
             )
 
             OutlinedTextField(
-                value = input,
+                value = studyMins,
                 onValueChange = { newValue ->
                     // 숫자만 허용
                     if (newValue.all { it.isDigit() }) {
-                        input = newValue
+                        studyMins = newValue
                         dailyTime.value = newValue.toIntOrNull() ?: 0
                     }
                 },
@@ -405,14 +547,7 @@ fun StudyTimeSection(dailyTime: MutableState<Int>) {
                 keyboardOptions = KeyboardOptions.Default.copy(
                     keyboardType = KeyboardType.Number
                 ),
-                trailingIcon = {
-                    IconButton(onClick = { /* 드롭다운 등 동작 */ }) {
-                        Icon(
-                            imageVector = Icons.Default.KeyboardArrowDown,
-                            contentDescription = "Select value"
-                        )
-                    }
-                },
+                textStyle = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.fillMaxWidth()
             )
         }
@@ -421,6 +556,7 @@ fun StudyTimeSection(dailyTime: MutableState<Int>) {
 
 @Composable
 fun StudyDaysOfWeekSection(studyDayOfWeeks: MutableState<List<String>>) {
+    // 현재 선택된 요일들을 표현하는 Set (enum의 name 값 - "MON", "TUE" 등)
     val selectedDays = remember { mutableStateOf(studyDayOfWeeks.value.toSet()) }
 
     Column(
@@ -428,6 +564,7 @@ fun StudyDaysOfWeekSection(studyDayOfWeeks: MutableState<List<String>>) {
     ) {
         Text(
             text = "공부 일정",
+            style = MaterialTheme.typography.titleSmall,
             modifier = Modifier.padding(bottom = 4.dp)
         )
 
@@ -436,19 +573,23 @@ fun StudyDaysOfWeekSection(studyDayOfWeeks: MutableState<List<String>>) {
             modifier = Modifier.horizontalScroll(rememberScrollState()),
         ) {
             DayOfWeek.entries.forEach { day ->
+                // 현재 요일이 선택되어 있는지 확인
                 val isSelected = selectedDays.value.contains(day.name)
+
                 FilterChip(
                     selected = isSelected,
                     onClick = {
+                        // 선택/해제 토글
                         selectedDays.value = if (isSelected)
                             selectedDays.value - day.name
                         else
                             selectedDays.value + day.name
 
-                        // 외부 상태 업데이트 (enum.name 기준으로 저장)
+                        // 외부 상태 업데이트 - enum의 name 값을 리스트로 저장
+                        // (예: ["MON", "WED", "FRI"])
                         studyDayOfWeeks.value = selectedDays.value.toList()
                     },
-                    label = { Text(day.label) }, // 표시는 label ("월", "화", ...)
+                    label = { Text(day.label) }, // 표시는 한글 레이블 ("월", "화", ...)
                     colors = FilterChipDefaults.filterChipColors(
                         selectedContainerColor = LightPurple,
                         containerColor = chipGray,
@@ -469,60 +610,166 @@ fun StudyDaysOfWeekSection(studyDayOfWeeks: MutableState<List<String>>) {
 @Composable
 fun StartEndLectureSection(
     startLessonId: MutableState<Int>,
-    endLessonId: MutableState<Int>
+    endLessonId: MutableState<Int>,
+    lectureViewModel: LectureViewModel
 ) {
+    // Collect lessons from viewModel
+    val lessons by lectureViewModel.lessonsByLectureId.collectAsState()
+
+    // States to store selected lesson titles
+    var startLessonTitle by remember { mutableStateOf("강의 선택") }
+    var endLessonTitle by remember { mutableStateOf("강의 선택") }
+
+    // Dropdown visibility states
+    var startDropdownExpanded by remember { mutableStateOf(false) }
+    var endDropdownExpanded by remember { mutableStateOf(false) }
+
+    // Update titles when IDs change or lessons load
+    LaunchedEffect(startLessonId.value, lessons) {
+        if (startLessonId.value > 0) {
+            val selectedLesson = lessons.find { it.id == startLessonId.value }
+            if (selectedLesson != null) {
+                startLessonTitle = selectedLesson.title
+            }
+        }
+    }
+
+    LaunchedEffect(endLessonId.value, lessons) {
+        if (endLessonId.value > 0) {
+            val selectedLesson = lessons.find { it.id == endLessonId.value }
+            if (selectedLesson != null) {
+                endLessonTitle = selectedLesson.title
+            }
+        }
+    }
+
     // 시작 강의 / 마지막 강의
     Column(
         modifier = Modifier.padding(bottom = 16.dp)
     ) {
         Text(
             text = "시작 강의",
-//            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
+            style = MaterialTheme.typography.titleSmall,
+            modifier = Modifier.padding(bottom = 4.dp)
         )
-        Spacer(modifier = Modifier.height(4.dp))
-        OutlinedTextField(
-            value = "강의 선택",
-            onValueChange = { },
-            readOnly = true,
-            trailingIcon = {
-                IconButton(onClick = { /* 강의 목록 드롭다운 */ }) {
-                    Image(
-                        painter = painterResource(id = R.drawable.icon_nav_arrow_down),
-                        contentDescription = "시작 강의 선택"
+
+        Box {
+            OutlinedTextField(
+                value = startLessonTitle,
+                onValueChange = { },
+                readOnly = true,
+                trailingIcon = {
+                    IconButton(onClick = { startDropdownExpanded = true }) {
+                        Image(
+                            painter = painterResource(id = R.drawable.icon_nav_arrow_down),
+                            contentDescription = "시작 강의 선택"
+                        )
+                    }
+                },
+                textStyle = MaterialTheme.typography.bodyMedium,
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            DropdownMenu(
+                expanded = startDropdownExpanded,
+                onDismissRequest = { startDropdownExpanded = false },
+                modifier = Modifier
+                    .background(Color.White)
+                    .heightIn(max = 250.dp)
+                    .width(with(LocalDensity.current) {
+                        // Calculate width to match the text field
+                        (LocalConfiguration.current.screenWidthDp.dp - 32.dp).toPx().toInt().toDp()
+                    }),
+            ) {
+                if (lessons.isEmpty()) {
+                    DropdownMenuItem(
+                        text = { Text("강의를 불러오는 중...") },
+                        onClick = { }
                     )
+                } else {
+                    lessons.forEach { lesson ->
+                        DropdownMenuItem(
+                            text = { Text(lesson.title) },
+                            onClick = {
+                                startLessonId.value = lesson.id
+                                startLessonTitle = lesson.title
+                                startDropdownExpanded = false
+                            }
+                        )
+                    }
                 }
-            },
-            modifier = Modifier.fillMaxSize()
-        )
+            }
+        }
     }
     Column(
         modifier = Modifier.padding(bottom = 16.dp)
     ) {
         Text(
             text = "마지막 강의",
-//            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
+            style = MaterialTheme.typography.titleSmall,
+            modifier = Modifier.padding(bottom = 4.dp)
         )
-        Spacer(modifier = Modifier.height(4.dp))
-        OutlinedTextField(
-            value = "강의 선택",
-            onValueChange = { },
-            readOnly = true,
-            trailingIcon = {
-                IconButton(onClick = { /* 강의 목록 드롭다운 */ }) {
-                    Image(
-                        painter = painterResource(id = R.drawable.icon_nav_arrow_down),
-                        contentDescription = "마지막 강의 선택"
+
+        Box {
+            OutlinedTextField(
+                value = endLessonTitle,
+                onValueChange = { },
+                readOnly = true,
+                trailingIcon = {
+                    IconButton(onClick = { endDropdownExpanded = true }) {
+                        Image(
+                            painter = painterResource(id = R.drawable.icon_nav_arrow_down),
+                            contentDescription = "마지막 강의 선택"
+                        )
+                    }
+                },
+                textStyle = MaterialTheme.typography.bodyMedium,
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            DropdownMenu(
+                expanded = endDropdownExpanded,
+                onDismissRequest = { endDropdownExpanded = false },
+                modifier = Modifier
+                    .background(Color.White)
+                    .heightIn(max = 250.dp)
+                    .width(with(LocalDensity.current) {
+                        // Calculate width to match the text field
+                        (LocalConfiguration.current.screenWidthDp.dp - 32.dp).toPx().toInt().toDp()
+                    })
+            ) {
+                if (lessons.isEmpty()) {
+                    DropdownMenuItem(
+                        text = { Text("강의를 불러오는 중...") },
+                        onClick = { }
                     )
+                } else {
+                    lessons.forEach { lesson ->
+                        DropdownMenuItem(
+                            text = { Text(lesson.title) },
+                            onClick = {
+                                endLessonId.value = lesson.id
+                                endLessonTitle = lesson.title
+                                endDropdownExpanded = false
+                            }
+                        )
+                    }
                 }
-            },
-            modifier = Modifier.fillMaxSize()
-        )
+            }
+        }
     }
 }
 
 @Composable
 fun PlaybackSpeedSection(playbackSpeed: MutableState<Double>) {
     var speed by remember { mutableFloatStateOf(1.0f) } // 기본값 1.0배속
+
+    // Update the external state when the slider value changes
+    LaunchedEffect(speed) {
+        playbackSpeed.value = speed.toDouble()
+    }
 
     Column {
         // "배속" + 현재 배속 값
@@ -534,9 +781,11 @@ fun PlaybackSpeedSection(playbackSpeed: MutableState<Double>) {
         ) {
             Text(
                 text = "배속",
+                style = MaterialTheme.typography.titleSmall,
             )
             Text(
                 text = String.format("%.1fx", speed),
+                style = MaterialTheme.typography.titleSmall,
                 color = MainPurple,
             )
         }
@@ -546,8 +795,8 @@ fun PlaybackSpeedSection(playbackSpeed: MutableState<Double>) {
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text("1.0x", color = Color.Gray)
-            Text("2.0x", color = Color.Gray)
+            Text("1.0x", color = Color.Gray, style = MaterialTheme.typography.titleSmall)
+            Text("2.0x", color = Color.Gray, style = MaterialTheme.typography.titleSmall)
         }
 
         Slider(
@@ -558,11 +807,3 @@ fun PlaybackSpeedSection(playbackSpeed: MutableState<Double>) {
         )
     }
 }
-
-//@Preview(showBackground = true)
-//@Composable
-//fun PlanScreenPreview() {
-//    CapstonTheme {
-//        PlanScreen(Lecture())
-//    }
-//}

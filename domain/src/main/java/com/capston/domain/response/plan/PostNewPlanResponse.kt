@@ -4,7 +4,7 @@ import com.capston.domain.model.Lecture
 import com.capston.domain.model.Lesson
 import com.capston.domain.model.User
 
-data class PostPlanResponse(
+data class PostNewPlanResponse(
     val id: Int = 0,
     val user: User = User(),
     val lecture: Lecture = Lecture(),
@@ -20,9 +20,3 @@ data class PostPlanResponse(
     val studyDays: List<String> = emptyList(),
     val isDeleted: Boolean = false
 )
-
-
-
-
-
-

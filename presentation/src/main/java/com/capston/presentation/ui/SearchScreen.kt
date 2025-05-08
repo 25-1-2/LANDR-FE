@@ -287,6 +287,7 @@ fun SearchScreen(
         // 개선된 무한 스크롤 리스트 구현
         SimplifiedInfiniteScrollList(
             navController = navController,
+            lectureViewModel = lectureViewModel,
             lectureItems = allItems,
             searchQuery = searchQuery,
             hasMoreData = hasMoreData,
@@ -330,6 +331,7 @@ fun SearchScreen(
 @Composable
 fun SimplifiedInfiniteScrollList(
     navController: NavController,
+    lectureViewModel: LectureViewModel,
     lectureItems: List<LectureItemDto>,
     searchQuery: String,
     hasMoreData: Boolean,
@@ -388,8 +390,10 @@ fun SimplifiedInfiniteScrollList(
                         lectureItem = item,
                         searchQuery = searchQuery,
                         onClick = {
-                            navController.navigate("${Screen.Plan.title}/${item.title}")
-                        }
+                            // Store the selected lecture before navigating
+                            lectureViewModel.selectLecture(item)
+                            // Navigate with lecture ID instead of title
+                            navController.navigate("${Screen.Plan.title}/${item.id}")                        }
                     )
                 }
 
@@ -463,18 +467,25 @@ fun SearchNavHost(navController: NavHostController, planViewModel: PlanViewModel
             )
         }
         composable(
-            route = "plan/{lectureTitle}",
-            arguments = listOf(navArgument("lectureTitle") { type = NavType.StringType })
+            route = "${Screen.Plan.title}/{lectureId}",
+            arguments = listOf(navArgument("lectureId") { type = NavType.IntType })
         ) { backStackEntry ->
-            val title = backStackEntry.arguments?.getString("lectureTitle") ?: ""
-            MakePlanScreen(Lecture(), planViewModel)
+            val lectureId = backStackEntry.arguments?.getInt("lectureId") ?: 0
+            MakePlanScreen(
+                planViewModel = planViewModel,
+                lectureViewModel = lectureViewModel,
+            )
         }
     }
 }
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun SearchLectureItem(lectureItem: LectureItemDto, searchQuery: String, onClick: () -> Unit) {
+fun SearchLectureItem(
+    lectureItem: LectureItemDto,
+    searchQuery: String,
+    onClick: () -> Unit
+) {
     // null 안전하게 처리
     val title = lectureItem.title
     val query = searchQuery
