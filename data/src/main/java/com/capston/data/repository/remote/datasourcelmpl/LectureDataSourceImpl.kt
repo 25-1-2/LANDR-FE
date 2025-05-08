@@ -3,6 +3,7 @@ package com.capston.data.repository.remote.datasourcelmpl
 import android.util.Log
 import com.capston.data.repository.remote.api.LectureApi
 import com.capston.domain.datasource.LectureDataSource
+import com.capston.domain.model.NewPlanLesson
 import com.capston.domain.request.LectureDto
 import com.capston.domain.response.lecture.DistinctLectureResponse
 import kotlinx.coroutines.flow.Flow
@@ -114,5 +115,9 @@ class LectureDataSourceImpl @Inject constructor(
         val errorMessage = e.message ?: "알 수 없는 오류 발생"
         Log.e("getAllLecture", "예외 발생: $errorMessage")
         // 오류 처리
+    }
+
+    override suspend fun getLessonsByLectureId(lectureId: Int): List<NewPlanLesson> {
+        return lectureApi.getLessonsByLectureId(lectureId)
     }
 }
