@@ -132,19 +132,14 @@ fun CalenderScreen(homeViewModel: HomeViewModel, dailyScheduleViewModel: DailySc
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .padding(top = 16.dp, start = 20.dp, end = 20.dp) // 상단 + 좌우 패딩 추가
                 .nestedScroll(nestedScrollConnection)
-                // 전체 화면에 포인터 입력 처리 추가 (더 안정적인 드래그 처리)
                 .pointerInput(Unit) {
                     detectVerticalDragGestures { change, dragAmount ->
-                        change.consume() // 제스처 소비
-
-                        // 현재 시간 체크
+                        change.consume()
                         val currentTime = System.currentTimeMillis()
-
-                        // 클릭 후 짧은 시간 내의 드래그도 처리하기
                         if (abs(dragAmount) > 3f) {
-                            // 드래그 방향에 따라 캘린더 크기 조절
-                            val delta = dragAmount * 0.003f  // 드래그 효과 조절 계수
+                            val delta = dragAmount * 0.003f
                             calendarExpandRatio = (calendarExpandRatio + delta).coerceIn(0.2f, 1f)
                         }
                     }
@@ -163,13 +158,6 @@ fun CalenderScreen(homeViewModel: HomeViewModel, dailyScheduleViewModel: DailySc
                 },
                 onDateSelected = onDateSelectedWithTracking,
                 onDatePickerClick = { showDatePickerDialog = true }
-            )
-
-            // 선택된 날짜 표시 및 구분선
-            Divider(
-                color = LightGray,
-                thickness = 1.dp,
-                modifier = Modifier.fillMaxWidth()
             )
 
             Row(
@@ -312,9 +300,11 @@ fun SimpleCalendar(
 
     Box(
         modifier = Modifier
+            .background(color = Color.White, shape = RoundedCornerShape(16.dp))
+            .border(width = 1.dp, color = LightGray60, shape = RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(16.dp)) // 내용이 테두리를 넘지 않도록 클립
             .fillMaxWidth()
             .height(calendarHeight)
-            .background(color = LightGray3)
     ) {
         Column(
             modifier = Modifier
