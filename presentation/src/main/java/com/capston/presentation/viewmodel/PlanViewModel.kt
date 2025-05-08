@@ -13,7 +13,7 @@ import com.capston.domain.response.plan.PostNewPlanResponse
 import com.capston.domain.usecase.plan.GetPlanDetailUseCase
 import com.capston.domain.usecase.plan.GetPlanLectureRoomUseCase
 import com.capston.domain.usecase.plan.PatchPlanNameUseCase
-import com.capston.domain.usecase.plan.PostPlanDetailUseCase
+import com.capston.domain.usecase.plan.PostNewPlanUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -24,14 +24,14 @@ import javax.inject.Inject
 
 @HiltViewModel
 class PlanViewModel @Inject constructor(
-    private val postPlanDetailUseCase: PostPlanDetailUseCase,
+    private val postNewPlanUseCase: PostNewPlanUseCase,
     private val patchPlanNameUseCase: PatchPlanNameUseCase,
     private val getPlanLectureRoomUseCase: GetPlanLectureRoomUseCase,
     private val getPlanDetailUseCase: GetPlanDetailUseCase,
     private val loadingStateManager: LoadingStateManager
 ) : ViewModel() {
-    private val _postPlanDetail = MutableStateFlow(PostNewPlanResponse())  // 기본값 ""
-    val postPlanDetail: StateFlow<PostNewPlanResponse> = _postPlanDetail.asStateFlow()
+    private val _postNewPlan = MutableStateFlow(PostNewPlanResponse())  // 기본값 ""
+    val postNewPlan: StateFlow<PostNewPlanResponse> = _postNewPlan.asStateFlow()
 
     private val _patchPlanName = MutableStateFlow(LectureAliasResponse())  // 기본값 ""
     val patchPlanName: StateFlow<LectureAliasResponse> = _patchPlanName.asStateFlow()
@@ -42,15 +42,15 @@ class PlanViewModel @Inject constructor(
     private val _getPlanDetail = MutableStateFlow(GetPlanDetailResponse())  // 기본값 ""
     val getPlanDetail: StateFlow<GetPlanDetailResponse> = _getPlanDetail.asStateFlow()
 
-    fun postPlanDetail(postNewPlanDto: PostNewPlanDto) {
+    fun postNewPlan(postNewPlanDto: PostNewPlanDto) {
         viewModelScope.launch {
             loadingStateManager.show()
-            postPlanDetailUseCase(postNewPlanDto)
+            postNewPlanUseCase(postNewPlanDto)
                 .catch { e ->
                     Log.e("PlanViewModel", "postPlanDetail 에러: ${e.message}")
                 }
                 .collect { response ->  // 값 저장
-                    _postPlanDetail.value = response // 공백 제거 후 저장
+                    _postNewPlan.value = response // 공백 제거 후 저장
                     Log.d("PlanViewModel", "postPlanDetail 업데이트됨: $response")
                 }
             loadingStateManager.hide()
