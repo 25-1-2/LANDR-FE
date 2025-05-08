@@ -1,12 +1,11 @@
 package com.capston.presentation.ui
 
 import android.annotation.SuppressLint
-import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.util.Log
-import android.widget.Toast
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
@@ -23,27 +22,23 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.Divider
 import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.TextFieldDefaults
 import androidx.compose.material.icons.Icons
@@ -59,7 +54,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SheetState
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -78,7 +72,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Color.Companion.LightGray
 import androidx.compose.ui.graphics.Color.Companion.Transparent
 import androidx.compose.ui.graphics.Color.Companion.White
 import androidx.compose.ui.graphics.RectangleShape
@@ -107,13 +100,26 @@ import com.capston.presentation.theme.LightGray4_40
 import com.capston.presentation.theme.LightGray60
 import com.capston.presentation.theme.MainPurple
 import com.capston.presentation.theme.WarmPurple_20
-import com.capston.presentation.theme.backgroundGray
 import com.capston.presentation.theme.materialGray
 import com.capston.presentation.theme.textGray
 import com.capston.presentation.viewmodel.HomeViewModel
 import com.capston.presentation.viewmodel.PlanViewModel
 import kotlinx.coroutines.launch
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDefaults
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.ui.res.painterResource
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
+@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter", "StateFlowValueCalledInComposition",
     "CoroutineCreationDuringComposition"
@@ -140,6 +146,15 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
     // ModalBottomSheet의 boolean 상태를 기억
     var isBottomSheetVisible by rememberSaveable { mutableStateOf(false) }
     val modalBottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    // 시험 디데이 바텀 시트 관련 상태 추가
+    var isExamBottomSheetVisible by rememberSaveable { mutableStateOf(false) }
+    val examModalBottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    // 시험 일정 정보를 저장할 상태 변수 추가
+    var examTitle by rememberSaveable { mutableStateOf("예정된 계획이 없어요.") }
+    var examDate by rememberSaveable { mutableStateOf("2025-05-16") } // 예시 날짜
+    var dDay by rememberSaveable { mutableStateOf(0) } // D-Day 계산된 값
 
     Scaffold(
         modifier = Modifier.fillMaxSize()
@@ -399,9 +414,14 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween,
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 8.dp)
                         ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(vertical = 8.dp)
+                            ) {
                                 Icon(
                                     painter = painterResource(id = R.drawable.screen_profile_learning_status_iv),
                                     contentDescription = null,
@@ -412,20 +432,23 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
                                 )
 
                                 Text(
-                                    text = "시험 디데이",
+                                    text = "디데이",
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 18.sp,
-                                    style = MaterialTheme.typography.bodyMedium
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = White
                                 )
                             }
 
-                            // 편집 버튼
+                            // 편집 버튼 - 시험 일정 바텀 시트 열기
                             Card(
                                 modifier = Modifier
-                                    .wrapContentSize()
-                                    .clickable { /* 편집 기능 */ },
+                                    .wrapContentHeight()
+                                    .clickable {
+                                        isExamBottomSheetVisible = true
+                                    },
                                 shape = RoundedCornerShape(8.dp),
-                                border = BorderStroke(1.dp, MainPurple),
+                                border = BorderStroke(1.dp, White),
                                 colors = CardDefaults.cardColors(containerColor = White)
                             ) {
                                 Text(
@@ -439,14 +462,14 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
 
                         Spacer(modifier = Modifier.height(12.dp))
 
-                        // 디데이 내용 (예시)
+                        // 디데이 내용
                         Column(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.Center
                         ) {
                             Text(
-                                text = "D-7",
+                                text = "D-$dDay",
                                 fontSize = 48.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = White
@@ -455,7 +478,7 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
                             Spacer(modifier = Modifier.height(8.dp))
 
                             Text(
-                                text = "알고리즘 중간고사",
+                                text = examTitle,
                                 fontSize = 14.sp,
                                 color = White
                             )
@@ -617,6 +640,37 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
             )
         }
     }
+
+    // 시험 일정 바텀 시트
+    if (isExamBottomSheetVisible) {
+        ModalBottomSheet(
+            sheetState = examModalBottomSheetState,
+            onDismissRequest = { isExamBottomSheetVisible = false },
+            containerColor = White,
+            dragHandle = null
+        ) {
+            ExamBottomSheetContent(
+                title = "시험 일정",
+                description = "시험 정보를 입력해 주세요.",
+                modalBottomSheetState = examModalBottomSheetState,
+                onDismiss = { isExamBottomSheetVisible = false },
+                currentTitle = examTitle,
+                currentDate = examDate,
+                onSave = { newTitle, newDate ->
+                    examTitle = newTitle
+                    examDate = newDate
+
+                    // D-Day 계산
+                    val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+                    val examDateTime = LocalDate.parse(newDate, formatter)
+                    val today = LocalDate.now()
+                    dDay = ChronoUnit.DAYS.between(today, examDateTime).toInt()
+
+                    isExamBottomSheetVisible = false
+                }
+            )
+        }
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -680,20 +734,7 @@ fun CustomBottomSheetDialog(
                             }
                         },
                     verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "뒤로가기",
-                        color = MainPurple,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                    Icon(
-                        imageVector = Icons.Default.ArrowBack,
-                        contentDescription = "뒤로가기",
-                        tint = MainPurple,
-                        modifier = Modifier.size(18.dp)
-                    )
-                }
+                ) {}
             }
 
             Spacer(modifier = Modifier.height(10.dp))
@@ -1052,7 +1093,7 @@ fun CircleGraph(name: String, cleared: Int, total: Int) {
 // 앱 실행 또는 Play Store 이동을 위한 함수
 fun openAppOrPlayStore(context: Context, packageName: String) {
     var intent = context.packageManager.getLaunchIntentForPackage(packageName)
-    if (intent==null) {
+    if (intent == null) {
         val link = "https://play.google.com/store/apps/details?id=$packageName"
         intent = Intent(Intent.ACTION_VIEW).apply {
             data = Uri.parse(link)
@@ -1062,4 +1103,228 @@ fun openAppOrPlayStore(context: Context, packageName: String) {
     }
     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
     context.startActivity(intent)
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ExamBottomSheetContent(
+    title: String,
+    description: String,
+    modalBottomSheetState: SheetState,
+    onDismiss: () -> Unit,
+    currentTitle: String,
+    currentDate: String,
+    onSave: (String, String) -> Unit
+) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var examTitle by remember { mutableStateOf(currentTitle) }
+    var examDate by remember { mutableStateOf(currentDate) }
+
+    // 날짜 선택 모달 표시 여부
+    var showDatePicker by remember { mutableStateOf(false) }
+
+    // 날짜 포맷터
+    val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+    val displayFormatter = DateTimeFormatter.ofPattern("yyyy년 MM월 dd일")
+
+    // 표시용 날짜 문자열
+    val displayDate = try {
+        if (examDate != "시작일 선택") {
+            LocalDate.parse(examDate, dateFormatter).format(displayFormatter)
+        } else {
+            "시험일 선택"
+        }
+    } catch (e: Exception) {
+        "시험일 선택"
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(White)
+            .navigationBarsPadding()
+            .imePadding()
+    ) {
+        // 커스텀 drag handle
+        Box(
+            modifier = Modifier
+                .padding(top = 20.dp, bottom = 8.dp)
+                .size(width = 36.dp, height = 4.dp)
+                .background(materialGray, RoundedCornerShape(2.dp))
+                .align(Alignment.CenterHorizontally)
+        )
+
+        // 컨텐츠 영역
+        Column(
+            modifier = Modifier
+                .padding(horizontal = 16.dp)
+                .fillMaxWidth()
+                .height(320.dp), // 바텀 시트 높이 조정
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // 상단 제목 박스
+            Box(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = title,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.align(Alignment.Center),
+                    style = TextStyle(
+                        color = Color.Black,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                )
+
+                Row(
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .clickable {
+                            scope.launch {
+                                modalBottomSheetState.hide()
+                            }.invokeOnCompletion {
+                                onDismiss()
+                            }
+                        },
+                    verticalAlignment = Alignment.CenterVertically
+                ) {}
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text(
+                text = description,
+                textAlign = TextAlign.Center,
+                style = TextStyle(
+                    color = Color.Gray,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Normal
+                )
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // 시험 제목 입력 필드
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.Start
+            ) {
+                Text(
+                    text = "시험 이름",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+
+                OutlinedTextField(
+                    value = examTitle,
+                    onValueChange = { examTitle = it },
+                    colors = TextFieldDefaults.outlinedTextFieldColors(
+                        focusedBorderColor = MainPurple,
+                        unfocusedBorderColor = LightGray60,
+                        textColor = Color.Black
+                    ),
+                    textStyle = TextStyle(fontSize = 16.sp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp),
+                    placeholder = { Text("시험 이름을 입력하세요") }
+                )
+
+                // 시험 날짜 선택기
+                Text(
+                    text = "시험 날짜",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+
+                OutlinedTextField(
+                    value = displayDate,
+                    textStyle = MaterialTheme.typography.bodyMedium,
+                    onValueChange = { },
+                    readOnly = true,
+                    trailingIcon = {
+                        IconButton(onClick = { showDatePicker = true }) {
+                            Image(
+                                painter = painterResource(id = R.drawable.icon_calendar),
+                                contentDescription = "날짜 선택"
+                            )
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            // 저장 버튼
+            Button(
+                onClick = {
+                    onSave(examTitle, examDate)
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 16.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MainPurple,
+                    contentColor = White
+                ),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Text(
+                    text = "저장하기",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
+            }
+        }
+    }
+
+    // DatePicker 다이얼로그 표시 - MakePlanScreen 스타일로 구현
+    if (showDatePicker) {
+        val datePickerState = rememberDatePickerState(
+            initialSelectedDateMillis = System.currentTimeMillis()
+        )
+
+        DatePickerDialog(
+            colors = DatePickerDefaults.colors(
+                containerColor = White,
+                selectedDayContainerColor = MainPurple,
+            ),
+            tonalElevation = 0.dp, // 배경에 투명 레이어 없음
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    datePickerState.selectedDateMillis?.let { millis ->
+                        val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                        examDate = sdf.format(Date(millis))
+                    }
+                    showDatePicker = false
+                }) {
+                    Text("확인", color = Color.Black)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) {
+                    Text("취소", color = Color.Black)
+                }
+            },
+        ) {
+            DatePicker(
+                title = null,
+                state = datePickerState,
+                colors = DatePickerDefaults.colors(
+                    containerColor = White
+                ),
+                modifier = Modifier
+                    .background(White)
+                    .padding(top = 32.dp)
+            )
+        }
+    }
 }
