@@ -389,25 +389,38 @@ fun DatePickerModal(
     onDateSelected: (Long?) -> Unit,
     onDismiss: () -> Unit
 ) {
-    val datePickerState = rememberDatePickerState()
+    val datePickerState = rememberDatePickerState(
+        initialSelectedDateMillis = System.currentTimeMillis()
+    )
 
     DatePickerDialog(
+        colors = DatePickerDefaults.colors(
+            containerColor = Color.White, // DatePicker의 배경색 설정
+            selectedDayContainerColor = MainPurple, // 원하는 강조색
+        ),
+        tonalElevation = 0.dp, // 이걸 추가해줘야 배경에 투명 레이어 없음
         onDismissRequest = onDismiss,
         confirmButton = {
             TextButton(onClick = {
                 onDateSelected(datePickerState.selectedDateMillis)
                 onDismiss()
             }) {
-                Text("OK")
+                Text("확인", color = Color.Black)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text("취소", color = Color.Black)
             }
         }
     ) {
-        DatePicker(state = datePickerState)
+        DatePicker(
+            state = datePickerState,
+            colors = DatePickerDefaults.colors(
+                containerColor = Color.White
+            ),
+            modifier = Modifier.background(Color.White) // <- 추가
+        )
     }
 }
 
