@@ -412,14 +412,16 @@ fun DatePickerModal(
             TextButton(onClick = onDismiss) {
                 Text("취소", color = Color.Black)
             }
-        }
+        },
     ) {
         DatePicker(
+            title = null,
             state = datePickerState,
             colors = DatePickerDefaults.colors(
                 containerColor = Color.White
             ),
             modifier = Modifier.background(Color.White) // <- 추가
+                .padding(top = 32.dp)
         )
     }
 }
