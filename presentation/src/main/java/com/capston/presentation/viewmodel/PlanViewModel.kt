@@ -6,10 +6,10 @@ import androidx.lifecycle.viewModelScope
 import com.capston.domain.manager.LoadingStateManager
 import com.capston.domain.model.MyLecture
 import com.capston.domain.request.PatchPlanDto
-import com.capston.domain.request.PostPlanDto
+import com.capston.domain.request.PostNewPlanDto
 import com.capston.domain.response.plan.GetPlanDetailResponse
 import com.capston.domain.response.plan.LectureAliasResponse
-import com.capston.domain.response.plan.PostPlanResponse
+import com.capston.domain.response.plan.PostNewPlanResponse
 import com.capston.domain.usecase.plan.GetPlanDetailUseCase
 import com.capston.domain.usecase.plan.GetPlanLectureRoomUseCase
 import com.capston.domain.usecase.plan.PatchPlanNameUseCase
@@ -30,8 +30,8 @@ class PlanViewModel @Inject constructor(
     private val getPlanDetailUseCase: GetPlanDetailUseCase,
     private val loadingStateManager: LoadingStateManager
 ) : ViewModel() {
-    private val _postPlanDetail = MutableStateFlow(PostPlanResponse())  // 기본값 ""
-    val postPlanDetail: StateFlow<PostPlanResponse> = _postPlanDetail.asStateFlow()
+    private val _postPlanDetail = MutableStateFlow(PostNewPlanResponse())  // 기본값 ""
+    val postPlanDetail: StateFlow<PostNewPlanResponse> = _postPlanDetail.asStateFlow()
 
     private val _patchPlanName = MutableStateFlow(LectureAliasResponse())  // 기본값 ""
     val patchPlanName: StateFlow<LectureAliasResponse> = _patchPlanName.asStateFlow()
@@ -42,10 +42,10 @@ class PlanViewModel @Inject constructor(
     private val _getPlanDetail = MutableStateFlow(GetPlanDetailResponse())  // 기본값 ""
     val getPlanDetail: StateFlow<GetPlanDetailResponse> = _getPlanDetail.asStateFlow()
 
-    fun postPlanDetail(postPlanDto: PostPlanDto) {
+    fun postPlanDetail(postNewPlanDto: PostNewPlanDto) {
         viewModelScope.launch {
             loadingStateManager.show()
-            postPlanDetailUseCase(postPlanDto)
+            postPlanDetailUseCase(postNewPlanDto)
                 .catch { e ->
                     Log.e("PlanViewModel", "postPlanDetail 에러: ${e.message}")
                 }

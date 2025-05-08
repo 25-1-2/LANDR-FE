@@ -1,6 +1,6 @@
 package com.capston.domain.request
 
-data class PostPlanDto(
+data class PostNewPlanDto(
     val lectureId: Int = 0,
     val planType: String = "",
     val startLessonId: Int = 0,

@@ -20,7 +20,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.capston.domain.model.Lecture
-import com.capston.domain.request.PostPlanDto
+import com.capston.domain.request.PostNewPlanDto
 import com.capston.domain.response.enum_class.DayOfWeek
 import com.capston.presentation.R
 import com.capston.presentation.theme.LightPurple
@@ -81,7 +81,7 @@ fun MakePlanScreen(
     val pagerState = rememberPagerState(pageCount = { 2 }) // 0: 기간, 1: 시간
     val coroutineScope = rememberCoroutineScope()
 
-    val postPlanDto = PostPlanDto(
+    val postNewPlanDto = PostNewPlanDto(
         lectureId = lecture.id,
     )
 
@@ -133,7 +133,7 @@ fun MakePlanScreen(
             Column(modifier = Modifier.padding(horizontal = 16.dp)) {
                 Button(
                     onClick = {
-                        val dto = PostPlanDto(
+                        val dto = PostNewPlanDto(
                             lectureId = lecture.id,
                             planType = planType.value,
                             startLessonId = startLessonId.intValue,
