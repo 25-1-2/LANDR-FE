@@ -351,17 +351,6 @@ fun WeeklyAchievementGraph(
                     modifier = Modifier.rotate(rotationState)
                 )
             }
-
-            // 나머지 공간 채우기
-            Spacer(modifier = Modifier.weight(1f))
-
-            // 성취율 표시 (펼치기 상태에 관계없이 표시)
-            Text(
-                text = "성취율 ${String.format("%.0f", achievementRate)}%",
-                style = MaterialTheme.typography.bodyMedium,
-                color = Color.Gray,
-                fontWeight = FontWeight.Bold
-            )
         }
 
         // 회색 테두리 박스 - 중앙 정렬로 변경
@@ -1071,7 +1060,8 @@ fun ExamDdayContent(examTitle: String, dDay: Int) {
             text = "D-$dDay",
             fontSize = 48.sp,
             fontWeight = FontWeight.Bold,
-            color = White
+            color = White,
+            style = MaterialTheme.typography.titleLarge
         )
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -1378,7 +1368,8 @@ fun LectureList(
                             OutlinedTextField(
                                 value = aliasState,
                                 onValueChange = { newValue ->
-                                    if (newValue.length <= 8) {
+                                    if (newValue.length <= 8 || lecture.lectureName == lecture.lectureAlias) {
+                                        // 글자수가 8자 이하 or 초기 계획 생성 시
                                         showError = false // 오류 숨기기
                                         aliasState = newValue
 
