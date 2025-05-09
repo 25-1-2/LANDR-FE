@@ -79,6 +79,7 @@ class MainActivity : ComponentActivity() {
 
             LaunchedEffect(Unit) {
                 homeViewModel.getDistinctHome()
+                loginViewModel.getUserProfile()
             }
 
             CapstonTheme {

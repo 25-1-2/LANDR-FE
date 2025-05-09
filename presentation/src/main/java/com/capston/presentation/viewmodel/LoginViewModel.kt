@@ -15,6 +15,7 @@ import com.capston.domain.usecase.token.ClearTokensUseCase
 import com.capston.domain.usecase.token.GetAccessTokenUseCase
 import com.capston.domain.usecase.token.SaveAccessTokenUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -42,9 +43,6 @@ class LoginViewModel @Inject constructor(
 
     private val _getUserprofile = MutableStateFlow(UserProfileResponse())
     val getUserProfile: StateFlow<UserProfileResponse> = _getUserprofile.asStateFlow()
-
-    private val _patchUserName = MutableStateFlow(UserProfileResponse())
-    val patchUserName: StateFlow<UserProfileResponse> = _patchUserName.asStateFlow()
 
     fun postLogin(loginDto: LoginDto) {
         viewModelScope.launch {
@@ -94,24 +92,42 @@ class LoginViewModel @Inject constructor(
 
     fun getUserProfile() {
         viewModelScope.launch {
-            loadingStateManager.show()
-            getUserProfileUseCase().collect { response ->
-                _getUserprofile.value = response
-                Log.d("LoginViewModel", "유저 프로필 조회")
+            try {
+                loadingStateManager.show()
+                getUserProfileUseCase()
+                    .catch { e ->
+                        Log.e("LoginViewModel", "Get profile error: ${e.message}")
+                    }
+                    .collect { response ->
+                        _getUserprofile.value = response
+                        Log.d("LoginViewModel", "Profile retrieved: ${response.name}")
+                    }
+            } finally {
+                loadingStateManager.hide()
             }
-            loadingStateManager.hide()
         }
     }
 
     fun patchUserName(userNameDto: UserNameDto) {
         viewModelScope.launch {
-            loadingStateManager.show()
-            patchUserNameUseCase(userNameDto).collect {
-                _patchUserName.value = it
-                Log.d("LoginViewModel", "유저 프로필 수정")
-                getUserProfile()
+            try {
+                loadingStateManager.show()
+                patchUserNameUseCase(userNameDto)
+                    .catch { e ->
+                        Log.e("LoginViewModel", "Name update error: ${e.message}")
+                    }
+                    .collect { response ->
+                        // Trust ONLY the name from the PATCH response
+                        val updatedProfile = _getUserprofile.value.copy(name = response.name)
+                        // Update UI state directly - IGNORE future GET responses
+                        _getUserprofile.value = updatedProfile
+                        Log.d("LoginViewModel", "User profile manually updated to: ${updatedProfile.name}")
+
+                        // Skip refreshing from server since it returns incorrect data
+                    }
+            } finally {
+                loadingStateManager.hide()
             }
-            loadingStateManager.hide()
         }
     }
 }
