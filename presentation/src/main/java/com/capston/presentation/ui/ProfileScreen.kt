@@ -108,12 +108,17 @@ fun ProfileScreen(loginViewModel: LoginViewModel) {
     var isLecturesExpanded by remember { mutableStateOf(false) }
     var isStudyTimeExpanded by remember { mutableStateOf(true) } // 기본값을 true로 설정하여 처음에는 펼쳐진 상태로 시작
     var isStudyStatusExpanded by remember { mutableStateOf(true) }
-    var isWeeklyExpanded by remember { mutableStateOf(true) }
     var isSubjectExpanded by remember { mutableStateOf(true) }
 
     // 유저 이름과 다이얼로그 상태 관리
     val userState by loginViewModel.getUserProfile.collectAsState()
-    var userName = userState.name
+    var displayName by remember(userState.name) {
+        mutableStateOf(userState.name)
+    }
+
+    LaunchedEffect(userState) {
+        displayName = userState.name
+    }
 
     Log.d("userName", userState.toString())
 
@@ -125,10 +130,11 @@ fun ProfileScreen(loginViewModel: LoginViewModel) {
     // 이름 수정 다이얼로그
     if (showEditDialog) {
         EditNameDialog(
-            initialName = userName,
+            initialName = displayName,
             onDismiss = { showEditDialog = false },
             onConfirm = { newName ->
                 if (newName.isNotBlank()) {
+                    Log.d("ProfileScreen", "Submitting name change: $newName")
                     loginViewModel.patchUserName(UserNameDto(name = newName))
                 }
                 showEditDialog = false
@@ -165,7 +171,7 @@ fun ProfileScreen(loginViewModel: LoginViewModel) {
                     modifier = Modifier.padding(end = 10.dp)
                 )
                 Text(
-                    text = "${userName}님",
+                    text = "${displayName}님",
                     fontSize = 14.sp,
                     style = MaterialTheme.typography.bodyMedium
                 )
@@ -178,7 +184,7 @@ fun ProfileScreen(loginViewModel: LoginViewModel) {
                     fontSize = 14.sp,
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.clickable {
-                        editUserName = userName  // 현재 이름으로 초기화
+                        editUserName = displayName  // 현재 이름으로 초기화
                         showEditDialog = true    // 다이얼로그 표시
                     }
                 )
@@ -186,7 +192,7 @@ fun ProfileScreen(loginViewModel: LoginViewModel) {
                 // 토글 버튼
                 IconButton(
                     onClick = {
-                        editUserName = userName  // 현재 이름으로 초기화
+                        editUserName = displayName  // 현재 이름으로 초기화
                         showEditDialog = true    // 다이얼로그 표시
                     },
                     modifier = Modifier
