@@ -89,7 +89,8 @@ class LoginViewModel @Inject constructor(
     fun getUserProfile() {
         viewModelScope.launch {
             loadingStateManager.show()
-            getUserProfileUseCase().collect {
+            getUserProfileUseCase().collect { response ->
+                _getUserprofile.value = response
                 Log.d("LoginViewModel", "유저 프로필 조회")
             }
             loadingStateManager.hide()
