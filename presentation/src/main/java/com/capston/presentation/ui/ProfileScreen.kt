@@ -99,6 +99,10 @@ import java.time.format.DateTimeFormatter
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun ProfileScreen(loginViewModel: LoginViewModel) {
+    LaunchedEffect(Unit) {
+        loginViewModel.getUserProfile()
+    }
+
     // 완료한 강의 및 공부 시간 컴포넌트의 확장 상태 관리
     var isLecturesExpanded by remember { mutableStateOf(false) }
     var isStudyTimeExpanded by remember { mutableStateOf(true) } // 기본값을 true로 설정하여 처음에는 펼쳐진 상태로 시작
