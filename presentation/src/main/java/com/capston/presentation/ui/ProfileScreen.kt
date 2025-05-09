@@ -2,6 +2,7 @@ package com.capston.presentation.ui
 
 import android.annotation.SuppressLint
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
@@ -39,6 +40,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -88,6 +90,7 @@ import com.capston.presentation.theme.SoftPink
 import com.capston.presentation.theme.SubPurple
 import com.capston.presentation.theme.WarmPurple
 import com.capston.presentation.theme.chipGray
+import com.capston.presentation.viewmodel.LoginViewModel
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -95,7 +98,7 @@ import java.time.format.DateTimeFormatter
 @RequiresApi(Build.VERSION_CODES.O)
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
-fun ProfileScreen() {
+fun ProfileScreen(loginViewModel: LoginViewModel) {
     // 완료한 강의 및 공부 시간 컴포넌트의 확장 상태 관리
     var isLecturesExpanded by remember { mutableStateOf(false) }
     var isStudyTimeExpanded by remember { mutableStateOf(true) } // 기본값을 true로 설정하여 처음에는 펼쳐진 상태로 시작
@@ -104,7 +107,11 @@ fun ProfileScreen() {
     var isSubjectExpanded by remember { mutableStateOf(true) }
 
     // 유저 이름과 다이얼로그 상태 관리
-    var userName by remember { mutableStateOf("조은채") }
+    val userState by loginViewModel.getUserProfile.collectAsState()
+    val userName = userState.name
+
+    Log.d("userName", userState.toString())
+
     var showEditDialog by remember { mutableStateOf(false) }
 
     // 다이얼로그에서 편집 중인 이름
@@ -116,10 +123,10 @@ fun ProfileScreen() {
             initialName = userName,
             onDismiss = { showEditDialog = false },
             onConfirm = { newName ->
-                if (newName.isNotBlank()) {
-                    userName = newName
-                }
-                showEditDialog = false
+//                if (newName.isNotBlank()) {
+//                    userName = newName
+//                }
+//                showEditDialog = false
             }
         )
     }
