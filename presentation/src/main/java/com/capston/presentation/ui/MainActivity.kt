@@ -2,6 +2,7 @@ package com.capston.presentation.ui
 
 import android.annotation.SuppressLint
 import android.content.Intent
+import android.graphics.drawable.Drawable
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -48,6 +49,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.capston.domain.manager.LoadingStateManager
 import com.capston.domain.response.plan.GetPlanDetailResponse
+import com.capston.presentation.R
 import com.capston.presentation.theme.CapstonTheme
 import com.capston.presentation.theme.LightGray2
 import com.capston.presentation.theme.LightGray4_40
@@ -230,9 +232,8 @@ fun TopBar(hasUnreadNotifications: Boolean) {
                 Box(contentAlignment = Alignment.TopEnd) {
                     IconButton(onClick = { /* 알람 클릭 */ }) {
                         Icon(
-                            imageVector = Icons.Outlined.Notifications,
+                            painter = painterResource(R.drawable.home_screen_notification_iv),
                             contentDescription = "alarm icon",
-                            Modifier.size(30.dp)
                         )
                     }
 

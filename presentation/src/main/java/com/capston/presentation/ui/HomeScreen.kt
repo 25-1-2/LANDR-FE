@@ -126,6 +126,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
 import com.capston.domain.response.enum_class.DayOfWeek
 import com.capston.domain.response.plan.LectureAliasResponse
+import com.capston.presentation.theme.LightGray4
 import com.capston.presentation.theme.LightGray5
 import com.capston.presentation.theme.WarmPurple
 import java.text.SimpleDateFormat
@@ -236,8 +237,6 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
                     onToggle = { isWeeklyExpanded = it }
                 )
             }
-
-            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 
@@ -391,13 +390,13 @@ fun WeeklyAchievementGraph(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 20.dp),
+                    .padding(top = 10.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 // 요일별 체크 표시
                 DayAchievementChecks(weekDaysData = weekDaysData)
 
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
                 // 추가 정보 표시
                 Text(
@@ -423,7 +422,6 @@ fun DayAchievementChecks(weekDaysData: List<DayAchievement>) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 16.dp)
         ) {
             Row(
                 modifier = Modifier
@@ -506,7 +504,7 @@ fun LearningStatusCard(
         modifier = Modifier
             .fillMaxWidth()
             .padding(15.dp),
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = WarmPurple_20),
         border = BorderStroke(1.dp, color = WarmPurple)
     ) {
@@ -516,7 +514,7 @@ fun LearningStatusCard(
                 .padding(bottom = 10.dp)
         ) {
             Column(
-                modifier = Modifier.padding(start = 20.dp)
+                modifier = Modifier.padding(horizontal = 10.dp)
             ) {
                 // 헤더 행 (아이콘 + 제목 + 편집 버튼)
                 LearningStatusHeader(onEditClick = onEditClick)
@@ -540,7 +538,7 @@ fun LearningStatusHeader(onEditClick: () -> Unit) {
         horizontalArrangement = Arrangement.SpaceBetween,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp)
+            .padding(end = 16.dp)
     ) {
         // 아이콘 + 제목
         Row(
@@ -548,19 +546,20 @@ fun LearningStatusHeader(onEditClick: () -> Unit) {
             modifier = Modifier.padding(vertical = 16.dp)
         ) {
             Icon(
-                painter = painterResource(id = R.drawable.screen_profile_learning_status_iv),
+                painter = painterResource(id = R.drawable.screen_profile_study_time_iv),
                 contentDescription = null,
                 tint = Color.Unspecified,
                 modifier = Modifier
                     .size(32.dp)
-                    .padding(end = 12.dp)
+                    .padding(start = 12.dp)
             )
 
             Text(
                 text = stringResource(R.string.home_status),
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
-                style = MaterialTheme.typography.headlineMedium
+                style = MaterialTheme.typography.headlineMedium,
+                modifier = Modifier.padding(start = 5.dp)
             )
         }
 
@@ -610,7 +609,7 @@ fun LearningProgressGraphs(
         // lectureProgressList가 비어있지 않을 때만 항목 표시
         if (lectureProgressList.isNotEmpty()) {
             items(lectureProgressList) { item ->
-                Spacer(modifier = Modifier.width(16.dp)) // 그래프 간격 추가
+                Spacer(modifier = Modifier.width(10.dp)) // 그래프 간격 추가
 
                 // PATCH 요청 응답을 받아서 name 업데이트
                 val currentLectureName = if (item.planId == patchData.planId) {
@@ -650,7 +649,7 @@ fun CircleGraph(name: String, cleared: Int, total: Int) {
         modifier = Modifier.size(150.dp)
     ) {
         val sizeArc = size / 1.3F
-        val arcStrokeWidth = 30f
+        val arcStrokeWidth = 40f
 
         // 내부 색 채우기
         drawCircle(
@@ -707,6 +706,31 @@ fun CircleGraph(name: String, cleared: Int, total: Int) {
                 textSize = 50f
             }
         )
+
+        // 원호 끝에 도넛 모양 인디케이터 추가 - 진행률이 0보다 클 때만 표시
+        val progressAngle = animatedValue.value
+        if (progressAngle > 0f) {
+            // 인디케이터 위치 계산
+            val endAngleRadians = Math.toRadians((270f + progressAngle).toDouble())
+            val radius = sizeArc.minDimension / 2
+            val indicatorX = center.x + radius * kotlin.math.cos(endAngleRadians).toFloat()
+            val indicatorY = center.y + radius * kotlin.math.sin(endAngleRadians).toFloat()
+
+            // 인디케이터의 외부 원 그리기
+            val indicatorOuterRadius = arcStrokeWidth * 0.7f
+            drawCircle(
+                color = MainPurple,
+                radius = indicatorOuterRadius,
+                center = Offset(indicatorX, indicatorY)
+            )
+
+            // 인디케이터의 내부 흰색 원 그리기 (도넛 모양을 만들기 위함)
+            drawCircle(
+                color = White,
+                radius = indicatorOuterRadius * 0.5f,
+                center = Offset(indicatorX, indicatorY)
+            )
+        }
     }
 }
 
@@ -1116,7 +1140,7 @@ fun OnlineLectureHeader() {
         )
 
         Text(
-            text = "인강 사이트",
+            text = "인강 바로가기",
             fontWeight = FontWeight.Bold,
             fontSize = 18.sp
         )
@@ -1166,7 +1190,8 @@ fun OnlineLectureSiteItem(name: String, packageName: String, context: Context) {
                 text = name,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Medium,
-                style = MaterialTheme.typography.bodyMedium
+                style = MaterialTheme.typography.headlineMedium,
+                color = MainPurple
             )
         }
     }
@@ -1288,12 +1313,13 @@ fun CustomBottomSheetDialog(
                     text = title,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.align(Alignment.Center),
-                    style = TextStyle(
+                    style = MaterialTheme.typography.titleLarge.copy(
                         color = Color.Black,
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold
                     )
                 )
+
                 Row(
                     modifier = Modifier
                         .align(Alignment.CenterEnd)
@@ -1313,7 +1339,7 @@ fun CustomBottomSheetDialog(
             Text(
                 text = description,
                 textAlign = TextAlign.Center,
-                style = TextStyle(
+                style = MaterialTheme.typography.bodyMedium.copy(
                     color = Color.Gray,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Normal
@@ -1382,7 +1408,7 @@ fun LectureList(
                                     unfocusedBorderColor = if (showError) Color.Red else MainPurple,
                                     textColor = textGray,
                                 ),
-                                textStyle = TextStyle(fontSize = 14.sp),
+                                textStyle = MaterialTheme.typography.bodySmall,
                                 modifier = Modifier
                                     .weight(1f)
                                     .padding(end = 8.dp)
@@ -1435,7 +1461,8 @@ fun LectureList(
                         Text(
                             text = lecture.lectureName,
                             fontSize = 12.sp,
-                            color = LightGray60
+                            color = LightGray60,
+                            style = MaterialTheme.typography.bodyMedium
                         )
                     }
 
@@ -1471,7 +1498,10 @@ fun ExamBottomSheetContent(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var examTitle by remember { mutableStateOf(currentTitle) }
+    // "예정된 계획이 없어요"인 경우 빈 문자열로 시작하도록 처리
+    var examTitle by remember {
+        mutableStateOf(if (currentTitle == "예정된 계획이 없어요.") "" else currentTitle)
+    }
     var examDate by remember { mutableStateOf(currentDate) }
 
     // 날짜 선택 모달 표시 여부
@@ -1525,7 +1555,7 @@ fun ExamBottomSheetContent(
                     textAlign = TextAlign.Center,
                     modifier = Modifier.align(Alignment.Center),
                     style = TextStyle(
-                        color = Color.Black,
+                        color = materialGray,
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -1568,7 +1598,7 @@ fun ExamBottomSheetContent(
                     text = "시험 이름",
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Medium,
-                    modifier = Modifier.padding(bottom = 8.dp)
+                    modifier = Modifier.padding(bottom = 8.dp),
                 )
 
                 OutlinedTextField(
