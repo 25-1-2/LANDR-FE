@@ -74,6 +74,7 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import androidx.compose.ui.zIndex
+import com.capston.domain.request.UserNameDto
 import com.capston.domain.response.enum_class.DayOfWeek
 import com.capston.domain.response.enum_class.Subject
 import com.capston.presentation.R
@@ -112,7 +113,7 @@ fun ProfileScreen(loginViewModel: LoginViewModel) {
 
     // 유저 이름과 다이얼로그 상태 관리
     val userState by loginViewModel.getUserProfile.collectAsState()
-    val userName = userState.name
+    var userName = userState.name
 
     Log.d("userName", userState.toString())
 
@@ -127,10 +128,10 @@ fun ProfileScreen(loginViewModel: LoginViewModel) {
             initialName = userName,
             onDismiss = { showEditDialog = false },
             onConfirm = { newName ->
-//                if (newName.isNotBlank()) {
-//                    userName = newName
-//                }
-//                showEditDialog = false
+                if (newName.isNotBlank()) {
+                    loginViewModel.patchUserName(UserNameDto(name = newName))
+                }
+                showEditDialog = false
             }
         )
     }

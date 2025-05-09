@@ -5,9 +5,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.capston.domain.manager.LoadingStateManager
 import com.capston.domain.request.LoginDto
+import com.capston.domain.request.UserNameDto
 import com.capston.domain.response.user.LoginResponse
 import com.capston.domain.response.user.UserProfileResponse
 import com.capston.domain.usecase.login.GetUserProfileUseCase
+import com.capston.domain.usecase.login.PatchUserNameUseCase
 import com.capston.domain.usecase.login.PostLoginInfoUseCase
 import com.capston.domain.usecase.token.ClearTokensUseCase
 import com.capston.domain.usecase.token.GetAccessTokenUseCase
@@ -24,6 +26,7 @@ import javax.inject.Inject
 class LoginViewModel @Inject constructor(
     private val postLoginInfoUseCase: PostLoginInfoUseCase,
     private val getUserProfileUseCase: GetUserProfileUseCase,
+    private val patchUserNameUseCase: PatchUserNameUseCase,
     private val saveTokensUseCase: SaveAccessTokenUseCase,
     private val getAccessTokenUseCase: GetAccessTokenUseCase,
     private val clearTokensUseCase: ClearTokensUseCase,
@@ -39,6 +42,9 @@ class LoginViewModel @Inject constructor(
 
     private val _getUserprofile = MutableStateFlow(UserProfileResponse())
     val getUserProfile: StateFlow<UserProfileResponse> = _getUserprofile.asStateFlow()
+
+    private val _patchUserName = MutableStateFlow(UserProfileResponse())
+    val patchUserName: StateFlow<UserProfileResponse> = _patchUserName.asStateFlow()
 
     fun postLogin(loginDto: LoginDto) {
         viewModelScope.launch {
@@ -92,6 +98,18 @@ class LoginViewModel @Inject constructor(
             getUserProfileUseCase().collect { response ->
                 _getUserprofile.value = response
                 Log.d("LoginViewModel", "유저 프로필 조회")
+            }
+            loadingStateManager.hide()
+        }
+    }
+
+    fun patchUserName(userNameDto: UserNameDto) {
+        viewModelScope.launch {
+            loadingStateManager.show()
+            patchUserNameUseCase(userNameDto).collect {
+                _patchUserName.value = it
+                Log.d("LoginViewModel", "유저 프로필 수정")
+                getUserProfile()
             }
             loadingStateManager.hide()
         }

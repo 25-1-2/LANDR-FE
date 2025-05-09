@@ -3,6 +3,7 @@ package com.capston.data.repository.remote.repositoryImpl
 import com.capston.domain.datasource.LoginDataSource
 import com.capston.domain.repository.LoginRepository
 import com.capston.domain.request.LoginDto
+import com.capston.domain.request.UserNameDto
 import com.capston.domain.response.user.LoginResponse
 import com.capston.domain.response.user.UserProfileResponse
 import javax.inject.Inject
@@ -15,4 +16,7 @@ class LoginRepositoryImpl @Inject constructor(
 
     override suspend fun getUserProfile(): UserProfileResponse =
         loginDataSource.getUserProfile()
+
+    override suspend fun patchUserName(userNameDto: UserNameDto): UserProfileResponse =
+        loginDataSource.patchUserName(userNameDto)
 }
