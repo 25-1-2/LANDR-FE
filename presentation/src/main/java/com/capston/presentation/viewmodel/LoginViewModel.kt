@@ -5,7 +5,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.capston.domain.manager.LoadingStateManager
 import com.capston.domain.request.LoginDto
-import com.capston.domain.response.LoginResponse
+import com.capston.domain.response.user.LoginResponse
+import com.capston.domain.response.user.UserProfileResponse
+import com.capston.domain.usecase.login.GetUserProfileUseCase
 import com.capston.domain.usecase.login.PostLoginInfoUseCase
 import com.capston.domain.usecase.token.ClearTokensUseCase
 import com.capston.domain.usecase.token.GetAccessTokenUseCase
@@ -21,6 +23,7 @@ import javax.inject.Inject
 @HiltViewModel
 class LoginViewModel @Inject constructor(
     private val postLoginInfoUseCase: PostLoginInfoUseCase,
+    private val getUserProfileUseCase: GetUserProfileUseCase,
     private val saveTokensUseCase: SaveAccessTokenUseCase,
     private val getAccessTokenUseCase: GetAccessTokenUseCase,
     private val clearTokensUseCase: ClearTokensUseCase,
@@ -33,6 +36,9 @@ class LoginViewModel @Inject constructor(
     // 로그인 성공 여부를 나타내는 상태 변수(예: 이벤트 또는 플래그)
     private val _loginSuccess = MutableStateFlow(false)
     val loginSuccess: StateFlow<Boolean> = _loginSuccess.asStateFlow()
+
+    private val _getUserprofile = MutableStateFlow(UserProfileResponse())
+    val getUserProfile: StateFlow<UserProfileResponse> = _getUserprofile.asStateFlow()
 
     fun postLogin(loginDto: LoginDto) {
         viewModelScope.launch {
@@ -76,6 +82,16 @@ class LoginViewModel @Inject constructor(
             loadingStateManager.show()
             clearTokensUseCase()
             Log.d("LoginViewModel", "토큰 삭제 완료")
+            loadingStateManager.hide()
+        }
+    }
+
+    fun getUserProfile() {
+        viewModelScope.launch {
+            loadingStateManager.show()
+            getUserProfileUseCase().collect {
+                Log.d("LoginViewModel", "유저 프로필 조회")
+            }
             loadingStateManager.hide()
         }
     }
