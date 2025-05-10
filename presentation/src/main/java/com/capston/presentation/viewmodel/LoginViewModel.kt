@@ -3,7 +3,7 @@ package com.capston.presentation.viewmodel
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.capston.data.local.storage.UserPreferencesRepository
+import com.capston.data.network.UserProfileInterceptor
 import com.capston.domain.manager.LoadingStateManager
 import com.capston.domain.request.LoginDto
 import com.capston.domain.request.UserNameDto
@@ -16,6 +16,7 @@ import com.capston.domain.usecase.token.ClearTokensUseCase
 import com.capston.domain.usecase.token.GetAccessTokenUseCase
 import com.capston.domain.usecase.token.SaveAccessTokenUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -31,8 +32,8 @@ class LoginViewModel @Inject constructor(
     private val saveTokensUseCase: SaveAccessTokenUseCase,
     private val getAccessTokenUseCase: GetAccessTokenUseCase,
     private val clearTokensUseCase: ClearTokensUseCase,
-    private val loadingStateManager: LoadingStateManager,
-    private val userPreferencesRepository: UserPreferencesRepository
+    private val userProfileInterceptor: UserProfileInterceptor,
+    private val loadingStateManager: LoadingStateManager
 ): ViewModel() {
     // 회원가입 성공 시 받아오는 액세스 토큰
     private val _loginResponse = MutableStateFlow(LoginResponse())
@@ -45,18 +46,10 @@ class LoginViewModel @Inject constructor(
     private val _getUserprofile = MutableStateFlow(UserProfileResponse())
     val getUserProfile: StateFlow<UserProfileResponse> = _getUserprofile.asStateFlow()
 
-    private var cachedUserName: String? = null
-
-    // Load saved name when ViewModel is created
+    // Add init block to check if we have a saved name
     init {
-        viewModelScope.launch {
-            userPreferencesRepository.getUserName().collect { savedName ->
-                if (!savedName.isNullOrEmpty()) {
-                    cachedUserName = savedName
-                    Log.d("LoginViewModel", "Loaded persistent name: $savedName")
-                }
-            }
-        }
+        // Log the saved name (if any) for debugging
+        Log.d("LoginViewModel", "Restored name from persistent storage: ${userProfileInterceptor.lastUpdatedName}")
     }
 
     fun postLogin(loginDto: LoginDto) {
@@ -95,15 +88,14 @@ class LoginViewModel @Inject constructor(
         }
     }
 
-    // 로그아웃 기능
+    // For logout, clear the interceptor
     fun logout() {
         viewModelScope.launch {
             loadingStateManager.show()
             clearTokensUseCase()
 
-            // Also clear saved name
-            userPreferencesRepository.saveUserName("")
-            cachedUserName = null
+            // Clear any stored name
+            userProfileInterceptor.lastUpdatedName = null
 
             Log.d("LoginViewModel", "Tokens and saved name cleared")
             loadingStateManager.hide()
@@ -119,19 +111,8 @@ class LoginViewModel @Inject constructor(
                         Log.e("LoginViewModel", "Get profile error: ${e.message}")
                     }
                     .collect { response ->
-                        // Override with saved name if available
-                        if (cachedUserName != null) {
-                            val updatedProfile = UserProfileResponse(
-                                id = response.id,
-                                email = response.email,
-                                name = cachedUserName!!
-                            )
-                            _getUserprofile.value = updatedProfile
-                            Log.d("LoginViewModel", "Profile retrieved with persistent name: ${updatedProfile.name}")
-                        } else {
-                            _getUserprofile.value = response
-                            Log.d("LoginViewModel", "Profile retrieved from server: ${response.name}")
-                        }
+                        _getUserprofile.value = response
+                        Log.d("LoginViewModel", "Profile retrieved: ${response.name}")
                     }
             } finally {
                 loadingStateManager.hide()
@@ -144,25 +125,18 @@ class LoginViewModel @Inject constructor(
             try {
                 loadingStateManager.show()
 
-                // Immediately store locally for app restart persistence
-                userPreferencesRepository.saveUserName(userNameDto.name)
-                cachedUserName = userNameDto.name
-                Log.d("LoginViewModel", "Saved name persistently: ${userNameDto.name}")
+                // Set the name in the interceptor
+                userProfileInterceptor.lastUpdatedName = userNameDto.name
 
                 patchUserNameUseCase(userNameDto)
                     .catch { e ->
                         Log.e("LoginViewModel", "Name update error: ${e.message}")
                     }
                     .collect { response ->
-                        // Always use our saved name for UI
-                        val updatedProfile = UserProfileResponse(
-                            id = _getUserprofile.value.id,
-                            email = _getUserprofile.value.email,
-                            name = userNameDto.name
-                        )
-
+                        // The response should already be modified by the interceptor,
+                        // but let's ensure it has the right name
+                        val updatedProfile = response.copy(name = userNameDto.name)
                         _getUserprofile.value = updatedProfile
-                        Log.d("LoginViewModel", "Updated profile: ${updatedProfile.name}")
                     }
             } finally {
                 loadingStateManager.hide()
