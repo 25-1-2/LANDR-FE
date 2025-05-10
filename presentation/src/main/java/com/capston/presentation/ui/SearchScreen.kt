@@ -83,6 +83,7 @@ import com.capston.presentation.R
 import com.capston.presentation.theme.LightGray40
 import com.capston.presentation.theme.MainPurple
 import com.capston.presentation.theme.materialGray
+import com.capston.presentation.theme.textGray
 import com.capston.presentation.viewmodel.LectureViewModel
 import com.capston.presentation.viewmodel.PlanViewModel
 import kotlinx.coroutines.Job
@@ -650,7 +651,7 @@ fun SimplifiedInfiniteScrollList(
                 Text(
                     text = if (searchQuery.isBlank()) "강의 목록이 비어 있습니다." else "검색 결과가 없습니다.",
                     fontSize = 18.sp,
-                    color = Color.Gray,
+                    color = materialGray,
                     textAlign = TextAlign.Center
                 )
             }
@@ -701,7 +702,7 @@ fun SimplifiedInfiniteScrollList(
                         Text(
                             text = "모든 강의를 불러왔습니다 (총 ${lectureItems.size}개)",
                             fontSize = 14.sp,
-                            color = Color.Gray,
+                            color = materialGray,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(16.dp),
@@ -884,13 +885,13 @@ fun SearchLectureItem(
                 ) {
                     Text(
                         text = lectureItem.teacher,
-                        color = LightGray40,
+                        color = textGray,
                         fontSize = 14.sp
                     )
 
                     Text(
                         text = " · [${lectureItem.tag}]",
-                        color = LightGray40,
+                        color = textGray,
                         fontSize = 14.sp
                     )
                 }
