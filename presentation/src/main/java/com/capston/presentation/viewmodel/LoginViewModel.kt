@@ -3,7 +3,7 @@ package com.capston.presentation.viewmodel
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.capston.data.network.UserProfileInterceptor
+import com.capston.data.user.UserProfileManager
 import com.capston.domain.manager.LoadingStateManager
 import com.capston.domain.request.LoginDto
 import com.capston.domain.request.UserNameDto
@@ -15,6 +15,8 @@ import com.capston.domain.usecase.login.PostLoginInfoUseCase
 import com.capston.domain.usecase.token.ClearTokensUseCase
 import com.capston.domain.usecase.token.GetAccessTokenUseCase
 import com.capston.domain.usecase.token.SaveAccessTokenUseCase
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.UserProfileChangeRequest
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -32,7 +34,7 @@ class LoginViewModel @Inject constructor(
     private val saveTokensUseCase: SaveAccessTokenUseCase,
     private val getAccessTokenUseCase: GetAccessTokenUseCase,
     private val clearTokensUseCase: ClearTokensUseCase,
-    private val userProfileInterceptor: UserProfileInterceptor,
+    private val userProfileManager: UserProfileManager,
     private val loadingStateManager: LoadingStateManager
 ): ViewModel() {
     // 회원가입 성공 시 받아오는 액세스 토큰
@@ -46,10 +48,13 @@ class LoginViewModel @Inject constructor(
     private val _getUserprofile = MutableStateFlow(UserProfileResponse())
     val getUserProfile: StateFlow<UserProfileResponse> = _getUserprofile.asStateFlow()
 
-    // Add init block to check if we have a saved name
     init {
-        // Log the saved name (if any) for debugging
-        Log.d("LoginViewModel", "Restored name from persistent storage: ${userProfileInterceptor.lastUpdatedName}")
+        // Check if we have a saved name on init
+        Log.d("LoginViewModel", "Checking for saved user name")
+        val savedName = userProfileManager.getUserName()
+        if (!savedName.isNullOrBlank()) {
+            Log.d("LoginViewModel", "Found saved name: $savedName")
+        }
     }
 
     fun postLogin(loginDto: LoginDto) {
@@ -88,14 +93,13 @@ class LoginViewModel @Inject constructor(
         }
     }
 
-    // For logout, clear the interceptor
     fun logout() {
         viewModelScope.launch {
             loadingStateManager.show()
             clearTokensUseCase()
 
             // Clear any stored name
-            userProfileInterceptor.lastUpdatedName = null
+            userProfileManager.clearCache()
 
             Log.d("LoginViewModel", "Tokens and saved name cleared")
             loadingStateManager.hide()
@@ -111,8 +115,10 @@ class LoginViewModel @Inject constructor(
                         Log.e("LoginViewModel", "Get profile error: ${e.message}")
                     }
                     .collect { response ->
-                        _getUserprofile.value = response
-                        Log.d("LoginViewModel", "Profile retrieved: ${response.name}")
+                        // Apply any name override from our manager
+                        val finalResponse = userProfileManager.applyNameOverride(response)
+                        _getUserprofile.value = finalResponse
+                        Log.d("LoginViewModel", "Profile retrieved: ${finalResponse.name}")
                     }
             } finally {
                 loadingStateManager.hide()
@@ -125,22 +131,58 @@ class LoginViewModel @Inject constructor(
             try {
                 loadingStateManager.show()
 
-                // Set the name in the interceptor
-                userProfileInterceptor.lastUpdatedName = userNameDto.name
+                // 1. Update our manager first (Firebase + local storage)
+                val managerUpdateSuccess = userProfileManager.updateUserName(userNameDto.name)
+                if (!managerUpdateSuccess) {
+                    Log.w("LoginViewModel", "Profile manager update had some issues")
+                }
 
+                // 2. Call the API to update server-side
                 patchUserNameUseCase(userNameDto)
                     .catch { e ->
                         Log.e("LoginViewModel", "Name update error: ${e.message}")
                     }
                     .collect { response ->
-                        // The response should already be modified by the interceptor,
-                        // but let's ensure it has the right name
-                        val updatedProfile = response.copy(name = userNameDto.name)
+                        // Apply our cached name override
+                        val updatedProfile = userProfileManager.applyNameOverride(response)
                         _getUserprofile.value = updatedProfile
+                        Log.d("LoginViewModel", "User profile updated: ${updatedProfile.name}")
                     }
             } finally {
                 loadingStateManager.hide()
             }
+        }
+    }
+
+    private fun updateFirebaseUserProfile(name: String) {
+        // Firebase 현재 사용자 가져오기
+        val user = FirebaseAuth.getInstance().currentUser
+
+        // 사용자 프로필 업데이트 요청
+        val profileUpdates = UserProfileChangeRequest.Builder()
+            .setDisplayName(name)
+            .build()
+
+        user?.updateProfile(profileUpdates)
+            ?.addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    Log.d("LoginViewModel", "Firebase 사용자 프로필 업데이트 성공")
+                } else {
+                    Log.e("LoginViewModel", "Firebase 사용자 프로필 업데이트 실패", task.exception)
+                }
+            }
+    }
+
+    // In your application initialization or login flow
+    private fun ensureFirebaseUser() {
+        if (FirebaseAuth.getInstance().currentUser == null) {
+            FirebaseAuth.getInstance().signInAnonymously()
+                .addOnSuccessListener {
+                    Log.d("Auth", "Anonymous auth successful")
+                }
+                .addOnFailureListener { e ->
+                    Log.e("Auth", "Anonymous auth failed", e)
+                }
         }
     }
 }
