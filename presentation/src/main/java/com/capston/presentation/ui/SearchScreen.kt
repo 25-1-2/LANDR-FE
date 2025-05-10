@@ -118,14 +118,6 @@ fun LectureFilterBarDropdown(
                     onPlatformSelected(platform)
                 }
             },
-            leadingIcon = {
-                Icon(
-                    painter = painterResource(R.drawable.screen_profile_study_time_iv),
-                    contentDescription = null,
-                    modifier = Modifier.size(16.dp),
-                    tint = Color.Unspecified
-                )
-            },
             modifier = Modifier.weight(1f)
         )
 
@@ -144,14 +136,6 @@ fun LectureFilterBarDropdown(
                     // 선택되지 않았으면 추가
                     onSubjectSelected(subject)
                 }
-            },
-            leadingIcon = {
-                Icon(
-                    painter = painterResource(R.drawable.screen_profile_week_completion),
-                    contentDescription = null,
-                    modifier = Modifier.size(16.dp),
-                    tint = Color.Unspecified
-                )
             },
             modifier = Modifier.weight(1f)
         )
@@ -172,7 +156,8 @@ fun LectureFilterBarDropdown(
                     label = {
                         Text(
                             text = platform.label,
-                            fontSize = 12.sp
+                            fontSize = 12.sp,
+                            style = MaterialTheme.typography.labelSmall
                         )
                     },
                     icon = {
@@ -197,7 +182,8 @@ fun LectureFilterBarDropdown(
                     label = {
                         Text(
                             text = subject.label,
-                            fontSize = 11.sp
+                            fontSize = 12.sp,
+                            style = MaterialTheme.typography.labelSmall
                         )
                     },
                     icon = {
