@@ -3,6 +3,7 @@ package com.capston.presentation.viewmodel
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.capston.data.local.storage.UserPreferencesRepository
 import com.capston.domain.manager.LoadingStateManager
 import com.capston.domain.request.LoginDto
 import com.capston.domain.request.UserNameDto
@@ -15,7 +16,6 @@ import com.capston.domain.usecase.token.ClearTokensUseCase
 import com.capston.domain.usecase.token.GetAccessTokenUseCase
 import com.capston.domain.usecase.token.SaveAccessTokenUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -31,7 +31,8 @@ class LoginViewModel @Inject constructor(
     private val saveTokensUseCase: SaveAccessTokenUseCase,
     private val getAccessTokenUseCase: GetAccessTokenUseCase,
     private val clearTokensUseCase: ClearTokensUseCase,
-    private val loadingStateManager: LoadingStateManager
+    private val loadingStateManager: LoadingStateManager,
+    private val userPreferencesRepository: UserPreferencesRepository
 ): ViewModel() {
     // 회원가입 성공 시 받아오는 액세스 토큰
     private val _loginResponse = MutableStateFlow(LoginResponse())
@@ -43,6 +44,20 @@ class LoginViewModel @Inject constructor(
 
     private val _getUserprofile = MutableStateFlow(UserProfileResponse())
     val getUserProfile: StateFlow<UserProfileResponse> = _getUserprofile.asStateFlow()
+
+    private var cachedUserName: String? = null
+
+    // Load saved name when ViewModel is created
+    init {
+        viewModelScope.launch {
+            userPreferencesRepository.getUserName().collect { savedName ->
+                if (!savedName.isNullOrEmpty()) {
+                    cachedUserName = savedName
+                    Log.d("LoginViewModel", "Loaded persistent name: $savedName")
+                }
+            }
+        }
+    }
 
     fun postLogin(loginDto: LoginDto) {
         viewModelScope.launch {
@@ -85,7 +100,12 @@ class LoginViewModel @Inject constructor(
         viewModelScope.launch {
             loadingStateManager.show()
             clearTokensUseCase()
-            Log.d("LoginViewModel", "토큰 삭제 완료")
+
+            // Also clear saved name
+            userPreferencesRepository.saveUserName("")
+            cachedUserName = null
+
+            Log.d("LoginViewModel", "Tokens and saved name cleared")
             loadingStateManager.hide()
         }
     }
@@ -99,8 +119,19 @@ class LoginViewModel @Inject constructor(
                         Log.e("LoginViewModel", "Get profile error: ${e.message}")
                     }
                     .collect { response ->
-                        _getUserprofile.value = response
-                        Log.d("LoginViewModel", "Profile retrieved: ${response.name}")
+                        // Override with saved name if available
+                        if (cachedUserName != null) {
+                            val updatedProfile = UserProfileResponse(
+                                id = response.id,
+                                email = response.email,
+                                name = cachedUserName!!
+                            )
+                            _getUserprofile.value = updatedProfile
+                            Log.d("LoginViewModel", "Profile retrieved with persistent name: ${updatedProfile.name}")
+                        } else {
+                            _getUserprofile.value = response
+                            Log.d("LoginViewModel", "Profile retrieved from server: ${response.name}")
+                        }
                     }
             } finally {
                 loadingStateManager.hide()
@@ -112,18 +143,26 @@ class LoginViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 loadingStateManager.show()
+
+                // Immediately store locally for app restart persistence
+                userPreferencesRepository.saveUserName(userNameDto.name)
+                cachedUserName = userNameDto.name
+                Log.d("LoginViewModel", "Saved name persistently: ${userNameDto.name}")
+
                 patchUserNameUseCase(userNameDto)
                     .catch { e ->
                         Log.e("LoginViewModel", "Name update error: ${e.message}")
                     }
                     .collect { response ->
-                        // Trust ONLY the name from the PATCH response
-                        val updatedProfile = _getUserprofile.value.copy(name = response.name)
-                        // Update UI state directly - IGNORE future GET responses
-                        _getUserprofile.value = updatedProfile
-                        Log.d("LoginViewModel", "User profile manually updated to: ${updatedProfile.name}")
+                        // Always use our saved name for UI
+                        val updatedProfile = UserProfileResponse(
+                            id = _getUserprofile.value.id,
+                            email = _getUserprofile.value.email,
+                            name = userNameDto.name
+                        )
 
-                        // Skip refreshing from server since it returns incorrect data
+                        _getUserprofile.value = updatedProfile
+                        Log.d("LoginViewModel", "Updated profile: ${updatedProfile.name}")
                     }
             } finally {
                 loadingStateManager.hide()
