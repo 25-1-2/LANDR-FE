@@ -28,6 +28,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.Card
@@ -38,6 +39,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -123,21 +125,37 @@ fun ProfileScreen(loginViewModel: LoginViewModel) {
     Log.d("userName", userState.toString())
 
     var showEditDialog by remember { mutableStateOf(false) }
+    var showWarningDialog by remember { mutableStateOf(false) }
 
     // 다이얼로그에서 편집 중인 이름
     var editUserName by remember { mutableStateOf("") }
 
-    // 이름 수정 다이얼로그
     if (showEditDialog) {
         EditNameDialog(
             initialName = displayName,
             onDismiss = { showEditDialog = false },
             onConfirm = { newName ->
-                if (newName.isNotBlank()) {
+                if (newName.length < 3 || newName.length > 9) {
+                    showWarningDialog = true
+                } else {
                     Log.d("ProfileScreen", "Submitting name change: $newName")
                     loginViewModel.patchUserName(UserNameDto(name = newName))
+                    showEditDialog = false
                 }
-                showEditDialog = false
+            }
+        )
+    }
+
+    // 경고 다이얼로그
+    if (showWarningDialog) {
+        AlertDialog(
+            onDismissRequest = { showWarningDialog = false },
+            title = { Text("이름 입력 오류") },
+            text = { Text("이름은 3자 이상 9자 이하로 입력해주세요.") },
+            confirmButton = {
+                TextButton(onClick = { showWarningDialog = false }) {
+                    Text("확인")
+                }
             }
         )
     }
