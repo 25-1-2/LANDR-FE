@@ -4,7 +4,7 @@ import android.content.Context
 import android.util.Log
 import com.capston.data.BuildConfig
 import com.capston.data.local.storage.TokenDataStore
-import com.capston.data.network.UserProfileInterceptor
+import com.capston.data.user.UserProfileManager
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import dagger.Module
@@ -37,9 +37,9 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideUserProfileInterceptor(
+    fun provideUserProfileManager(
         @ApplicationContext context: Context
-    ): UserProfileInterceptor = UserProfileInterceptor(context)
+    ): UserProfileManager = UserProfileManager(context)
 
     @Singleton
     @Provides
@@ -63,7 +63,6 @@ object NetworkModule {
     fun provideOkHttpClient(
         httpLoggingInterceptor: HttpLoggingInterceptor,
         accessTokenInterceptor: AccessTokenInterceptor,
-        userProfileInterceptor: UserProfileInterceptor
     ): OkHttpClient {
         return OkHttpClient.Builder()
             .connectTimeout(150, TimeUnit.SECONDS)
@@ -74,7 +73,6 @@ object NetworkModule {
             .addInterceptor(HttpLoggingInterceptor().apply {
                 level = HttpLoggingInterceptor.Level.BODY
             })
-            .addInterceptor(userProfileInterceptor.createInterceptor())
             .addInterceptor{ chain ->
                 val request = chain.request()
                 Log.d("NetworkModule", "Headers: ${request.headers}")
