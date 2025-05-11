@@ -6,6 +6,7 @@ import com.capston.domain.repository.MyPageRepository
 import com.capston.domain.response.CheckResponse
 import com.capston.domain.response.home.DistinctHomeIdResponse
 import com.capston.domain.response.mypage.GetDistinctMyPageResponse
+import com.capston.domain.response.mypage.GetMyPageStatisticsResponse
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
@@ -15,5 +16,9 @@ class MyPageRepositoryImpl @Inject constructor(
 
     override suspend fun getDistinctMyPage(): GetDistinctMyPageResponse {
         return myPageDataSource.getDistinctMyPage()
+    }
+
+    override suspend fun getMonthlyStatistics(date: String): GetMyPageStatisticsResponse {
+        return myPageDataSource.getMonthlyStatistics(date)
     }
 }
