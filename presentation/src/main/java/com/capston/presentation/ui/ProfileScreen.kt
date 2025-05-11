@@ -227,8 +227,8 @@ fun ProfileScreen(loginViewModel: LoginViewModel, myPageViewModel: MyPageViewMod
             ) {
                 TodayCircleGraph(
                     name = stringResource(R.string.mypage_today_plan),
-                    cleared = 7,
-                    total = 10
+                    cleared = mypageState.completedLectureCount,
+                    total = mypageState.todayTotalLessonCount
                 )
             }
 
@@ -268,8 +268,9 @@ fun ProfileScreen(loginViewModel: LoginViewModel, myPageViewModel: MyPageViewMod
                             style = MaterialTheme.typography.labelMedium,
                             fontSize = 12.sp
                         )
+                        val completedCount = mypageState.completedLectureCount.toString()
                         Text(
-                            text = "5개",
+                            text = "$completedCount 개",
                             color = Color.White,
                             style = MaterialTheme.typography.bodyMedium,
                             fontSize = 18.sp
@@ -291,8 +292,10 @@ fun ProfileScreen(loginViewModel: LoginViewModel, myPageViewModel: MyPageViewMod
                             fontSize = 12.sp
                         )
                         Spacer(modifier = Modifier.height(4.dp))
+
+                        val studyStreak = mypageState.studyStreak
                         Text(
-                            text = "3일째",
+                            text = "$studyStreak 일째",
                             color = Color.White,
                             style = MaterialTheme.typography.bodyMedium,
                             fontSize = 18.sp
@@ -314,9 +317,11 @@ fun ProfileScreen(loginViewModel: LoginViewModel, myPageViewModel: MyPageViewMod
                             style = MaterialTheme.typography.labelMedium,
                             fontSize = 12.sp
                         )
+
+                        val studyingLectureCnt = mypageState.subjectAchievementList.size
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "3개",
+                            text = "$studyingLectureCnt 개",
                             color = Color.White,
                             style = MaterialTheme.typography.bodyMedium,
                             fontSize = 18.sp
