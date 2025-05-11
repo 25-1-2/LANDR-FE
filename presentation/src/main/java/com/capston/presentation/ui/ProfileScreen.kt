@@ -131,20 +131,32 @@ fun ProfileScreen(loginViewModel: LoginViewModel, myPageViewModel: MyPageViewMod
 
     // 다이얼로그에서 편집 중인 이름
     var editUserName by remember { mutableStateOf("") }
-    var displayName  = mypageState.userName
+    var isNameUpdated by remember { mutableStateOf(false) }
+
+    // LaunchedEffect 추가
+    LaunchedEffect(isNameUpdated) {
+        if (isNameUpdated) {
+            // 이름이 변경되었을 때 데이터 새로고침
+            myPageViewModel.getDistinctMyPage()
+            isNameUpdated = false
+        }
+    }
+
 
     if (showEditDialog) {
         EditNameDialog(
-            initialName = displayName,
+            initialName = mypageState.userName,
             onDismiss = { showEditDialog = false },
             onConfirm = { newName ->
                 if (newName.length < 3 || newName.length > 9) {
                     showWarningDialog = true
                 } else {
                     Log.d("ProfileScreen", "Submitting name change: $newName")
+
                     loginViewModel.patchUserName(UserNameDto(name = newName))
-                    myPageViewModel.getDistinctMyPage()
+
                     showEditDialog = false
+                    isNameUpdated = true
                 }
             }
         )
@@ -193,7 +205,7 @@ fun ProfileScreen(loginViewModel: LoginViewModel, myPageViewModel: MyPageViewMod
                     modifier = Modifier.padding(end = 10.dp)
                 )
                 Text(
-                    text = "${displayName}님",
+                    text = "${mypageState.userName}님",
                     fontSize = 14.sp,
                     style = MaterialTheme.typography.bodyMedium
                 )
@@ -206,7 +218,7 @@ fun ProfileScreen(loginViewModel: LoginViewModel, myPageViewModel: MyPageViewMod
                     fontSize = 14.sp,
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.clickable {
-                        editUserName = displayName  // 현재 이름으로 초기화
+                        editUserName = mypageState.userName  // 현재 이름으로 초기화
                         showEditDialog = true    // 다이얼로그 표시
                     }
                 )
@@ -214,7 +226,7 @@ fun ProfileScreen(loginViewModel: LoginViewModel, myPageViewModel: MyPageViewMod
                 // 토글 버튼
                 IconButton(
                     onClick = {
-                        editUserName = displayName  // 현재 이름으로 초기화
+                        editUserName = mypageState.userName  // 현재 이름으로 초기화
                         showEditDialog = true    // 다이얼로그 표시
                     },
                     modifier = Modifier

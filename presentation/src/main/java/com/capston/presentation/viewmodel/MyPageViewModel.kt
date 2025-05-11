@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.capston.domain.manager.LoadingStateManager
+import com.capston.domain.request.UserNameDto
 import com.capston.domain.response.mypage.GetDistinctMyPageResponse
 import com.capston.domain.response.mypage.GetMyPageStatisticsResponse
 import com.capston.domain.usecase.mypage.GetDistinctMyPageUseCase
