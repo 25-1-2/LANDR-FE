@@ -252,7 +252,7 @@ fun ProfileScreen(loginViewModel: LoginViewModel, myPageViewModel: MyPageViewMod
             ) {
                 TodayCircleGraph(
                     name = stringResource(R.string.mypage_today_plan),
-                    cleared = mypageState.completedLectureCount,
+                    cleared = mypageState.todayCompletedLessonCount,
                     total = mypageState.todayTotalLessonCount
                 )
             }
