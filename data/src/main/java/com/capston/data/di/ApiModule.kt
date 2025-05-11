@@ -8,6 +8,7 @@ import com.capston.data.repository.remote.api.ErrorApi
 import com.capston.data.repository.remote.api.HomeApi
 import com.capston.data.repository.remote.api.LectureApi
 import com.capston.data.repository.remote.api.LoginApi
+import com.capston.data.repository.remote.api.MyPageApi
 import com.capston.data.repository.remote.api.PlanApi
 import dagger.Module
 import dagger.Provides
@@ -64,4 +65,10 @@ object ApiModule {
     fun provideLectureServer(
         @MainRetrofit retrofit: Retrofit
     ) : LectureApi = retrofit.create(LectureApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideMyPageServer(
+        @MainRetrofit retrofit: Retrofit
+    ) : MyPageApi = retrofit.create(MyPageApi::class.java)
 }
