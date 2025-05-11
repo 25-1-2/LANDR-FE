@@ -78,6 +78,7 @@ import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import androidx.compose.ui.zIndex
 import com.capston.domain.request.UserNameDto
+import com.capston.domain.response.enum_class.Subject
 import com.capston.domain.response.mypage.CompletedPlanDto
 import com.capston.domain.response.mypage.GetDistinctMyPageResponse
 import com.capston.domain.response.mypage.GetMyPageStatisticsResponse
@@ -1164,16 +1165,17 @@ fun SubjectDistributionGraph(
 
     val subjects = statisticsResponse.subjectTimes
         .filter { it.totalMinutes > 0 }
-        .mapIndexed { index, subjectTime ->
-            val color = when (index % 8) {
-                0 -> MainPurple
-                1 -> MutePurple
-                2 -> SubPurple
-                3 -> WarmPurple
-                4 -> SoftPink
-                5 -> LavenderGray
-                6 -> DustyRose
-                else -> CoolGray
+        .map { subjectTime ->
+            val color = when (subjectTime.subject) {
+                Subject.KOR -> MainPurple
+                Subject.ENG -> MutePurple
+                Subject.MATH -> SubPurple
+                Subject.SOC -> WarmPurple
+                Subject.SCI -> SoftPink
+                Subject.HIST -> LavenderGray
+                Subject.UNIV -> DustyRose
+                Subject.LANG2 -> CoolGray
+                Subject.VOC -> SkyLavender
             }
 
             SubjectDataDto(
@@ -1208,10 +1210,21 @@ fun SubjectDistributionGraph(
 
     // SubjectTimeDto를 SubjectData로 변환 (차트 표시용)
     val subjectDataList = statisticsResponse.subjectTimes.map { timeDto ->
+        val color = when (timeDto.subject) {
+            Subject.KOR -> MainPurple
+            Subject.ENG -> MutePurple
+            Subject.MATH -> SubPurple
+            Subject.SOC -> WarmPurple
+            Subject.SCI -> SoftPink
+            Subject.HIST -> LavenderGray
+            Subject.UNIV -> DustyRose
+            Subject.LANG2 -> CoolGray
+            Subject.VOC -> SkyLavender
+        }
         SubjectDataDto(
             subject = timeDto.subject,
             hours = timeDto.totalMinutes,
-            color = MainPurple // 모든 과목에 동일한 색상 적용
+            color = color
         )
     }
 
