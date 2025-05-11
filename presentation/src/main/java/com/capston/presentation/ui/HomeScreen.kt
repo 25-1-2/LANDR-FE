@@ -18,6 +18,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -783,6 +784,7 @@ fun ModifiedLessonList(
             .padding(start = 30.dp)
             .fillMaxWidth()
             .heightIn(max = maxHeight.dp) // Limit the height
+            .verticalScroll(rememberScrollState())
     ) {
         // Loop through items manually instead of using LazyColumn's items
         todayLessonList.forEach { lesson ->
