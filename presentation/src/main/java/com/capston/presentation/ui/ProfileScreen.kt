@@ -82,7 +82,9 @@ import com.capston.domain.response.enum_class.DayOfWeek
 import com.capston.domain.response.enum_class.Subject
 import com.capston.domain.response.mypage.CompletedPlanDto
 import com.capston.domain.response.mypage.GetDistinctMyPageResponse
+import com.capston.domain.response.mypage.GetMyPageStatisticsResponse
 import com.capston.domain.response.mypage.SubjectAchievementDto
+import com.capston.domain.usecase.mypage.GetMonthlyStatisticsUseCase
 import com.capston.presentation.R
 import com.capston.presentation.theme.CoolGray
 import com.capston.presentation.theme.DustyRose
@@ -114,11 +116,7 @@ fun ProfileScreen(loginViewModel: LoginViewModel, myPageViewModel: MyPageViewMod
     }
 
     val mypageState by myPageViewModel.getDistinctMyPage.collectAsState()
-    val statistics by myPageViewModel.getMyPageStatistics.collectAsState()
-
-    LaunchedEffect(Unit) {
-        myPageViewModel.getMonthlyStatistics("2025-05")
-    }
+    val myStatisticsState by myPageViewModel.getMyPageStatistics.collectAsState()
 
 
     // 완료한 강의 및 공부 시간 컴포넌트의 확장 상태 관리
@@ -365,7 +363,7 @@ fun ProfileScreen(loginViewModel: LoginViewModel, myPageViewModel: MyPageViewMod
             Spacer(modifier = Modifier.height(20.dp))
 
             // 내 공부 기록 통계 섹션 (제목 + 달력 선택 박스)
-            CalendarSelectionRow()
+            CalendarSelectionRow(myPageViewModel)
 
             // 회색 테두리 박스 - 둥근 모서리 (배경색 없음)
             Card(
@@ -561,7 +559,7 @@ fun EditNameDialog(
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun CalendarSelectionRow() {
+fun CalendarSelectionRow(myPageViewModel: MyPageViewModel) {
     var isCalenderExpanded by remember { mutableStateOf(false) }
     // 제목과 날짜 선택 박스를 가로로 배치
     Row(
@@ -582,7 +580,8 @@ fun CalendarSelectionRow() {
         // 날짜 선택 박스
         CalendarSelectionBox(
             isExpanded = isCalenderExpanded,
-            onToggle = { isCalenderExpanded = it }
+            onToggle = { isCalenderExpanded = it },
+            myPageViewModel = myPageViewModel
         )
     }
 }
@@ -591,7 +590,8 @@ fun CalendarSelectionRow() {
 @Composable
 fun CalendarSelectionBox(
     isExpanded: Boolean,
-    onToggle: (Boolean) -> Unit
+    onToggle: (Boolean) -> Unit,
+    myPageViewModel: MyPageViewModel
 ) {
     // 현재 날짜 가져오기
     val currentDate = LocalDate.now()
@@ -600,6 +600,8 @@ fun CalendarSelectionBox(
 
     var selectedYear by remember { mutableStateOf(currentYear) }
     var selectedMonth by remember { mutableStateOf(currentMonth) }
+
+    myPageViewModel.getMonthlyStatistics("${selectedYear}-${selectedMonth}")
 
     // 달력 표시 여부
     var showCalendar by remember { mutableStateOf(false) }
