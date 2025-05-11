@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -79,6 +80,9 @@ import androidx.compose.ui.zIndex
 import com.capston.domain.request.UserNameDto
 import com.capston.domain.response.enum_class.DayOfWeek
 import com.capston.domain.response.enum_class.Subject
+import com.capston.domain.response.mypage.CompletedPlanDto
+import com.capston.domain.response.mypage.GetDistinctMyPageResponse
+import com.capston.domain.response.mypage.SubjectAchievementDto
 import com.capston.presentation.R
 import com.capston.presentation.theme.CoolGray
 import com.capston.presentation.theme.DustyRose
@@ -93,6 +97,8 @@ import com.capston.presentation.theme.SoftPink
 import com.capston.presentation.theme.SubPurple
 import com.capston.presentation.theme.WarmPurple
 import com.capston.presentation.theme.chipGray
+import com.capston.presentation.theme.materialGray
+import com.capston.presentation.theme.textGray
 import com.capston.presentation.viewmodel.LoginViewModel
 import com.capston.presentation.viewmodel.MyPageViewModel
 import java.time.LocalDate
@@ -268,9 +274,8 @@ fun ProfileScreen(loginViewModel: LoginViewModel, myPageViewModel: MyPageViewMod
                             style = MaterialTheme.typography.labelMedium,
                             fontSize = 12.sp
                         )
-                        val completedCount = mypageState.completedLectureCount.toString()
                         Text(
-                            text = "$completedCount 개",
+                            text = "${mypageState.completedLectureCount}개",
                             color = Color.White,
                             style = MaterialTheme.typography.bodyMedium,
                             fontSize = 18.sp
@@ -293,9 +298,8 @@ fun ProfileScreen(loginViewModel: LoginViewModel, myPageViewModel: MyPageViewMod
                         )
                         Spacer(modifier = Modifier.height(4.dp))
 
-                        val studyStreak = mypageState.studyStreak
                         Text(
-                            text = "$studyStreak 일째",
+                            text = "${mypageState.studyStreak} 일째",
                             color = Color.White,
                             style = MaterialTheme.typography.bodyMedium,
                             fontSize = 18.sp
@@ -318,10 +322,9 @@ fun ProfileScreen(loginViewModel: LoginViewModel, myPageViewModel: MyPageViewMod
                             fontSize = 12.sp
                         )
 
-                        val studyingLectureCnt = mypageState.subjectAchievementList.size
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "$studyingLectureCnt 개",
+                            text = "${mypageState.subjectAchievementList.size} 개",
                             color = Color.White,
                             style = MaterialTheme.typography.bodyMedium,
                             fontSize = 18.sp
@@ -344,17 +347,10 @@ fun ProfileScreen(loginViewModel: LoginViewModel, myPageViewModel: MyPageViewMod
                 ),
                 border = BorderStroke(1.dp, color = LightGray60)
             ) {
-                val lectures = listOf(
-                    "Java 프로그래밍 기초",
-                    "Kotlin 입문",
-                    "Android 개발 입문",
-                    "Jetpack Compose 기초",
-                    "UI/UX 디자인 기초"
-                )
 
                 // isLecturesExpanded 상태를 CompletedLecturesToggle로 전달
                 CompletedLecturesToggle(
-                    lectures = lectures,
+                    lectures = mypageState.completedPlanList,
                     isExpanded = isLecturesExpanded,
                     onToggle = { isLecturesExpanded = it }
                 )
@@ -414,7 +410,8 @@ fun ProfileScreen(loginViewModel: LoginViewModel, myPageViewModel: MyPageViewMod
             ) {
                 SubjectAchievementGraph(
                     isExpanded = isSubjectExpanded,
-                    onToggle = { isSubjectExpanded = it }
+                    onToggle = { isSubjectExpanded = it },
+                    mypageState
                 )
             }
 
@@ -928,7 +925,7 @@ fun MonthItem(
 
 @Composable
 fun CompletedLecturesToggle(
-    lectures: List<String>,
+    lectures: List<CompletedPlanDto>,
     isExpanded: Boolean,
     onToggle: (Boolean) -> Unit
 ) {
@@ -1013,7 +1010,7 @@ fun CompletedLecturesToggle(
 }
 
 @Composable
-fun LectureItem(lecture: String, isLastItem: Boolean) {
+fun LectureItem(lecture: CompletedPlanDto, isLastItem: Boolean) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -1021,8 +1018,7 @@ fun LectureItem(lecture: String, isLastItem: Boolean) {
     ) {
         Row(
             modifier = Modifier
-                .fillMaxWidth()
-                .clickable { /* 강의 상세 페이지로 이동하는 로직 추가 가능 */ },
+                .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // 체크 마크 이미지 (보라색 배경의 원형 체크 아이콘)
@@ -1044,12 +1040,22 @@ fun LectureItem(lecture: String, isLastItem: Boolean) {
 
             Spacer(modifier = Modifier.width(12.dp))
 
-            // 강의 제목
-            Text(
-                text = lecture,
-                style = MaterialTheme.typography.bodyMedium,
-                color = Color.Black
-            )
+            Column(
+                modifier = Modifier.fillMaxHeight()
+            ) {
+                // 강의 제목
+                Text(
+                    text = "${lecture.platform.label} · ${lecture.teacher}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = textGray
+                )
+                // 강의 제목
+                Text(
+                    text = lecture.lectureTitle,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.Black
+                )
+            }
 
             // 오른쪽 여백을 채우는 스페이서
             Spacer(modifier = Modifier.weight(1f))
@@ -1793,11 +1799,13 @@ data class WeeklyData(
     val hours: Int
 )
 
+@SuppressLint("DefaultLocale")
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun SubjectAchievementGraph(
     isExpanded: Boolean,
-    onToggle: (Boolean) -> Unit
+    onToggle: (Boolean) -> Unit,
+    mypageState: GetDistinctMyPageResponse
 ) {
     // 현재 날짜 가져오기
     val currentDate = LocalDate.now()
@@ -1806,39 +1814,22 @@ fun SubjectAchievementGraph(
     val previousMonth = currentDate.minusMonths(2)
 
     // 과목별 성취 데이터
-    val subjectData = listOf(
-        SubjectAchievement(
-            subject = Subject.MATH,
-            startDate = "${previousMonth.format(DateTimeFormatter.ofPattern("yyyy"))}.${previousMonth.format(DateTimeFormatter.ofPattern("MM"))}.15",
-            endDate = "$currentYear.$currentMonth.15",
-            progressPercent = 65f
-        ),
-        SubjectAchievement(
-            subject = Subject.KOR,
-            startDate = "${previousMonth.format(DateTimeFormatter.ofPattern("yyyy"))}.${previousMonth.plusMonths(1).format(DateTimeFormatter.ofPattern("MM"))}.10",
-            endDate = "$currentYear.${currentDate.plusMonths(1).format(DateTimeFormatter.ofPattern("MM"))}.10",
-            progressPercent = 42f
-        ),
-        SubjectAchievement(
-            subject = Subject.ENG,
-            startDate = "${previousMonth.plusMonths(1).format(DateTimeFormatter.ofPattern("yyyy"))}.${previousMonth.plusMonths(1).format(DateTimeFormatter.ofPattern("MM"))}.05",
-            endDate = "$currentYear.${currentDate.plusMonths(2).format(DateTimeFormatter.ofPattern("MM"))}.05",
-            progressPercent = 30f
-        ),
-        SubjectAchievement(
-            subject = Subject.SCI,
-            startDate = "${previousMonth.format(DateTimeFormatter.ofPattern("yyyy"))}.${previousMonth.plusMonths(1).format(DateTimeFormatter.ofPattern("MM"))}.20",
-            endDate = "$currentYear.$currentMonth.20",
-            progressPercent = 85f
-        )
-    )
+    val subjectData = mypageState.subjectAchievementList
 
     // 평균 성취율 계산
-    val averageProgress = subjectData.map { it.progressPercent }.average().toFloat()
+    val averageProgress = subjectData
+        .map { (it.completedLessons.toFloat() / it.totalLessons) * 100f }
+        .average()
+        .toFloat()
 
     // 가장 높은 성취율의 과목 찾기
-    val highestSubject = subjectData.maxByOrNull { it.progressPercent }
-    val highestPercent = highestSubject?.progressPercent ?: 0f
+    val highestSubject = subjectData.maxByOrNull {
+        (it.completedLessons.toFloat() / it.totalLessons) * 100f
+    }
+
+    val highestPercent = highestSubject?.let {
+        (it.completedLessons.toFloat() / it.totalLessons) * 100f
+    } ?: 0f
 
     Column(
         modifier = Modifier
@@ -1923,7 +1914,7 @@ fun SubjectAchievementGraph(
                             withStyle(style = SpanStyle(color = MainPurple)) {
                                 append(highestSubject.subject.label)
                             }
-                            append("은 ${String.format("%.0f", highestSubject.progressPercent)}%로 ")
+                            append("은 약 ${String.format("%.0f", (highestSubject.completedLessons.toFloat() / highestSubject.totalLessons) * 100f)}%로 ")
                             append("가장 높은 성취율을 보이고 있어요")
                         },
                         style = MaterialTheme.typography.bodyMedium,
@@ -1955,7 +1946,7 @@ fun SubjectAchievementGraph(
 
 @Composable
 fun SubjectProgressBars(
-    subjectData: List<SubjectAchievement>,
+    subjectData: List<SubjectAchievementDto>,
     highestPercent: Float
 ) {
     Column(
@@ -1966,7 +1957,7 @@ fun SubjectProgressBars(
         // 각 과목별 진행 바
         subjectData.forEach { subject ->
             // 가장 높은 성취율 과목만 MainPurple 컬러로
-            val subjectColor = if (subject.progressPercent == highestPercent) SubPurple else WarmPurple
+            val subjectColor = if ((subject.completedLessons.toFloat() / subject.totalLessons) * 100f == highestPercent) SubPurple else WarmPurple
 
             SubjectProgressItem(
                 subjectAchievement = subject,
@@ -1981,7 +1972,7 @@ fun SubjectProgressBars(
 @SuppressLint("DefaultLocale")
 @Composable
 fun SubjectProgressItem(
-    subjectAchievement: SubjectAchievement,
+    subjectAchievement: SubjectAchievementDto,
     barColor: Color,
     highestPercent: Float
 ) {
@@ -1990,7 +1981,7 @@ fun SubjectProgressItem(
     // 애니메이션 적용
     LaunchedEffect(subjectAchievement) {
         animatedProgress.animateTo(
-            targetValue = subjectAchievement.progressPercent / 100f,
+            targetValue = (subjectAchievement.completedLessons.toFloat() / subjectAchievement.totalLessons) * 100f / 100f,
             animationSpec = tween(
                 durationMillis = 1000,
                 easing = LinearEasing
@@ -2100,9 +2091,9 @@ fun SubjectProgressItem(
             )
 
             Text(
-                text = "${String.format("%.0f", subjectAchievement.progressPercent)}%",
+                text = "${String.format("%.0f", (subjectAchievement.completedLessons.toFloat() / subjectAchievement.totalLessons) * 100f)}%",
                 style = MaterialTheme.typography.bodySmall,
-                color = if (subjectAchievement.progressPercent == highestPercent) Color.Black else LightGray60,
+                color = if ((subjectAchievement.completedLessons.toFloat() / subjectAchievement.totalLessons) * 100f == highestPercent) Color.Black else LightGray60,
                 fontWeight = FontWeight.Bold,
                 fontSize = 14.sp
             )
@@ -2116,11 +2107,3 @@ fun SubjectProgressItem(
         }
     }
 }
-
-// 과목별 성취 데이터 클래스
-data class SubjectAchievement(
-    val subject: Subject,
-    val startDate: String,
-    val endDate: String,
-    val progressPercent: Float
-)
