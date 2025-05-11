@@ -4,7 +4,6 @@ import android.content.Context
 import android.util.Log
 import com.capston.data.BuildConfig
 import com.capston.data.local.storage.TokenDataStore
-import com.capston.data.user.UserProfileManager
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import dagger.Module
@@ -34,12 +33,6 @@ object NetworkModule {
             level = HttpLoggingInterceptor.Level.BODY
         }
     }
-
-    @Provides
-    @Singleton
-    fun provideUserProfileManager(
-        @ApplicationContext context: Context
-    ): UserProfileManager = UserProfileManager(context)
 
     @Singleton
     @Provides
