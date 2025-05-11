@@ -82,6 +82,7 @@ import com.capston.domain.response.mypage.CompletedPlanDto
 import com.capston.domain.response.mypage.GetDistinctMyPageResponse
 import com.capston.domain.response.mypage.GetMyPageStatisticsResponse
 import com.capston.domain.response.mypage.SubjectAchievementDto
+import com.capston.domain.response.mypage.WeeklyTimeDto
 import com.capston.presentation.R
 import com.capston.presentation.theme.CoolGray
 import com.capston.presentation.theme.DustyRose
@@ -96,12 +97,14 @@ import com.capston.presentation.theme.SoftPink
 import com.capston.presentation.theme.SubPurple
 import com.capston.presentation.theme.WarmPurple
 import com.capston.presentation.theme.chipGray
+import com.capston.presentation.theme.materialGray
 import com.capston.presentation.theme.textGray
 import com.capston.presentation.ui.login.SubjectDataDto
 import com.capston.presentation.viewmodel.LoginViewModel
 import com.capston.presentation.viewmodel.MyPageViewModel
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import kotlin.math.ceil
 
 // 마이페이지 스크린
 @RequiresApi(Build.VERSION_CODES.O)
@@ -396,7 +399,8 @@ fun ProfileScreen(loginViewModel: LoginViewModel, myPageViewModel: MyPageViewMod
                 // 접기/펼치기 기능이 있는 WeeklyStudyStatisticsGraph 컴포넌트 호출
                 WeeklyStudyStatisticsGraph(
                     isExpanded = isStudyStatusExpanded,
-                    onToggle = { isStudyStatusExpanded = it }
+                    onToggle = { isStudyStatusExpanded = it },
+                    myStatisticsState = myStatisticsState
                 )
             }
 
@@ -1148,7 +1152,7 @@ fun SubjectDistributionGraph(
     val subjects = statisticsResponse.subjectTimes
         .filter { it.totalMinutes > 0 }
         .mapIndexed { index, subjectTime ->
-            val color = when (index % 9) {
+            val color = when (index % 8) {
                 0 -> MainPurple
                 1 -> MutePurple
                 2 -> SubPurple
@@ -1156,17 +1160,16 @@ fun SubjectDistributionGraph(
                 4 -> SoftPink
                 5 -> LavenderGray
                 6 -> DustyRose
-                7 -> CoolGray
-                else -> SkyLavender
+                else -> CoolGray
             }
+
             SubjectDataDto(
                 subject = subjectTime.subject,
                 hours = subjectTime.totalMinutes,
-                color = MainPurple
+                color = color
             )
         }
 
-    // If no data, show appropriate message
     if (subjects.isEmpty()) {
         Box(modifier = Modifier
             .fillMaxWidth()
@@ -1182,16 +1185,10 @@ fun SubjectDistributionGraph(
         return
     }
 
-    // Calculate total hours
     val totalHours = subjects.sumOf { it.hours }
-
-    // Calculate angles for pie chart
     val angles = subjects.map { (it.hours.toFloat() / totalHours) * 360f }
-
-    // Calculate percentages
     val percentages = subjects.map { (it.hours.toFloat() / totalHours) * 100f }
 
-    // Find subject with max hours
     val maxHours = subjects.maxOf { it.hours }
     val topSubjects = subjects.filter { it.hours == maxHours }
     val topSubjectsText = topSubjects.joinToString(", ") { it.subject.label }
@@ -1544,23 +1541,31 @@ fun TodayCircleGraph(name: String, cleared: Int, total: Int) {
 @Composable
 fun WeeklyStudyStatisticsGraph(
     isExpanded: Boolean,
-    onToggle: (Boolean) -> Unit
+    onToggle: (Boolean) -> Unit,
+    myStatisticsState: GetMyPageStatisticsResponse
 ) {
-    // 주차별 학습 시간 데이터
-    val weeklyData = listOf(
-        WeeklyData("1주", 3),
-        WeeklyData("2주", 5),
-        WeeklyData("3주", 8),
-        WeeklyData("4주", 6),
-        WeeklyData("5주", 10)
-    )
+    // 먼저 데이터가 비어있는지 확인
+    if (myStatisticsState.weeklyTimes.isEmpty() || myStatisticsState.weeklyTimes.all { it.totalMinutes == 0 }) {
+        Box(modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "기록된 공부 시간이 없습니다.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.Gray
+            )
+        }
+        return
+    }
 
-    // 최대 시간 값
-    val maxHours = weeklyData.maxOf { it.hours }
+    // 데이터가 있는 경우에만 계산
+    val maxMinutes = myStatisticsState.weeklyTimes.maxOf { it.totalMinutes }
 
     // 가장 많은 공부를 한 주 찾기
-    val mostStudiedWeeks = weeklyData.filter { it.hours == maxHours }
-    val mostStudiedWeeksText = mostStudiedWeeks.joinToString(", ") { it.week }
+    val mostStudiedWeeks = myStatisticsState.weeklyTimes.filter { it.totalMinutes == maxMinutes }
+    val mostStudiedWeeksText = mostStudiedWeeks.joinToString(", ") { it.weekNumber.toString() }
 
     Column(
         modifier = Modifier
@@ -1614,9 +1619,9 @@ fun WeeklyStudyStatisticsGraph(
             Spacer(modifier = Modifier.weight(1f))
 
             // 평균 공부 시간 표시 (펼치기 상태에 관계없이 표시)
-            val averageHours = weeklyData.map { it.hours }.average()
+            val averageMinutes = myStatisticsState.weeklyTimes.map { it.totalMinutes }.average()
             Text(
-                text = "평균 ${String.format("%.1f", averageHours)}시간/주",
+                text = "평균 ${String.format("%.0f", averageMinutes)}분/주",
                 style = MaterialTheme.typography.bodyMedium,
                 color = Color.Gray,
                 fontWeight = FontWeight.Bold
@@ -1643,9 +1648,9 @@ fun WeeklyStudyStatisticsGraph(
                 Text(
                     buildAnnotatedString {
                         withStyle(style = SpanStyle(color = MainPurple)) { // 강조색을 MainPurple로 통일
-                            append(mostStudiedWeeksText)
+                            append(mostStudiedWeeksText+"주차")
                         }
-                        append("차에 가장 많은 강의를 수강했어요")
+                        append("에 가장 많은 강의를 수강했어요")
                     },
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.Black,
@@ -1664,9 +1669,9 @@ fun WeeklyStudyStatisticsGraph(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 // 세로 막대 그래프
-                ImprovedWeeklyBarChart(
-                    weeklyData = weeklyData,
-                    maxHoursValue = maxHours
+                DynamicWeeklyBarChart(
+                    weeklyData = myStatisticsState.weeklyTimes,
+                    maxMinutesValue = maxMinutes
                 )
             }
         }
@@ -1674,9 +1679,9 @@ fun WeeklyStudyStatisticsGraph(
 }
 
 @Composable
-fun ImprovedWeeklyBarChart(
-    weeklyData: List<WeeklyData>,
-    maxHoursValue: Int
+fun DynamicWeeklyBarChart(
+    weeklyData: List<WeeklyTimeDto>,
+    maxMinutesValue: Int
 ) {
     // 애니메이션 값들
     val animatedValues = List(weeklyData.size) {
@@ -1688,7 +1693,7 @@ fun ImprovedWeeklyBarChart(
         animatedValues.forEachIndexed { index, animatable ->
             animatable.snapTo(0f)
             animatable.animateTo(
-                targetValue = weeklyData[index].hours.toFloat(),
+                targetValue = weeklyData[index].totalMinutes.toFloat(),
                 animationSpec = tween(
                     durationMillis = 1000,
                     easing = LinearEasing,
@@ -1698,9 +1703,41 @@ fun ImprovedWeeklyBarChart(
         }
     }
 
-    // 차트 높이와 최대 시간
+    // 차트 높이
     val chartHeight = 200.dp
-    val maxHours = 10f // 고정된 최대값 (0, 5, 10 표시 위해)
+
+    // 최대값을 기준으로 적절한 라운드 숫자로 조정
+    val maxValue = maxMinutesValue.toFloat()
+
+    // 적절한 스케일 찾기 (10, 50, 100, 200, 500 등)
+    val scale = when {
+        maxValue <= 30 -> 10f
+        maxValue <= 150 -> 50f
+        maxValue <= 300 -> 100f
+        maxValue <= 600 -> 200f
+        maxValue <= 1500 -> 500f
+        else -> 1000f
+    }
+
+    // 최대값을 위한 깔끔한 라운드 숫자 계산
+    val topValue = ceil(maxValue / scale) * scale
+
+    // 각 간격도 깔끔한 숫자로 설정
+    val interval = topValue / 3
+    // 간격을 라운드 숫자로 만들기
+    val roundedInterval = when {
+        interval <= 10 -> 5f
+        interval <= 20 -> 10f
+        interval <= 50 -> 25f
+        interval <= 100 -> 50f
+        interval <= 200 -> 100f
+        interval <= 500 -> 200f
+        else -> 500f
+    }
+
+    // 균등하게 3개 구간으로 나누기
+    val thirdValue = roundedInterval
+    val twoThirdsValue = roundedInterval * 2
 
     Row(
         modifier = Modifier
@@ -1708,31 +1745,39 @@ fun ImprovedWeeklyBarChart(
             .height(chartHeight + 60.dp)
             .padding(start = 8.dp, end = 16.dp)
     ) {
-        // 왼쪽 시간 표시 (0시간, 5시간, 10시간)
+        // 왼쪽 시간 표시 (동적으로 계산된 값 표시)
         Column(
             modifier = Modifier
-                .width(40.dp)
+                .width(50.dp) // 넓게 조정
                 .height(chartHeight),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-            // 시간 표시는 위에서부터 아래로
+            // 시간 표시는 위에서부터 아래로 - 라운드 숫자로 표시
             Text(
-                text = "10시간",
+                text = "${topValue.toInt()}분",
                 fontSize = 12.sp,
                 color = Color.Gray,
                 textAlign = TextAlign.End,
                 modifier = Modifier.padding(top = 4.dp)
             )
 
+            // 중간 값들도 라운드 숫자로 표시
             Text(
-                text = "5시간",
+                text = "${twoThirdsValue.toInt()}분",
                 fontSize = 12.sp,
                 color = Color.Gray,
                 textAlign = TextAlign.End
             )
 
             Text(
-                text = "0시간",
+                text = "${thirdValue.toInt()}분",
+                fontSize = 12.sp,
+                color = Color.Gray,
+                textAlign = TextAlign.End
+            )
+
+            Text(
+                text = "0분",
                 fontSize = 12.sp,
                 color = Color.Gray,
                 textAlign = TextAlign.End,
@@ -1747,11 +1792,11 @@ fun ImprovedWeeklyBarChart(
                 .height(chartHeight)
                 .background(Color.White)
         ) {
-            // 수평 그리드 라인 (0시간, 5시간, 10시간)
+            // 수평 그리드 라인 (동적으로 계산된 값의 위치에 그리기)
             Canvas(
                 modifier = Modifier.fillMaxSize()
             ) {
-                // 10시간 선 (맨 위)
+                // 최상단 선
                 drawLine(
                     color = LightGray5,
                     start = Offset(0f, 0f),
@@ -1759,15 +1804,27 @@ fun ImprovedWeeklyBarChart(
                     strokeWidth = 1.dp.toPx()
                 )
 
-                // 5시간 선 (중간)
+                // 중간 상단 선
+                val twoThirdsY = size.height * (1 - twoThirdsValue / topValue)
                 drawLine(
                     color = LightGray5,
-                    start = Offset(0f, size.height / 2),
-                    end = Offset(size.width, size.height / 2),
-                    strokeWidth = 1.dp.toPx()
+                    start = Offset(0f, twoThirdsY),
+                    end = Offset(size.width, twoThirdsY),
+                    strokeWidth = 1.dp.toPx(),
+                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(4f, 4f), 0f)
                 )
 
-                // 0시간 선 (맨 아래)
+                // 중간 하단 선
+                val thirdY = size.height * (1 - thirdValue / topValue)
+                drawLine(
+                    color = LightGray5,
+                    start = Offset(0f, thirdY),
+                    end = Offset(size.width, thirdY),
+                    strokeWidth = 1.dp.toPx(),
+                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(4f, 4f), 0f)
+                )
+
+                // 최하단 선
                 drawLine(
                     color = LightGray5,
                     start = Offset(0f, size.height),
@@ -1783,24 +1840,34 @@ fun ImprovedWeeklyBarChart(
                 verticalAlignment = Alignment.Bottom
             ) {
                 weeklyData.forEachIndexed { index, data ->
-                    val animatedHeight = animatedValues[index].value
-                    val barHeight = (animatedHeight / maxHours) * chartHeight.value
+                    val animatedValue = animatedValues[index].value
+                    val barHeight = (animatedValue / topValue) * chartHeight.value
 
                     Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Bottom
                     ) {
                         // 가장 높은 막대만 다른 색상
-                        val barColor = if (data.hours == maxHoursValue) SubPurple else WarmPurple
+                        val barColor = if (data.totalMinutes == maxMinutesValue) SubPurple else WarmPurple
 
+                        // 분 표시
+                        Text(
+                            text = "${data.totalMinutes}분",
+                            fontSize = 10.sp,
+                            color = Color.Gray,
+                            modifier = Modifier.padding(bottom = 4.dp)
+                        )
+
+                        // 막대
                         Box(
                             modifier = Modifier
                                 .width(16.dp)
-                                .height(barHeight.dp)
+                                .height(barHeight.dp.coerceAtLeast(1.dp)) // 최소 1dp
                                 .background(
                                     color = barColor,
-                                    shape = RoundedCornerShape(20.dp)
+                                    shape = RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp)
                                 )
-                        ) {}
+                        )
                     }
                 }
             }
@@ -1811,24 +1878,18 @@ fun ImprovedWeeklyBarChart(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 8.dp, start = 40.dp, end = 16.dp),
+            .padding(top = 8.dp, start = 50.dp, end = 16.dp),
         horizontalArrangement = Arrangement.SpaceEvenly
     ) {
         weeklyData.forEach { data ->
             Text(
-                text = data.week,
-                fontSize = 14.sp,
+                text = "${data.weekNumber}주",
+                fontSize = 12.sp,
                 color = Color.Black
             )
         }
     }
 }
-
-// 주차별 데이터 클래스
-data class WeeklyData(
-    val week: String,
-    val hours: Int
-)
 
 @SuppressLint("DefaultLocale")
 @RequiresApi(Build.VERSION_CODES.O)
