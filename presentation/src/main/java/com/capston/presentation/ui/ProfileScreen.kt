@@ -114,6 +114,12 @@ fun ProfileScreen(loginViewModel: LoginViewModel, myPageViewModel: MyPageViewMod
     }
 
     val mypageState by myPageViewModel.getDistinctMyPage.collectAsState()
+    val statistics by myPageViewModel.getMyPageStatistics.collectAsState()
+
+    LaunchedEffect(Unit) {
+        myPageViewModel.getMonthlyStatistics("2025-05")
+    }
+
 
     // 완료한 강의 및 공부 시간 컴포넌트의 확장 상태 관리
     var isLecturesExpanded by remember { mutableStateOf(false) }
