@@ -94,6 +94,7 @@ import com.capston.presentation.theme.SubPurple
 import com.capston.presentation.theme.WarmPurple
 import com.capston.presentation.theme.chipGray
 import com.capston.presentation.viewmodel.LoginViewModel
+import com.capston.presentation.viewmodel.MyPageViewModel
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -101,10 +102,12 @@ import java.time.format.DateTimeFormatter
 @RequiresApi(Build.VERSION_CODES.O)
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
-fun ProfileScreen(loginViewModel: LoginViewModel) {
+fun ProfileScreen(loginViewModel: LoginViewModel, myPageViewModel: MyPageViewModel) {
     LaunchedEffect(Unit) {
-        loginViewModel.getUserProfile()
+        myPageViewModel.getDistinctMyPage()
     }
+
+    val mypageState by myPageViewModel.getDistinctMyPage.collectAsState()
 
     // 완료한 강의 및 공부 시간 컴포넌트의 확장 상태 관리
     var isLecturesExpanded by remember { mutableStateOf(false) }
@@ -112,23 +115,12 @@ fun ProfileScreen(loginViewModel: LoginViewModel) {
     var isStudyStatusExpanded by remember { mutableStateOf(true) }
     var isSubjectExpanded by remember { mutableStateOf(true) }
 
-    // 유저 이름과 다이얼로그 상태 관리
-    val userState by loginViewModel.getUserProfile.collectAsState()
-    var displayName by remember(userState.name) {
-        mutableStateOf(userState.name)
-    }
-
-    LaunchedEffect(userState) {
-        displayName = userState.name
-    }
-
-    Log.d("userName", userState.toString())
-
     var showEditDialog by remember { mutableStateOf(false) }
     var showWarningDialog by remember { mutableStateOf(false) }
 
     // 다이얼로그에서 편집 중인 이름
     var editUserName by remember { mutableStateOf("") }
+    var displayName  = mypageState.userName
 
     if (showEditDialog) {
         EditNameDialog(
