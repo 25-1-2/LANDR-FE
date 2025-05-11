@@ -143,6 +143,7 @@ fun ProfileScreen(loginViewModel: LoginViewModel, myPageViewModel: MyPageViewMod
                 } else {
                     Log.d("ProfileScreen", "Submitting name change: $newName")
                     loginViewModel.patchUserName(UserNameDto(name = newName))
+                    myPageViewModel.getDistinctMyPage()
                     showEditDialog = false
                 }
             }
