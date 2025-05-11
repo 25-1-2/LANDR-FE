@@ -30,8 +30,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
@@ -41,6 +39,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -78,13 +78,10 @@ import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import androidx.compose.ui.zIndex
 import com.capston.domain.request.UserNameDto
-import com.capston.domain.response.enum_class.DayOfWeek
-import com.capston.domain.response.enum_class.Subject
 import com.capston.domain.response.mypage.CompletedPlanDto
 import com.capston.domain.response.mypage.GetDistinctMyPageResponse
 import com.capston.domain.response.mypage.GetMyPageStatisticsResponse
 import com.capston.domain.response.mypage.SubjectAchievementDto
-import com.capston.domain.usecase.mypage.GetMonthlyStatisticsUseCase
 import com.capston.presentation.R
 import com.capston.presentation.theme.CoolGray
 import com.capston.presentation.theme.DustyRose
@@ -99,8 +96,8 @@ import com.capston.presentation.theme.SoftPink
 import com.capston.presentation.theme.SubPurple
 import com.capston.presentation.theme.WarmPurple
 import com.capston.presentation.theme.chipGray
-import com.capston.presentation.theme.materialGray
 import com.capston.presentation.theme.textGray
+import com.capston.presentation.ui.login.SubjectDataDto
 import com.capston.presentation.viewmodel.LoginViewModel
 import com.capston.presentation.viewmodel.MyPageViewModel
 import java.time.LocalDate
@@ -111,13 +108,14 @@ import java.time.format.DateTimeFormatter
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun ProfileScreen(loginViewModel: LoginViewModel, myPageViewModel: MyPageViewModel) {
+
+    // Explicitly load both data sources on initial composition
     LaunchedEffect(Unit) {
         myPageViewModel.getDistinctMyPage()
     }
 
     val mypageState by myPageViewModel.getDistinctMyPage.collectAsState()
     val myStatisticsState by myPageViewModel.getMyPageStatistics.collectAsState()
-
 
     // 완료한 강의 및 공부 시간 컴포넌트의 확장 상태 관리
     var isLecturesExpanded by remember { mutableStateOf(false) }
@@ -379,7 +377,8 @@ fun ProfileScreen(loginViewModel: LoginViewModel, myPageViewModel: MyPageViewMod
                 // 접기/펼치기 기능이 있는 SubjectDistributionGraph 컴포넌트 호출
                 SubjectDistributionGraph(
                     isExpanded = isStudyTimeExpanded,
-                    onToggle = { isStudyTimeExpanded = it }
+                    onToggle = { isStudyTimeExpanded = it },
+                    statisticsResponse = myStatisticsState
                 )
             }
 
@@ -601,7 +600,9 @@ fun CalendarSelectionBox(
     var selectedYear by remember { mutableStateOf(currentYear) }
     var selectedMonth by remember { mutableStateOf(currentMonth) }
 
-    myPageViewModel.getMonthlyStatistics("${selectedYear}-${selectedMonth}")
+    LaunchedEffect(selectedYear, selectedMonth) {
+        myPageViewModel.getMonthlyStatistics("${selectedYear}-${selectedMonth}")
+    }
 
     // 달력 표시 여부
     var showCalendar by remember { mutableStateOf(false) }
@@ -1136,46 +1137,82 @@ private fun DrawScope.drawBubbleWithText(text: String, position: Offset) {
 @Composable
 fun SubjectDistributionGraph(
     isExpanded: Boolean,
-    onToggle: (Boolean) -> Unit
+    onToggle: (Boolean) -> Unit,
+    statisticsResponse: GetMyPageStatisticsResponse
 ) {
-    val rawSubjects = listOf(
-        SubjectData(Subject.ENG, 0, MainPurple),
-        SubjectData(Subject.UNIV, 0, MutePurple),
-        SubjectData(Subject.KOR, 5, SubPurple),
-        SubjectData(Subject.SCI, 5, WarmPurple),
-        SubjectData(Subject.SOC, 5, SoftPink),
-        SubjectData(Subject.HIST, 10, LavenderGray),
-        SubjectData(Subject.LANG2, 5, DustyRose),
-        SubjectData(Subject.MATH, 5, CoolGray),
-        SubjectData(Subject.VOC, 5, SkyLavender),
-    )
 
-    //  0시간인 과목 제거
-    val subjects = rawSubjects.filter { it.hours > 0 }
+    LaunchedEffect(statisticsResponse) {
+        Log.d("SubjectDistribution", "받은 데이터: subjectTimes=${statisticsResponse.subjectTimes.size}, totalTime=${statisticsResponse.totalStudyMinutes}")
+    }
 
-    // 총 공부 시간
+    val subjects = statisticsResponse.subjectTimes
+        .filter { it.totalMinutes > 0 }
+        .mapIndexed { index, subjectTime ->
+            val color = when (index % 9) {
+                0 -> MainPurple
+                1 -> MutePurple
+                2 -> SubPurple
+                3 -> WarmPurple
+                4 -> SoftPink
+                5 -> LavenderGray
+                6 -> DustyRose
+                7 -> CoolGray
+                else -> SkyLavender
+            }
+            SubjectDataDto(
+                subject = subjectTime.subject,
+                hours = subjectTime.totalMinutes,
+                color = MainPurple
+            )
+        }
+
+    // If no data, show appropriate message
+    if (subjects.isEmpty()) {
+        Box(modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "기록된 공부 시간이 없습니다.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.Gray
+            )
+        }
+        return
+    }
+
+    // Calculate total hours
     val totalHours = subjects.sumOf { it.hours }
 
-    // 각 과목의 각도 계산 (비율 * 360도)
+    // Calculate angles for pie chart
     val angles = subjects.map { (it.hours.toFloat() / totalHours) * 360f }
 
-    // 각 과목의 퍼센트 계산
+    // Calculate percentages
     val percentages = subjects.map { (it.hours.toFloat() / totalHours) * 100f }
 
-    // 가장 많은 시간을 투자하는 과목 찾기
+    // Find subject with max hours
     val maxHours = subjects.maxOf { it.hours }
     val topSubjects = subjects.filter { it.hours == maxHours }
-
-    // 가장 많은 시간을 투자하는 과목들의 이름을 쉼표로 구분하여 문자열 생성
     val topSubjectsText = topSubjects.joinToString(", ") { it.subject.label }
 
+    // SubjectTimeDto를 SubjectData로 변환 (차트 표시용)
+    val subjectDataList = statisticsResponse.subjectTimes.map { timeDto ->
+        SubjectDataDto(
+            subject = timeDto.subject,
+            hours = timeDto.totalMinutes,
+            color = MainPurple // 모든 과목에 동일한 색상 적용
+        )
+    }
+
+    // UI 구성
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 20.dp, vertical = 16.dp),
-        horizontalAlignment = Alignment.Start // 전체 컬럼을 왼쪽 정렬로 변경
+        horizontalAlignment = Alignment.Start
     ) {
-        // 제목 행 (아이콘 추가)
+        // 헤더 부분
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -1199,12 +1236,11 @@ fun SubjectDistributionGraph(
                 modifier = Modifier.padding(end = 5.dp)
             )
 
-            // 오른쪽 화살표 - 클릭 가능한 토글 버튼으로 변경
+            // 토글 버튼
             IconButton(
                 onClick = { onToggle(!isExpanded) },
                 modifier = Modifier.size(24.dp)
             ) {
-                // 회전 애니메이션 추가
                 val rotationState by animateFloatAsState(
                     targetValue = if (isExpanded) 90f else 0f,
                     label = "rotationAnimation"
@@ -1217,19 +1253,18 @@ fun SubjectDistributionGraph(
                 )
             }
 
-            // 나머지 공간 채우기
             Spacer(modifier = Modifier.weight(1f))
 
-            // 총 공부 시간 표시 (펼치기 상태에 관계없이 표시)
+            // 총 공부 시간
             Text(
-                text = "총 ${totalHours}시간",
+                text = "총 ${statisticsResponse.totalStudyMinutes}분",
                 style = MaterialTheme.typography.bodyMedium,
                 color = Color.Gray,
                 fontWeight = FontWeight.Bold
             )
         }
 
-        // 회색 테두리 박스 - 중앙 정렬로 변경
+        // 정보 박스
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -1237,15 +1272,11 @@ fun SubjectDistributionGraph(
             contentAlignment = Alignment.Center
         ) {
             Card(
-                modifier = Modifier
-                    .padding(10.dp),
-                shape = RoundedCornerShape(5.dp), // 둥근 모서리
-                colors = CardDefaults.cardColors(
-                    containerColor = Color.White // 흰색 배경
-                ),
+                modifier = Modifier.padding(10.dp),
+                shape = RoundedCornerShape(5.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
                 border = BorderStroke(1.dp, color = LightGray60)
             ) {
-                // 완강 정보 텍스트
                 Text(
                     buildAnnotatedString {
                         withStyle(style = SpanStyle(color = SubPurple)) {
@@ -1261,10 +1292,10 @@ fun SubjectDistributionGraph(
             }
         }
 
-        // 확장된 경우에만 원형 그래프와 범례 표시
+        // 확장 시 그래프와 범례 표시
         AnimatedVisibility(visible = isExpanded) {
             Column {
-                // 원형 그래프는 중앙 정렬
+                // 원형 그래프
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier
@@ -1272,21 +1303,20 @@ fun SubjectDistributionGraph(
                         .size(240.dp)
                         .padding(top = 40.dp)
                 ) {
-                    // 도넛 차트 (말풍선 포함)
-                    SubjectPieChartWithBubbles(subjects, angles)
+                    SubjectPieChartWithBubbles(subjectDataList, angles)
                 }
 
                 Spacer(modifier = Modifier.height(40.dp))
 
-                // 범례 (퍼센트로 표시)
-                SubjectLegendWithPercentage(subjects, percentages)
+                // 범례
+                SubjectLegendWithPercentage(subjectDataList, percentages)
             }
         }
     }
 }
 
 @Composable
-fun SubjectPieChartWithBubbles(subjects: List<SubjectData>, angles: List<Float>) {
+fun SubjectPieChartWithBubbles(subjects: List<SubjectDataDto>, angles: List<Float>) {
     val animatedValues = List(subjects.size) { remember { Animatable(0f) } }
 
     // 애니메이션 적용
@@ -1355,7 +1385,7 @@ fun SubjectPieChartWithBubbles(subjects: List<SubjectData>, angles: List<Float>)
 
 @Composable
 fun SubjectLegendWithPercentage(
-    subjects: List<SubjectData>,
+    subjects: List<SubjectDataDto>,
     percentages: List<Float>
 ) {
     Column(
@@ -1400,13 +1430,6 @@ fun SubjectLegendWithPercentage(
         }
     }
 }
-
-// 과목 데이터 클래스
-data class SubjectData(
-    val subject: Subject,
-    val hours: Int,
-    val color: Color
-)
 
 @Composable
 fun TodayCircleGraph(name: String, cleared: Int, total: Int) {
@@ -1815,14 +1838,24 @@ fun SubjectAchievementGraph(
     onToggle: (Boolean) -> Unit,
     mypageState: GetDistinctMyPageResponse
 ) {
-    // 현재 날짜 가져오기
-    val currentDate = LocalDate.now()
-    val currentYear = currentDate.format(DateTimeFormatter.ofPattern("yyyy"))
-    val currentMonth = currentDate.format(DateTimeFormatter.ofPattern("MM"))
-    val previousMonth = currentDate.minusMonths(2)
-
     // 과목별 성취 데이터
     val subjectData = mypageState.subjectAchievementList
+
+    // If no data, show appropriate message
+    if (subjectData.isEmpty()) {
+        Box(modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "공부하고 있는 과목이 없습니다.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.Gray
+            )
+        }
+        return
+    }
 
     // 평균 성취율 계산
     val averageProgress = subjectData
