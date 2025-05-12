@@ -203,10 +203,6 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
 
     // 앱 초기화 시 데이터 로드
     LaunchedEffect(Unit) {
-        val dday = homeState.dday
-        homeViewModel.refreshInBackground(dday.ddayId)
-
-        // FIX: More thorough null checks
         try {
             val dday = homeState.dday
             if (dday != null && dday.ddayId > 0) {
@@ -216,7 +212,6 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
                 )
             }
         } catch (e: Exception) {
-            // Log error but don't crash
             android.util.Log.e("HomeScreen", "Error patching D-Day: ${e.message}", e)
         }
     }
