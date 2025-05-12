@@ -1,6 +1,8 @@
 package com.capston.presentation.ui
 
 import android.annotation.SuppressLint
+import android.app.Activity
+import android.content.Intent
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
@@ -47,6 +49,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -63,6 +66,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
@@ -77,6 +81,7 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import androidx.compose.ui.zIndex
+import androidx.core.content.ContextCompat.startActivity
 import com.capston.domain.request.UserNameDto
 import com.capston.domain.response.enum_class.Subject
 import com.capston.domain.response.mypage.CompletedPlanDto
@@ -100,9 +105,11 @@ import com.capston.presentation.theme.WarmPurple
 import com.capston.presentation.theme.chipGray
 import com.capston.presentation.theme.materialGray
 import com.capston.presentation.theme.textGray
+import com.capston.presentation.ui.login.LoginActivity
 import com.capston.presentation.ui.login.SubjectDataDto
 import com.capston.presentation.viewmodel.LoginViewModel
 import com.capston.presentation.viewmodel.MyPageViewModel
+import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import kotlin.math.ceil
@@ -117,6 +124,12 @@ fun ProfileScreen(loginViewModel: LoginViewModel, myPageViewModel: MyPageViewMod
     LaunchedEffect(Unit) {
         myPageViewModel.getDistinctMyPage()
     }
+
+    // Get the current context
+    val context = LocalContext.current
+
+// Create rememberable coroutine scope
+    val scope = rememberCoroutineScope()
 
     val mypageState by myPageViewModel.getDistinctMyPage.collectAsState()
     val myStatisticsState by myPageViewModel.getMyPageStatistics.collectAsState()
@@ -438,6 +451,41 @@ fun ProfileScreen(loginViewModel: LoginViewModel, myPageViewModel: MyPageViewMod
 
             // 하단 여백
             Spacer(modifier = Modifier.height(20.dp))
+
+            Text(
+                text = "로그아웃",
+                color = MainPurple,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        scope.launch {
+                            // Perform logout in coroutine
+                            loginViewModel.logout()
+
+                            try {
+                                // Create a completely new task with LoginActivity
+                                val intent = Intent(context, LoginActivity::class.java).apply {
+                                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+                                            Intent.FLAG_ACTIVITY_CLEAR_TASK
+                                }
+
+                                // Log before navigation
+                                Log.d("ProfileScreen", "Starting LoginActivity, context: $context")
+                                context.startActivity(intent)
+
+//                                // Force stop the current app process (use with caution)
+//                                if (context is Activity) {
+//                                    Log.d("ProfileScreen", "Finishing activity")
+//                                    context.finishAffinity()
+//                                    android.os.Process.killProcess(android.os.Process.myPid())
+//                                }
+                            } catch (e: Exception) {
+                                Log.e("ProfileScreen", "Error during logout navigation: ${e.message}", e)
+                            }
+                        }
+                    }
+                    .padding(16.dp)
+            )
         }
     }
 }

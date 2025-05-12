@@ -171,36 +171,62 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
 
     // D-Day 관련 상태 관리
     var examTitle by rememberSaveable {
-        mutableStateOf(dDayState?.title ?: "예정된 계획이 없어요.")
+        mutableStateOf(dDayState?.title ?: "")
     }
     var examDate by rememberSaveable {
         mutableStateOf(dDayState?.goalDate ?: "")
     }
-    var dDay by rememberSaveable { mutableStateOf(0) }
+    var dDay by rememberSaveable { mutableStateOf("D-Day") }
 
-    fun calculateDDay(dateString: String): Int {
+    fun calculateDDay(dateString: String): String {
+        if (dateString.isBlank()) return "D-Day"
+
         val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
         return try {
             val examDateTime = LocalDate.parse(dateString, formatter)
             val today = LocalDate.now()
-            ChronoUnit.DAYS.between(today, examDateTime).toInt()
+            val daysDifference = ChronoUnit.DAYS.between(today, examDateTime).toInt()
+
+            when {
+                daysDifference > 0 -> "D-$daysDifference" // Future date (countdown)
+                daysDifference < 0 -> "D+${-daysDifference}" // Past date (count up from event)
+                else -> "D-Day" // Today is the day
+            }
         } catch (e: Exception) {
-            0
+            "D-Day" // Default in case of parsing error
         }
     }
 
-    // D-Day 상태 업데이트
+    // D-Day 상태 업데이트 - dDayState가 변경될 때마다 실행
     LaunchedEffect(dDayState) {
-        dDayState?.let {
-            examTitle = it.title
-            dDay = calculateDDay(it.goalDate)
+        if (dDayState != null) {
+            examTitle = dDayState!!.title
+            examDate = dDayState!!.goalDate
+            dDay = calculateDDay(dDayState!!.goalDate)
+        } else {
+            // Reset to default values when there's no D-Day
+            examTitle = ""
+            examDate = ""
+            dDay = "D-Day"
         }
     }
 
+    // 앱 초기화 시 데이터 로드
     LaunchedEffect(Unit) {
         homeViewModel.refreshInBackground()
-        if (homeState.dday.ddayId > 0) {
-            homeViewModel.patchDDay(homeState.dday.ddayId, UpdateDDayRequest(homeState.dday.title,homeState.dday.goalDate))
+
+        // FIX: More thorough null checks
+        try {
+            val dday = homeState.dday
+            if (dday != null && dday.ddayId > 0) {
+                homeViewModel.patchDDay(
+                    dday.ddayId,
+                    UpdateDDayRequest(dday.title ?: "", dday.goalDate ?: "")
+                )
+            }
+        } catch (e: Exception) {
+            // Log error but don't crash
+            android.util.Log.e("HomeScreen", "Error patching D-Day: ${e.message}", e)
         }
     }
 
@@ -275,7 +301,7 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
         }
     }
 
-    // 바텀 시트 처리
+    // 바텀 시트 처리 - with additional null safety
     ShowBottomSheets(
         isBottomSheetVisible = isBottomSheetVisible,
         modalBottomSheetState = modalBottomSheetState,
@@ -288,16 +314,32 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
         examTitle = examTitle,
         examDate = examDate,
         onSaveExam = { newTitle, newDate ->
-            val dDayId = dDayState?.ddayId
-            if (dDayId != null) {
-                // Update existing D-Day
-                homeViewModel.patchDDay(dDayId, UpdateDDayRequest(newTitle, newDate))
-            } else {
-                // Create new D-Day
-                homeViewModel.postDDay(UpdateDDayRequest(newTitle, newDate))
+            try {
+                val dDayId = dDayState?.ddayId
+                if (dDayId != null && dDayId > 0) {
+                    // Update existing D-Day
+                    homeViewModel.patchDDay(dDayId, UpdateDDayRequest(newTitle, newDate))
+                } else {
+                    // Create new D-Day
+                    homeViewModel.postDDay(UpdateDDayRequest(newTitle, newDate))
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("HomeScreen", "Error saving D-Day: ${e.message}", e)
             }
             isExamBottomSheetVisible = false
-        }
+        },
+        onDeleteExam = {
+            try {
+                val ddayId = dDayState?.ddayId
+                if (ddayId != null && ddayId > 0) {
+                    homeViewModel.deleteDDay(ddayId)
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("HomeScreen", "Error deleting D-Day: ${e.message}", e)
+            }
+            isExamBottomSheetVisible = false
+        },
+        hasDDay = dDayState?.ddayId != null && (dDayState!!.ddayId > 0)
     )
 }
 
@@ -1001,7 +1043,7 @@ fun EmptyLectureState(context: Context) {
 @Composable
 fun ExamDdayCard(
     examTitle: String,
-    dDay: Int,
+    dDay: String,
     onEditClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -1082,14 +1124,16 @@ fun ExamDdayHeader(onEditClick: () -> Unit) {
 }
 
 @Composable
-fun ExamDdayContent(examTitle: String, dDay: Int) {
+fun ExamDdayContent(examTitle: String, dDay: String) {
+    val displayTitle = if (examTitle == "") "시험을 추가해보세요!" else examTitle
+
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = "D-$dDay",
+            text = dDay,
             fontSize = 48.sp,
             fontWeight = FontWeight.Bold,
             color = White,
@@ -1099,7 +1143,7 @@ fun ExamDdayContent(examTitle: String, dDay: Int) {
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            text = examTitle,
+            text = displayTitle,
             fontSize = 14.sp,
             color = White
         )
@@ -1219,7 +1263,9 @@ fun ShowBottomSheets(
     planViewModel: PlanViewModel,
     examTitle: String,
     examDate: String,
-    onSaveExam: (String, String) -> Unit
+    onSaveExam: (String, String) -> Unit,
+    onDeleteExam: () -> Unit = {}, // Add delete callback
+    hasDDay: Boolean = false // Flag to show if there's an existing D-Day
 ) {
     // 강의 목록 바텀 시트
     if (isBottomSheetVisible) {
@@ -1240,7 +1286,7 @@ fun ShowBottomSheets(
         }
     }
 
-    // 시험 일정 바텀 시트
+    /// 시험 일정 바텀 시트
     if (isExamBottomSheetVisible) {
         ModalBottomSheet(
             sheetState = examModalBottomSheetState,
@@ -1255,7 +1301,9 @@ fun ShowBottomSheets(
                 onDismiss = onDismissExamBottomSheet,
                 currentTitle = examTitle,
                 currentDate = examDate,
-                onSave = onSaveExam
+                onSave = onSaveExam,
+                onDelete = onDeleteExam,
+                showDeleteButton = hasDDay
             )
         }
     }
@@ -1502,7 +1550,9 @@ fun ExamBottomSheetContent(
     onDismiss: () -> Unit,
     currentTitle: String,
     currentDate: String,
-    onSave: (String, String) -> Unit
+    onSave: (String, String) -> Unit,
+    onDelete: () -> Unit = {}, // Add delete callback
+    showDeleteButton: Boolean = false // Show delete button for existing D-Days
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -1621,7 +1671,7 @@ fun ExamBottomSheetContent(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = 16.dp),
-                    placeholder = { Text("시험 이름을 입력하세요") }
+                    placeholder = { Text(text = "시험 이름을 입력하세요", style = MaterialTheme.typography.bodyMedium) },
                 )
 
                 // 시험 날짜 선택기
@@ -1651,26 +1701,60 @@ fun ExamBottomSheetContent(
 
             Spacer(modifier = Modifier.weight(1f))
 
-            // 저장 버튼
-            Button(
-                onClick = {
-                    onSave(examTitle, examDate)
-                },
+            // 버튼 영역 - 삭제와 저장 버튼을 가로로 배치
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 16.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MainPurple,
-                    contentColor = White
-                ),
-                shape = RoundedCornerShape(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Text(
-                    text = "저장하기",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(vertical = 8.dp)
-                )
+                // 삭제 버튼 (기존 D-Day가 있을 때만 표시)
+                if (showDeleteButton) {
+                    Button(
+                        onClick = {
+                            onDelete()
+                            scope.launch {
+                                modalBottomSheetState.hide()
+                            }.invokeOnCompletion {
+                                onDismiss()
+                            }
+                        },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = White.copy(alpha = 0.8f),
+                            contentColor = MainPurple,
+                        ),
+                        shape = RoundedCornerShape(8.dp),
+                        border = BorderStroke(1.dp, MainPurple)
+                    ) {
+                        Text(
+                            text = "삭제하기",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(vertical = 8.dp)
+                        )
+                    }
+                }
+
+                // 저장 버튼
+                Button(
+                    onClick = {
+                        onSave(examTitle, examDate)
+                    },
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MainPurple,
+                        contentColor = White
+                    ),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text(
+                        text = "저장하기",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
+                }
             }
         }
     }

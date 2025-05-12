@@ -147,6 +147,7 @@ class HomeViewModel @Inject constructor(
                 }
                 .collect { response ->
                     _dDay.value = response
+                    refreshInBackground()
                     Log.d("HomeViewModel", "HomeViewModel 업데이트됨: ${response}")
                 }
             loadingStateManager.hide()
@@ -162,17 +163,22 @@ class HomeViewModel @Inject constructor(
                 }
                 .collect { response ->
                     _dDay.value = response
+                    refreshInBackground()
                     Log.d("HomeViewModel", "HomeViewModel 업데이트됨: ${response}")
                 }
             loadingStateManager.hide()
         }
     }
 
-    fun deleteDDay(dDayId: Int) {
+    fun deleteDDay(ddayId: Int) {
         viewModelScope.launch {
-            loadingStateManager.show()
-            deleteDDayUseCase(dDayId)
-            loadingStateManager.hide()
+            try {
+                deleteDDayUseCase(ddayId)
+                _dDay.value = null
+                refreshInBackground()
+            } catch (e: Exception) {
+                Log.e("HomeViewModel", "Error deleting D-Day: ${e.message}", e)
+            }
         }
     }
 
@@ -185,6 +191,7 @@ class HomeViewModel @Inject constructor(
                 }
                 .collect { response ->
                     _dDay.value = response
+                    refreshInBackground()
                     Log.d("HomeViewModel", "HomeViewModel 업데이트됨: ${response}")
                 }
             loadingStateManager.hide()
