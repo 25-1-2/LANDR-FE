@@ -4,10 +4,12 @@ import android.util.Log
 import com.capston.domain.base.BaseLoadingState
 import com.capston.data.repository.remote.api.HomeApi
 import com.capston.domain.datasource.HomeDataSource
+import com.capston.domain.request.UpdateDDayRequest
 import com.capston.domain.response.BaseResponse
 import com.capston.domain.response.CheckResponse
 import com.capston.domain.response.home.DistinctHomeIdResponse
 import com.capston.domain.response.BaseResult
+import com.capston.domain.response.home.DDayResponse
 import com.capston.domain.response.home.TodayScheduleResponse
 import com.capston.domain.response.home.UserProgressResponse
 import kotlinx.coroutines.flow.Flow
@@ -62,6 +64,36 @@ class HomeDataSourceImpl @Inject constructor(
         emit(result)
     }.catch { e ->
         Log.e("patchLessonSchedulesCheckToggle 에러", e.message.toString())
+    }
+
+    override suspend fun postDDay(updateDDayRequest: UpdateDDayRequest): Flow<DDayResponse> = flow {
+        val response = homeApi.postDDay(updateDDayRequest)
+        emit(response)
+    }.catch { e->
+        Log.e("HomeDataSourceImpl 에러", e.message.toString())
+    }
+
+    override suspend fun getDDay(dDayId: Int): Flow<DDayResponse> = flow {
+        val response = homeApi.getDDay(dDayId)
+        emit(response)
+    }.catch { e->
+        Log.e("HomeDataSourceImpl 에러", e.message.toString())
+    }
+
+    override suspend fun deleteDDay(dDayId: Int) {
+        val response = homeApi.deleteDDay(dDayId)
+        Log.d("HomeDataSourceImpl 에러", response.toString())
+        return response
+    }
+
+    override suspend fun patchDDay(
+        dDayId: Int,
+        updateDDayRequest: UpdateDDayRequest
+    ): Flow<DDayResponse> = flow {
+        val response = homeApi.patchDDay(dDayId, updateDDayRequest)
+        emit(response)
+    }.catch { e->
+        Log.e("HomeDataSourceImpl 에러", e.message.toString())
     }
 
     private fun parseErrorMessage(json: String): String {
