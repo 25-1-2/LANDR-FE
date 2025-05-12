@@ -27,7 +27,7 @@ class LoginViewModel @Inject constructor(
     private val postLoginInfoUseCase: PostLoginInfoUseCase,
     private val getUserProfileUseCase: GetUserProfileUseCase,
     private val patchUserNameUseCase: PatchUserNameUseCase,
-    private val saveTokensUseCase: SaveAccessTokenUseCase,
+    private val saveAccessTokenUseCase: SaveAccessTokenUseCase,
     private val getAccessTokenUseCase: GetAccessTokenUseCase,
     private val clearTokensUseCase: ClearTokensUseCase,
     private val loadingStateManager: LoadingStateManager
@@ -57,7 +57,7 @@ class LoginViewModel @Inject constructor(
                     Log.d("LoginViewModel", "로그인 성공! Access Token: ${response.token}")
 
                     // 토큰 저장 (비동기 작업)
-                    saveTokensUseCase(
+                    saveAccessTokenUseCase(
                         response.token,
                     )
                     Log.d("LoginViewModel", "토큰 저장 요청 완료")
