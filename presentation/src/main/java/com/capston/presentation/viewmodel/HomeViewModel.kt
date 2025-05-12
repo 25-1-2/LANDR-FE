@@ -4,12 +4,18 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.capston.domain.manager.LoadingStateManager
+import com.capston.domain.request.UpdateDDayRequest
 import com.capston.domain.response.CheckResponse
+import com.capston.domain.response.home.DDayResponse
 import com.capston.domain.response.home.DistinctHomeIdResponse
 import com.capston.domain.response.home.TodayScheduleResponse
 import com.capston.domain.response.home.UserProgressResponse
+import com.capston.domain.usecase.home.DeleteDDayUseCase
+import com.capston.domain.usecase.home.GetDDayUseCase
 import com.capston.domain.usecase.home.GetDistinctHomeUseCase
+import com.capston.domain.usecase.home.PatchDDayUseCase
 import com.capston.domain.usecase.home.PatchLessonSchedulesCheckToggleUseCase
+import com.capston.domain.usecase.home.PostDDayUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -21,6 +27,10 @@ import javax.inject.Inject
 class HomeViewModel @Inject constructor(
     private val getDistinctHomeUseCase: GetDistinctHomeUseCase,
     private val patchLessonSchedulesCheckToggleUseCase: PatchLessonSchedulesCheckToggleUseCase,
+    private val getDDayUseCase: GetDDayUseCase,
+    private val postDDayUseCase: PostDDayUseCase,
+    private val deleteDDayUseCase: DeleteDDayUseCase,
+    private val patchDDayUseCase: PatchDDayUseCase,
     private val loadingStateManager: LoadingStateManager
 ) : ViewModel() {
 
@@ -29,6 +39,15 @@ class HomeViewModel @Inject constructor(
 
     private val _patchLessonSchedulesCheckToggle = MutableStateFlow(CheckResponse())
     val patchLessonSchedulesCheckToggle = _patchLessonSchedulesCheckToggle
+
+    private val _getDDay = MutableStateFlow(DDayResponse())
+    val getDDay: StateFlow<DDayResponse> = _getDDay
+
+    private val _patchDDay = MutableStateFlow(DDayResponse())
+    val patchDDay: StateFlow<DDayResponse> = _patchDDay
+
+    private val _postDDay = MutableStateFlow(DDayResponse())
+    val postDDay: StateFlow<DDayResponse> = _postDDay
 
     // 캐시된 데이터 유지
     private var lastLoadTime: Long = 0
@@ -121,6 +140,59 @@ class HomeViewModel @Inject constructor(
             getDistinctHomeUseCase().collect { response ->
                 _getDistinctHome.value = response
             }
+        }
+    }
+
+    fun getDDay(dDayId: Int) {
+        viewModelScope.launch {
+            loadingStateManager.show()
+            getDDayUseCase(dDayId)
+                .catch { e ->
+                    Log.e("HomeViewModel", "HomeViewModel 에러: ${e.message}")
+                }
+                .collect { response ->
+                    _getDDay.value = response
+                    Log.d("HomeViewModel", "HomeViewModel 업데이트됨: ${response}")
+                }
+            loadingStateManager.hide()
+        }
+    }
+
+    fun postDDay(updateDDayRequest: UpdateDDayRequest) {
+        viewModelScope.launch {
+            loadingStateManager.show()
+            postDDayUseCase(updateDDayRequest)
+                .catch { e ->
+                    Log.e("HomeViewModel", "HomeViewModel 에러: ${e.message}")
+                }
+                .collect { response ->
+                    _postDDay.value = response
+                    Log.d("HomeViewModel", "HomeViewModel 업데이트됨: ${response}")
+                }
+            loadingStateManager.hide()
+        }
+    }
+
+    fun deleteDDay(dDayId: Int) {
+        viewModelScope.launch {
+            loadingStateManager.show()
+            deleteDDayUseCase(dDayId)
+            loadingStateManager.hide()
+        }
+    }
+
+    fun patchDDay(dDayId: Int, updateDDayRequest: UpdateDDayRequest) {
+        viewModelScope.launch {
+            loadingStateManager.show()
+            patchDDayUseCase(dDayId, updateDDayRequest)
+                .catch { e ->
+                    Log.e("HomeViewModel", "HomeViewModel 에러: ${e.message}")
+                }
+                .collect { response ->
+                    _postDDay.value = response
+                    Log.d("HomeViewModel", "HomeViewModel 업데이트됨: ${response}")
+                }
+            loadingStateManager.hide()
         }
     }
 }
