@@ -114,10 +114,15 @@ class MainActivity : ComponentActivity() {
             LaunchedEffect(Unit) {
                 homeViewModel.getDistinctHome()
                 homeViewModel.getDistinctHome.collectLatest { homeData ->
-                    if (homeData.dday.ddayId > 0) {
-                        homeViewModel.getDDay(homeData.dday.ddayId)
+                    val dday = homeData.dday
+                    if (dday != null && dday.ddayId > 0) {
+                        homeViewModel.getDDay(dday.ddayId)
+                    } else {
+                        // Handle the case when there's no D-Day
+                        Log.d("HomeScreen", "No D-Day information available")
                     }
                 }
+
                 loginViewModel.getUserProfile()
             }
 
