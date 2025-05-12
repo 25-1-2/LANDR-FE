@@ -18,6 +18,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -170,14 +171,19 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
     var examDate by rememberSaveable { mutableStateOf("2025-05-16") } // 예시 날짜
     var dDay by rememberSaveable { mutableStateOf(0) } // D-Day 계산된 값
 
+    LaunchedEffect(Unit) {
+        homeViewModel.refreshInBackground()
+    }
+
     // 이번주 학습 성취율 섹션 확장/축소 상태
     var isWeeklyExpanded by remember { mutableStateOf(true) }
 
-    Scaffold(modifier = Modifier.fillMaxSize()) {
+    Scaffold(modifier = Modifier.fillMaxSize()) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState()),
+                .padding(paddingValues)
+                .verticalScroll(rememberScrollState())
         ) {
             // 학습 현황 카드
             LearningStatusCard(
@@ -777,42 +783,15 @@ fun ModifiedLessonList(
     todayLessonList: List<LessonScheduleResponse>,
     isExpanded: Boolean = true // 확장 상태 여부를 매개변수로 받음
 ) {
-    // 제스처 차단을 위한 InputTransformer 생성
-    val inputModifier = Modifier.pointerInput(Unit) {
-        detectVerticalDragGestures { _, _ ->
-            // 아무것도 하지 않음으로써 드래그 제스처를 소비만 함
-        }
-    }
-
-    // 스크롤 가능한 LazyColumn 사용
-    LazyColumn(
+    Column(
         modifier = Modifier
             .padding(start = 30.dp)
-            .fillMaxWidth()  // 너비 꽉 채우기
-            .fillMaxHeight() // 가능한 한 높이 모두 사용
-            // 확장 상태일 때만 스크롤 가능하도록 설정
-            .then(
-                if (!isExpanded) {
-                    Modifier.disableScrolling()
-                } else {
-                    Modifier
-                }
-            )
-            // 스크롤 가능하지만 드래그는 불가능하도록 설정
-            .nestedScroll(remember {
-                object : NestedScrollConnection {
-                    override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                        // 드래그를 위한 스크롤은 차단
-                        return if (source == NestedScrollSource.Drag) {
-                            available // 드래그 소비
-                        } else {
-                            Offset.Zero // 다른 스크롤은 통과
-                        }
-                    }
-                }
-            })
+            .fillMaxWidth()
+            .heightIn(max = maxHeight.dp) // Limit the height
+            .verticalScroll(rememberScrollState())
     ) {
-        items(todayLessonList) { lesson ->
+        // Loop through items manually instead of using LazyColumn's items
+        todayLessonList.forEach { lesson ->
             var isChecked by remember { mutableStateOf(lesson.completed) }
 
             Row(
@@ -827,7 +806,8 @@ fun ModifiedLessonList(
                         onClick = { /* 클릭만 허용 */ }
                     )
             ) {
-                CustomCheckBox (
+                // Existing content for each item
+                CustomCheckBox(
                     isChecked = isChecked,
                     onCheckedChange = {
                         homeViewModel.patchLessonSchedulesCheckToggle(lesson.id)

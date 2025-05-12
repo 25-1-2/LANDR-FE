@@ -5,7 +5,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.capston.domain.manager.LoadingStateManager
 import com.capston.domain.request.LoginDto
-import com.capston.domain.response.LoginResponse
+import com.capston.domain.request.UserNameDto
+import com.capston.domain.response.user.LoginResponse
+import com.capston.domain.response.user.UserProfileResponse
+import com.capston.domain.usecase.login.GetUserProfileUseCase
+import com.capston.domain.usecase.login.PatchUserNameUseCase
 import com.capston.domain.usecase.login.PostLoginInfoUseCase
 import com.capston.domain.usecase.token.ClearTokensUseCase
 import com.capston.domain.usecase.token.GetAccessTokenUseCase
@@ -21,6 +25,8 @@ import javax.inject.Inject
 @HiltViewModel
 class LoginViewModel @Inject constructor(
     private val postLoginInfoUseCase: PostLoginInfoUseCase,
+    private val getUserProfileUseCase: GetUserProfileUseCase,
+    private val patchUserNameUseCase: PatchUserNameUseCase,
     private val saveTokensUseCase: SaveAccessTokenUseCase,
     private val getAccessTokenUseCase: GetAccessTokenUseCase,
     private val clearTokensUseCase: ClearTokensUseCase,
@@ -33,6 +39,9 @@ class LoginViewModel @Inject constructor(
     // 로그인 성공 여부를 나타내는 상태 변수(예: 이벤트 또는 플래그)
     private val _loginSuccess = MutableStateFlow(false)
     val loginSuccess: StateFlow<Boolean> = _loginSuccess.asStateFlow()
+
+    private val _getUserprofile = MutableStateFlow(UserProfileResponse())
+    val getUserProfile: StateFlow<UserProfileResponse> = _getUserprofile.asStateFlow()
 
     fun postLogin(loginDto: LoginDto) {
         viewModelScope.launch {
@@ -70,13 +79,52 @@ class LoginViewModel @Inject constructor(
         }
     }
 
-    // 로그아웃 기능
     fun logout() {
         viewModelScope.launch {
             loadingStateManager.show()
             clearTokensUseCase()
-            Log.d("LoginViewModel", "토큰 삭제 완료")
+
+            Log.d("LoginViewModel", "Tokens and saved name cleared")
             loadingStateManager.hide()
+        }
+    }
+
+    fun getUserProfile() {
+        viewModelScope.launch {
+            try {
+                loadingStateManager.show()
+                getUserProfileUseCase()
+                    .catch { e ->
+                        Log.e("LoginViewModel", "Get profile error: ${e.message}")
+                    }
+                    .collect { response ->
+                        // Apply any name override from our manager
+                        _getUserprofile.value = response
+                        Log.d("LoginViewModel", "Profile retrieved: ${response.name}")
+                    }
+            } finally {
+                loadingStateManager.hide()
+            }
+        }
+    }
+
+    fun patchUserName(userNameDto: UserNameDto) {
+        viewModelScope.launch {
+            try {
+                loadingStateManager.show()
+
+                patchUserNameUseCase(userNameDto)
+                    .catch { e ->
+                        Log.e("LoginViewModel", "Name update error: ${e.message}")
+                    }
+                    .collect { response ->
+                        // Apply our cached name override
+                        _getUserprofile.value = response
+                        Log.d("LoginViewModel", "User profile updated: ${response.name}")
+                    }
+            } finally {
+                loadingStateManager.hide()
+            }
         }
     }
 }

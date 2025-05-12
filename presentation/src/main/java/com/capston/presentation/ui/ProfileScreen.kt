@@ -2,6 +2,7 @@ package com.capston.presentation.ui
 
 import android.annotation.SuppressLint
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
@@ -18,6 +19,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -27,8 +29,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
@@ -37,8 +38,12 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -72,8 +77,13 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import androidx.compose.ui.zIndex
-import com.capston.domain.response.enum_class.DayOfWeek
+import com.capston.domain.request.UserNameDto
 import com.capston.domain.response.enum_class.Subject
+import com.capston.domain.response.mypage.CompletedPlanDto
+import com.capston.domain.response.mypage.GetDistinctMyPageResponse
+import com.capston.domain.response.mypage.GetMyPageStatisticsResponse
+import com.capston.domain.response.mypage.SubjectAchievementDto
+import com.capston.domain.response.mypage.WeeklyTimeDto
 import com.capston.presentation.R
 import com.capston.presentation.theme.CoolGray
 import com.capston.presentation.theme.DustyRose
@@ -88,38 +98,81 @@ import com.capston.presentation.theme.SoftPink
 import com.capston.presentation.theme.SubPurple
 import com.capston.presentation.theme.WarmPurple
 import com.capston.presentation.theme.chipGray
+import com.capston.presentation.theme.materialGray
+import com.capston.presentation.theme.textGray
+import com.capston.presentation.ui.login.SubjectDataDto
+import com.capston.presentation.viewmodel.LoginViewModel
+import com.capston.presentation.viewmodel.MyPageViewModel
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import kotlin.math.ceil
 
 // 마이페이지 스크린
 @RequiresApi(Build.VERSION_CODES.O)
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
-fun ProfileScreen() {
+fun ProfileScreen(loginViewModel: LoginViewModel, myPageViewModel: MyPageViewModel) {
+
+    // Explicitly load both data sources on initial composition
+    LaunchedEffect(Unit) {
+        myPageViewModel.getDistinctMyPage()
+    }
+
+    val mypageState by myPageViewModel.getDistinctMyPage.collectAsState()
+    val myStatisticsState by myPageViewModel.getMyPageStatistics.collectAsState()
+
     // 완료한 강의 및 공부 시간 컴포넌트의 확장 상태 관리
     var isLecturesExpanded by remember { mutableStateOf(false) }
     var isStudyTimeExpanded by remember { mutableStateOf(true) } // 기본값을 true로 설정하여 처음에는 펼쳐진 상태로 시작
     var isStudyStatusExpanded by remember { mutableStateOf(true) }
-    var isWeeklyExpanded by remember { mutableStateOf(true) }
     var isSubjectExpanded by remember { mutableStateOf(true) }
 
-    // 유저 이름과 다이얼로그 상태 관리
-    var userName by remember { mutableStateOf("조은채") }
     var showEditDialog by remember { mutableStateOf(false) }
+    var showWarningDialog by remember { mutableStateOf(false) }
 
     // 다이얼로그에서 편집 중인 이름
     var editUserName by remember { mutableStateOf("") }
+    var isNameUpdated by remember { mutableStateOf(false) }
 
-    // 이름 수정 다이얼로그
+    // LaunchedEffect 추가
+    LaunchedEffect(isNameUpdated) {
+        if (isNameUpdated) {
+            // 이름이 변경되었을 때 데이터 새로고침
+            myPageViewModel.getDistinctMyPage()
+            isNameUpdated = false
+        }
+    }
+
+
     if (showEditDialog) {
         EditNameDialog(
-            initialName = userName,
+            initialName = mypageState.userName,
             onDismiss = { showEditDialog = false },
             onConfirm = { newName ->
-                if (newName.isNotBlank()) {
-                    userName = newName
+                if (newName.length < 3 || newName.length > 9) {
+                    showWarningDialog = true
+                } else {
+                    Log.d("ProfileScreen", "Submitting name change: $newName")
+
+                    loginViewModel.patchUserName(UserNameDto(name = newName))
+
+                    showEditDialog = false
+                    isNameUpdated = true
                 }
-                showEditDialog = false
+            }
+        )
+    }
+
+    // 경고 다이얼로그
+    if (showWarningDialog) {
+        AlertDialog(
+            onDismissRequest = { showWarningDialog = false },
+            title = { Text("이름 입력 오류") },
+            text = { Text("이름은 3자 이상 9자 이하로 입력해주세요.") },
+            confirmButton = {
+                TextButton(onClick = { showWarningDialog = false }) {
+                    Text("확인")
+                }
             }
         )
     }
@@ -153,7 +206,7 @@ fun ProfileScreen() {
                     modifier = Modifier.padding(end = 10.dp)
                 )
                 Text(
-                    text = "${userName}님",
+                    text = "${mypageState.userName}님",
                     fontSize = 14.sp,
                     style = MaterialTheme.typography.bodyMedium
                 )
@@ -166,7 +219,7 @@ fun ProfileScreen() {
                     fontSize = 14.sp,
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.clickable {
-                        editUserName = userName  // 현재 이름으로 초기화
+                        editUserName = mypageState.userName  // 현재 이름으로 초기화
                         showEditDialog = true    // 다이얼로그 표시
                     }
                 )
@@ -174,7 +227,7 @@ fun ProfileScreen() {
                 // 토글 버튼
                 IconButton(
                     onClick = {
-                        editUserName = userName  // 현재 이름으로 초기화
+                        editUserName = mypageState.userName  // 현재 이름으로 초기화
                         showEditDialog = true    // 다이얼로그 표시
                     },
                     modifier = Modifier
@@ -199,8 +252,8 @@ fun ProfileScreen() {
             ) {
                 TodayCircleGraph(
                     name = stringResource(R.string.mypage_today_plan),
-                    cleared = 7,
-                    total = 10
+                    cleared = mypageState.todayCompletedLessonCount,
+                    total = mypageState.todayTotalLessonCount
                 )
             }
 
@@ -241,7 +294,7 @@ fun ProfileScreen() {
                             fontSize = 12.sp
                         )
                         Text(
-                            text = "5개",
+                            text = "${mypageState.completedLectureCount}개",
                             color = Color.White,
                             style = MaterialTheme.typography.bodyMedium,
                             fontSize = 18.sp
@@ -263,8 +316,9 @@ fun ProfileScreen() {
                             fontSize = 12.sp
                         )
                         Spacer(modifier = Modifier.height(4.dp))
+
                         Text(
-                            text = "3일째",
+                            text = "${mypageState.studyStreak} 일째",
                             color = Color.White,
                             style = MaterialTheme.typography.bodyMedium,
                             fontSize = 18.sp
@@ -286,9 +340,10 @@ fun ProfileScreen() {
                             style = MaterialTheme.typography.labelMedium,
                             fontSize = 12.sp
                         )
+
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "3개",
+                            text = "${mypageState.subjectAchievementList.size} 개",
                             color = Color.White,
                             style = MaterialTheme.typography.bodyMedium,
                             fontSize = 18.sp
@@ -311,17 +366,10 @@ fun ProfileScreen() {
                 ),
                 border = BorderStroke(1.dp, color = LightGray60)
             ) {
-                val lectures = listOf(
-                    "Java 프로그래밍 기초",
-                    "Kotlin 입문",
-                    "Android 개발 입문",
-                    "Jetpack Compose 기초",
-                    "UI/UX 디자인 기초"
-                )
 
                 // isLecturesExpanded 상태를 CompletedLecturesToggle로 전달
                 CompletedLecturesToggle(
-                    lectures = lectures,
+                    lectures = mypageState.completedPlanList,
                     isExpanded = isLecturesExpanded,
                     onToggle = { isLecturesExpanded = it }
                 )
@@ -330,7 +378,7 @@ fun ProfileScreen() {
             Spacer(modifier = Modifier.height(20.dp))
 
             // 내 공부 기록 통계 섹션 (제목 + 달력 선택 박스)
-            CalendarSelectionRow()
+            CalendarSelectionRow(myPageViewModel)
 
             // 회색 테두리 박스 - 둥근 모서리 (배경색 없음)
             Card(
@@ -346,7 +394,8 @@ fun ProfileScreen() {
                 // 접기/펼치기 기능이 있는 SubjectDistributionGraph 컴포넌트 호출
                 SubjectDistributionGraph(
                     isExpanded = isStudyTimeExpanded,
-                    onToggle = { isStudyTimeExpanded = it }
+                    onToggle = { isStudyTimeExpanded = it },
+                    statisticsResponse = myStatisticsState
                 )
             }
 
@@ -364,7 +413,8 @@ fun ProfileScreen() {
                 // 접기/펼치기 기능이 있는 WeeklyStudyStatisticsGraph 컴포넌트 호출
                 WeeklyStudyStatisticsGraph(
                     isExpanded = isStudyStatusExpanded,
-                    onToggle = { isStudyStatusExpanded = it }
+                    onToggle = { isStudyStatusExpanded = it },
+                    myStatisticsState = myStatisticsState
                 )
             }
 
@@ -381,7 +431,8 @@ fun ProfileScreen() {
             ) {
                 SubjectAchievementGraph(
                     isExpanded = isSubjectExpanded,
-                    onToggle = { isSubjectExpanded = it }
+                    onToggle = { isSubjectExpanded = it },
+                    mypageState
                 )
             }
 
@@ -525,7 +576,7 @@ fun EditNameDialog(
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun CalendarSelectionRow() {
+fun CalendarSelectionRow(myPageViewModel: MyPageViewModel) {
     var isCalenderExpanded by remember { mutableStateOf(false) }
     // 제목과 날짜 선택 박스를 가로로 배치
     Row(
@@ -546,7 +597,8 @@ fun CalendarSelectionRow() {
         // 날짜 선택 박스
         CalendarSelectionBox(
             isExpanded = isCalenderExpanded,
-            onToggle = { isCalenderExpanded = it }
+            onToggle = { isCalenderExpanded = it },
+            myPageViewModel = myPageViewModel
         )
     }
 }
@@ -555,7 +607,8 @@ fun CalendarSelectionRow() {
 @Composable
 fun CalendarSelectionBox(
     isExpanded: Boolean,
-    onToggle: (Boolean) -> Unit
+    onToggle: (Boolean) -> Unit,
+    myPageViewModel: MyPageViewModel
 ) {
     // 현재 날짜 가져오기
     val currentDate = LocalDate.now()
@@ -564,6 +617,10 @@ fun CalendarSelectionBox(
 
     var selectedYear by remember { mutableStateOf(currentYear) }
     var selectedMonth by remember { mutableStateOf(currentMonth) }
+
+    LaunchedEffect(selectedYear, selectedMonth) {
+        myPageViewModel.getMonthlyStatistics("${selectedYear}-${selectedMonth}")
+    }
 
     // 달력 표시 여부
     var showCalendar by remember { mutableStateOf(false) }
@@ -895,7 +952,7 @@ fun MonthItem(
 
 @Composable
 fun CompletedLecturesToggle(
-    lectures: List<String>,
+    lectures: List<CompletedPlanDto>,
     isExpanded: Boolean,
     onToggle: (Boolean) -> Unit
 ) {
@@ -980,7 +1037,7 @@ fun CompletedLecturesToggle(
 }
 
 @Composable
-fun LectureItem(lecture: String, isLastItem: Boolean) {
+fun LectureItem(lecture: CompletedPlanDto, isLastItem: Boolean) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -988,8 +1045,7 @@ fun LectureItem(lecture: String, isLastItem: Boolean) {
     ) {
         Row(
             modifier = Modifier
-                .fillMaxWidth()
-                .clickable { /* 강의 상세 페이지로 이동하는 로직 추가 가능 */ },
+                .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // 체크 마크 이미지 (보라색 배경의 원형 체크 아이콘)
@@ -1011,12 +1067,22 @@ fun LectureItem(lecture: String, isLastItem: Boolean) {
 
             Spacer(modifier = Modifier.width(12.dp))
 
-            // 강의 제목
-            Text(
-                text = lecture,
-                style = MaterialTheme.typography.bodyMedium,
-                color = Color.Black
-            )
+            Column(
+                modifier = Modifier.fillMaxHeight()
+            ) {
+                // 강의 제목
+                Text(
+                    text = "${lecture.platform.label} · ${lecture.teacher}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = textGray
+                )
+                // 강의 제목
+                Text(
+                    text = lecture.lectureTitle,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.Black
+                )
+            }
 
             // 오른쪽 여백을 채우는 스페이서
             Spacer(modifier = Modifier.weight(1f))
@@ -1089,46 +1155,87 @@ private fun DrawScope.drawBubbleWithText(text: String, position: Offset) {
 @Composable
 fun SubjectDistributionGraph(
     isExpanded: Boolean,
-    onToggle: (Boolean) -> Unit
+    onToggle: (Boolean) -> Unit,
+    statisticsResponse: GetMyPageStatisticsResponse
 ) {
-    val rawSubjects = listOf(
-        SubjectData(Subject.ENG, 0, MainPurple),
-        SubjectData(Subject.UNIV, 0, MutePurple),
-        SubjectData(Subject.KOR, 5, SubPurple),
-        SubjectData(Subject.SCI, 5, WarmPurple),
-        SubjectData(Subject.SOC, 5, SoftPink),
-        SubjectData(Subject.HIST, 10, LavenderGray),
-        SubjectData(Subject.LANG2, 5, DustyRose),
-        SubjectData(Subject.MATH, 5, CoolGray),
-        SubjectData(Subject.VOC, 5, SkyLavender),
-    )
 
-    //  0시간인 과목 제거
-    val subjects = rawSubjects.filter { it.hours > 0 }
+    LaunchedEffect(statisticsResponse) {
+        Log.d("SubjectDistribution", "받은 데이터: subjectTimes=${statisticsResponse.subjectTimes.size}, totalTime=${statisticsResponse.totalStudyMinutes}")
+    }
 
-    // 총 공부 시간
+    val subjects = statisticsResponse.subjectTimes
+        .filter { it.totalMinutes > 0 }
+        .map { subjectTime ->
+            val color = when (subjectTime.subject) {
+                Subject.KOR -> MainPurple
+                Subject.ENG -> MutePurple
+                Subject.MATH -> SubPurple
+                Subject.SOC -> WarmPurple
+                Subject.SCI -> SoftPink
+                Subject.HIST -> LavenderGray
+                Subject.UNIV -> DustyRose
+                Subject.LANG2 -> CoolGray
+                Subject.VOC -> SkyLavender
+            }
+
+            SubjectDataDto(
+                subject = subjectTime.subject,
+                hours = subjectTime.totalMinutes,
+                color = color
+            )
+        }
+
+    if (subjects.isEmpty()) {
+        Box(modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "기록된 공부 시간이 없습니다.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.Gray
+            )
+        }
+        return
+    }
+
     val totalHours = subjects.sumOf { it.hours }
-
-    // 각 과목의 각도 계산 (비율 * 360도)
     val angles = subjects.map { (it.hours.toFloat() / totalHours) * 360f }
-
-    // 각 과목의 퍼센트 계산
     val percentages = subjects.map { (it.hours.toFloat() / totalHours) * 100f }
 
-    // 가장 많은 시간을 투자하는 과목 찾기
     val maxHours = subjects.maxOf { it.hours }
     val topSubjects = subjects.filter { it.hours == maxHours }
-
-    // 가장 많은 시간을 투자하는 과목들의 이름을 쉼표로 구분하여 문자열 생성
     val topSubjectsText = topSubjects.joinToString(", ") { it.subject.label }
 
+    // SubjectTimeDto를 SubjectData로 변환 (차트 표시용)
+    val subjectDataList = statisticsResponse.subjectTimes.map { timeDto ->
+        val color = when (timeDto.subject) {
+            Subject.KOR -> MainPurple
+            Subject.ENG -> MutePurple
+            Subject.MATH -> SubPurple
+            Subject.SOC -> WarmPurple
+            Subject.SCI -> SoftPink
+            Subject.HIST -> LavenderGray
+            Subject.UNIV -> DustyRose
+            Subject.LANG2 -> CoolGray
+            Subject.VOC -> SkyLavender
+        }
+        SubjectDataDto(
+            subject = timeDto.subject,
+            hours = timeDto.totalMinutes,
+            color = color
+        )
+    }
+
+    // UI 구성
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 20.dp, vertical = 16.dp),
-        horizontalAlignment = Alignment.Start // 전체 컬럼을 왼쪽 정렬로 변경
+        horizontalAlignment = Alignment.Start
     ) {
-        // 제목 행 (아이콘 추가)
+        // 헤더 부분
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -1152,12 +1259,11 @@ fun SubjectDistributionGraph(
                 modifier = Modifier.padding(end = 5.dp)
             )
 
-            // 오른쪽 화살표 - 클릭 가능한 토글 버튼으로 변경
+            // 토글 버튼
             IconButton(
                 onClick = { onToggle(!isExpanded) },
                 modifier = Modifier.size(24.dp)
             ) {
-                // 회전 애니메이션 추가
                 val rotationState by animateFloatAsState(
                     targetValue = if (isExpanded) 90f else 0f,
                     label = "rotationAnimation"
@@ -1170,19 +1276,18 @@ fun SubjectDistributionGraph(
                 )
             }
 
-            // 나머지 공간 채우기
             Spacer(modifier = Modifier.weight(1f))
 
-            // 총 공부 시간 표시 (펼치기 상태에 관계없이 표시)
+            // 총 공부 시간
             Text(
-                text = "총 ${totalHours}시간",
+                text = "총 ${statisticsResponse.totalStudyMinutes}분",
                 style = MaterialTheme.typography.bodyMedium,
                 color = Color.Gray,
                 fontWeight = FontWeight.Bold
             )
         }
 
-        // 회색 테두리 박스 - 중앙 정렬로 변경
+        // 정보 박스
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -1190,15 +1295,11 @@ fun SubjectDistributionGraph(
             contentAlignment = Alignment.Center
         ) {
             Card(
-                modifier = Modifier
-                    .padding(10.dp),
-                shape = RoundedCornerShape(5.dp), // 둥근 모서리
-                colors = CardDefaults.cardColors(
-                    containerColor = Color.White // 흰색 배경
-                ),
+                modifier = Modifier.padding(10.dp),
+                shape = RoundedCornerShape(5.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
                 border = BorderStroke(1.dp, color = LightGray60)
             ) {
-                // 완강 정보 텍스트
                 Text(
                     buildAnnotatedString {
                         withStyle(style = SpanStyle(color = SubPurple)) {
@@ -1214,10 +1315,10 @@ fun SubjectDistributionGraph(
             }
         }
 
-        // 확장된 경우에만 원형 그래프와 범례 표시
+        // 확장 시 그래프와 범례 표시
         AnimatedVisibility(visible = isExpanded) {
             Column {
-                // 원형 그래프는 중앙 정렬
+                // 원형 그래프
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier
@@ -1225,21 +1326,20 @@ fun SubjectDistributionGraph(
                         .size(240.dp)
                         .padding(top = 40.dp)
                 ) {
-                    // 도넛 차트 (말풍선 포함)
-                    SubjectPieChartWithBubbles(subjects, angles)
+                    SubjectPieChartWithBubbles(subjectDataList, angles)
                 }
 
                 Spacer(modifier = Modifier.height(40.dp))
 
-                // 범례 (퍼센트로 표시)
-                SubjectLegendWithPercentage(subjects, percentages)
+                // 범례
+                SubjectLegendWithPercentage(subjectDataList, percentages)
             }
         }
     }
 }
 
 @Composable
-fun SubjectPieChartWithBubbles(subjects: List<SubjectData>, angles: List<Float>) {
+fun SubjectPieChartWithBubbles(subjects: List<SubjectDataDto>, angles: List<Float>) {
     val animatedValues = List(subjects.size) { remember { Animatable(0f) } }
 
     // 애니메이션 적용
@@ -1308,7 +1408,7 @@ fun SubjectPieChartWithBubbles(subjects: List<SubjectData>, angles: List<Float>)
 
 @Composable
 fun SubjectLegendWithPercentage(
-    subjects: List<SubjectData>,
+    subjects: List<SubjectDataDto>,
     percentages: List<Float>
 ) {
     Column(
@@ -1353,13 +1453,6 @@ fun SubjectLegendWithPercentage(
         }
     }
 }
-
-// 과목 데이터 클래스
-data class SubjectData(
-    val subject: Subject,
-    val hours: Int,
-    val color: Color
-)
 
 @Composable
 fun TodayCircleGraph(name: String, cleared: Int, total: Int) {
@@ -1474,23 +1567,31 @@ fun TodayCircleGraph(name: String, cleared: Int, total: Int) {
 @Composable
 fun WeeklyStudyStatisticsGraph(
     isExpanded: Boolean,
-    onToggle: (Boolean) -> Unit
+    onToggle: (Boolean) -> Unit,
+    myStatisticsState: GetMyPageStatisticsResponse
 ) {
-    // 주차별 학습 시간 데이터
-    val weeklyData = listOf(
-        WeeklyData("1주", 3),
-        WeeklyData("2주", 5),
-        WeeklyData("3주", 8),
-        WeeklyData("4주", 6),
-        WeeklyData("5주", 10)
-    )
+    // 먼저 데이터가 비어있는지 확인
+    if (myStatisticsState.weeklyTimes.isEmpty() || myStatisticsState.weeklyTimes.all { it.totalMinutes == 0 }) {
+        Box(modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "기록된 공부 시간이 없습니다.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.Gray
+            )
+        }
+        return
+    }
 
-    // 최대 시간 값
-    val maxHours = weeklyData.maxOf { it.hours }
+    // 데이터가 있는 경우에만 계산
+    val maxMinutes = myStatisticsState.weeklyTimes.maxOf { it.totalMinutes }
 
     // 가장 많은 공부를 한 주 찾기
-    val mostStudiedWeeks = weeklyData.filter { it.hours == maxHours }
-    val mostStudiedWeeksText = mostStudiedWeeks.joinToString(", ") { it.week }
+    val mostStudiedWeeks = myStatisticsState.weeklyTimes.filter { it.totalMinutes == maxMinutes }
+    val mostStudiedWeeksText = mostStudiedWeeks.joinToString(", ") { it.weekNumber.toString() }
 
     Column(
         modifier = Modifier
@@ -1544,9 +1645,9 @@ fun WeeklyStudyStatisticsGraph(
             Spacer(modifier = Modifier.weight(1f))
 
             // 평균 공부 시간 표시 (펼치기 상태에 관계없이 표시)
-            val averageHours = weeklyData.map { it.hours }.average()
+            val averageMinutes = myStatisticsState.weeklyTimes.map { it.totalMinutes }.average()
             Text(
-                text = "평균 ${String.format("%.1f", averageHours)}시간/주",
+                text = "평균 ${String.format("%.0f", averageMinutes)}분/주",
                 style = MaterialTheme.typography.bodyMedium,
                 color = Color.Gray,
                 fontWeight = FontWeight.Bold
@@ -1573,9 +1674,9 @@ fun WeeklyStudyStatisticsGraph(
                 Text(
                     buildAnnotatedString {
                         withStyle(style = SpanStyle(color = MainPurple)) { // 강조색을 MainPurple로 통일
-                            append(mostStudiedWeeksText)
+                            append(mostStudiedWeeksText+"주차")
                         }
-                        append("차에 가장 많은 강의를 수강했어요")
+                        append("에 가장 많은 강의를 수강했어요")
                     },
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.Black,
@@ -1594,9 +1695,9 @@ fun WeeklyStudyStatisticsGraph(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 // 세로 막대 그래프
-                ImprovedWeeklyBarChart(
-                    weeklyData = weeklyData,
-                    maxHoursValue = maxHours
+                DynamicWeeklyBarChart(
+                    weeklyData = myStatisticsState.weeklyTimes,
+                    maxMinutesValue = maxMinutes
                 )
             }
         }
@@ -1604,9 +1705,9 @@ fun WeeklyStudyStatisticsGraph(
 }
 
 @Composable
-fun ImprovedWeeklyBarChart(
-    weeklyData: List<WeeklyData>,
-    maxHoursValue: Int
+fun DynamicWeeklyBarChart(
+    weeklyData: List<WeeklyTimeDto>,
+    maxMinutesValue: Int
 ) {
     // 애니메이션 값들
     val animatedValues = List(weeklyData.size) {
@@ -1618,7 +1719,7 @@ fun ImprovedWeeklyBarChart(
         animatedValues.forEachIndexed { index, animatable ->
             animatable.snapTo(0f)
             animatable.animateTo(
-                targetValue = weeklyData[index].hours.toFloat(),
+                targetValue = weeklyData[index].totalMinutes.toFloat(),
                 animationSpec = tween(
                     durationMillis = 1000,
                     easing = LinearEasing,
@@ -1628,9 +1729,41 @@ fun ImprovedWeeklyBarChart(
         }
     }
 
-    // 차트 높이와 최대 시간
+    // 차트 높이
     val chartHeight = 200.dp
-    val maxHours = 10f // 고정된 최대값 (0, 5, 10 표시 위해)
+
+    // 최대값을 기준으로 적절한 라운드 숫자로 조정
+    val maxValue = maxMinutesValue.toFloat()
+
+    // 적절한 스케일 찾기 (10, 50, 100, 200, 500 등)
+    val scale = when {
+        maxValue <= 30 -> 10f
+        maxValue <= 150 -> 50f
+        maxValue <= 300 -> 100f
+        maxValue <= 600 -> 200f
+        maxValue <= 1500 -> 500f
+        else -> 1000f
+    }
+
+    // 최대값을 위한 깔끔한 라운드 숫자 계산
+    val topValue = ceil(maxValue / scale) * scale
+
+    // 각 간격도 깔끔한 숫자로 설정
+    val interval = topValue / 3
+    // 간격을 라운드 숫자로 만들기
+    val roundedInterval = when {
+        interval <= 10 -> 5f
+        interval <= 20 -> 10f
+        interval <= 50 -> 25f
+        interval <= 100 -> 50f
+        interval <= 200 -> 100f
+        interval <= 500 -> 200f
+        else -> 500f
+    }
+
+    // 균등하게 3개 구간으로 나누기
+    val thirdValue = roundedInterval
+    val twoThirdsValue = roundedInterval * 2
 
     Row(
         modifier = Modifier
@@ -1638,31 +1771,39 @@ fun ImprovedWeeklyBarChart(
             .height(chartHeight + 60.dp)
             .padding(start = 8.dp, end = 16.dp)
     ) {
-        // 왼쪽 시간 표시 (0시간, 5시간, 10시간)
+        // 왼쪽 시간 표시 (동적으로 계산된 값 표시)
         Column(
             modifier = Modifier
-                .width(40.dp)
+                .width(50.dp) // 넓게 조정
                 .height(chartHeight),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-            // 시간 표시는 위에서부터 아래로
+            // 시간 표시는 위에서부터 아래로 - 라운드 숫자로 표시
             Text(
-                text = "10시간",
+                text = "${topValue.toInt()}분",
                 fontSize = 12.sp,
                 color = Color.Gray,
                 textAlign = TextAlign.End,
                 modifier = Modifier.padding(top = 4.dp)
             )
 
+            // 중간 값들도 라운드 숫자로 표시
             Text(
-                text = "5시간",
+                text = "${twoThirdsValue.toInt()}분",
                 fontSize = 12.sp,
                 color = Color.Gray,
                 textAlign = TextAlign.End
             )
 
             Text(
-                text = "0시간",
+                text = "${thirdValue.toInt()}분",
+                fontSize = 12.sp,
+                color = Color.Gray,
+                textAlign = TextAlign.End
+            )
+
+            Text(
+                text = "0분",
                 fontSize = 12.sp,
                 color = Color.Gray,
                 textAlign = TextAlign.End,
@@ -1677,11 +1818,11 @@ fun ImprovedWeeklyBarChart(
                 .height(chartHeight)
                 .background(Color.White)
         ) {
-            // 수평 그리드 라인 (0시간, 5시간, 10시간)
+            // 수평 그리드 라인 (동적으로 계산된 값의 위치에 그리기)
             Canvas(
                 modifier = Modifier.fillMaxSize()
             ) {
-                // 10시간 선 (맨 위)
+                // 최상단 선
                 drawLine(
                     color = LightGray5,
                     start = Offset(0f, 0f),
@@ -1689,15 +1830,27 @@ fun ImprovedWeeklyBarChart(
                     strokeWidth = 1.dp.toPx()
                 )
 
-                // 5시간 선 (중간)
+                // 중간 상단 선
+                val twoThirdsY = size.height * (1 - twoThirdsValue / topValue)
                 drawLine(
                     color = LightGray5,
-                    start = Offset(0f, size.height / 2),
-                    end = Offset(size.width, size.height / 2),
-                    strokeWidth = 1.dp.toPx()
+                    start = Offset(0f, twoThirdsY),
+                    end = Offset(size.width, twoThirdsY),
+                    strokeWidth = 1.dp.toPx(),
+                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(4f, 4f), 0f)
                 )
 
-                // 0시간 선 (맨 아래)
+                // 중간 하단 선
+                val thirdY = size.height * (1 - thirdValue / topValue)
+                drawLine(
+                    color = LightGray5,
+                    start = Offset(0f, thirdY),
+                    end = Offset(size.width, thirdY),
+                    strokeWidth = 1.dp.toPx(),
+                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(4f, 4f), 0f)
+                )
+
+                // 최하단 선
                 drawLine(
                     color = LightGray5,
                     start = Offset(0f, size.height),
@@ -1713,24 +1866,34 @@ fun ImprovedWeeklyBarChart(
                 verticalAlignment = Alignment.Bottom
             ) {
                 weeklyData.forEachIndexed { index, data ->
-                    val animatedHeight = animatedValues[index].value
-                    val barHeight = (animatedHeight / maxHours) * chartHeight.value
+                    val animatedValue = animatedValues[index].value
+                    val barHeight = (animatedValue / topValue) * chartHeight.value
 
                     Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Bottom
                     ) {
                         // 가장 높은 막대만 다른 색상
-                        val barColor = if (data.hours == maxHoursValue) SubPurple else WarmPurple
+                        val barColor = if (data.totalMinutes == maxMinutesValue) SubPurple else WarmPurple
 
+                        // 분 표시
+                        Text(
+                            text = "${data.totalMinutes}분",
+                            fontSize = 10.sp,
+                            color = Color.Gray,
+                            modifier = Modifier.padding(bottom = 4.dp)
+                        )
+
+                        // 막대
                         Box(
                             modifier = Modifier
                                 .width(16.dp)
-                                .height(barHeight.dp)
+                                .height(barHeight.dp.coerceAtLeast(1.dp)) // 최소 1dp
                                 .background(
                                     color = barColor,
-                                    shape = RoundedCornerShape(20.dp)
+                                    shape = RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp)
                                 )
-                        ) {}
+                        )
                     }
                 }
             }
@@ -1741,71 +1904,60 @@ fun ImprovedWeeklyBarChart(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 8.dp, start = 40.dp, end = 16.dp),
+            .padding(top = 8.dp, start = 50.dp, end = 16.dp),
         horizontalArrangement = Arrangement.SpaceEvenly
     ) {
         weeklyData.forEach { data ->
             Text(
-                text = data.week,
-                fontSize = 14.sp,
+                text = "${data.weekNumber}주",
+                fontSize = 12.sp,
                 color = Color.Black
             )
         }
     }
 }
 
-// 주차별 데이터 클래스
-data class WeeklyData(
-    val week: String,
-    val hours: Int
-)
-
+@SuppressLint("DefaultLocale")
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun SubjectAchievementGraph(
     isExpanded: Boolean,
-    onToggle: (Boolean) -> Unit
+    onToggle: (Boolean) -> Unit,
+    mypageState: GetDistinctMyPageResponse
 ) {
-    // 현재 날짜 가져오기
-    val currentDate = LocalDate.now()
-    val currentYear = currentDate.format(DateTimeFormatter.ofPattern("yyyy"))
-    val currentMonth = currentDate.format(DateTimeFormatter.ofPattern("MM"))
-    val previousMonth = currentDate.minusMonths(2)
-
     // 과목별 성취 데이터
-    val subjectData = listOf(
-        SubjectAchievement(
-            subject = Subject.MATH,
-            startDate = "${previousMonth.format(DateTimeFormatter.ofPattern("yyyy"))}.${previousMonth.format(DateTimeFormatter.ofPattern("MM"))}.15",
-            endDate = "$currentYear.$currentMonth.15",
-            progressPercent = 65f
-        ),
-        SubjectAchievement(
-            subject = Subject.KOR,
-            startDate = "${previousMonth.format(DateTimeFormatter.ofPattern("yyyy"))}.${previousMonth.plusMonths(1).format(DateTimeFormatter.ofPattern("MM"))}.10",
-            endDate = "$currentYear.${currentDate.plusMonths(1).format(DateTimeFormatter.ofPattern("MM"))}.10",
-            progressPercent = 42f
-        ),
-        SubjectAchievement(
-            subject = Subject.ENG,
-            startDate = "${previousMonth.plusMonths(1).format(DateTimeFormatter.ofPattern("yyyy"))}.${previousMonth.plusMonths(1).format(DateTimeFormatter.ofPattern("MM"))}.05",
-            endDate = "$currentYear.${currentDate.plusMonths(2).format(DateTimeFormatter.ofPattern("MM"))}.05",
-            progressPercent = 30f
-        ),
-        SubjectAchievement(
-            subject = Subject.SCI,
-            startDate = "${previousMonth.format(DateTimeFormatter.ofPattern("yyyy"))}.${previousMonth.plusMonths(1).format(DateTimeFormatter.ofPattern("MM"))}.20",
-            endDate = "$currentYear.$currentMonth.20",
-            progressPercent = 85f
-        )
-    )
+    val subjectData = mypageState.subjectAchievementList
+
+    // If no data, show appropriate message
+    if (subjectData.isEmpty()) {
+        Box(modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "공부하고 있는 과목이 없습니다.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.Gray
+            )
+        }
+        return
+    }
 
     // 평균 성취율 계산
-    val averageProgress = subjectData.map { it.progressPercent }.average().toFloat()
+    val averageProgress = subjectData
+        .map { (it.completedLessons.toFloat() / it.totalLessons) * 100f }
+        .average()
+        .toFloat()
 
     // 가장 높은 성취율의 과목 찾기
-    val highestSubject = subjectData.maxByOrNull { it.progressPercent }
-    val highestPercent = highestSubject?.progressPercent ?: 0f
+    val highestSubject = subjectData.maxByOrNull {
+        (it.completedLessons.toFloat() / it.totalLessons) * 100f
+    }
+
+    val highestPercent = highestSubject?.let {
+        (it.completedLessons.toFloat() / it.totalLessons) * 100f
+    } ?: 0f
 
     Column(
         modifier = Modifier
@@ -1890,7 +2042,7 @@ fun SubjectAchievementGraph(
                             withStyle(style = SpanStyle(color = MainPurple)) {
                                 append(highestSubject.subject.label)
                             }
-                            append("은 ${String.format("%.0f", highestSubject.progressPercent)}%로 ")
+                            append("은 약 ${String.format("%.0f", (highestSubject.completedLessons.toFloat() / highestSubject.totalLessons) * 100f)}%로 ")
                             append("가장 높은 성취율을 보이고 있어요")
                         },
                         style = MaterialTheme.typography.bodyMedium,
@@ -1922,7 +2074,7 @@ fun SubjectAchievementGraph(
 
 @Composable
 fun SubjectProgressBars(
-    subjectData: List<SubjectAchievement>,
+    subjectData: List<SubjectAchievementDto>,
     highestPercent: Float
 ) {
     Column(
@@ -1933,7 +2085,7 @@ fun SubjectProgressBars(
         // 각 과목별 진행 바
         subjectData.forEach { subject ->
             // 가장 높은 성취율 과목만 MainPurple 컬러로
-            val subjectColor = if (subject.progressPercent == highestPercent) SubPurple else WarmPurple
+            val subjectColor = if ((subject.completedLessons.toFloat() / subject.totalLessons) * 100f == highestPercent) SubPurple else WarmPurple
 
             SubjectProgressItem(
                 subjectAchievement = subject,
@@ -1948,7 +2100,7 @@ fun SubjectProgressBars(
 @SuppressLint("DefaultLocale")
 @Composable
 fun SubjectProgressItem(
-    subjectAchievement: SubjectAchievement,
+    subjectAchievement: SubjectAchievementDto,
     barColor: Color,
     highestPercent: Float
 ) {
@@ -1957,7 +2109,7 @@ fun SubjectProgressItem(
     // 애니메이션 적용
     LaunchedEffect(subjectAchievement) {
         animatedProgress.animateTo(
-            targetValue = subjectAchievement.progressPercent / 100f,
+            targetValue = (subjectAchievement.completedLessons.toFloat() / subjectAchievement.totalLessons) * 100f / 100f,
             animationSpec = tween(
                 durationMillis = 1000,
                 easing = LinearEasing
@@ -2067,9 +2219,9 @@ fun SubjectProgressItem(
             )
 
             Text(
-                text = "${String.format("%.0f", subjectAchievement.progressPercent)}%",
+                text = "${String.format("%.0f", (subjectAchievement.completedLessons.toFloat() / subjectAchievement.totalLessons) * 100f)}%",
                 style = MaterialTheme.typography.bodySmall,
-                color = if (subjectAchievement.progressPercent == highestPercent) Color.Black else LightGray60,
+                color = if ((subjectAchievement.completedLessons.toFloat() / subjectAchievement.totalLessons) * 100f == highestPercent) Color.Black else LightGray60,
                 fontWeight = FontWeight.Bold,
                 fontSize = 14.sp
             )
@@ -2083,11 +2235,3 @@ fun SubjectProgressItem(
         }
     }
 }
-
-// 과목별 성취 데이터 클래스
-data class SubjectAchievement(
-    val subject: Subject,
-    val startDate: String,
-    val endDate: String,
-    val progressPercent: Float
-)
