@@ -18,14 +18,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
-import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -37,7 +35,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -48,8 +45,6 @@ import androidx.compose.material.AlertDialog
 import androidx.compose.material.OutlinedTextField
 //noinspection UsingMaterialAndMaterial3Libraries
 import androidx.compose.material.TextFieldDefaults
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -85,9 +80,6 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
-import androidx.compose.ui.input.nestedscroll.NestedScrollSource
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -118,19 +110,16 @@ import java.time.temporal.ChronoUnit
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
 import com.capston.domain.request.UpdateDDayRequest
 import com.capston.domain.response.enum_class.DayOfWeek
+import com.capston.domain.response.home.DistinctHomeIdResponse
 import com.capston.domain.response.plan.LectureAliasResponse
-import com.capston.presentation.theme.LightGray4
 import com.capston.presentation.theme.LightGray5
 import com.capston.presentation.theme.WarmPurple
 import java.text.SimpleDateFormat
@@ -297,7 +286,8 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
             ) {
                 WeeklyAchievementGraph(
                     isExpanded = isWeeklyExpanded,
-                    onToggle = { isWeeklyExpanded = it }
+                    onToggle = { isWeeklyExpanded = it },
+                    homeState = homeState
                 )
             }
         }
@@ -361,17 +351,18 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
 @Composable
 fun WeeklyAchievementGraph(
     isExpanded: Boolean,
-    onToggle: (Boolean) -> Unit
+    onToggle: (Boolean) -> Unit,
+    homeState: DistinctHomeIdResponse
 ) {
     // 요일별 학습 성취 데이터 (true: 달성, false: 미달성)
     val weekDaysData = listOf(
-        DayAchievement(DayOfWeek.MON, true),
-        DayAchievement(DayOfWeek.TUE, true),
-        DayAchievement(DayOfWeek.WED, true),
-        DayAchievement(DayOfWeek.THU, false),
-        DayAchievement(DayOfWeek.FRI, true),
-        DayAchievement(DayOfWeek.SAT, false),
-        DayAchievement(DayOfWeek.SUN, true)
+        DayAchievementDto(DayOfWeek.MON, homeState.weeklyAchievement.mondayAchieved),
+        DayAchievementDto(DayOfWeek.TUE, homeState.weeklyAchievement.tuesdayAchieved),
+        DayAchievementDto(DayOfWeek.WED, homeState.weeklyAchievement.wednesdayAchieved),
+        DayAchievementDto(DayOfWeek.THU, homeState.weeklyAchievement.thursdayAchieved),
+        DayAchievementDto(DayOfWeek.FRI, homeState.weeklyAchievement.fridayAchieved),
+        DayAchievementDto(DayOfWeek.SAT, homeState.weeklyAchievement.saturdayAchieved),
+        DayAchievementDto(DayOfWeek.SUN, homeState.weeklyAchievement.sundayAchieved)
     )
 
     // 성취율 계산
@@ -500,7 +491,7 @@ fun WeeklyAchievementGraph(
 }
 
 @Composable
-fun DayAchievementChecks(weekDaysData: List<DayAchievement>) {
+fun DayAchievementChecks(weekDaysData: List<DayAchievementDto>) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -574,12 +565,6 @@ fun DayAchievementItem(day: DayOfWeek, isAchieved: Boolean) {
         }
     }
 }
-
-// 일별 성취 데이터 클래스
-data class DayAchievement(
-    val day: DayOfWeek,
-    val isAchieved: Boolean
-)
 
 @Composable
 fun LearningStatusCard(
