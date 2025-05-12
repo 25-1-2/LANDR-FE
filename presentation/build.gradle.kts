@@ -58,6 +58,8 @@ dependencies {
     implementation(libs.material)
     implementation(libs.androidx.activity)
     implementation(libs.androidx.runtime.android)
+    implementation(libs.firebase.messaging.ktx)
+    implementation(libs.androidx.work.runtime.ktx)
     implementation(project(":data"))
     kapt(libs.hilt.compiler)
     testImplementation(libs.junit)

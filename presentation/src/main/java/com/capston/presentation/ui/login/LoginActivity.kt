@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -25,16 +26,19 @@ import com.capston.presentation.theme.CapstonTheme
 import com.capston.presentation.ui.LoadingIndicator
 import com.capston.presentation.ui.MainActivity
 import com.capston.presentation.viewmodel.LoginViewModel
+import com.google.android.gms.tasks.OnCompleteListener
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
+import com.google.firebase.messaging.FirebaseMessaging
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import kotlin.math.sign
 
@@ -138,21 +142,36 @@ class LoginActivity : ComponentActivity() {
                 if (task.isSuccessful) {
                     // Sign in success, update UI with the signed-in user's information
                     Log.d("LoginActivity", "signInWithCredential:success")
-                    // 백엔드에 회원가입 정보 전달
-                    loginViewModel.postLogin(
-                        LoginDto(
-                            auth.currentUser?.email,
-                            auth.currentUser?.displayName,
-                            "")
-                    )
-                    // 로그인 성공 후 MainActivity로 이동
-                    startActivity(Intent(this, MainActivity::class.java))
-                    finish()
+                    // FCM 토큰까지 불러와 백엔드에 회원가입 정보 전달
+                    getFcmToken { token ->
+                        loginViewModel.postLogin(
+                            LoginDto(
+                                auth.currentUser?.email,
+                                auth.currentUser?.displayName,
+                                token
+                            )
+                        )
+                        startActivity(Intent(this, MainActivity::class.java))
+                        finish()
+                    }
                 } else {
                     // If sign in fails, display a message to the user
                     Log.w("LoginActivity", "signInWithCredential:failure", task.exception)
                 }
             }
+    }
+
+    private fun getFcmToken(onTokenReceived: (String?) -> Unit) {
+        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                val token = task.result
+                Log.d("LoginActivity", "token: $token")
+                onTokenReceived(token)
+            } else {
+                Log.w("LoginActivity", "Fetching FCM token failed", task.exception)
+                onTokenReceived(null)
+            }
+        }
     }
 
     private fun signOut(credentialManager: CredentialManager) {
