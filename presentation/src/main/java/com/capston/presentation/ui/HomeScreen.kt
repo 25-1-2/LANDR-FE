@@ -43,6 +43,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.AlertDialog
 //noinspection UsingMaterialAndMaterial3Libraries
 import androidx.compose.material.OutlinedTextField
 //noinspection UsingMaterialAndMaterial3Libraries
@@ -302,6 +303,8 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
         }
     }
 
+    var showDeleteCompleteDialog by remember { mutableStateOf(false) }
+
     // 바텀 시트 처리 - with additional null safety
     ShowBottomSheets(
         isBottomSheetVisible = isBottomSheetVisible,
@@ -334,6 +337,7 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
                 val ddayId = dDayState?.ddayId
                 if (ddayId != null && ddayId > 0) {
                     homeViewModel.deleteDDay(ddayId)
+                    showDeleteCompleteDialog = true
                 }
             } catch (e: Exception) {
                 android.util.Log.e("HomeScreen", "Error deleting D-Day: ${e.message}", e)
@@ -341,6 +345,14 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
             isExamBottomSheetVisible = false
         },
         hasDDay = dDayState?.ddayId != null && (dDayState!!.ddayId > 0)
+    )
+
+    // 바텀시트 외부에 삭제 완료 다이얼로그 표시
+    DeleteCompleteDialog(
+        show = showDeleteCompleteDialog,
+        onDismiss = {
+            showDeleteCompleteDialog = false
+        }
     )
 }
 
@@ -1566,6 +1578,12 @@ fun ExamBottomSheetContent(
     // 날짜 선택 모달 표시 여부
     var showDatePicker by remember { mutableStateOf(false) }
 
+    // 삭제 확인 다이얼로그 표시 여부
+    var showDeleteConfirmDialog by remember { mutableStateOf(false) }
+
+    // 삭제 완료 다이얼로그 표시 여부
+    var showDeleteCompleteDialog by remember { mutableStateOf(false) }
+
     // 날짜 포맷터
     val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
     val displayFormatter = DateTimeFormatter.ofPattern("yyyy년 MM월 dd일")
@@ -1713,12 +1731,8 @@ fun ExamBottomSheetContent(
                 if (showDeleteButton) {
                     Button(
                         onClick = {
-                            onDelete()
-                            scope.launch {
-                                modalBottomSheetState.hide()
-                            }.invokeOnCompletion {
-                                onDismiss()
-                            }
+                            // 삭제 확인 다이얼로그 표시
+                            showDeleteConfirmDialog = true
                         },
                         modifier = Modifier.weight(1f),
                         colors = ButtonDefaults.buttonColors(
@@ -1801,5 +1815,52 @@ fun ExamBottomSheetContent(
                     .padding(top = 32.dp)
             )
         }
+    }
+
+    // 삭제 확인 다이얼로그
+    if (showDeleteConfirmDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirmDialog = false },
+            title = { Text("삭제 확인", fontWeight = FontWeight.Bold) },
+            text = { Text("정말 삭제하시겠습니까?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteConfirmDialog = false
+                        onDelete()  // 분리된 삭제 처리 함수 호출
+                    }
+                ) {
+                    Text("삭제", color = Color.Red)
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showDeleteConfirmDialog = false }
+                ) {
+                    Text("취소")
+                }
+            }
+        )
+
+    }
+}
+
+// 바텀 시트 외부에 별도 컴포저블로 삭제 완료 다이얼로그 구현
+@Composable
+fun DeleteCompleteDialog(
+    show: Boolean,
+    onDismiss: () -> Unit
+) {
+    if (show) {
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            title = { Text("삭제 완료", fontWeight = FontWeight.Bold) },
+            text = { Text("성공적으로 삭제되었습니다.") },
+            confirmButton = {
+                TextButton(onClick = onDismiss) {
+                    Text("확인")
+                }
+            }
+        )
     }
 }
