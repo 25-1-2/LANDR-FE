@@ -11,6 +11,8 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.work.OneTimeWorkRequest
 import androidx.work.WorkManager
+import com.capston.presentation.R
+import com.capston.presentation.ui.MainActivity
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 
@@ -44,7 +46,7 @@ class LandrFireBaseMessagingService : FirebaseMessagingService() {
             // Check if data needs to be processed by long running job
             if (isLongRunningJob()) {
                 // For long-running tasks (10 seconds or more) use WorkManager.
-                scheduleJob()
+//                scheduleJob()
             } else {
                 // Handle message within 10 seconds
                 handleNow()
@@ -54,7 +56,7 @@ class LandrFireBaseMessagingService : FirebaseMessagingService() {
         // Check if message contains a notification payload.
         remoteMessage.notification?.let {
             Log.d(TAG, "Message Notification Body: ${it.body}")
-            it.body?.let { body -> sendNotification(body) }
+//            it.body?.let { body -> sendNotification(body) }
         }
 
         // Also if you intend on generating your own notifications as a result of a received FCM
@@ -83,12 +85,12 @@ class LandrFireBaseMessagingService : FirebaseMessagingService() {
     /**
      * Schedule async work using WorkManager.
      */
-    private fun scheduleJob() {
-        // [START dispatch_job]
-        val work = OneTimeWorkRequest.Builder(MyWorker::class.java).build()
-        WorkManager.getInstance(this).beginWith(work).enqueue()
-        // [END dispatch_job]
-    }
+//    private fun scheduleJob() {
+//        // [START dispatch_job]
+//        val work = OneTimeWorkRequest.Builder(MyWorker::class.java).build()
+//        WorkManager.getInstance(this).beginWith(work).enqueue()
+//        // [END dispatch_job]
+//    }
 
     /**
      * Handle time allotted to BroadcastReceivers.
@@ -115,42 +117,42 @@ class LandrFireBaseMessagingService : FirebaseMessagingService() {
      *
      * @param messageBody FCM message body received.
      */
-    private fun sendNotification(messageBody: String) {
-        val requestCode = 0
-        val intent = Intent(this, MainActivity::class.java)
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
-        val pendingIntent = PendingIntent.getActivity(
-            this,
-            requestCode,
-            intent,
-            PendingIntent.FLAG_IMMUTABLE,
-        )
-
-        val channelId = getString(R.string.default_notification_channel_id)
-        val defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
-        val notificationBuilder = NotificationCompat.Builder(this, channelId)
-            .setSmallIcon(R.drawable.ic_stat_ic_notification)
-            .setContentTitle(getString(R.string.fcm_message))
-            .setContentText(messageBody)
-            .setAutoCancel(true)
-            .setSound(defaultSoundUri)
-            .setContentIntent(pendingIntent)
-
-        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-
-        // Since android Oreo notification channel is needed.
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                channelId,
-                "Channel human readable title",
-                NotificationManager.IMPORTANCE_DEFAULT,
-            )
-            notificationManager.createNotificationChannel(channel)
-        }
-
-        val notificationId = 0
-        notificationManager.notify(notificationId, notificationBuilder.build())
-    }
+//    private fun sendNotification(messageBody: String) {
+//        val requestCode = 0
+//        val intent = Intent(this, MainActivity::class.java)
+//        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+//        val pendingIntent = PendingIntent.getActivity(
+//            this,
+//            requestCode,
+//            intent,
+//            PendingIntent.FLAG_IMMUTABLE,
+//        )
+//
+//        val channelId = getString(R.string.default_notification_channel_id)
+//        val defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+//        val notificationBuilder = NotificationCompat.Builder(this, channelId)
+//            .setSmallIcon(R.drawable.ic_stat_ic_notification)
+//            .setContentTitle(getString(R.string.fcm_message))
+//            .setContentText(messageBody)
+//            .setAutoCancel(true)
+//            .setSound(defaultSoundUri)
+//            .setContentIntent(pendingIntent)
+//
+//        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+//
+//        // Since android Oreo notification channel is needed.
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+//            val channel = NotificationChannel(
+//                channelId,
+//                "Channel human readable title",
+//                NotificationManager.IMPORTANCE_DEFAULT,
+//            )
+//            notificationManager.createNotificationChannel(channel)
+//        }
+//
+//        val notificationId = 0
+//        notificationManager.notify(notificationId, notificationBuilder.build())
+//    }
 
     companion object {
 

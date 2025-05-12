@@ -213,7 +213,8 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
 
     // 앱 초기화 시 데이터 로드
     LaunchedEffect(Unit) {
-        homeViewModel.refreshInBackground()
+        val dday = homeState.dday
+        homeViewModel.refreshInBackground(dday.ddayId)
 
         // FIX: More thorough null checks
         try {

@@ -129,11 +129,19 @@ class HomeViewModel @Inject constructor(
     }
 
     // 백그라운드 갱신 (deeplink나 다른 화면에서 돌아왔을 때)
-    fun refreshInBackground() {
+    fun refreshInBackground(dDayId: Int) {
         viewModelScope.launch {
-            // 로딩 인디케이터 없이 백그라운드 갱신
+            // First operation - get home data
             getDistinctHomeUseCase().collect { response ->
                 _getDistinctHome.value = response
+
+                // Only after home data is updated, get the D-Day info
+                // Launch in a new coroutine to avoid blocking
+                viewModelScope.launch {
+                    getDDayUseCase(dDayId).collect { ddayResponse ->
+                        _dDay.value = ddayResponse
+                    }
+                }
             }
         }
     }
@@ -147,7 +155,7 @@ class HomeViewModel @Inject constructor(
                 }
                 .collect { response ->
                     _dDay.value = response
-                    refreshInBackground()
+                    refreshInBackground(dDayId)
                     Log.d("HomeViewModel", "HomeViewModel 업데이트됨: ${response}")
                 }
             loadingStateManager.hide()
@@ -163,7 +171,7 @@ class HomeViewModel @Inject constructor(
                 }
                 .collect { response ->
                     _dDay.value = response
-                    refreshInBackground()
+                    dDay.value?.let { refreshInBackground(it.ddayId) }
                     Log.d("HomeViewModel", "HomeViewModel 업데이트됨: ${response}")
                 }
             loadingStateManager.hide()
@@ -175,7 +183,7 @@ class HomeViewModel @Inject constructor(
             try {
                 deleteDDayUseCase(ddayId)
                 _dDay.value = null
-                refreshInBackground()
+                refreshInBackground(ddayId)
             } catch (e: Exception) {
                 Log.e("HomeViewModel", "Error deleting D-Day: ${e.message}", e)
             }
@@ -191,7 +199,7 @@ class HomeViewModel @Inject constructor(
                 }
                 .collect { response ->
                     _dDay.value = response
-                    refreshInBackground()
+                    refreshInBackground(dDayId)
                     Log.d("HomeViewModel", "HomeViewModel 업데이트됨: ${response}")
                 }
             loadingStateManager.hide()

@@ -70,6 +70,7 @@ import com.capston.presentation.viewmodel.PlanViewModel
 import com.google.android.gms.tasks.OnCompleteListener
 import com.google.firebase.messaging.FirebaseMessaging
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.collectLatest
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -112,6 +113,11 @@ class MainActivity : ComponentActivity() {
 
             LaunchedEffect(Unit) {
                 homeViewModel.getDistinctHome()
+                homeViewModel.getDistinctHome.collectLatest { homeData ->
+                    if (homeData.dday.ddayId > 0) {
+                        homeViewModel.getDDay(homeData.dday.ddayId)
+                    }
+                }
                 loginViewModel.getUserProfile()
             }
 
