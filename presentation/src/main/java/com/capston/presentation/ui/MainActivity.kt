@@ -102,21 +102,6 @@ class MainActivity : ComponentActivity() {
         // 알림 권한 묻기
         askNotificationPermission()
 
-        FirebaseMessaging.getInstance().token.addOnCompleteListener(OnCompleteListener { task ->
-            if (!task.isSuccessful) {
-                Log.w("MainActivity", "Fetching FCM registration token failed", task.exception)
-                return@OnCompleteListener
-            }
-
-            // Get new FCM registration token
-            val token = task.result
-
-            // Log and toast
-//            val msg = getString(R.string.msg_token_fmt, token)
-            Log.d("MainActivity", "token: $token")
-            Toast.makeText(baseContext, token, Toast.LENGTH_SHORT).show()
-        })
-
         // UI 설정
         setContent {
             val homeViewModel: HomeViewModel by viewModels()
