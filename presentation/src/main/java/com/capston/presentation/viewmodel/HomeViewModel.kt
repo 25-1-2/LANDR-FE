@@ -19,6 +19,7 @@ import com.capston.domain.usecase.home.PostDDayUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -40,14 +41,8 @@ class HomeViewModel @Inject constructor(
     private val _patchLessonSchedulesCheckToggle = MutableStateFlow(CheckResponse())
     val patchLessonSchedulesCheckToggle = _patchLessonSchedulesCheckToggle
 
-    private val _getDDay = MutableStateFlow(DDayResponse())
-    val getDDay: StateFlow<DDayResponse> = _getDDay
-
-    private val _patchDDay = MutableStateFlow(DDayResponse())
-    val patchDDay: StateFlow<DDayResponse> = _patchDDay
-
-    private val _postDDay = MutableStateFlow(DDayResponse())
-    val postDDay: StateFlow<DDayResponse> = _postDDay
+    private val _dDay = MutableStateFlow<DDayResponse?>(null)
+    val dDay: StateFlow<DDayResponse?> = _dDay.asStateFlow()
 
     // 캐시된 데이터 유지
     private var lastLoadTime: Long = 0
@@ -151,7 +146,7 @@ class HomeViewModel @Inject constructor(
                     Log.e("HomeViewModel", "HomeViewModel 에러: ${e.message}")
                 }
                 .collect { response ->
-                    _getDDay.value = response
+                    _dDay.value = response
                     Log.d("HomeViewModel", "HomeViewModel 업데이트됨: ${response}")
                 }
             loadingStateManager.hide()
@@ -166,7 +161,7 @@ class HomeViewModel @Inject constructor(
                     Log.e("HomeViewModel", "HomeViewModel 에러: ${e.message}")
                 }
                 .collect { response ->
-                    _postDDay.value = response
+                    _dDay.value = response
                     Log.d("HomeViewModel", "HomeViewModel 업데이트됨: ${response}")
                 }
             loadingStateManager.hide()
@@ -189,7 +184,7 @@ class HomeViewModel @Inject constructor(
                     Log.e("HomeViewModel", "HomeViewModel 에러: ${e.message}")
                 }
                 .collect { response ->
-                    _postDDay.value = response
+                    _dDay.value = response
                     Log.d("HomeViewModel", "HomeViewModel 업데이트됨: ${response}")
                 }
             loadingStateManager.hide()

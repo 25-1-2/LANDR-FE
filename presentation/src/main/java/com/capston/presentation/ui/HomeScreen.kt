@@ -120,11 +120,13 @@ import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
+import com.capston.domain.request.UpdateDDayRequest
 import com.capston.domain.response.enum_class.DayOfWeek
 import com.capston.domain.response.plan.LectureAliasResponse
 import com.capston.presentation.theme.LightGray4
@@ -145,6 +147,7 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
     val context = LocalContext.current
 
     val homeState by homeViewModel.getDistinctHome.collectAsState()
+    val dDayState by homeViewModel.dDay.collectAsState()
 
     // 나의 학습 현황
     val totalCompletedLessons = homeState.userProgress.totalCompletedLessons // 들은 강의 개수
@@ -166,13 +169,39 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
     var isExamBottomSheetVisible by rememberSaveable { mutableStateOf(false) }
     val examModalBottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    // 시험 일정 정보를 저장할 상태 변수
-    var examTitle by rememberSaveable { mutableStateOf("예정된 계획이 없어요.") }
-    var examDate by rememberSaveable { mutableStateOf("2025-05-16") } // 예시 날짜
-    var dDay by rememberSaveable { mutableStateOf(0) } // D-Day 계산된 값
+    // D-Day 관련 상태 관리
+    var examTitle by rememberSaveable {
+        mutableStateOf(dDayState?.title ?: "예정된 계획이 없어요.")
+    }
+    var examDate by rememberSaveable {
+        mutableStateOf(dDayState?.goalDate ?: "")
+    }
+    var dDay by rememberSaveable { mutableStateOf(0) }
+
+    fun calculateDDay(dateString: String): Int {
+        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+        return try {
+            val examDateTime = LocalDate.parse(dateString, formatter)
+            val today = LocalDate.now()
+            ChronoUnit.DAYS.between(today, examDateTime).toInt()
+        } catch (e: Exception) {
+            0
+        }
+    }
+
+    // D-Day 상태 업데이트
+    LaunchedEffect(dDayState) {
+        dDayState?.let {
+            examTitle = it.title
+            dDay = calculateDDay(it.goalDate)
+        }
+    }
 
     LaunchedEffect(Unit) {
         homeViewModel.refreshInBackground()
+        if (homeState.dday.ddayId > 0) {
+            homeViewModel.patchDDay(homeState.dday.ddayId, UpdateDDayRequest(homeState.dday.title,homeState.dday.goalDate))
+        }
     }
 
     // 이번주 학습 성취율 섹션 확장/축소 상태
@@ -259,15 +288,14 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
         examTitle = examTitle,
         examDate = examDate,
         onSaveExam = { newTitle, newDate ->
-            examTitle = newTitle
-            examDate = newDate
-
-            // D-Day 계산
-            val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
-            val examDateTime = LocalDate.parse(newDate, formatter)
-            val today = LocalDate.now()
-            dDay = ChronoUnit.DAYS.between(today, examDateTime).toInt()
-
+            val dDayId = dDayState?.ddayId
+            if (dDayId != null) {
+                // Update existing D-Day
+                homeViewModel.patchDDay(dDayId, UpdateDDayRequest(newTitle, newDate))
+            } else {
+                // Create new D-Day
+                homeViewModel.postDDay(UpdateDDayRequest(newTitle, newDate))
+            }
             isExamBottomSheetVisible = false
         }
     )
