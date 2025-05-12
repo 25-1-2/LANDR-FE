@@ -81,4 +81,7 @@ dependencies {
 
     // coroutines
     implementation(libs.kotlinx.coroutines.android)
+
+    // firebase
+    implementation(libs.firebase.auth.ktx)
 }
