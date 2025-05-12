@@ -171,6 +171,10 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
     var examDate by rememberSaveable { mutableStateOf("2025-05-16") } // 예시 날짜
     var dDay by rememberSaveable { mutableStateOf(0) } // D-Day 계산된 값
 
+    LaunchedEffect(Unit) {
+        homeViewModel.refreshInBackground()
+    }
+
     // 이번주 학습 성취율 섹션 확장/축소 상태
     var isWeeklyExpanded by remember { mutableStateOf(true) }
 
