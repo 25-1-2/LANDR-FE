@@ -3,22 +3,63 @@ package com.capston.presentation.ui
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.util.Log
-import androidx.compose.foundation.Image
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedCard
+import androidx.compose.material3.SuggestionChip
+import androidx.compose.material3.SuggestionChipDefaults
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Color.Companion.Transparent
+import androidx.compose.ui.graphics.Color.Companion.White
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
@@ -35,17 +76,231 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
-import com.capston.domain.model.Lecture
 import com.capston.domain.request.LectureDto
+import com.capston.domain.response.enum_class.Platform
 import com.capston.domain.response.enum_class.Subject
 import com.capston.presentation.R
 import com.capston.presentation.theme.LightGray40
 import com.capston.presentation.theme.MainPurple
 import com.capston.presentation.theme.materialGray
+import com.capston.presentation.theme.textGray
 import com.capston.presentation.viewmodel.LectureViewModel
 import com.capston.presentation.viewmodel.PlanViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+
+@Composable
+fun LectureFilterBarDropdown(
+    selectedPlatforms: List<Platform>,
+    onPlatformSelected: (Platform) -> Unit,
+    selectedSubjects: List<Subject>,
+    onSubjectSelected: (Subject) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        // 왼쪽: 강의 사이트 필터
+        CompactFilterDropdown(
+            items = Platform.entries,
+            selectedItems = selectedPlatforms,
+            labelMapper = { it.label },
+            placeholderText = "강의 사이트", // 라벨을 placeholder로 표시
+            onItemSelected = { platform ->
+                // 다중 선택 토글 로직
+                if (selectedPlatforms.contains(platform)) {
+                    // 이미 선택된 항목이면 제거
+                    onPlatformSelected(platform)
+                } else {
+                    // 선택되지 않았으면 추가
+                    onPlatformSelected(platform)
+                }
+            },
+            modifier = Modifier.weight(1f)
+        )
+
+        // 오른쪽: 과목 필터
+        CompactFilterDropdown(
+            items = Subject.entries,
+            selectedItems = selectedSubjects,
+            labelMapper = { it.label },
+            placeholderText = "과목", // 라벨을 placeholder로 표시
+            onItemSelected = { subject ->
+                // 다중 선택 토글 로직
+                if (selectedSubjects.contains(subject)) {
+                    // 이미 선택된 항목이면 제거
+                    onSubjectSelected(subject)
+                } else {
+                    // 선택되지 않았으면 추가
+                    onSubjectSelected(subject)
+                }
+            },
+            modifier = Modifier.weight(1f)
+        )
+    }
+
+    // 선택된 항목 태그 표시 (한 줄에 모두 표시)
+    if (selectedPlatforms.isNotEmpty() || selectedSubjects.isNotEmpty()) {
+        LazyRow(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 2.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            // 플랫폼 태그 표시
+            itemsIndexed(selectedPlatforms) { _, platform ->
+                SuggestionChip(
+                    onClick = { onPlatformSelected(platform) }, // 클릭하면 제거
+                    label = {
+                        Text(
+                            text = platform.label,
+                            fontSize = 12.sp,
+                            style = MaterialTheme.typography.labelSmall
+                        )
+                    },
+                    icon = {
+                        Icon(
+                            imageVector = Icons.Filled.Close,
+                            contentDescription = "Remove",
+                            modifier = Modifier.size(12.dp)
+                        )
+                    },
+                    shape = RoundedCornerShape(6.dp),
+                    border = null,
+                    colors = SuggestionChipDefaults.suggestionChipColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f)
+                    )
+                )
+            }
+
+            // 과목 태그 표시
+            itemsIndexed(selectedSubjects) { _, subject ->
+                SuggestionChip(
+                    onClick = { onSubjectSelected(subject) }, // 클릭하면 제거
+                    label = {
+                        Text(
+                            text = subject.label,
+                            fontSize = 12.sp,
+                            style = MaterialTheme.typography.labelSmall
+                        )
+                    },
+                    icon = {
+                        Icon(
+                            imageVector = Icons.Filled.Close,
+                            contentDescription = "Remove",
+                            modifier = Modifier.size(12.dp)
+                        )
+                    },
+                    shape = RoundedCornerShape(6.dp),
+                    border = null,
+                    colors = SuggestionChipDefaults.suggestionChipColors(
+                        containerColor = subject.bgColor.copy(alpha = 0.7f)
+                    )
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun <T> CompactFilterDropdown(
+    items: List<T>,
+    selectedItems: List<T>,
+    labelMapper: (T) -> String,
+    placeholderText: String,
+    onItemSelected: (T) -> Unit,
+    leadingIcon: @Composable (() -> Unit)? = null,
+    modifier: Modifier = Modifier
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Box(modifier = modifier) {
+        OutlinedCard(
+            shape = RoundedCornerShape(6.dp),
+            border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(32.dp)
+                .clickable(onClick = { expanded = true })
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 6.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (leadingIcon != null) {
+                    Box(modifier = Modifier.padding(end = 4.dp)) {
+                        leadingIcon()
+                    }
+                }
+
+                Text(
+                    text = placeholderText,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (selectedItems.isEmpty())
+                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                    else
+                        MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
+                )
+
+                Icon(
+                    imageVector = if (expanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
+                    contentDescription = if (expanded) "접기" else "펼치기",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(14.dp)
+                )
+            }
+        }
+
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            modifier = Modifier
+                .width(IntrinsicSize.Min)
+                .heightIn(max = 200.dp)
+                .background(White)
+        ) {
+            items.forEach { item ->
+                val isSelected = selectedItems.contains(item)
+                DropdownMenuItem(
+                    onClick = {
+                        onItemSelected(item)
+                        // 다중 선택 가능하도록 메뉴 유지
+                    },
+                    text = {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = labelMapper(item),
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.weight(1f)
+                            )
+
+                            if (isSelected) {
+                                Icon(
+                                    imageVector = Icons.Filled.Check,
+                                    contentDescription = "Selected",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                            }
+                        }
+                    }
+                )
+            }
+        }
+    }
+}
 
 @SuppressLint("RememberReturnType")
 @Composable
@@ -77,6 +332,10 @@ fun SearchScreen(
 
     // 모든 아이템을 누적해서 저장
     var allItems by remember { mutableStateOf<List<LectureItemDto>>(emptyList()) }
+
+    // Filter state
+    var selectedPlatforms by remember { mutableStateOf<List<Platform>>(emptyList()) }
+    var selectedSubjects by remember { mutableStateOf<List<Subject>>(emptyList()) }
 
     // 디버깅용 - 현재 로드된 아이템 수 출력
     LaunchedEffect(allItems.size, isLoadingMore) {
@@ -119,7 +378,7 @@ fun SearchScreen(
     }
 
     // 검색어 변경 시 API 호출
-    var searchJob by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
+    var searchJob by remember { mutableStateOf<Job?>(null) }
     LaunchedEffect(searchQuery) {
         searchJob?.cancel()
         searchJob = scope.launch {
@@ -284,6 +543,28 @@ fun SearchScreen(
     Column {
         SearchTopBar(searchQuery = searchQuery, onQueryChanged = { searchQuery = it }, lectureViewModel = lectureViewModel)
 
+        // SearchScreen 내부의 해당 부분을 다음과 같이 변경합니다
+        LectureFilterBarDropdown(
+            selectedPlatforms = selectedPlatforms,
+            onPlatformSelected = { platform ->
+                // 토글 로직: 이미 선택되어 있으면 제거, 없으면 추가
+                selectedPlatforms = if (selectedPlatforms.contains(platform)) {
+                    selectedPlatforms - platform
+                } else {
+                    selectedPlatforms + platform
+                }
+            },
+            selectedSubjects = selectedSubjects,
+            onSubjectSelected = { subject ->
+                // 토글 로직: 이미 선택되어 있으면 제거, 없으면 추가
+                selectedSubjects = if (selectedSubjects.contains(subject)) {
+                    selectedSubjects - subject
+                } else {
+                    selectedSubjects + subject
+                }
+            }
+        )
+
         // 개선된 무한 스크롤 리스트 구현
         SimplifiedInfiniteScrollList(
             navController = navController,
@@ -370,7 +651,7 @@ fun SimplifiedInfiniteScrollList(
                 Text(
                     text = if (searchQuery.isBlank()) "강의 목록이 비어 있습니다." else "검색 결과가 없습니다.",
                     fontSize = 18.sp,
-                    color = Color.Gray,
+                    color = materialGray,
                     textAlign = TextAlign.Center
                 )
             }
@@ -421,7 +702,7 @@ fun SimplifiedInfiniteScrollList(
                         Text(
                             text = "모든 강의를 불러왔습니다 (총 ${lectureItems.size}개)",
                             fontSize = 14.sp,
-                            color = Color.Gray,
+                            color = materialGray,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(16.dp),
@@ -604,13 +885,13 @@ fun SearchLectureItem(
                 ) {
                     Text(
                         text = lectureItem.teacher,
-                        color = LightGray40,
+                        color = textGray,
                         fontSize = 14.sp
                     )
 
                     Text(
                         text = " · [${lectureItem.tag}]",
-                        color = LightGray40,
+                        color = textGray,
                         fontSize = 14.sp
                     )
                 }
