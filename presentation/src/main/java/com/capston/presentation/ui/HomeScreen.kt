@@ -977,7 +977,7 @@ fun EmptyLectureState(context: Context) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Image(
-            painter = painterResource(R.drawable.home_screen_empty),
+            painter = painterResource(R.drawable.screen_home_todaylesson_empty_iv),
             contentDescription = "과목명",
             modifier = Modifier.size(80.dp)
         )
@@ -985,7 +985,7 @@ fun EmptyLectureState(context: Context) {
             text = "오늘 강의가 없어요",
             textAlign = TextAlign.Center,
             fontSize = 16.sp,
-            color = LightGray60
+            color = textGray
         )
         Spacer(Modifier.height(10.dp))
 
