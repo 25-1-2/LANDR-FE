@@ -1044,14 +1044,13 @@ fun ExamDdayHeader(onEditClick: () -> Unit) {
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(vertical = 8.dp)
         ) {
             Icon(
                 painter = painterResource(id = R.drawable.screen_profile_calender_iv),
                 contentDescription = null,
                 tint = Color.Unspecified,
                 modifier = Modifier
-                    .size(24.dp)
+                    .size(32.dp)
                     .padding(end = 8.dp)
             )
 
