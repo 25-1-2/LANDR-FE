@@ -70,6 +70,7 @@ import com.capston.presentation.viewmodel.PlanViewModel
 import com.google.android.gms.tasks.OnCompleteListener
 import com.google.firebase.messaging.FirebaseMessaging
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.collectLatest
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -112,6 +113,16 @@ class MainActivity : ComponentActivity() {
 
             LaunchedEffect(Unit) {
                 homeViewModel.getDistinctHome()
+                homeViewModel.getDistinctHome.collectLatest { homeData ->
+                    val dday = homeData.dday
+                    if (dday != null && dday.ddayId > 0) {
+                        homeViewModel.getDDay(dday.ddayId)
+                    } else {
+                        // Handle the case when there's no D-Day
+                        Log.d("HomeScreen", "No D-Day information available")
+                    }
+                }
+
                 loginViewModel.getUserProfile()
             }
 

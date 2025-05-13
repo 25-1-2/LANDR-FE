@@ -4,15 +4,22 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.capston.domain.manager.LoadingStateManager
+import com.capston.domain.request.UpdateDDayRequest
 import com.capston.domain.response.CheckResponse
+import com.capston.domain.response.home.DDayResponse
 import com.capston.domain.response.home.DistinctHomeIdResponse
 import com.capston.domain.response.home.TodayScheduleResponse
 import com.capston.domain.response.home.UserProgressResponse
+import com.capston.domain.usecase.home.DeleteDDayUseCase
+import com.capston.domain.usecase.home.GetDDayUseCase
 import com.capston.domain.usecase.home.GetDistinctHomeUseCase
+import com.capston.domain.usecase.home.PatchDDayUseCase
 import com.capston.domain.usecase.home.PatchLessonSchedulesCheckToggleUseCase
+import com.capston.domain.usecase.home.PostDDayUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -21,6 +28,10 @@ import javax.inject.Inject
 class HomeViewModel @Inject constructor(
     private val getDistinctHomeUseCase: GetDistinctHomeUseCase,
     private val patchLessonSchedulesCheckToggleUseCase: PatchLessonSchedulesCheckToggleUseCase,
+    private val getDDayUseCase: GetDDayUseCase,
+    private val postDDayUseCase: PostDDayUseCase,
+    private val deleteDDayUseCase: DeleteDDayUseCase,
+    private val patchDDayUseCase: PatchDDayUseCase,
     private val loadingStateManager: LoadingStateManager
 ) : ViewModel() {
 
@@ -29,6 +40,9 @@ class HomeViewModel @Inject constructor(
 
     private val _patchLessonSchedulesCheckToggle = MutableStateFlow(CheckResponse())
     val patchLessonSchedulesCheckToggle = _patchLessonSchedulesCheckToggle
+
+    private val _dDay = MutableStateFlow<DDayResponse?>(null)
+    val dDay: StateFlow<DDayResponse?> = _dDay.asStateFlow()
 
     // 캐시된 데이터 유지
     private var lastLoadTime: Long = 0
@@ -115,12 +129,80 @@ class HomeViewModel @Inject constructor(
     }
 
     // 백그라운드 갱신 (deeplink나 다른 화면에서 돌아왔을 때)
-    fun refreshInBackground() {
+    fun refreshInBackground(dDayId: Int) {
         viewModelScope.launch {
-            // 로딩 인디케이터 없이 백그라운드 갱신
+            // First operation - get home data
             getDistinctHomeUseCase().collect { response ->
                 _getDistinctHome.value = response
+
+                // Only after home data is updated, get the D-Day info
+                // Launch in a new coroutine to avoid blocking
+                viewModelScope.launch {
+                    getDDayUseCase(dDayId).collect { ddayResponse ->
+                        _dDay.value = ddayResponse
+                    }
+                }
             }
+        }
+    }
+
+    fun getDDay(dDayId: Int) {
+        viewModelScope.launch {
+            loadingStateManager.show()
+            getDDayUseCase(dDayId)
+                .catch { e ->
+                    Log.e("HomeViewModel", "HomeViewModel 에러: ${e.message}")
+                }
+                .collect { response ->
+                    _dDay.value = response
+                    refreshInBackground(dDayId)
+                    Log.d("HomeViewModel", "HomeViewModel 업데이트됨: ${response}")
+                }
+            loadingStateManager.hide()
+        }
+    }
+
+    fun postDDay(updateDDayRequest: UpdateDDayRequest) {
+        viewModelScope.launch {
+            loadingStateManager.show()
+            postDDayUseCase(updateDDayRequest)
+                .catch { e ->
+                    Log.e("HomeViewModel", "HomeViewModel 에러: ${e.message}")
+                }
+                .collect { response ->
+                    _dDay.value = response
+                    dDay.value?.let { refreshInBackground(it.ddayId) }
+                    Log.d("HomeViewModel", "HomeViewModel 업데이트됨: ${response}")
+                }
+            loadingStateManager.hide()
+        }
+    }
+
+    fun deleteDDay(ddayId: Int) {
+        viewModelScope.launch {
+            try {
+                deleteDDayUseCase(ddayId)
+                _dDay.value = null
+                refreshInBackground(ddayId)
+            } catch (e: Exception) {
+                Log.e("HomeViewModel", "Error deleting D-Day: ${e.message}", e)
+            }
+        }
+    }
+
+    fun patchDDay(dDayId: Int, updateDDayRequest: UpdateDDayRequest) {
+        viewModelScope.launch {
+            loadingStateManager.show()
+            patchDDayUseCase(dDayId, updateDDayRequest)
+                .catch { e ->
+                    Log.e("HomeViewModel", "HomeViewModel 에러: ${e.message}")
+                }
+                .collect { response ->
+                    _dDay.value = response
+                    refreshInBackground(dDayId)
+                    Log.d("HomeViewModel", "HomeViewModel 업데이트됨: ${response}")
+                }
+            loadingStateManager.hide()
         }
     }
 }

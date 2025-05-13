@@ -18,14 +18,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
-import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -37,18 +35,16 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.AlertDialog
 //noinspection UsingMaterialAndMaterial3Libraries
 import androidx.compose.material.OutlinedTextField
 //noinspection UsingMaterialAndMaterial3Libraries
 import androidx.compose.material.TextFieldDefaults
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -84,9 +80,6 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
-import androidx.compose.ui.input.nestedscroll.NestedScrollSource
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -117,17 +110,16 @@ import java.time.temporal.ChronoUnit
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
+import com.capston.domain.request.UpdateDDayRequest
 import com.capston.domain.response.enum_class.DayOfWeek
+import com.capston.domain.response.home.DistinctHomeIdResponse
 import com.capston.domain.response.plan.LectureAliasResponse
-import com.capston.presentation.theme.LightGray4
 import com.capston.presentation.theme.LightGray5
 import com.capston.presentation.theme.WarmPurple
 import java.text.SimpleDateFormat
@@ -145,6 +137,7 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
     val context = LocalContext.current
 
     val homeState by homeViewModel.getDistinctHome.collectAsState()
+    val dDayState by homeViewModel.dDay.collectAsState()
 
     // 나의 학습 현황
     val totalCompletedLessons = homeState.userProgress.totalCompletedLessons // 들은 강의 개수
@@ -166,13 +159,61 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
     var isExamBottomSheetVisible by rememberSaveable { mutableStateOf(false) }
     val examModalBottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    // 시험 일정 정보를 저장할 상태 변수
-    var examTitle by rememberSaveable { mutableStateOf("예정된 계획이 없어요.") }
-    var examDate by rememberSaveable { mutableStateOf("2025-05-16") } // 예시 날짜
-    var dDay by rememberSaveable { mutableStateOf(0) } // D-Day 계산된 값
+    // D-Day 관련 상태 관리
+    var examTitle by rememberSaveable {
+        mutableStateOf(dDayState?.title ?: "")
+    }
+    var examDate by rememberSaveable {
+        mutableStateOf(dDayState?.goalDate ?: "")
+    }
+    var dDay by rememberSaveable { mutableStateOf("D-Day") }
 
+    fun calculateDDay(dateString: String): String {
+        if (dateString.isBlank()) return "D-Day"
+
+        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+        return try {
+            val examDateTime = LocalDate.parse(dateString, formatter)
+            val today = LocalDate.now()
+            val daysDifference = ChronoUnit.DAYS.between(today, examDateTime).toInt()
+
+            when {
+                daysDifference > 0 -> "D-$daysDifference" // Future date (countdown)
+                daysDifference < 0 -> "D+${-daysDifference}" // Past date (count up from event)
+                else -> "D-Day" // Today is the day
+            }
+        } catch (e: Exception) {
+            "D-Day" // Default in case of parsing error
+        }
+    }
+
+    // D-Day 상태 업데이트 - dDayState가 변경될 때마다 실행
+    LaunchedEffect(dDayState) {
+        if (dDayState != null) {
+            examTitle = dDayState!!.title
+            examDate = dDayState!!.goalDate
+            dDay = calculateDDay(dDayState!!.goalDate)
+        } else {
+            // Reset to default values when there's no D-Day
+            examTitle = ""
+            examDate = ""
+            dDay = "D-Day"
+        }
+    }
+
+    // 앱 초기화 시 데이터 로드
     LaunchedEffect(Unit) {
-        homeViewModel.refreshInBackground()
+        try {
+            val dday = homeState.dday
+            if (dday != null && dday.ddayId > 0) {
+                homeViewModel.patchDDay(
+                    dday.ddayId,
+                    UpdateDDayRequest(dday.title ?: "", dday.goalDate ?: "")
+                )
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("HomeScreen", "Error patching D-Day: ${e.message}", e)
+        }
     }
 
     // 이번주 학습 성취율 섹션 확장/축소 상태
@@ -240,13 +281,16 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
             ) {
                 WeeklyAchievementGraph(
                     isExpanded = isWeeklyExpanded,
-                    onToggle = { isWeeklyExpanded = it }
+                    onToggle = { isWeeklyExpanded = it },
+                    homeState = homeState
                 )
             }
         }
     }
 
-    // 바텀 시트 처리
+    var showDeleteCompleteDialog by remember { mutableStateOf(false) }
+
+    // 바텀 시트 처리 - with additional null safety
     ShowBottomSheets(
         isBottomSheetVisible = isBottomSheetVisible,
         modalBottomSheetState = modalBottomSheetState,
@@ -259,16 +303,40 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
         examTitle = examTitle,
         examDate = examDate,
         onSaveExam = { newTitle, newDate ->
-            examTitle = newTitle
-            examDate = newDate
-
-            // D-Day 계산
-            val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
-            val examDateTime = LocalDate.parse(newDate, formatter)
-            val today = LocalDate.now()
-            dDay = ChronoUnit.DAYS.between(today, examDateTime).toInt()
-
+            try {
+                val dDayId = dDayState?.ddayId
+                if (dDayId != null && dDayId > 0) {
+                    // Update existing D-Day
+                    homeViewModel.patchDDay(dDayId, UpdateDDayRequest(newTitle, newDate))
+                } else {
+                    // Create new D-Day
+                    homeViewModel.postDDay(UpdateDDayRequest(newTitle, newDate))
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("HomeScreen", "Error saving D-Day: ${e.message}", e)
+            }
             isExamBottomSheetVisible = false
+        },
+        onDeleteExam = {
+            try {
+                val ddayId = dDayState?.ddayId
+                if (ddayId != null && ddayId > 0) {
+                    homeViewModel.deleteDDay(ddayId)
+                    showDeleteCompleteDialog = true
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("HomeScreen", "Error deleting D-Day: ${e.message}", e)
+            }
+            isExamBottomSheetVisible = false
+        },
+        hasDDay = dDayState?.ddayId != null && (dDayState!!.ddayId > 0)
+    )
+
+    // 바텀시트 외부에 삭제 완료 다이얼로그 표시
+    DeleteCompleteDialog(
+        show = showDeleteCompleteDialog,
+        onDismiss = {
+            showDeleteCompleteDialog = false
         }
     )
 }
@@ -278,36 +346,24 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
 @Composable
 fun WeeklyAchievementGraph(
     isExpanded: Boolean,
-    onToggle: (Boolean) -> Unit
+    onToggle: (Boolean) -> Unit,
+    homeState: DistinctHomeIdResponse
 ) {
     // 요일별 학습 성취 데이터 (true: 달성, false: 미달성)
     val weekDaysData = listOf(
-        DayAchievement(DayOfWeek.MON, true),
-        DayAchievement(DayOfWeek.TUE, true),
-        DayAchievement(DayOfWeek.WED, true),
-        DayAchievement(DayOfWeek.THU, false),
-        DayAchievement(DayOfWeek.FRI, true),
-        DayAchievement(DayOfWeek.SAT, false),
-        DayAchievement(DayOfWeek.SUN, true)
+        DayAchievementDto(DayOfWeek.MON, homeState.weeklyAchievement.mondayAchieved),
+        DayAchievementDto(DayOfWeek.TUE, homeState.weeklyAchievement.tuesdayAchieved),
+        DayAchievementDto(DayOfWeek.WED, homeState.weeklyAchievement.wednesdayAchieved),
+        DayAchievementDto(DayOfWeek.THU, homeState.weeklyAchievement.thursdayAchieved),
+        DayAchievementDto(DayOfWeek.FRI, homeState.weeklyAchievement.fridayAchieved),
+        DayAchievementDto(DayOfWeek.SAT, homeState.weeklyAchievement.saturdayAchieved),
+        DayAchievementDto(DayOfWeek.SUN, homeState.weeklyAchievement.sundayAchieved)
     )
 
     // 성취율 계산
     val achievedDays = weekDaysData.count { it.isAchieved }
     val totalDays = weekDaysData.size
     val achievementRate = (achievedDays.toFloat() / totalDays) * 100
-
-    // 연속 달성일 계산
-    var currentStreak = 0
-    var maxStreak = 0
-
-    weekDaysData.forEach { dayData ->
-        if (dayData.isAchieved) {
-            currentStreak++
-            maxStreak = maxOf(maxStreak, currentStreak)
-        } else {
-            currentStreak = 0
-        }
-    }
 
     Column(
         modifier = Modifier
@@ -403,21 +459,13 @@ fun WeeklyAchievementGraph(
                 DayAchievementChecks(weekDaysData = weekDaysData)
 
                 Spacer(modifier = Modifier.height(10.dp))
-
-                // 추가 정보 표시
-                Text(
-                    text = "최대 연속 달성: ${maxStreak}일",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MainPurple,
-                    fontWeight = FontWeight.Bold
-                )
             }
         }
     }
 }
 
 @Composable
-fun DayAchievementChecks(weekDaysData: List<DayAchievement>) {
+fun DayAchievementChecks(weekDaysData: List<DayAchievementDto>) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -491,12 +539,6 @@ fun DayAchievementItem(day: DayOfWeek, isAchieved: Boolean) {
         }
     }
 }
-
-// 일별 성취 데이터 클래스
-data class DayAchievement(
-    val day: DayOfWeek,
-    val isAchieved: Boolean
-)
 
 @Composable
 fun LearningStatusCard(
@@ -785,7 +827,7 @@ fun ModifiedLessonList(
 ) {
     Column(
         modifier = Modifier
-            .padding(start = 30.dp)
+            .padding(start = 10.dp)
             .fillMaxWidth()
             .heightIn(max = maxHeight.dp) // Limit the height
             .verticalScroll(rememberScrollState())
@@ -861,14 +903,6 @@ fun ModifiedLessonList(
             }
 
         }
-    }
-}
-
-// 스크롤 비활성화 확장 함수
-fun Modifier.disableScrolling() = composed {
-    val clipModifier = clip(RectangleShape)
-    clipModifier.pointerInput(Unit) {
-        detectVerticalDragGestures { _, _ -> }
     }
 }
 
@@ -973,7 +1007,7 @@ fun EmptyLectureState(context: Context) {
 @Composable
 fun ExamDdayCard(
     examTitle: String,
-    dDay: Int,
+    dDay: String,
     onEditClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -1010,14 +1044,13 @@ fun ExamDdayHeader(onEditClick: () -> Unit) {
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(vertical = 8.dp)
         ) {
             Icon(
-                painter = painterResource(id = R.drawable.screen_profile_learning_status_iv),
+                painter = painterResource(id = R.drawable.screen_profile_calender_iv),
                 contentDescription = null,
                 tint = Color.Unspecified,
                 modifier = Modifier
-                    .size(24.dp)
+                    .size(32.dp)
                     .padding(end = 8.dp)
             )
 
@@ -1054,14 +1087,16 @@ fun ExamDdayHeader(onEditClick: () -> Unit) {
 }
 
 @Composable
-fun ExamDdayContent(examTitle: String, dDay: Int) {
+fun ExamDdayContent(examTitle: String, dDay: String) {
+    val displayTitle = if (examTitle == "") "시험을 추가해보세요!" else examTitle
+
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = "D-$dDay",
+            text = dDay,
             fontSize = 48.sp,
             fontWeight = FontWeight.Bold,
             color = White,
@@ -1071,7 +1106,7 @@ fun ExamDdayContent(examTitle: String, dDay: Int) {
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            text = examTitle,
+            text = displayTitle,
             fontSize = 14.sp,
             color = White
         )
@@ -1111,7 +1146,7 @@ fun OnlineLectureHeader() {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
-            painter = painterResource(id = R.drawable.home_screen_total_count_iv),
+            painter = painterResource(id = R.drawable.screen_profile_learning_status_iv),
             contentDescription = null,
             tint = Color.Unspecified,
             modifier = Modifier
@@ -1191,7 +1226,9 @@ fun ShowBottomSheets(
     planViewModel: PlanViewModel,
     examTitle: String,
     examDate: String,
-    onSaveExam: (String, String) -> Unit
+    onSaveExam: (String, String) -> Unit,
+    onDeleteExam: () -> Unit = {}, // Add delete callback
+    hasDDay: Boolean = false // Flag to show if there's an existing D-Day
 ) {
     // 강의 목록 바텀 시트
     if (isBottomSheetVisible) {
@@ -1212,7 +1249,7 @@ fun ShowBottomSheets(
         }
     }
 
-    // 시험 일정 바텀 시트
+    /// 시험 일정 바텀 시트
     if (isExamBottomSheetVisible) {
         ModalBottomSheet(
             sheetState = examModalBottomSheetState,
@@ -1227,7 +1264,9 @@ fun ShowBottomSheets(
                 onDismiss = onDismissExamBottomSheet,
                 currentTitle = examTitle,
                 currentDate = examDate,
-                onSave = onSaveExam
+                onSave = onSaveExam,
+                onDelete = onDeleteExam,
+                showDeleteButton = hasDDay
             )
         }
     }
@@ -1474,7 +1513,9 @@ fun ExamBottomSheetContent(
     onDismiss: () -> Unit,
     currentTitle: String,
     currentDate: String,
-    onSave: (String, String) -> Unit
+    onSave: (String, String) -> Unit,
+    onDelete: () -> Unit = {}, // Add delete callback
+    showDeleteButton: Boolean = false // Show delete button for existing D-Days
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -1486,6 +1527,12 @@ fun ExamBottomSheetContent(
 
     // 날짜 선택 모달 표시 여부
     var showDatePicker by remember { mutableStateOf(false) }
+
+    // 삭제 확인 다이얼로그 표시 여부
+    var showDeleteConfirmDialog by remember { mutableStateOf(false) }
+
+    // 삭제 완료 다이얼로그 표시 여부
+    var showDeleteCompleteDialog by remember { mutableStateOf(false) }
 
     // 날짜 포맷터
     val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
@@ -1593,7 +1640,7 @@ fun ExamBottomSheetContent(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = 16.dp),
-                    placeholder = { Text("시험 이름을 입력하세요") }
+                    placeholder = { Text(text = "시험 이름을 입력하세요", style = MaterialTheme.typography.bodyMedium) },
                 )
 
                 // 시험 날짜 선택기
@@ -1623,26 +1670,56 @@ fun ExamBottomSheetContent(
 
             Spacer(modifier = Modifier.weight(1f))
 
-            // 저장 버튼
-            Button(
-                onClick = {
-                    onSave(examTitle, examDate)
-                },
+            // 버튼 영역 - 삭제와 저장 버튼을 가로로 배치
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 16.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MainPurple,
-                    contentColor = White
-                ),
-                shape = RoundedCornerShape(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Text(
-                    text = "저장하기",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(vertical = 8.dp)
-                )
+                // 삭제 버튼 (기존 D-Day가 있을 때만 표시)
+                if (showDeleteButton) {
+                    Button(
+                        onClick = {
+                            // 삭제 확인 다이얼로그 표시
+                            showDeleteConfirmDialog = true
+                        },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = White.copy(alpha = 0.8f),
+                            contentColor = MainPurple,
+                        ),
+                        shape = RoundedCornerShape(8.dp),
+                        border = BorderStroke(1.dp, MainPurple)
+                    ) {
+                        Text(
+                            text = "삭제하기",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(vertical = 8.dp)
+                        )
+                    }
+                }
+
+                // 저장 버튼
+                Button(
+                    onClick = {
+                        onSave(examTitle, examDate)
+                    },
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MainPurple,
+                        contentColor = White
+                    ),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text(
+                        text = "저장하기",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
+                }
             }
         }
     }
@@ -1688,5 +1765,52 @@ fun ExamBottomSheetContent(
                     .padding(top = 32.dp)
             )
         }
+    }
+
+    // 삭제 확인 다이얼로그
+    if (showDeleteConfirmDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirmDialog = false },
+            title = { Text("삭제 확인", fontWeight = FontWeight.Bold) },
+            text = { Text("정말 삭제하시겠습니까?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteConfirmDialog = false
+                        onDelete()  // 분리된 삭제 처리 함수 호출
+                    }
+                ) {
+                    Text("삭제", color = Color.Red)
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showDeleteConfirmDialog = false }
+                ) {
+                    Text("취소")
+                }
+            }
+        )
+
+    }
+}
+
+// 바텀 시트 외부에 별도 컴포저블로 삭제 완료 다이얼로그 구현
+@Composable
+fun DeleteCompleteDialog(
+    show: Boolean,
+    onDismiss: () -> Unit
+) {
+    if (show) {
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            title = { Text("삭제 완료", fontWeight = FontWeight.Bold) },
+            text = { Text("성공적으로 삭제되었습니다.") },
+            confirmButton = {
+                TextButton(onClick = onDismiss) {
+                    Text("확인")
+                }
+            }
+        )
     }
 }
