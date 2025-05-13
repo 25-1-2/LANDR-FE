@@ -288,7 +288,6 @@ fun TopBar(hasUnreadNotifications: Boolean) {
             navigationIcon = {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(start = 5.dp)
                 ) {
                     // 앱 로고
                     Icon(
