@@ -365,19 +365,6 @@ fun WeeklyAchievementGraph(
     val totalDays = weekDaysData.size
     val achievementRate = (achievedDays.toFloat() / totalDays) * 100
 
-    // 연속 달성일 계산
-    var currentStreak = 0
-    var maxStreak = 0
-
-    weekDaysData.forEach { dayData ->
-        if (dayData.isAchieved) {
-            currentStreak++
-            maxStreak = maxOf(maxStreak, currentStreak)
-        } else {
-            currentStreak = 0
-        }
-    }
-
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -472,14 +459,6 @@ fun WeeklyAchievementGraph(
                 DayAchievementChecks(weekDaysData = weekDaysData)
 
                 Spacer(modifier = Modifier.height(10.dp))
-
-                // 추가 정보 표시
-                Text(
-                    text = "최대 연속 달성: ${maxStreak}일",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MainPurple,
-                    fontWeight = FontWeight.Bold
-                )
             }
         }
     }
@@ -848,7 +827,7 @@ fun ModifiedLessonList(
 ) {
     Column(
         modifier = Modifier
-            .padding(start = 30.dp)
+            .padding(start = 10.dp)
             .fillMaxWidth()
             .heightIn(max = maxHeight.dp) // Limit the height
             .verticalScroll(rememberScrollState())
@@ -924,14 +903,6 @@ fun ModifiedLessonList(
             }
 
         }
-    }
-}
-
-// 스크롤 비활성화 확장 함수
-fun Modifier.disableScrolling() = composed {
-    val clipModifier = clip(RectangleShape)
-    clipModifier.pointerInput(Unit) {
-        detectVerticalDragGestures { _, _ -> }
     }
 }
 
@@ -1076,7 +1047,7 @@ fun ExamDdayHeader(onEditClick: () -> Unit) {
             modifier = Modifier.padding(vertical = 8.dp)
         ) {
             Icon(
-                painter = painterResource(id = R.drawable.screen_profile_learning_status_iv),
+                painter = painterResource(id = R.drawable.screen_profile_calender_iv),
                 contentDescription = null,
                 tint = Color.Unspecified,
                 modifier = Modifier
@@ -1176,7 +1147,7 @@ fun OnlineLectureHeader() {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
-            painter = painterResource(id = R.drawable.home_screen_total_count_iv),
+            painter = painterResource(id = R.drawable.screen_profile_learning_status_iv),
             contentDescription = null,
             tint = Color.Unspecified,
             modifier = Modifier
