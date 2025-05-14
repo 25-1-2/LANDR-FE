@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -1871,32 +1872,36 @@ fun DynamicWeeklyBarChart(
         rangeEnd = chartHeight.value
     )
 
-    Box(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .height(chartHeight + 60.dp)
             .padding(start = 8.dp, end = 16.dp)
     ) {
+        // 차트 영역
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(chartHeight)
         ) {
             // 왼쪽 시간 표시 (동적으로 계산된 값 표시)
-            Column(
+            Box(
                 modifier = Modifier
-                    .width(50.dp) // 넓게 조정
-                    .height(chartHeight),
-                verticalArrangement = Arrangement.SpaceBetween
+                    .width(50.dp)
+                    .height(chartHeight)
             ) {
-                // y축 눈금 표시
-                yAxisTicks.reversed().forEach { tickValue ->
+                // y축 눈금 표시를 정확한 위치에 배치
+                yAxisTicks.forEach { tickValue ->
+                    // 눈금 위치 계산 (0이 맨 아래, topValue가 맨 위)
+                    val yPosition = chartHeight * (1 - tickValue / topValue)
+
+                    // 텍스트 배치
                     Text(
                         text = "${tickValue.toInt()}분",
                         fontSize = 12.sp,
                         color = Color.Gray,
                         textAlign = TextAlign.End,
-                        modifier = Modifier.padding(vertical = 4.dp)
+                        modifier = Modifier
+                            .padding(end = 8.dp)
+                            .absoluteOffset(y = yPosition - 6.dp) // 그리드 라인과 정확히 정렬
                     )
                 }
             }
@@ -1908,50 +1913,42 @@ fun DynamicWeeklyBarChart(
                     .height(chartHeight)
                     .background(Color.White)
             ) {
-                // 수평 그리드 라인 (동적으로 계산된 값의 위치에 그리기)
+                // 수평 그리드 라인
                 Canvas(
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    // 수평 그리드 라인 그리기
-                    yAxisTicks.forEachIndexed { index, tickValue ->
+                    // 모든 그리드 라인을 점선으로 그리기
+                    yAxisTicks.forEach { tickValue ->
                         // y 위치 계산 (0이 맨 아래, topValue가 맨 위)
                         val yPosition = size.height * (1 - tickValue / topValue)
 
-                        // 선 스타일 (최상단과 최하단은 실선, 나머지는 점선)
-                        val isTopOrBottom = index == 0 || index == yAxisTicks.size - 1
-                        val pathEffect = if (isTopOrBottom) null
-                        else PathEffect.dashPathEffect(floatArrayOf(4f, 4f), 0f)
-
+                        // 모든 라인에 진한 점선 적용
                         drawLine(
                             color = LightGray5,
                             start = Offset(0f, yPosition),
                             end = Offset(size.width, yPosition),
-                            strokeWidth = 1.dp.toPx(),
-                            pathEffect = pathEffect
+                            strokeWidth = 1.5.dp.toPx(),
+                            pathEffect = PathEffect.dashPathEffect(floatArrayOf(3f, 3f), 0f)
                         )
                     }
                 }
 
-                // 막대 그래프 - 고정된 너비와 간격 사용
+                // 막대 그래프들이 들어갈 Row
                 Row(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .wrapContentWidth(Alignment.CenterHorizontally),
-                    horizontalArrangement = Arrangement.spacedBy(barSpacing),
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalArrangement = Arrangement.spacedBy(barSpacing, Alignment.CenterHorizontally),
                     verticalAlignment = Alignment.Bottom
                 ) {
+                    // 각 주차별 Column (막대 + 레이블을 세로로 묶음)
                     weeklyData.forEachIndexed { index, data ->
                         val animatedValue = animatedValues[index].value
-                        // 스케일을 사용하여 정확한 높이 계산
                         val barHeight = yScale.scale(animatedValue)
 
+                        // 각 주차별 Column
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.Bottom
                         ) {
-                            // 가장 높은 막대만 다른 색상
-                            val barColor = if (data.totalMinutes == maxMinutesValue) SubPurple else WarmPurple
-
                             // 분 표시
                             Text(
                                 text = "${data.totalMinutes}분",
@@ -1964,36 +1961,24 @@ fun DynamicWeeklyBarChart(
                             Box(
                                 modifier = Modifier
                                     .width(barWidth)
-                                    .height(barHeight.dp.coerceAtLeast(1.dp)) // 최소 1dp
+                                    .height(barHeight.dp.coerceAtLeast(1.dp))
                                     .background(
-                                        color = barColor,
+                                        color = if (data.totalMinutes == maxMinutesValue) SubPurple else WarmPurple,
                                         shape = RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp)
                                     )
+                            )
+
+                            // 주차 레이블 - 막대 바로 아래에 배치
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "${data.weekNumber}주",
+                                fontSize = 12.sp,
+                                color = Color.Black,
+                                textAlign = TextAlign.Center
                             )
                         }
                     }
                 }
-            }
-        }
-
-        // 주차 레이블 - 막대 그래프와 동일한 위치에 정렬
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = chartHeight + 16.dp, start = 50.dp, end = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(
-                barSpacing,
-                Alignment.CenterHorizontally
-            )
-        ) {
-            weeklyData.forEach { data ->
-                Text(
-                    text = "${data.weekNumber}주",
-                    fontSize = 12.sp,
-                    color = Color.Black,
-                    modifier = Modifier.wrapContentWidth(), // barWidth 제약 제거
-                    textAlign = TextAlign.Center
-                )
             }
         }
     }
