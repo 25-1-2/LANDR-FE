@@ -1966,8 +1966,8 @@ fun DynamicWeeklyBarChart(
                         // 분 표시
                         Text(
                             text = "${data.totalMinutes}분",
-                            fontSize = 10.sp,
-                            color = Color.Gray,
+                            fontSize = if (data.totalMinutes == maxMinutesValue) 12.sp else 10.sp,
+                            color = if (data.totalMinutes == maxMinutesValue) Color.Black else textGray,
                             modifier = Modifier.padding(bottom = 4.dp)
                         )
 
