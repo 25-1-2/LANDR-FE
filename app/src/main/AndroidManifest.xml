@@ -32,9 +32,9 @@
                 android:value="false" />
         </service>
 
-        <!-- 로그인 액티비티를 시작 액티비티로 설정 -->
+        <!-- 스플래시 액티비티를 시작 액티비티로 설정 -->
         <activity
-            android:name="com.capston.presentation.ui.login.LoginActivity"
+            android:name="com.capston.presentation.ui.SplashActivity"
             android:windowSoftInputMode="adjustPan"
             android:launchMode="singleTop"
             android:exported="true">
@@ -42,6 +42,13 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+        </activity>
+
+        <activity
+            android:name="com.capston.presentation.ui.login.LoginActivity"
+            android:windowSoftInputMode="adjustPan"
+            android:launchMode="singleTop"
+            android:exported="true">
         </activity>
 
         <!-- MainActivity는 로그인 이후로 전환 -->
