@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Intent
 import android.util.Log
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -648,6 +649,12 @@ fun SimplifiedInfiniteScrollList(
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                Image(
+                    painter = painterResource(R.drawable.screen_search_empty_iv),
+                    contentDescription = "과목명",
+                    modifier = Modifier.size(80.dp)
+                )
+                Spacer(modifier = Modifier.padding(5.dp))
                 Text(
                     text = if (searchQuery.isBlank()) "강의 목록이 비어 있습니다." else "검색 결과가 없습니다.",
                     fontSize = 18.sp,

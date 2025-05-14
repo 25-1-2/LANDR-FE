@@ -1051,7 +1051,6 @@ fun CompletedLecturesToggle(
             // 가운데 공간
             Spacer(modifier = Modifier.weight(1f))
 
-            // 완강 정보 텍스트
             Text(
                 buildAnnotatedString {
                     append("총 ")
@@ -1066,18 +1065,58 @@ fun CompletedLecturesToggle(
             )
         }
 
-        // 확장된 경우 강의 목록 표시
+        // 확장된 경우 강의 목록 표시 - 완강한 강의가 있는 경우와 없는 경우
         AnimatedVisibility(visible = isExpanded) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 24.dp, vertical = 8.dp)
             ) {
-                lectures.forEachIndexed { index, lecture ->
-                    LectureItem(
-                        lecture = lecture,
-                        isLastItem = index == lectures.size - 1
-                    )
+                if (lectures.isEmpty()) {
+                    // 완강한 강의가 없는 경우 보여줄 내용
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 24.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Image(
+                                painter = painterResource(id = R.drawable.screen_profile_completed_empty_iv), // 적절한 이미지로 교체
+                                contentDescription = "완강한 강의 없음",
+                                modifier = Modifier.size(80.dp)
+                            )
+
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            Text(
+                                text = "아직 완강한 강의가 없어요",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = textGray,
+                                textAlign = TextAlign.Center
+                            )
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            Text(
+                                text = "강의를 완료하고 성취감을 느껴보세요!",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = LightGray60,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                } else {
+                    // 완강한 강의가 있는 경우 목록 표시
+                    lectures.forEachIndexed { index, lecture ->
+                        LectureItem(
+                            lecture = lecture,
+                            isLastItem = index == lectures.size - 1
+                        )
+                    }
                 }
             }
         }

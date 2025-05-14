@@ -5,6 +5,7 @@ import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -39,6 +40,7 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -47,10 +49,12 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.capston.domain.response.enum_class.DayOfWeek
 import com.capston.domain.response.home.LessonScheduleResponse
+import com.capston.presentation.R
 import com.capston.presentation.theme.LightGray3
 import com.capston.presentation.theme.LightGray40
 import com.capston.presentation.theme.LightGray60
 import com.capston.presentation.theme.MainPurple
+import com.capston.presentation.theme.textGray
 import com.capston.presentation.viewmodel.DailyScheduleViewModel
 import com.capston.presentation.viewmodel.HomeViewModel
 import java.time.LocalDate
@@ -192,11 +196,18 @@ fun CalenderScreen(homeViewModel: HomeViewModel, dailyScheduleViewModel: DailySc
                         verticalArrangement = Arrangement.Center,
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
+                        Image(
+                            painter = painterResource(R.drawable.screen_calender_empty_iv),
+                            contentDescription = "과목명",
+                            modifier = Modifier.size(80.dp)
+                        )
+                        Spacer(modifier = Modifier.padding(5.dp))
                         Text(
-                            text = "선택한 날짜에 계획된 강의가 없어요 \uD83D\uDE0A\n",
+                            text = "선택한 날짜에 계획된 강의가 없어요",
                             textAlign = TextAlign.Center,
                             fontSize = 14.sp,
-                            color = LightGray60
+                            color = textGray,
+                            style = MaterialTheme.typography.bodyMedium
                         )
                     }
                 }

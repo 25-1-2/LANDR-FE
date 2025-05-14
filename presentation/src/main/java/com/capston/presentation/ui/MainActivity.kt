@@ -286,11 +286,26 @@ fun TopBar(hasUnreadNotifications: Boolean) {
                 .clip(RoundedCornerShape(20.dp))
                 .height(80.dp),
             navigationIcon = {
-                IconButton(onClick = { /* 메뉴 클릭 */ }) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    // 앱 로고
                     Icon(
-                        imageVector = Icons.Default.Menu,
-                        contentDescription = "Menu icon",
-                        Modifier.size(30.dp)
+                        painter = painterResource(id = R.drawable.ic_launcher),
+                        contentDescription = "앱 로고",
+                        modifier = Modifier.size(50.dp),
+                        tint = Color.Unspecified
+                    )
+
+                    // 간격 추가
+                    Spacer(modifier = Modifier.width(5.dp))
+
+                    // 앱 이름
+                    Icon(
+                        painter = painterResource(id = R.drawable.landr_title_iv),
+                        contentDescription = "앱 이름",
+                        modifier = Modifier.size(70.dp),
+                        tint = Color.Unspecified
                     )
                 }
             },

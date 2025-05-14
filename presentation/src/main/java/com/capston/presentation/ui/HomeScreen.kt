@@ -219,11 +219,10 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
     // 이번주 학습 성취율 섹션 확장/축소 상태
     var isWeeklyExpanded by remember { mutableStateOf(true) }
 
-    Scaffold(modifier = Modifier.fillMaxSize()) { paddingValues ->
+    Scaffold(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
                 .verticalScroll(rememberScrollState())
         ) {
             // 학습 현황 카드
@@ -977,7 +976,7 @@ fun EmptyLectureState(context: Context) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Image(
-            painter = painterResource(R.drawable.home_screen_empty),
+            painter = painterResource(R.drawable.screen_home_todaylesson_empty_iv),
             contentDescription = "과목명",
             modifier = Modifier.size(80.dp)
         )
@@ -985,7 +984,7 @@ fun EmptyLectureState(context: Context) {
             text = "오늘 강의가 없어요",
             textAlign = TextAlign.Center,
             fontSize = 16.sp,
-            color = LightGray60
+            color = textGray
         )
         Spacer(Modifier.height(10.dp))
 
