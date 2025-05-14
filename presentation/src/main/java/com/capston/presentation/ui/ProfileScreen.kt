@@ -28,6 +28,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -1819,187 +1820,181 @@ fun DynamicWeeklyBarChart(
     // 차트 높이
     val chartHeight = 200.dp
 
+    // 정확한 값 표시를 위한 LinearScale 생성
+    class LinearScale(val domainStart: Float, val domainEnd: Float, val rangeStart: Float, val rangeEnd: Float) {
+        fun scale(value: Float): Float {
+            val domainRatio = (value - domainStart) / (domainEnd - domainStart)
+            return rangeStart + (domainRatio * (rangeEnd - rangeStart))
+        }
+    }
+
     // 최대값을 기준으로 적절한 라운드 숫자로 조정
     val maxValue = maxMinutesValue.toFloat()
 
-    // 적절한 스케일 찾기 (10, 50, 100, 200, 500 등)
-    val scale = when {
-        maxValue <= 30 -> 10f
-        maxValue <= 150 -> 50f
-        maxValue <= 300 -> 100f
-        maxValue <= 600 -> 200f
-        maxValue <= 1500 -> 500f
-        else -> 1000f
+    // y축 눈금 계산을 위한 함수
+    fun calculateYAxisScale(maxValue: Float): Triple<Float, List<Float>, Float> {
+        // 적절한 스케일 찾기
+        val scale = when {
+            maxValue <= 30 -> 10f
+            maxValue <= 150 -> 50f
+            maxValue <= 300 -> 100f
+            maxValue <= 600 -> 200f
+            maxValue <= 1500 -> 500f
+            else -> 1000f
+        }
+
+        // 최대값을 위한 깔끔한 라운드 숫자 계산 (최소 4개의 눈금 표시)
+        val roundedMax = ceil(maxValue / scale) * scale
+
+        // 눈금 간격 (최소 3개 이상의 눈금이 표시되도록)
+        val tickCount = 4 // 0, 1/3, 2/3, max
+        val interval = roundedMax / (tickCount - 1)
+
+        // 눈금 값 생성
+        val ticks = List(tickCount) { i -> i * interval }
+
+        return Triple(roundedMax, ticks, interval)
     }
 
-    // 최대값을 위한 깔끔한 라운드 숫자 계산
-    val topValue = ceil(maxValue / scale) * scale
+    // y축 눈금 계산
+    val (topValue, yAxisTicks, interval) = calculateYAxisScale(maxValue)
 
-    // 각 간격도 깔끔한 숫자로 설정
-    val interval = topValue / 3
-    // 간격을 라운드 숫자로 만들기
-    val roundedInterval = when {
-        interval <= 10 -> 5f
-        interval <= 20 -> 10f
-        interval <= 50 -> 25f
-        interval <= 100 -> 50f
-        interval <= 200 -> 100f
-        interval <= 500 -> 200f
-        else -> 500f
-    }
+    // 바의 너비 계산 - 일정한 간격을 유지하기 위함
+    val barWidth = 16.dp
+    val barSpacing = 24.dp  // 바 사이의 간격 조정
 
-    // 균등하게 3개 구간으로 나누기
-    val thirdValue = roundedInterval
-    val twoThirdsValue = roundedInterval * 2
+    // 그래프에 사용할 스케일 생성 (실제 데이터 값 → 픽셀 높이 변환)
+    val yScale = LinearScale(
+        domainStart = 0f,
+        domainEnd = topValue,
+        rangeStart = 0f,
+        rangeEnd = chartHeight.value
+    )
 
-    Row(
+    Box(
         modifier = Modifier
             .fillMaxWidth()
             .height(chartHeight + 60.dp)
             .padding(start = 8.dp, end = 16.dp)
     ) {
-        // 왼쪽 시간 표시 (동적으로 계산된 값 표시)
-        Column(
+        Row(
             modifier = Modifier
-                .width(50.dp) // 넓게 조정
-                .height(chartHeight),
-            verticalArrangement = Arrangement.SpaceBetween
-        ) {
-            // 시간 표시는 위에서부터 아래로 - 라운드 숫자로 표시
-            Text(
-                text = "${topValue.toInt()}분",
-                fontSize = 12.sp,
-                color = Color.Gray,
-                textAlign = TextAlign.End,
-                modifier = Modifier.padding(top = 4.dp)
-            )
-
-            // 중간 값들도 라운드 숫자로 표시
-            Text(
-                text = "${twoThirdsValue.toInt()}분",
-                fontSize = 12.sp,
-                color = Color.Gray,
-                textAlign = TextAlign.End
-            )
-
-            Text(
-                text = "${thirdValue.toInt()}분",
-                fontSize = 12.sp,
-                color = Color.Gray,
-                textAlign = TextAlign.End
-            )
-
-            Text(
-                text = "0분",
-                fontSize = 12.sp,
-                color = Color.Gray,
-                textAlign = TextAlign.End,
-                modifier = Modifier.padding(bottom = 4.dp)
-            )
-        }
-
-        // 그래프 영역
-        Box(
-            modifier = Modifier
-                .weight(1f)
+                .fillMaxWidth()
                 .height(chartHeight)
-                .background(Color.White)
         ) {
-            // 수평 그리드 라인 (동적으로 계산된 값의 위치에 그리기)
-            Canvas(
-                modifier = Modifier.fillMaxSize()
+            // 왼쪽 시간 표시 (동적으로 계산된 값 표시)
+            Column(
+                modifier = Modifier
+                    .width(50.dp) // 넓게 조정
+                    .height(chartHeight),
+                verticalArrangement = Arrangement.SpaceBetween
             ) {
-                // 최상단 선
-                drawLine(
-                    color = LightGray5,
-                    start = Offset(0f, 0f),
-                    end = Offset(size.width, 0f),
-                    strokeWidth = 1.dp.toPx()
-                )
-
-                // 중간 상단 선
-                val twoThirdsY = size.height * (1 - twoThirdsValue / topValue)
-                drawLine(
-                    color = LightGray5,
-                    start = Offset(0f, twoThirdsY),
-                    end = Offset(size.width, twoThirdsY),
-                    strokeWidth = 1.dp.toPx(),
-                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(4f, 4f), 0f)
-                )
-
-                // 중간 하단 선
-                val thirdY = size.height * (1 - thirdValue / topValue)
-                drawLine(
-                    color = LightGray5,
-                    start = Offset(0f, thirdY),
-                    end = Offset(size.width, thirdY),
-                    strokeWidth = 1.dp.toPx(),
-                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(4f, 4f), 0f)
-                )
-
-                // 최하단 선
-                drawLine(
-                    color = LightGray5,
-                    start = Offset(0f, size.height),
-                    end = Offset(size.width, size.height),
-                    strokeWidth = 1.dp.toPx()
-                )
+                // y축 눈금 표시
+                yAxisTicks.reversed().forEach { tickValue ->
+                    Text(
+                        text = "${tickValue.toInt()}분",
+                        fontSize = 12.sp,
+                        color = Color.Gray,
+                        textAlign = TextAlign.End,
+                        modifier = Modifier.padding(vertical = 4.dp)
+                    )
+                }
             }
 
-            // 막대 그래프
-            Row(
-                modifier = Modifier.fillMaxSize(),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.Bottom
+            // 그래프 영역
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .height(chartHeight)
+                    .background(Color.White)
             ) {
-                weeklyData.forEachIndexed { index, data ->
-                    val animatedValue = animatedValues[index].value
-                    val barHeight = (animatedValue / topValue) * chartHeight.value
+                // 수평 그리드 라인 (동적으로 계산된 값의 위치에 그리기)
+                Canvas(
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    // 수평 그리드 라인 그리기
+                    yAxisTicks.forEachIndexed { index, tickValue ->
+                        // y 위치 계산 (0이 맨 아래, topValue가 맨 위)
+                        val yPosition = size.height * (1 - tickValue / topValue)
 
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Bottom
-                    ) {
-                        // 가장 높은 막대만 다른 색상
-                        val barColor = if (data.totalMinutes == maxMinutesValue) SubPurple else WarmPurple
+                        // 선 스타일 (최상단과 최하단은 실선, 나머지는 점선)
+                        val isTopOrBottom = index == 0 || index == yAxisTicks.size - 1
+                        val pathEffect = if (isTopOrBottom) null
+                        else PathEffect.dashPathEffect(floatArrayOf(4f, 4f), 0f)
 
-                        // 분 표시
-                        Text(
-                            text = "${data.totalMinutes}분",
-                            fontSize = if (data.totalMinutes == maxMinutesValue) 12.sp else 10.sp,
-                            color = if (data.totalMinutes == maxMinutesValue) Color.Black else textGray,
-                            modifier = Modifier.padding(bottom = 4.dp)
+                        drawLine(
+                            color = LightGray5,
+                            start = Offset(0f, yPosition),
+                            end = Offset(size.width, yPosition),
+                            strokeWidth = 1.dp.toPx(),
+                            pathEffect = pathEffect
                         )
+                    }
+                }
 
-                        // 막대
-                        Box(
-                            modifier = Modifier
-                                .width(16.dp)
-                                .height(barHeight.dp.coerceAtLeast(1.dp)) // 최소 1dp
-                                .background(
-                                    color = barColor,
-                                    shape = RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp)
-                                )
-                        )
+                // 막대 그래프 - 고정된 너비와 간격 사용
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .wrapContentWidth(Alignment.CenterHorizontally),
+                    horizontalArrangement = Arrangement.spacedBy(barSpacing),
+                    verticalAlignment = Alignment.Bottom
+                ) {
+                    weeklyData.forEachIndexed { index, data ->
+                        val animatedValue = animatedValues[index].value
+                        // 스케일을 사용하여 정확한 높이 계산
+                        val barHeight = yScale.scale(animatedValue)
+
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Bottom
+                        ) {
+                            // 가장 높은 막대만 다른 색상
+                            val barColor = if (data.totalMinutes == maxMinutesValue) SubPurple else WarmPurple
+
+                            // 분 표시
+                            Text(
+                                text = "${data.totalMinutes}분",
+                                fontSize = if (data.totalMinutes == maxMinutesValue) 12.sp else 10.sp,
+                                color = if (data.totalMinutes == maxMinutesValue) Color.Black else textGray,
+                                modifier = Modifier.padding(bottom = 4.dp)
+                            )
+
+                            // 막대
+                            Box(
+                                modifier = Modifier
+                                    .width(barWidth)
+                                    .height(barHeight.dp.coerceAtLeast(1.dp)) // 최소 1dp
+                                    .background(
+                                        color = barColor,
+                                        shape = RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp)
+                                    )
+                            )
+                        }
                     }
                 }
             }
         }
-    }
 
-    // 주차 레이블
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 8.dp, start = 50.dp, end = 16.dp),
-        horizontalArrangement = Arrangement.SpaceEvenly
-    ) {
-        weeklyData.forEach { data ->
-            Text(
-                text = "${data.weekNumber}주",
-                fontSize = 12.sp,
-                color = Color.Black
+        // 주차 레이블 - 막대 그래프와 동일한 위치에 정렬
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = chartHeight + 16.dp, start = 50.dp, end = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(
+                barSpacing,
+                Alignment.CenterHorizontally
             )
+        ) {
+            weeklyData.forEach { data ->
+                Text(
+                    text = "${data.weekNumber}주",
+                    fontSize = 12.sp,
+                    color = Color.Black,
+                    modifier = Modifier.wrapContentWidth(), // barWidth 제약 제거
+                    textAlign = TextAlign.Center
+                )
+            }
         }
     }
 }
