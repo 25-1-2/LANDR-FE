@@ -51,9 +51,9 @@ class SplashActivity : ComponentActivity() {
         LaunchedEffect(key1 = Unit) {
             alpha.animateTo(
                 targetValue = 1f,
-                animationSpec = tween(1500)
+                animationSpec = tween(500)
             )
-            delay(2000L)
+            delay(500L)
 
             Intent(this@SplashActivity, LoginActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
