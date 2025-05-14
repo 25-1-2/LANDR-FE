@@ -284,12 +284,6 @@ fun SimpleCalendar(
     // 날짜 목록 생성 (이전 달의 마지막 날짜들 + 현재 달 + 다음 달의 첫 날짜들)
     val startOffset = if (firstDayOfWeek == 7) 0 else firstDayOfWeek // 7은 일요일
 
-    val days = (1..daysInMonth).map { day ->
-        LocalDate.of(currentYear, currentMonth, day)
-    }
-
-    val emptyDaysBefore = (0 until startOffset).map { null }
-
     // 현재 선택된 날짜가 속한 주 계산 - 여기서는 월요일부터 일요일까지
     val currentWeekDays = getWeekDaysFromMonday(selectedLocalDate)
 
@@ -378,64 +372,63 @@ fun SimpleCalendar(
             }
 
             // 요일 헤더
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(7),
-                modifier = Modifier.fillMaxWidth(),
-                userScrollEnabled = false
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp)
             ) {
-                items(dayOfWeekMap) { day ->
-                    Text(
-                        text = day.name,
-                        color = LightGray40,
-                        fontSize = 14.sp,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier
-                            .padding(vertical = 4.dp)
-                            .fillMaxWidth()
-                    )
+                dayOfWeekMap.forEach { day ->
+                    Box(
+                        modifier = Modifier.weight(1f),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = day.name,
+                            color = LightGray40,
+                            fontSize = 14.sp,
+                            textAlign = TextAlign.Center
+                        )
+                    }
                 }
             }
 
-            // 날짜 그리드 - userScrollEnabled를 false로 설정하여 드래그 이벤트가 LazyVerticalGrid에서 소비되지 않도록 함
-            Box(modifier = Modifier.weight(1f)) {
-                if (expandRatio > 0.7f) {
-                    // 월간 뷰
-                    LazyVerticalGrid(
-                        columns = GridCells.Fixed(7),
-                        modifier = Modifier.fillMaxSize(),
-                        userScrollEnabled = false
-                    ) {
-                        items(emptyDaysBefore + days) { date ->
-                            if (date == null) {
-                                // 빈 셀
-                                Box(modifier = Modifier.size(40.dp))
-                            } else {
-                                // 현재 월의 날짜 표시 - 클릭 이벤트만 처리하고 드래그 이벤트는 상위 컴포넌트로 전달
-                                val isCurrentMonth = date.monthValue == currentMonth
-                                CalendarDay(
-                                    date = date,
-                                    isToday = date == today,
-                                    isSelected = date.format(formatter) == selectedDate,
-                                    isCurrentMonth = isCurrentMonth,
-                                    onClick = { onDateSelected(date.format(formatter)) }
-                                )
-                            }
-                        }
-                    }
-                } else {
-                    // 주간 뷰
-                    LazyVerticalGrid(
-                        columns = GridCells.Fixed(7),
-                        modifier = Modifier.fillMaxWidth(),
-                        userScrollEnabled = false
-                    ) {
-                        items(currentWeekDays) { date ->
+            // 날짜 그리드 - LazyVerticalGrid 대신 Column과 Row 사용
+            if (expandRatio > 0.7f) {
+                // 월간 뷰 - 일반 Column과 Row로 구현
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                ) {
+                    // 모든 날짜를 포함할 Calendar Grid 생성
+                    CalendarGrid(
+                        startOffset = startOffset,
+                        daysInMonth = daysInMonth,
+                        currentYear = currentYear,
+                        currentMonth = currentMonth,
+                        today = today,
+                        selectedDate = selectedDate,
+                        formatter = formatter,
+                        onDateSelected = onDateSelected
+                    )
+                }
+            } else {
+                // 주간 뷰
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp)
+                ) {
+                    currentWeekDays.forEach { date ->
+                        Box(
+                            modifier = Modifier.weight(1f),
+                            contentAlignment = Alignment.Center
+                        ) {
                             if (date != null) {
                                 CalendarDay(
                                     date = date,
                                     isToday = date == today,
                                     isSelected = date.format(formatter) == selectedDate,
-                                    // 주간 뷰에서는 월 구분을 시각적으로 표시하지 않음
                                     isCurrentMonth = true,
                                     onClick = { onDateSelected(date.format(formatter)) }
                                 )
@@ -457,6 +450,72 @@ fun SimpleCalendar(
                 .height(4.dp)
                 .background(Color.Gray, RoundedCornerShape(2.dp))
         )
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun CalendarGrid(
+    startOffset: Int,
+    daysInMonth: Int,
+    currentYear: Int,
+    currentMonth: Int,
+    today: LocalDate,
+    selectedDate: String,
+    formatter: DateTimeFormatter,
+    onDateSelected: (String) -> Unit
+) {
+    Column(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        // 오프셋을 포함한 총 날짜 계산
+        val totalDays = startOffset + daysInMonth
+        val numRows = (totalDays + 6) / 7 // 행 개수 celling
+
+        // 모든 날짜 리스트
+        val allDays = mutableListOf<LocalDate?>()
+
+        repeat(startOffset) {
+            allDays.add(null)
+        }
+
+        // 실제 달의 날짜들
+        for (day in 1..daysInMonth) {
+            allDays.add(LocalDate.of(currentYear, currentMonth, day))
+        }
+
+        // 캘린더 그리드
+        for (row in 0 until numRows) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+            ) {
+                for (col in 0 until 7) {
+                    val index = row * 7 + col
+                    Box(
+                        modifier = Modifier.weight(1f),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (index < allDays.size) {
+                            val date = allDays[index]
+                            if (date != null) {
+                                CalendarDay(
+                                    date = date,
+                                    isToday = date == today,
+                                    isSelected = date.format(formatter) == selectedDate,
+                                    isCurrentMonth = true,
+                                    onClick = { onDateSelected(date.format(formatter)) }
+                                )
+                            } else {
+                                // Empty cell
+                                Box(modifier = Modifier.size(40.dp))
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
