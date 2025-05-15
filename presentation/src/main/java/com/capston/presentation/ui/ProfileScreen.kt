@@ -1858,7 +1858,7 @@ fun DynamicWeeklyBarChart(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(chartHeight + 60.dp)
+            .height(chartHeight + 40.dp)
             .padding(start = 8.dp, end = 16.dp)
     ) {
         // 왼쪽 시간 표시 (동적으로 계산된 값 표시)
@@ -2038,7 +2038,7 @@ fun DynamicWeeklyBarChart(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 8.dp, start = 50.dp, end = 16.dp),
+            .padding(start = 54.dp, end = 16.dp),
         horizontalArrangement = Arrangement.SpaceEvenly
     ) {
         weeklyData.forEach { data ->
