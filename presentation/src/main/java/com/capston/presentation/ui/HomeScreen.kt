@@ -117,6 +117,7 @@ import com.capston.domain.response.home.DistinctHomeIdResponse
 import com.capston.domain.response.plan.LectureAliasResponse
 import com.capston.presentation.theme.LightGray5
 import com.capston.presentation.theme.WarmPurple
+import com.capston.presentation.ui.common.CustomCheckBox
 import com.capston.presentation.ui.search.SearchActivity
 import java.text.SimpleDateFormat
 import java.util.Date
