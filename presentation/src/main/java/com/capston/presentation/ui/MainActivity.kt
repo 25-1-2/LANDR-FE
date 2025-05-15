@@ -234,7 +234,9 @@ fun SettingTopBottomBar(homeViewModel: HomeViewModel, planViewModel: PlanViewMod
         },
         bottomBar = {
             BottomBar(navController, bottomNavState, { index -> bottomNavState = index})
-        }
+        },
+        // 하단 시스템 바를 고려하도록 contentWindowInsets 설정
+        contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { contentPadding ->
         Column(
             modifier = Modifier
@@ -246,13 +248,13 @@ fun SettingTopBottomBar(homeViewModel: HomeViewModel, planViewModel: PlanViewMod
                 startDestination = Screen.Home.title,
                 modifier = Modifier.weight(1f)
             ) {
+                // 기존 코드와 동일한 부분 유지
                 composable(Screen.Home.title) { HomeScreen(homeViewModel, planViewModel) }
                 composable(Screen.Calender.title) { CalenderScreen(homeViewModel, dailyScheduleViewModel) }
                 composable(Screen.LectureRoom.title) {
                     LectureRoomScreen(
                         viewModel = planViewModel,
                         onPlanClick = { plan ->
-                            // plan.planId를 경로 파라미터로 사용하여 상세 화면으로 이동
                             navController.navigate("${Screen.PlanDetail.title}/${plan.planId}")
                         }
                     )
@@ -262,7 +264,6 @@ fun SettingTopBottomBar(homeViewModel: HomeViewModel, planViewModel: PlanViewMod
                     arguments = listOf(navArgument("planId") { type = NavType.IntType })
                 ) { backStackEntry ->
                     val planId = backStackEntry.arguments?.getInt("planId") ?: 0
-                    // 실제 앱에서는 강의 ID 또는 전체 Lecture 객체를 전달할 수 있도록 개선 필요
                     val planDetailResponse = GetPlanDetailResponse()
                     PlanDetailScreen(
                         planId = planId,
@@ -351,11 +352,15 @@ fun BottomBar(
     )
     val context = LocalContext.current
 
+    // 시스템 하단 네비게이션 높이 가져오기
+    val navigationBarsHeight = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+
     Divider(color = LightGray2, thickness = 1.dp)
     Box(
         Modifier
             .fillMaxWidth()
-            .height(100.dp) // BottomNavigationBar 높이 설정
+            // 시스템 네비게이션 바 높이만큼 패딩 추가
+            .windowInsetsPadding(WindowInsets.navigationBars)
     ) {
         Row(
             Modifier.fillMaxWidth(),
