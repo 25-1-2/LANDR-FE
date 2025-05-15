@@ -1,13 +1,11 @@
-package com.capston.presentation.ui
+package com.capston.presentation.ui.home
 
 import android.os.Build
-import android.widget.ImageButton
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -23,6 +21,7 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.sp
 import com.capston.domain.model.LessonSchedule
 import com.capston.domain.response.plan.GetPlanDetailResponse
+import com.capston.presentation.ui.common.CustomCheckBox
 import com.capston.presentation.viewmodel.HomeViewModel
 import com.capston.presentation.viewmodel.PlanViewModel
 

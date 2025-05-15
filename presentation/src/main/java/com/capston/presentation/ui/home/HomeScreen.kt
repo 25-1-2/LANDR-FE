@@ -1,10 +1,11 @@
-package com.capston.presentation.ui
+package com.capston.presentation.ui.home
 
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
@@ -17,7 +18,6 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -69,18 +69,14 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.composed
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Color.Companion.Transparent
 import androidx.compose.ui.graphics.Color.Companion.White
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -116,12 +112,15 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
+import com.capston.domain.model.DayAchievementDto
 import com.capston.domain.request.UpdateDDayRequest
 import com.capston.domain.response.enum_class.DayOfWeek
 import com.capston.domain.response.home.DistinctHomeIdResponse
 import com.capston.domain.response.plan.LectureAliasResponse
 import com.capston.presentation.theme.LightGray5
 import com.capston.presentation.theme.WarmPurple
+import com.capston.presentation.ui.common.CustomCheckBox
+import com.capston.presentation.ui.search.SearchActivity
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -312,7 +311,7 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
                     homeViewModel.postDDay(UpdateDDayRequest(newTitle, newDate))
                 }
             } catch (e: Exception) {
-                android.util.Log.e("HomeScreen", "Error saving D-Day: ${e.message}", e)
+                Log.e("HomeScreen", "Error saving D-Day: ${e.message}", e)
             }
             isExamBottomSheetVisible = false
         },
@@ -324,7 +323,7 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
                     showDeleteCompleteDialog = true
                 }
             } catch (e: Exception) {
-                android.util.Log.e("HomeScreen", "Error deleting D-Day: ${e.message}", e)
+                Log.e("HomeScreen", "Error deleting D-Day: ${e.message}", e)
             }
             isExamBottomSheetVisible = false
         },

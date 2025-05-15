@@ -1,4 +1,4 @@
-package com.capston.presentation.ui
+package com.capston.presentation.ui.common
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.padding

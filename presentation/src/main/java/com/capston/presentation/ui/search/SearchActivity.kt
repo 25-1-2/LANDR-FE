@@ -1,4 +1,4 @@
-package com.capston.presentation.ui
+package com.capston.presentation.ui.search
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
