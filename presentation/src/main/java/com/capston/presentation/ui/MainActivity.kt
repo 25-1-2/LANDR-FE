@@ -249,7 +249,7 @@ fun SettingTopBottomBar(homeViewModel: HomeViewModel, planViewModel: PlanViewMod
                 modifier = Modifier.weight(1f)
             ) {
                 // 기존 코드와 동일한 부분 유지
-                composable(Screen.Home.title) { HomeScreen(homeViewModel, planViewModel) }
+                composable(Screen.Home.title) { HomeScreen(homeViewModel, planViewModel, navController) }
                 composable(Screen.Calender.title) { CalenderScreen(homeViewModel, dailyScheduleViewModel) }
                 composable(Screen.LectureRoom.title) {
                     LectureRoomScreen(
