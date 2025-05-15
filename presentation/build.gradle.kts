@@ -76,5 +76,7 @@ dependencies {
     // bottom 시트
     implementation(libs.androidx.compose.material3)
 
+    // lottie
+    implementation(libs.lottie.compose)
 
 }

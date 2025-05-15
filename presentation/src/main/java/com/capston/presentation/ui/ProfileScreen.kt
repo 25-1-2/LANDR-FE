@@ -21,13 +21,16 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -331,7 +334,7 @@ fun ProfileScreen(loginViewModel: LoginViewModel, myPageViewModel: MyPageViewMod
                         Spacer(modifier = Modifier.height(4.dp))
 
                         Text(
-                            text = "${mypageState.studyStreak} 일째",
+                            text = "${mypageState.studyStreak}일째",
                             color = Color.White,
                             style = MaterialTheme.typography.bodyMedium,
                             fontSize = 18.sp
@@ -356,7 +359,7 @@ fun ProfileScreen(loginViewModel: LoginViewModel, myPageViewModel: MyPageViewMod
 
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "${mypageState.subjectAchievementList.size} 개",
+                            text = "${mypageState.subjectAchievementList.size}개",
                             color = Color.White,
                             style = MaterialTheme.typography.bodyMedium,
                             fontSize = 18.sp
@@ -1365,9 +1368,11 @@ fun SubjectDistributionGraph(
 
             Spacer(modifier = Modifier.weight(1f))
 
-            // 총 공부 시간
             Text(
-                text = "총 ${statisticsResponse.totalStudyMinutes}분",
+                text = "총 " + if (statisticsResponse.totalStudyMinutes < 60)
+                    "${statisticsResponse.totalStudyMinutes}분"
+                else
+                    "${statisticsResponse.totalStudyMinutes / 60}시간",
                 style = MaterialTheme.typography.bodyMedium,
                 color = Color.Gray,
                 fontWeight = FontWeight.Bold
@@ -1392,7 +1397,11 @@ fun SubjectDistributionGraph(
                         withStyle(style = SpanStyle(color = SubPurple)) {
                             append(topSubjectsText)
                         }
-                        append("에 가장 많은 시간을 투자하고 있어요")
+                        append("에 ")
+                        withStyle(style = SpanStyle(color = SubPurple)) {
+                            append((maxHours/60).toString() + "시간")
+                        }
+                        append("으로 가장 많은 시간을 투자하고 있어요")
                     },
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.Black,
@@ -1734,7 +1743,10 @@ fun WeeklyStudyStatisticsGraph(
             // 평균 공부 시간 표시 (펼치기 상태에 관계없이 표시)
             val averageMinutes = myStatisticsState.weeklyTimes.map { it.totalMinutes }.average()
             Text(
-                text = "평균 ${String.format("%.0f", averageMinutes)}분/주",
+                text = "평균 " + if (myStatisticsState.totalStudyMinutes < 60)
+                    "${String.format("%.0f", averageMinutes)}분/주"
+                else
+                    "${String.format("%.0f", averageMinutes/60)}시간/주",
                 style = MaterialTheme.typography.bodyMedium,
                 color = Color.Gray,
                 fontWeight = FontWeight.Bold
@@ -1836,65 +1848,90 @@ fun DynamicWeeklyBarChart(
     val topValue = ceil(maxValue / scale) * scale
 
     // 각 간격도 깔끔한 숫자로 설정
-    val interval = topValue / 3
-    // 간격을 라운드 숫자로 만들기
-    val roundedInterval = when {
-        interval <= 10 -> 5f
-        interval <= 20 -> 10f
-        interval <= 50 -> 25f
-        interval <= 100 -> 50f
-        interval <= 200 -> 100f
-        interval <= 500 -> 200f
-        else -> 500f
-    }
+    val interval = topValue / 4
 
     // 균등하게 3개 구간으로 나누기
-    val thirdValue = roundedInterval
-    val twoThirdsValue = roundedInterval * 2
+    val thirdValue = interval
+    val twoThirdsValue = interval * 2
+    val threeThridsValue = interval * 3
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(chartHeight + 60.dp)
+            .height(chartHeight + 40.dp)
             .padding(start = 8.dp, end = 16.dp)
     ) {
         // 왼쪽 시간 표시 (동적으로 계산된 값 표시)
-        Column(
+        Box(
             modifier = Modifier
-                .width(50.dp) // 넓게 조정
-                .height(chartHeight),
-            verticalArrangement = Arrangement.SpaceBetween
+                .width(50.dp)
+                .height(chartHeight)
         ) {
-            // 시간 표시는 위에서부터 아래로 - 라운드 숫자로 표시
+            // 시간 레이블을 그리드 라인과 정확히 같은 위치 계산식으로 배치
+
+            // 최상단 값 (topValue)
             Text(
                 text = "${topValue.toInt()}분",
                 fontSize = 12.sp,
                 color = Color.Gray,
                 textAlign = TextAlign.End,
-                modifier = Modifier.padding(top = 4.dp)
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .fillMaxWidth()
+                    .padding(end = 10.dp)
+                    .offset(y = (-6).dp) // 텍스트 중앙이 선과 일치하도록 조정
             )
 
-            // 중간 값들도 라운드 숫자로 표시
+            // 3/4 지점 값
             Text(
                 text = "${twoThirdsValue.toInt()}분",
                 fontSize = 12.sp,
                 color = Color.Gray,
-                textAlign = TextAlign.End
+                textAlign = TextAlign.End,
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .fillMaxWidth()
+                    .padding(end = 10.dp)
+                    .offset(y = (chartHeight.value * (1 - twoThirdsValue / topValue)).dp - 6.dp)
             )
 
+            // 2/4 지점 값
             Text(
                 text = "${thirdValue.toInt()}분",
                 fontSize = 12.sp,
                 color = Color.Gray,
-                textAlign = TextAlign.End
+                textAlign = TextAlign.End,
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .fillMaxWidth()
+                    .padding(end = 10.dp)
+                    .offset(y = (chartHeight.value * (1 - thirdValue / topValue)).dp - 6.dp)
             )
 
+            // 3/4 지점 값
+            Text(
+                text = "${threeThridsValue.toInt()}분",
+                fontSize = 12.sp,
+                color = Color.Gray,
+                textAlign = TextAlign.End,
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .fillMaxWidth()
+                    .padding(end = 10.dp)
+                    .offset(y = (chartHeight.value * (1 - threeThridsValue / topValue)).dp - 6.dp)
+            )
+
+            // 최하단 값 (0)
             Text(
                 text = "0분",
                 fontSize = 12.sp,
                 color = Color.Gray,
                 textAlign = TextAlign.End,
-                modifier = Modifier.padding(bottom = 4.dp)
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .fillMaxWidth()
+                    .padding(end = 8.dp)
+                    .offset(y = (chartHeight.value - 6).dp)
             )
         }
 
@@ -1923,6 +1960,16 @@ fun DynamicWeeklyBarChart(
                     color = LightGray5,
                     start = Offset(0f, twoThirdsY),
                     end = Offset(size.width, twoThirdsY),
+                    strokeWidth = 1.dp.toPx(),
+                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(4f, 4f), 0f)
+                )
+
+                // 중간 상단 선
+                val threeThirdsY = size.height * (1 - threeThridsValue / topValue)
+                drawLine(
+                    color = LightGray5,
+                    start = Offset(0f, threeThirdsY),
+                    end = Offset(size.width, threeThirdsY),
                     strokeWidth = 1.dp.toPx(),
                     pathEffect = PathEffect.dashPathEffect(floatArrayOf(4f, 4f), 0f)
                 )
@@ -1966,8 +2013,8 @@ fun DynamicWeeklyBarChart(
                         // 분 표시
                         Text(
                             text = "${data.totalMinutes}분",
-                            fontSize = 10.sp,
-                            color = Color.Gray,
+                            fontSize = if (data.totalMinutes == maxMinutesValue) 12.sp else 10.sp,
+                            color = if (data.totalMinutes == maxMinutesValue) Color.Black else textGray,
                             modifier = Modifier.padding(bottom = 4.dp)
                         )
 
@@ -1991,7 +2038,7 @@ fun DynamicWeeklyBarChart(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 8.dp, start = 50.dp, end = 16.dp),
+            .padding(start = 54.dp, end = 16.dp),
         horizontalArrangement = Arrangement.SpaceEvenly
     ) {
         weeklyData.forEach { data ->

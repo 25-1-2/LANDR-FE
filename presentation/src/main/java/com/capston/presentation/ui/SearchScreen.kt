@@ -77,6 +77,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.capston.domain.manager.LoadingStateManager
 import com.capston.domain.request.LectureDto
 import com.capston.domain.response.enum_class.Platform
 import com.capston.domain.response.enum_class.Subject
@@ -96,7 +97,8 @@ fun LectureFilterBarDropdown(
     selectedPlatforms: List<Platform>,
     onPlatformSelected: (Platform) -> Unit,
     selectedSubjects: List<Subject>,
-    onSubjectSelected: (Subject) -> Unit
+    onSubjectSelected: (Subject) -> Unit,
+    loadingStateManager: LoadingStateManager
 ) {
     Row(
         modifier = Modifier
@@ -309,6 +311,7 @@ fun SearchScreen(
     navController: NavController,
     lectureViewModel: LectureViewModel,
     initialQuery: String = "",
+    loadingStateManager: LoadingStateManager
 ) {
     var searchQuery by remember { mutableStateOf(initialQuery) }
     val scope = rememberCoroutineScope()
@@ -563,7 +566,8 @@ fun SearchScreen(
                 } else {
                     selectedSubjects + subject
                 }
-            }
+            },
+            loadingStateManager = loadingStateManager
         )
 
         // 개선된 무한 스크롤 리스트 구현
@@ -605,7 +609,8 @@ fun SearchScreen(
                 } else {
                     Log.d("SearchScreen", "추가 데이터 로드 무시: hasMore=$hasMoreData, isLoading=$isLoading, isLoadingMore=$isLoadingMore")
                 }
-            }
+            },
+            loadingStateManager = loadingStateManager
         )
     }
 }
@@ -619,7 +624,8 @@ fun SimplifiedInfiniteScrollList(
     hasMoreData: Boolean,
     isLoading: Boolean,
     isLoadingMore: Boolean,
-    onLoadMore: () -> Unit
+    onLoadMore: () -> Unit,
+    loadingStateManager: LoadingStateManager
 ) {
     val listState = rememberLazyListState()
 
@@ -694,11 +700,7 @@ fun SimplifiedInfiniteScrollList(
                                 .padding(16.dp),
                             contentAlignment = Alignment.Center
                         ) {
-                            CircularProgressIndicator(
-                                color = MainPurple,
-                                strokeWidth = 2.dp,
-                                modifier = Modifier.size(32.dp)
-                            )
+                            LoadingIndicator(loadingStateManager)
                         }
                     }
                 }
@@ -723,27 +725,12 @@ fun SimplifiedInfiniteScrollList(
                     Spacer(modifier = Modifier.height(60.dp))
                 }
             }
-
-            // 첫 로딩 중일 때만 전체 로딩 인디케이터 표시
-            if (isLoading && lectureItems.isEmpty()) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator(
-                        color = MainPurple,
-                        strokeWidth = 3.dp
-                    )
-                }
-            }
         }
     }
 }
 
 @Composable
-fun SearchNavHost(navController: NavHostController, planViewModel: PlanViewModel, lectureViewModel: LectureViewModel) {
+fun SearchNavHost(navController: NavHostController, planViewModel: PlanViewModel, lectureViewModel: LectureViewModel, loadingStateManager: LoadingStateManager) {
     NavHost(
         navController = navController,
         startDestination = "search"
@@ -751,7 +738,8 @@ fun SearchNavHost(navController: NavHostController, planViewModel: PlanViewModel
         composable("search") {
             SearchScreen(
                 navController = navController,
-                lectureViewModel = lectureViewModel
+                lectureViewModel = lectureViewModel,
+                loadingStateManager = loadingStateManager
             )
         }
         composable(
