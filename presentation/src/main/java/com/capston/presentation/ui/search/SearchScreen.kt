@@ -84,7 +84,7 @@ import com.capston.presentation.R
 import com.capston.presentation.theme.MainPurple
 import com.capston.presentation.theme.materialGray
 import com.capston.presentation.theme.textGray
-import com.capston.presentation.ui.LectureItemDto
+import com.capston.domain.model.LectureItemDto
 import com.capston.presentation.ui.common.LoadingIndicator
 import com.capston.presentation.ui.MainActivity
 import com.capston.presentation.ui.Screen

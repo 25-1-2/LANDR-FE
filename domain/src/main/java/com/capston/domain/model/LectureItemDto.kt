@@ -1,4 +1,4 @@
-package com.capston.presentation.ui
+package com.capston.domain.model
 
 import com.capston.domain.response.enum_class.Platform
 import com.capston.domain.response.enum_class.Subject

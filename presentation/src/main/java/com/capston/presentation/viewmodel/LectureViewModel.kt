@@ -4,7 +4,6 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.capston.domain.manager.LoadingStateManager
-import com.capston.domain.model.Lecture
 import com.capston.domain.model.NewPlanLesson
 import com.capston.domain.request.LectureDto
 import com.capston.domain.response.lecture.DistinctLectureResponse
@@ -12,7 +11,7 @@ import com.capston.domain.response.lecture.LectureResponseDto
 import com.capston.domain.usecase.lecture.GetAllLectureUseCase
 import com.capston.domain.usecase.lecture.GetDistinctLectureUseCase
 import com.capston.domain.usecase.lecture.GetLessonsByLectureIdUseCase
-import com.capston.presentation.ui.LectureItemDto
+import com.capston.domain.model.LectureItemDto
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
