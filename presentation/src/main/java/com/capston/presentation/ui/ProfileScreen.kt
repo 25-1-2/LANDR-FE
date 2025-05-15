@@ -334,7 +334,7 @@ fun ProfileScreen(loginViewModel: LoginViewModel, myPageViewModel: MyPageViewMod
                         Spacer(modifier = Modifier.height(4.dp))
 
                         Text(
-                            text = "${mypageState.studyStreak} 일째",
+                            text = "${mypageState.studyStreak}일째",
                             color = Color.White,
                             style = MaterialTheme.typography.bodyMedium,
                             fontSize = 18.sp
@@ -359,7 +359,7 @@ fun ProfileScreen(loginViewModel: LoginViewModel, myPageViewModel: MyPageViewMod
 
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "${mypageState.subjectAchievementList.size} 개",
+                            text = "${mypageState.subjectAchievementList.size}개",
                             color = Color.White,
                             style = MaterialTheme.typography.bodyMedium,
                             fontSize = 18.sp
