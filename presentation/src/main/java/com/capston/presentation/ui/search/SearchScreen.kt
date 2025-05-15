@@ -87,7 +87,7 @@ import com.capston.presentation.theme.textGray
 import com.capston.domain.model.LectureItemDto
 import com.capston.presentation.ui.common.LoadingIndicator
 import com.capston.presentation.ui.MainActivity
-import com.capston.presentation.ui.Screen
+import com.capston.presentation.ui.common.Screen
 import com.capston.presentation.ui.SearchFieldWithIcons
 import com.capston.presentation.viewmodel.LectureViewModel
 import com.capston.presentation.viewmodel.PlanViewModel

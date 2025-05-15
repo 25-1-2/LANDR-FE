@@ -1,4 +1,4 @@
-package com.capston.presentation.ui
+package com.capston.presentation.ui.common
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
