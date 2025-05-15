@@ -1,4 +1,4 @@
-package com.capston.presentation.ui
+package com.capston.presentation.ui.search
 
 import android.annotation.SuppressLint
 import android.content.Intent
@@ -34,7 +34,6 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -82,10 +81,15 @@ import com.capston.domain.request.LectureDto
 import com.capston.domain.response.enum_class.Platform
 import com.capston.domain.response.enum_class.Subject
 import com.capston.presentation.R
-import com.capston.presentation.theme.LightGray40
 import com.capston.presentation.theme.MainPurple
 import com.capston.presentation.theme.materialGray
 import com.capston.presentation.theme.textGray
+import com.capston.presentation.ui.LectureItemDto
+import com.capston.presentation.ui.LoadingIndicator
+import com.capston.presentation.ui.MainActivity
+import com.capston.presentation.ui.MakePlanScreen
+import com.capston.presentation.ui.Screen
+import com.capston.presentation.ui.SearchFieldWithIcons
 import com.capston.presentation.viewmodel.LectureViewModel
 import com.capston.presentation.viewmodel.PlanViewModel
 import kotlinx.coroutines.Job
