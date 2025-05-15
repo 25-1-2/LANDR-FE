@@ -216,7 +216,7 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel, navCo
                 )
             }
         } catch (e: Exception) {
-            android.util.Log.e("HomeScreen", "Error patching D-Day: ${e.message}", e)
+            Log.e("HomeScreen", "Error patching D-Day: ${e.message}", e)
         }
     }
 
@@ -733,7 +733,7 @@ fun CircleGraph(
     ) {
         // 나머지 Canvas 그래픽 코드는 동일하게 유지
         val sizeArc = size / 1.3F
-        val arcStrokeWidth = 40f
+        val arcStrokeWidth = 30f
 
         // 내부 색 채우기
         drawCircle(
