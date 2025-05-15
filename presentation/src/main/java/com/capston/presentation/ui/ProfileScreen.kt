@@ -1368,9 +1368,11 @@ fun SubjectDistributionGraph(
 
             Spacer(modifier = Modifier.weight(1f))
 
-            // 총 공부 시간
             Text(
-                text = "총 ${statisticsResponse.totalStudyMinutes}분",
+                text = "총 " + if (statisticsResponse.totalStudyMinutes < 60)
+                    "${statisticsResponse.totalStudyMinutes}분"
+                else
+                    "${statisticsResponse.totalStudyMinutes / 60}시간",
                 style = MaterialTheme.typography.bodyMedium,
                 color = Color.Gray,
                 fontWeight = FontWeight.Bold
@@ -1395,7 +1397,11 @@ fun SubjectDistributionGraph(
                         withStyle(style = SpanStyle(color = SubPurple)) {
                             append(topSubjectsText)
                         }
-                        append("에 가장 많은 시간을 투자하고 있어요")
+                        append("에 ")
+                        withStyle(style = SpanStyle(color = SubPurple)) {
+                            append((maxHours/60).toString() + "시간")
+                        }
+                        append("으로 가장 많은 시간을 투자하고 있어요")
                     },
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.Black,
@@ -1737,7 +1743,10 @@ fun WeeklyStudyStatisticsGraph(
             // 평균 공부 시간 표시 (펼치기 상태에 관계없이 표시)
             val averageMinutes = myStatisticsState.weeklyTimes.map { it.totalMinutes }.average()
             Text(
-                text = "평균 ${String.format("%.0f", averageMinutes)}분/주",
+                text = "평균 " + if (myStatisticsState.totalStudyMinutes < 60)
+                    "${String.format("%.0f", averageMinutes)}분/주"
+                else
+                    "${String.format("%.0f", averageMinutes/60)}시간/주",
                 style = MaterialTheme.typography.bodyMedium,
                 color = Color.Gray,
                 fontWeight = FontWeight.Bold
