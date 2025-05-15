@@ -111,6 +111,7 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
+import com.capston.domain.model.DayAchievementDto
 import com.capston.domain.request.UpdateDDayRequest
 import com.capston.domain.response.enum_class.DayOfWeek
 import com.capston.domain.response.home.DistinctHomeIdResponse
