@@ -59,6 +59,11 @@ import com.capston.presentation.theme.LightGray4_40
 import com.capston.presentation.theme.MainPurple
 import com.capston.presentation.ui.common.LoadingIndicator
 import com.capston.presentation.ui.common.Screen
+import com.capston.presentation.ui.home.CalenderScreen
+import com.capston.presentation.ui.home.HomeScreen
+import com.capston.presentation.ui.home.LectureRoomScreen
+import com.capston.presentation.ui.home.PlanDetailScreen
+import com.capston.presentation.ui.home.ProfileScreen
 import com.capston.presentation.ui.search.SearchActivity
 import com.capston.presentation.viewmodel.DailyScheduleViewModel
 import com.capston.presentation.viewmodel.HomeViewModel

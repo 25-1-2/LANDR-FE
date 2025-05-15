@@ -1,4 +1,4 @@
-package com.capston.presentation.ui
+package com.capston.presentation.ui.home
 
 import android.os.Build
 import androidx.annotation.RequiresApi

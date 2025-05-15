@@ -1,10 +1,11 @@
-package com.capston.presentation.ui
+package com.capston.presentation.ui.home
 
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
@@ -310,7 +311,7 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
                     homeViewModel.postDDay(UpdateDDayRequest(newTitle, newDate))
                 }
             } catch (e: Exception) {
-                android.util.Log.e("HomeScreen", "Error saving D-Day: ${e.message}", e)
+                Log.e("HomeScreen", "Error saving D-Day: ${e.message}", e)
             }
             isExamBottomSheetVisible = false
         },
@@ -322,7 +323,7 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
                     showDeleteCompleteDialog = true
                 }
             } catch (e: Exception) {
-                android.util.Log.e("HomeScreen", "Error deleting D-Day: ${e.message}", e)
+                Log.e("HomeScreen", "Error deleting D-Day: ${e.message}", e)
             }
             isExamBottomSheetVisible = false
         },
