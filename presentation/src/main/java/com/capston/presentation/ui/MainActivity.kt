@@ -189,7 +189,7 @@ fun SearchFieldWithIcons(
                 textStyle = TextStyle(fontSize = 16.sp, color = Color.DarkGray),
                 modifier = Modifier
                     .weight(1f)
-                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                    .padding(horizontal = 8.dp, vertical = 13.dp),
                 decorationBox = { innerTextField ->
                     if (searchQuery.isEmpty()) {
                         Text(
