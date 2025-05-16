@@ -3,6 +3,7 @@ package com.capston.presentation.ui.search
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
@@ -23,6 +24,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 import com.capston.domain.model.Lecture
 import com.capston.domain.request.PostNewPlanDto
 import com.capston.domain.response.enum_class.DayOfWeek
@@ -54,7 +56,8 @@ fun formatDate(millis: Long?): String {
 @Composable
 fun MakePlanScreen(
     lectureViewModel: LectureViewModel,
-    planViewModel: PlanViewModel
+    planViewModel: PlanViewModel,
+    navController: NavController
 ) {
     val context = LocalContext.current
     val selectedLectureDto by lectureViewModel.selectedLecture.collectAsState()
@@ -82,7 +85,17 @@ fun MakePlanScreen(
     val planType = remember { mutableStateOf("PERIOD") }
     val startLessonId = remember { mutableIntStateOf(0) }
     val endLessonId = remember { mutableIntStateOf(0) }
-    val studyDayOfWeeks = remember { mutableStateOf(emptyList<String>()) }
+    val studyDayOfWeeks = remember {
+        mutableStateOf(
+            listOf(
+                DayOfWeek.MON.name,
+                DayOfWeek.TUE.name,
+                DayOfWeek.WED.name,
+                DayOfWeek.THU.name,
+                DayOfWeek.FRI.name
+            )
+        )
+    }
     val dailyTime = remember { mutableIntStateOf(120) } // Default to 120 mins
     val startDate = remember { mutableStateOf("시작일 선택") }
     val endDate = remember { mutableStateOf("종료일 선택") }
@@ -111,12 +124,23 @@ fun MakePlanScreen(
     // Validation functions
     val validateInputs = {
         when {
-            startDate.value == "시작일 선택" || endDate.value == "종료일 선택" -> {
+            // 계획 유형에 따른 유효성 검사
+            planType.value == "PERIOD" && (startDate.value == "시작일 선택" || endDate.value == "종료일 선택") -> {
                 errorMessage = "시작일과 종료일을 모두 선택해주세요."
                 false
             }
-            !isStartDateBeforeEndDate(startDate.value, endDate.value) -> {
+            planType.value == "PERIOD" && !isStartDateBeforeEndDate(startDate.value, endDate.value) -> {
                 errorMessage = "시작일은 종료일보다 이전이어야 합니다."
+                false
+            }
+            planType.value == "TIME" && dailyTime.intValue <= 0 -> {
+                errorMessage = "일일 학습 시간을 설정해주세요."
+                false
+            }
+
+            // 공통 유효성 검사: 강의 선택 및 요일 선택
+            studyDayOfWeeks.value.isEmpty() -> {
+                errorMessage = "최소 하나 이상의 요일을 선택해주세요."
                 false
             }
             startLessonId.intValue == 0 || endLessonId.intValue == 0 -> {
@@ -127,20 +151,13 @@ fun MakePlanScreen(
                 errorMessage = "시작 강의는 마지막 강의보다 먼저여야 합니다."
                 false
             }
-            studyDayOfWeeks.value.isEmpty() -> {
-                errorMessage = "최소 하나 이상의 요일을 선택해주세요."
-                false
-            }
-            dailyTime.intValue <= 0 && planType.value == "TIME" -> {
-                errorMessage = "일일 학습 시간을 설정해주세요."
-                false
-            }
+
             else -> true
         }
     }
 
     Scaffold(
-        topBar = { PlanTopBar() }
+        topBar = { PlanTopBar(navController = navController) }
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -217,12 +234,20 @@ fun MakePlanScreen(
     // Error dialog
     if (showErrorDialog) {
         AlertDialog(
+            containerColor = Color.White,
+            iconContentColor = Color.Black,
+            titleContentColor = Color.Black,
+            textContentColor = Color.Black,
+            tonalElevation = 0.dp, // 그림자 효과 제거
             onDismissRequest = { showErrorDialog = false },
             title = { Text("입력 오류") },
             text = { Text(errorMessage ?: "입력 정보를 확인해주세요.") },
             confirmButton = {
                 TextButton(onClick = { showErrorDialog = false }) {
-                    Text("확인")
+                    Text(
+                        text = "확인",
+                        color = MainPurple
+                    )
                 }
             }
         )
@@ -246,13 +271,13 @@ fun isStartDateBeforeEndDate(startDateStr: String, endDateStr: String): Boolean 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PlanTopBar() {
+fun PlanTopBar(navController: NavController) {
     Column {
         TopAppBar(
             title = {},
             navigationIcon = {
                 IconButton(onClick = {
-                    // 뒤로가기 or 닫기 로직
+                    navController.popBackStack()
                 }) {
                     Image(
                         painter = painterResource(id = R.drawable.icon_arrow_back),
@@ -540,7 +565,12 @@ fun StudyTimeSection(dailyTime: MutableState<Int>) {
                         dailyTime.value = newValue.toIntOrNull() ?: 0
                     }
                 },
-                placeholder = { Text("예: 120") },
+                placeholder = {
+                    Text(
+                    text = "예: 120",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                },
                 keyboardOptions = KeyboardOptions.Default.copy(
                     keyboardType = KeyboardType.Number
                 ),
@@ -551,54 +581,83 @@ fun StudyTimeSection(dailyTime: MutableState<Int>) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StudyDaysOfWeekSection(studyDayOfWeeks: MutableState<List<String>>) {
     // 현재 선택된 요일들을 표현하는 Set (enum의 name 값 - "MON", "TUE" 등)
     val selectedDays = remember { mutableStateOf(studyDayOfWeeks.value.toSet()) }
 
     Column(
-        modifier = Modifier.padding(bottom = 16.dp)
+        modifier = Modifier.padding(bottom = 16.dp),
     ) {
-        Text(
-            text = "공부 일정",
-            style = MaterialTheme.typography.titleSmall,
-            modifier = Modifier.padding(bottom = 4.dp)
-        )
 
         Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
+        ) {
+            Text(
+                text = "공부 일정",
+                style = MaterialTheme.typography.titleSmall,
+                modifier = Modifier.padding(bottom = 4.dp)
+            )
+
+            Text(
+                text = "모두 선택",
+                style = MaterialTheme.typography.labelMedium,
+                modifier = Modifier
+                    .padding(bottom = 4.dp)
+                    .clickable {
+                        val allDays = DayOfWeek.entries.map { it.name }
+                        val isAllSelected = selectedDays.value.containsAll(allDays)
+
+                        selectedDays.value = if (isAllSelected) emptySet() else allDays.toSet()
+                        studyDayOfWeeks.value = selectedDays.value.toList()
+                    },
+                color = MainPurple
+            )
+        }
+
+        Row(
+            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier
+                .padding(bottom = 4.dp)
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
         ) {
             DayOfWeek.entries.forEach { day ->
                 // 현재 요일이 선택되어 있는지 확인
                 val isSelected = selectedDays.value.contains(day.name)
 
-                FilterChip(
-                    selected = isSelected,
-                    onClick = {
-                        // 선택/해제 토글
-                        selectedDays.value = if (isSelected)
-                            selectedDays.value - day.name
-                        else
-                            selectedDays.value + day.name
-
-                        // 외부 상태 업데이트 - enum의 name 값을 리스트로 저장
-                        // (예: ["MON", "WED", "FRI"])
-                        studyDayOfWeeks.value = selectedDays.value.toList()
-                    },
-                    label = { Text(day.label) }, // 표시는 한글 레이블 ("월", "화", ...)
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = LightPurple,
-                        containerColor = chipGray,
-                        selectedLabelColor = MainPurple,
-                        labelColor = Color.Black
-                    ),
-                    border = FilterChipDefaults.filterChipBorder(
-                        enabled = true,
+                CompositionLocalProvider(LocalMinimumInteractiveComponentEnforcement provides false) {
+                    FilterChip(
                         selected = isSelected,
-                        selectedBorderColor = MainPurple,
+                        onClick = {
+                            // 선택/해제 토글
+                            selectedDays.value = if (isSelected)
+                                selectedDays.value - day.name
+                            else
+                                selectedDays.value + day.name
+
+                            // 외부 상태 업데이트 - enum의 name 값을 리스트로 저장
+                            // (예: ["MON", "WED", "FRI"])
+                            studyDayOfWeeks.value = selectedDays.value.toList()
+                        },
+                        label = { Text(day.label) }, // 표시는 한글 레이블 ("월", "화", ...)
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = LightPurple,
+                            containerColor = chipGray,
+                            selectedLabelColor = MainPurple,
+                            labelColor = Color.Black
+                        ),
+                        border = FilterChipDefaults.filterChipBorder(
+                            enabled = true,
+                            selected = isSelected,
+                            selectedBorderColor = MainPurple,
+                        )
                     )
-                )
+                }
             }
         }
     }
@@ -621,7 +680,25 @@ fun StartEndLectureSection(
     var startDropdownExpanded by remember { mutableStateOf(false) }
     var endDropdownExpanded by remember { mutableStateOf(false) }
 
-    // Update titles when IDs change or lessons load
+    // 강의 목록이 로드되면 첫 번째와 마지막 강의를 자동으로 선택
+    LaunchedEffect(lessons) {
+        if (lessons.isNotEmpty()) {
+            // 아직 선택되지 않은 경우에만 기본값 설정
+            if (startLessonId.value == 0) {
+                val firstLesson = lessons.first()
+                startLessonId.value = firstLesson.id
+                startLessonTitle = firstLesson.title
+            }
+
+            if (endLessonId.value == 0) {
+                val lastLesson = lessons.last()
+                endLessonId.value = lastLesson.id
+                endLessonTitle = lastLesson.title
+            }
+        }
+    }
+
+    // 선택된 강의 ID가 변경될 때 제목 업데이트
     LaunchedEffect(startLessonId.value, lessons) {
         if (startLessonId.value > 0) {
             val selectedLesson = lessons.find { it.id == startLessonId.value }
