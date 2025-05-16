@@ -1364,7 +1364,7 @@ fun SubjectDistributionGraph(
             Spacer(modifier = Modifier.weight(1f))
 
             Text(
-                text = "총 " + if (statisticsResponse.totalStudyMinutes < 60)
+                text = "총 " + if (statisticsResponse.totalStudyMinutes <= 60)
                     "${statisticsResponse.totalStudyMinutes}분"
                 else
                     "${statisticsResponse.totalStudyMinutes / 60}시간",
@@ -1393,8 +1393,15 @@ fun SubjectDistributionGraph(
                             append(topSubjectsText)
                         }
                         append("에 ")
-                        withStyle(style = SpanStyle(color = SubPurple)) {
-                            append((maxHours/60).toString() + "시간")
+                        if (maxHours >= 60) {
+                            withStyle(style = SpanStyle(color = SubPurple)) {
+                                append((maxHours / 60).toString() + "시간")
+                            }
+                        }
+                        else {
+                            withStyle(style = SpanStyle(color = SubPurple)) {
+                                append((maxHours).toString() + "분")
+                            }
                         }
                         append("으로 가장 많은 시간을 투자하고 있어요")
                     },
@@ -1738,7 +1745,7 @@ fun WeeklyStudyStatisticsGraph(
             // 평균 공부 시간 표시 (펼치기 상태에 관계없이 표시)
             val averageMinutes = myStatisticsState.weeklyTimes.map { it.totalMinutes }.average()
             Text(
-                text = "평균 " + if (myStatisticsState.totalStudyMinutes < 60)
+                text = "평균 " + if (myStatisticsState.totalStudyMinutes <= 60)
                     "${String.format("%.0f", averageMinutes)}분/주"
                 else
                     "${String.format("%.0f", averageMinutes/60)}시간/주",
@@ -1866,7 +1873,7 @@ fun DynamicWeeklyBarChart(
 
             // 최상단 값 (topValue)
             Text(
-                text = "${topValue.toInt()}분",
+                text = "${topValue.toInt()/60}시간",
                 fontSize = 12.sp,
                 color = Color.Gray,
                 textAlign = TextAlign.End,
@@ -1879,7 +1886,7 @@ fun DynamicWeeklyBarChart(
 
             // 3/4 지점 값
             Text(
-                text = "${twoThirdsValue.toInt()}분",
+                text = "${twoThirdsValue.toInt()/60}시간",
                 fontSize = 12.sp,
                 color = Color.Gray,
                 textAlign = TextAlign.End,
@@ -1892,7 +1899,7 @@ fun DynamicWeeklyBarChart(
 
             // 2/4 지점 값
             Text(
-                text = "${thirdValue.toInt()}분",
+                text = "${thirdValue.toInt()/60}시간",
                 fontSize = 12.sp,
                 color = Color.Gray,
                 textAlign = TextAlign.End,
@@ -1905,7 +1912,7 @@ fun DynamicWeeklyBarChart(
 
             // 3/4 지점 값
             Text(
-                text = "${threeThridsValue.toInt()}분",
+                text = "${threeThridsValue.toInt()/60}시간",
                 fontSize = 12.sp,
                 color = Color.Gray,
                 textAlign = TextAlign.End,
@@ -1918,7 +1925,7 @@ fun DynamicWeeklyBarChart(
 
             // 최하단 값 (0)
             Text(
-                text = "0분",
+                text = "0시간",
                 fontSize = 12.sp,
                 color = Color.Gray,
                 textAlign = TextAlign.End,
@@ -2007,7 +2014,11 @@ fun DynamicWeeklyBarChart(
 
                         // 분 표시
                         Text(
-                            text = "${data.totalMinutes}분",
+                            text = if (data.totalMinutes>= 60){
+                                "${data.totalMinutes/60}시간"
+                            } else {
+                                "${data.totalMinutes}분"
+                            },
                             fontSize = if (data.totalMinutes == maxMinutesValue) 12.sp else 10.sp,
                             color = if (data.totalMinutes == maxMinutesValue) Color.Black else textGray,
                             modifier = Modifier.padding(bottom = 4.dp)
