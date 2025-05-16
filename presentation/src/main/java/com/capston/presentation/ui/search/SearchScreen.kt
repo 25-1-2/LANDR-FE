@@ -753,7 +753,8 @@ fun SearchNavHost(navController: NavHostController, planViewModel: PlanViewModel
             MakePlanScreen(
                 planViewModel = planViewModel,
                 lectureViewModel = lectureViewModel,
-                navController = navController
+                navController = navController,
+                loadingStateManager = loadingStateManager
             )
         }
     }

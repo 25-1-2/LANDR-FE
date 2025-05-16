@@ -25,6 +25,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.capston.domain.manager.LoadingStateManager
 import com.capston.domain.model.Lecture
 import com.capston.domain.request.PostNewPlanDto
 import com.capston.domain.response.enum_class.DayOfWeek
@@ -38,6 +39,7 @@ import com.capston.presentation.theme.textGray
 import com.capston.presentation.viewmodel.LectureViewModel
 import com.capston.presentation.viewmodel.PlanViewModel
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.text.ParseException
 import java.text.SimpleDateFormat
@@ -57,10 +59,19 @@ fun formatDate(millis: Long?): String {
 fun MakePlanScreen(
     lectureViewModel: LectureViewModel,
     planViewModel: PlanViewModel,
-    navController: NavController
+    navController: NavController,
+    loadingStateManager: LoadingStateManager
 ) {
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
     val selectedLectureDto by lectureViewModel.selectedLecture.collectAsState()
+
+    // 요청 상태 추적
+    var requestSent by remember { mutableStateOf(false) }
+    val planResponse by planViewModel.postNewPlanResponse.collectAsState()
+
+    // 기간으로 계획, 시간으로 계획
+    val pagerState = rememberPagerState(pageCount = { 2 }) // 0: 기간, 1: 시간
 
     // Convert LectureResponseDto to Lecture model
     val lecture = remember(selectedLectureDto) {
@@ -101,8 +112,15 @@ fun MakePlanScreen(
     val endDate = remember { mutableStateOf("종료일 선택") }
     val playbackSpeed = remember { mutableDoubleStateOf(1.0) }
 
-    val pagerState = rememberPagerState(pageCount = { 2 }) // 0: 기간, 1: 시간
-    val coroutineScope = rememberCoroutineScope()
+    // 응답을 관찰하여 액티비티 종료 처리
+    LaunchedEffect(planResponse, requestSent) {
+        if (requestSent && planResponse.id != 0) {
+            // 성공적인 응답을 받았음
+            delay(1000) // 로딩 표시를 위한 지연
+            loadingStateManager.hide()
+            (context as? ComponentActivity)?.finish()
+        }
+    }
 
     // Load lessons when lecture is selected
     LaunchedEffect(lecture.id) {
@@ -202,6 +220,12 @@ fun MakePlanScreen(
                 Button(
                     onClick = {
                         if (validateInputs()) {
+                            // 요청 전송 표시
+                            requestSent = true
+
+                            // 로딩 인디케이터 표시
+                            loadingStateManager.show()
+
                             val dto = PostNewPlanDto(
                                 lectureId = lecture.id,
                                 planType = planType.value,
@@ -214,10 +238,8 @@ fun MakePlanScreen(
                                 playbackSpeed = playbackSpeed.doubleValue
                             )
 
+                            // API 호출만 실행 (응답은 LaunchedEffect에서 처리)
                             planViewModel.postNewPlan(dto)
-
-                            // 액티비티 종료 추가
-                            (context as? ComponentActivity)?.finish()
                         } else {
                             showErrorDialog = true
                         }
