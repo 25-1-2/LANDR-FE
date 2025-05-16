@@ -85,7 +85,17 @@ fun MakePlanScreen(
     val planType = remember { mutableStateOf("PERIOD") }
     val startLessonId = remember { mutableIntStateOf(0) }
     val endLessonId = remember { mutableIntStateOf(0) }
-    val studyDayOfWeeks = remember { mutableStateOf(emptyList<String>()) }
+    val studyDayOfWeeks = remember {
+        mutableStateOf(
+            listOf(
+                DayOfWeek.MON.name,
+                DayOfWeek.TUE.name,
+                DayOfWeek.WED.name,
+                DayOfWeek.THU.name,
+                DayOfWeek.FRI.name
+            )
+        )
+    }
     val dailyTime = remember { mutableIntStateOf(120) } // Default to 120 mins
     val startDate = remember { mutableStateOf("시작일 선택") }
     val endDate = remember { mutableStateOf("종료일 선택") }
