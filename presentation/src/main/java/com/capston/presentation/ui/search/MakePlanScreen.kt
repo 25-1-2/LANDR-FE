@@ -670,7 +670,25 @@ fun StartEndLectureSection(
     var startDropdownExpanded by remember { mutableStateOf(false) }
     var endDropdownExpanded by remember { mutableStateOf(false) }
 
-    // Update titles when IDs change or lessons load
+    // 강의 목록이 로드되면 첫 번째와 마지막 강의를 자동으로 선택
+    LaunchedEffect(lessons) {
+        if (lessons.isNotEmpty()) {
+            // 아직 선택되지 않은 경우에만 기본값 설정
+            if (startLessonId.value == 0) {
+                val firstLesson = lessons.first()
+                startLessonId.value = firstLesson.id
+                startLessonTitle = firstLesson.title
+            }
+
+            if (endLessonId.value == 0) {
+                val lastLesson = lessons.last()
+                endLessonId.value = lastLesson.id
+                endLessonTitle = lastLesson.title
+            }
+        }
+    }
+
+    // 선택된 강의 ID가 변경될 때 제목 업데이트
     LaunchedEffect(startLessonId.value, lessons) {
         if (startLessonId.value > 0) {
             val selectedLesson = lessons.find { it.id == startLessonId.value }
