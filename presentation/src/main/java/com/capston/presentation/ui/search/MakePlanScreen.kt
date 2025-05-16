@@ -551,54 +551,75 @@ fun StudyTimeSection(dailyTime: MutableState<Int>) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StudyDaysOfWeekSection(studyDayOfWeeks: MutableState<List<String>>) {
     // 현재 선택된 요일들을 표현하는 Set (enum의 name 값 - "MON", "TUE" 등)
     val selectedDays = remember { mutableStateOf(studyDayOfWeeks.value.toSet()) }
 
     Column(
-        modifier = Modifier.padding(bottom = 16.dp)
+        modifier = Modifier.padding(bottom = 16.dp),
     ) {
-        Text(
-            text = "공부 일정",
-            style = MaterialTheme.typography.titleSmall,
-            modifier = Modifier.padding(bottom = 4.dp)
-        )
 
         Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
+        ) {
+            Text(
+                text = "공부 일정",
+                style = MaterialTheme.typography.titleSmall,
+                modifier = Modifier.padding(bottom = 4.dp)
+            )
+
+            Text(
+                text = "모두 선택",
+                style = MaterialTheme.typography.labelMedium,
+                modifier = Modifier.padding(bottom = 4.dp),
+                color = MainPurple
+            )
+        }
+
+        Row(
+            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier
+                .padding(bottom = 4.dp)
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
         ) {
             DayOfWeek.entries.forEach { day ->
                 // 현재 요일이 선택되어 있는지 확인
                 val isSelected = selectedDays.value.contains(day.name)
 
-                FilterChip(
-                    selected = isSelected,
-                    onClick = {
-                        // 선택/해제 토글
-                        selectedDays.value = if (isSelected)
-                            selectedDays.value - day.name
-                        else
-                            selectedDays.value + day.name
-
-                        // 외부 상태 업데이트 - enum의 name 값을 리스트로 저장
-                        // (예: ["MON", "WED", "FRI"])
-                        studyDayOfWeeks.value = selectedDays.value.toList()
-                    },
-                    label = { Text(day.label) }, // 표시는 한글 레이블 ("월", "화", ...)
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = LightPurple,
-                        containerColor = chipGray,
-                        selectedLabelColor = MainPurple,
-                        labelColor = Color.Black
-                    ),
-                    border = FilterChipDefaults.filterChipBorder(
-                        enabled = true,
+                CompositionLocalProvider(LocalMinimumInteractiveComponentEnforcement provides false) {
+                    FilterChip(
                         selected = isSelected,
-                        selectedBorderColor = MainPurple,
+                        onClick = {
+                            // 선택/해제 토글
+                            selectedDays.value = if (isSelected)
+                                selectedDays.value - day.name
+                            else
+                                selectedDays.value + day.name
+
+                            // 외부 상태 업데이트 - enum의 name 값을 리스트로 저장
+                            // (예: ["MON", "WED", "FRI"])
+                            studyDayOfWeeks.value = selectedDays.value.toList()
+                        },
+                        label = { Text(day.label) }, // 표시는 한글 레이블 ("월", "화", ...)
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = LightPurple,
+                            containerColor = chipGray,
+                            selectedLabelColor = MainPurple,
+                            labelColor = Color.Black
+                        ),
+                        border = FilterChipDefaults.filterChipBorder(
+                            enabled = true,
+                            selected = isSelected,
+                            selectedBorderColor = MainPurple,
+                        )
                     )
-                )
+                }
             }
         }
     }
