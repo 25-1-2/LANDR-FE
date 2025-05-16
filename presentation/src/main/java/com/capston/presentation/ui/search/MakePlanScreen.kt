@@ -555,7 +555,12 @@ fun StudyTimeSection(dailyTime: MutableState<Int>) {
                         dailyTime.value = newValue.toIntOrNull() ?: 0
                     }
                 },
-                placeholder = { Text("예: 120") },
+                placeholder = {
+                    Text(
+                    text = "예: 120",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                },
                 keyboardOptions = KeyboardOptions.Default.copy(
                     keyboardType = KeyboardType.Number
                 ),
