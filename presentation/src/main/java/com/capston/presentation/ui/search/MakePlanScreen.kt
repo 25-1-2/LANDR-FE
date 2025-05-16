@@ -220,12 +220,20 @@ fun MakePlanScreen(
     // Error dialog
     if (showErrorDialog) {
         AlertDialog(
+            containerColor = Color.White,
+            iconContentColor = Color.Black,
+            titleContentColor = Color.Black,
+            textContentColor = Color.Black,
+            tonalElevation = 0.dp, // 그림자 효과 제거
             onDismissRequest = { showErrorDialog = false },
             title = { Text("입력 오류") },
             text = { Text(errorMessage ?: "입력 정보를 확인해주세요.") },
             confirmButton = {
                 TextButton(onClick = { showErrorDialog = false }) {
-                    Text("확인")
+                    Text(
+                        text = "확인",
+                        color = MainPurple
+                    )
                 }
             }
         )
