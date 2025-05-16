@@ -24,6 +24,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 import com.capston.domain.model.Lecture
 import com.capston.domain.request.PostNewPlanDto
 import com.capston.domain.response.enum_class.DayOfWeek
@@ -55,7 +56,8 @@ fun formatDate(millis: Long?): String {
 @Composable
 fun MakePlanScreen(
     lectureViewModel: LectureViewModel,
-    planViewModel: PlanViewModel
+    planViewModel: PlanViewModel,
+    navController: NavController
 ) {
     val context = LocalContext.current
     val selectedLectureDto by lectureViewModel.selectedLecture.collectAsState()
@@ -141,7 +143,7 @@ fun MakePlanScreen(
     }
 
     Scaffold(
-        topBar = { PlanTopBar() }
+        topBar = { PlanTopBar(navController = navController) }
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -247,13 +249,13 @@ fun isStartDateBeforeEndDate(startDateStr: String, endDateStr: String): Boolean 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PlanTopBar() {
+fun PlanTopBar(navController: NavController) {
     Column {
         TopAppBar(
             title = {},
             navigationIcon = {
                 IconButton(onClick = {
-                    // 뒤로가기 or 닫기 로직
+                    navController.popBackStack()
                 }) {
                     Image(
                         painter = painterResource(id = R.drawable.icon_arrow_back),
