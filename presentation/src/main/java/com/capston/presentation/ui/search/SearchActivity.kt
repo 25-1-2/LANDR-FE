@@ -8,6 +8,7 @@ import androidx.activity.viewModels
 import androidx.navigation.compose.rememberNavController
 import com.capston.domain.manager.LoadingStateManager
 import com.capston.presentation.theme.CapstonTheme
+import com.capston.presentation.ui.common.LoadingIndicator
 import com.capston.presentation.viewmodel.LectureViewModel
 import com.capston.presentation.viewmodel.PlanViewModel
 import dagger.hilt.android.AndroidEntryPoint
@@ -30,6 +31,9 @@ class SearchActivity : ComponentActivity() {
 
             CapstonTheme {
                 SearchNavHost(navController, planViewModel, lectureViewModel, loadingStateManager)
+
+                // 전역 로딩 인디케이터
+                LoadingIndicator(loadingStateManager)
             }
         }
     }

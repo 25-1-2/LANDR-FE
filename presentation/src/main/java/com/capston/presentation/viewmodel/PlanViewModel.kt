@@ -30,8 +30,8 @@ class PlanViewModel @Inject constructor(
     private val getPlanDetailUseCase: GetPlanDetailUseCase,
     private val loadingStateManager: LoadingStateManager
 ) : ViewModel() {
-    private val _postNewPlan = MutableStateFlow(PostNewPlanResponse())  // 기본값 ""
-    val postNewPlan: StateFlow<PostNewPlanResponse> = _postNewPlan.asStateFlow()
+    private val _postNewPlanResponse = MutableStateFlow(PostNewPlanResponse())  // 기본값 ""
+    val postNewPlanResponse: StateFlow<PostNewPlanResponse> = _postNewPlanResponse.asStateFlow()
 
     private val _patchPlanName = MutableStateFlow(LectureAliasResponse())  // 기본값 ""
     val patchPlanName: StateFlow<LectureAliasResponse> = _patchPlanName.asStateFlow()
@@ -50,10 +50,10 @@ class PlanViewModel @Inject constructor(
                     Log.e("PlanViewModel", "postPlanDetail 에러: ${e.message}")
                 }
                 .collect { response ->  // 값 저장
-                    _postNewPlan.value = response // 공백 제거 후 저장
+                    _postNewPlanResponse.value = response // 공백 제거 후 저장
                     Log.d("PlanViewModel", "postPlanDetail 업데이트됨: $response")
                 }
-            loadingStateManager.hide()
+//            loadingStateManager.hide()
         }
     }
 
