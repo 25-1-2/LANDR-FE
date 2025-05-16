@@ -26,15 +26,16 @@ import androidx.compose.ui.unit.dp
 import com.capston.domain.model.MyLecture
 import com.capston.presentation.theme.MainPurple
 import com.capston.presentation.theme.Typography
+import com.capston.presentation.viewmodel.LectureRoomViewModel
 import com.capston.presentation.viewmodel.PlanViewModel
 
 @Composable
 fun LectureRoomScreen(
-    viewModel: PlanViewModel,
+    lectureRoomViewModel: LectureRoomViewModel,
     onPlanClick: ((MyLecture) -> Unit)?
 ) {
-    val lectures = viewModel.getPlanLectureRoom
-    viewModel.getPlanLectureRoom()
+    val lectures = lectureRoomViewModel.getPlanLectureRoom
+    lectureRoomViewModel.getPlanLectureRoom()
 
     Column(
         modifier = Modifier
