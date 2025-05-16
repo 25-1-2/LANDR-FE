@@ -114,12 +114,23 @@ fun MakePlanScreen(
     // Validation functions
     val validateInputs = {
         when {
-            startDate.value == "시작일 선택" || endDate.value == "종료일 선택" -> {
+            // 계획 유형에 따른 유효성 검사
+            planType.value == "PERIOD" && (startDate.value == "시작일 선택" || endDate.value == "종료일 선택") -> {
                 errorMessage = "시작일과 종료일을 모두 선택해주세요."
                 false
             }
-            !isStartDateBeforeEndDate(startDate.value, endDate.value) -> {
+            planType.value == "PERIOD" && !isStartDateBeforeEndDate(startDate.value, endDate.value) -> {
                 errorMessage = "시작일은 종료일보다 이전이어야 합니다."
+                false
+            }
+            planType.value == "TIME" && dailyTime.intValue <= 0 -> {
+                errorMessage = "일일 학습 시간을 설정해주세요."
+                false
+            }
+
+            // 공통 유효성 검사: 강의 선택 및 요일 선택
+            studyDayOfWeeks.value.isEmpty() -> {
+                errorMessage = "최소 하나 이상의 요일을 선택해주세요."
                 false
             }
             startLessonId.intValue == 0 || endLessonId.intValue == 0 -> {
@@ -130,14 +141,7 @@ fun MakePlanScreen(
                 errorMessage = "시작 강의는 마지막 강의보다 먼저여야 합니다."
                 false
             }
-            studyDayOfWeeks.value.isEmpty() -> {
-                errorMessage = "최소 하나 이상의 요일을 선택해주세요."
-                false
-            }
-            dailyTime.intValue <= 0 && planType.value == "TIME" -> {
-                errorMessage = "일일 학습 시간을 설정해주세요."
-                false
-            }
+
             else -> true
         }
     }
