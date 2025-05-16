@@ -112,14 +112,19 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.capston.domain.model.DayAchievementDto
+import com.capston.domain.model.MyLecture
 import com.capston.domain.request.UpdateDDayRequest
 import com.capston.domain.response.enum_class.DayOfWeek
+import com.capston.domain.response.enum_class.Platform
 import com.capston.domain.response.home.DistinctHomeIdResponse
 import com.capston.domain.response.plan.LectureAliasResponse
 import com.capston.presentation.theme.LightGray5
 import com.capston.presentation.theme.WarmPurple
 import com.capston.presentation.ui.common.CustomCheckBox
+import com.capston.presentation.ui.common.Screen
 import com.capston.presentation.ui.search.SearchActivity
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -131,7 +136,7 @@ import java.util.Locale
     "CoroutineCreationDuringComposition"
 )
 @Composable
-fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
+fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel, navController: NavController) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
 
@@ -211,7 +216,7 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
                 )
             }
         } catch (e: Exception) {
-            android.util.Log.e("HomeScreen", "Error patching D-Day: ${e.message}", e)
+            Log.e("HomeScreen", "Error patching D-Day: ${e.message}", e)
         }
     }
 
@@ -230,7 +235,8 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel) {
                 totalLessons = totalLessons,
                 lectureProgressList = lectureProgressList,
                 patchData = patchData,
-                onEditClick = { isBottomSheetVisible = true }
+                onEditClick = { isBottomSheetVisible = true },
+                navController = navController
             )
 
             // 오늘의 강의 카드
@@ -544,7 +550,8 @@ fun LearningStatusCard(
     totalLessons: Int,
     lectureProgressList: List<LectureProgressResponse>,
     patchData: LectureAliasResponse,
-    onEditClick: () -> Unit
+    onEditClick: () -> Unit,
+    navController: NavController // NavController 추가
 ) {
     Card(
         modifier = Modifier
@@ -570,7 +577,8 @@ fun LearningStatusCard(
                     totalCompletedLessons = totalCompletedLessons,
                     totalLessons = totalLessons,
                     lectureProgressList = lectureProgressList,
-                    patchData = patchData
+                    patchData = patchData,
+                    navController = navController // NavController 전달
                 )
             }
         }
@@ -642,15 +650,21 @@ fun LearningProgressGraphs(
     totalCompletedLessons: Int,
     totalLessons: Int,
     lectureProgressList: List<LectureProgressResponse>,
-    patchData: LectureAliasResponse
+    patchData: LectureAliasResponse,
+    navController: NavController // NavController 추가
 ) {
     LazyRow(
         modifier = Modifier.fillMaxWidth(),
     ) {
         item {
-            CircleGraph("전체", totalCompletedLessons, totalLessons)
+            CircleGraph(
+                "전체",
+                totalCompletedLessons,
+                totalLessons,
+                onPlanClick = null, // 전체는 클릭 불가
+                lectureProgressList = lectureProgressList
+            )
         }
-
 
         // lectureProgressList가 비어있지 않을 때만 항목 표시
         if (lectureProgressList.isNotEmpty()) {
@@ -666,7 +680,12 @@ fun LearningProgressGraphs(
                 CircleGraph(
                     name = currentLectureName,
                     cleared = item.completedLessons,
-                    total = item.totalLessons
+                    total = item.totalLessons,
+                    onPlanClick = { planId ->
+                        // planId만 사용하여 바로 이동
+                        navController.navigate("${Screen.PlanDetail.title}/$planId")
+                    },
+                    lectureProgressList = lectureProgressList
                 )
             }
         }
@@ -674,7 +693,13 @@ fun LearningProgressGraphs(
 }
 
 @Composable
-fun CircleGraph(name: String, cleared: Int, total: Int) {
+fun CircleGraph(
+    name: String,
+    cleared: Int,
+    total: Int,
+    onPlanClick: ((Int) -> Unit)?, // MyLecture 객체 대신 planId를 직접 전달하도록 변경
+    lectureProgressList: List<LectureProgressResponse> = emptyList()
+) {
     val animatedValue = remember { Animatable(0f) }
 
     val targetValue = if (total > 0) {
@@ -692,10 +717,23 @@ fun CircleGraph(name: String, cleared: Int, total: Int) {
     }
 
     Canvas(
-        modifier = Modifier.size(150.dp)
+        modifier = Modifier
+            .size(150.dp)
+            .clickable(enabled = onPlanClick != null) {
+                if (onPlanClick != null) {
+                    // 이름으로 현재 lectureProgressList에서 일치하는 항목 찾기
+                    val matchingLecture = lectureProgressList.find { it.lectureAlias == name }
+
+                    if (matchingLecture != null) {
+                        // planId만 전달하여 간단하게 처리
+                        onPlanClick(matchingLecture.planId)
+                    }
+                }
+            }
     ) {
+        // 나머지 Canvas 그래픽 코드는 동일하게 유지
         val sizeArc = size / 1.3F
-        val arcStrokeWidth = 40f
+        val arcStrokeWidth = 30f
 
         // 내부 색 채우기
         drawCircle(
@@ -714,6 +752,7 @@ fun CircleGraph(name: String, cleared: Int, total: Int) {
             style = Stroke(width = arcStrokeWidth)
         )
 
+        // 진행 그래프
         drawArc(
             brush = Brush.linearGradient(
                 colors = listOf(MainPurple, MainPurple),
@@ -731,6 +770,7 @@ fun CircleGraph(name: String, cleared: Int, total: Int) {
             style = Stroke(width = arcStrokeWidth, cap = StrokeCap.Round)
         )
 
+        // 텍스트 그리기
         drawContext.canvas.nativeCanvas.drawText(
             name,
             size.width / 2,
@@ -753,16 +793,14 @@ fun CircleGraph(name: String, cleared: Int, total: Int) {
             }
         )
 
-        // 원호 끝에 도넛 모양 인디케이터 추가 - 진행률이 0보다 클 때만 표시
+        // 인디케이터 그리기
         val progressAngle = animatedValue.value
         if (progressAngle > 0f) {
-            // 인디케이터 위치 계산
             val endAngleRadians = Math.toRadians((270f + progressAngle).toDouble())
             val radius = sizeArc.minDimension / 2
             val indicatorX = center.x + radius * kotlin.math.cos(endAngleRadians).toFloat()
             val indicatorY = center.y + radius * kotlin.math.sin(endAngleRadians).toFloat()
 
-            // 인디케이터의 외부 원 그리기
             val indicatorOuterRadius = arcStrokeWidth * 0.7f
             drawCircle(
                 color = MainPurple,
@@ -770,7 +808,6 @@ fun CircleGraph(name: String, cleared: Int, total: Int) {
                 center = Offset(indicatorX, indicatorY)
             )
 
-            // 인디케이터의 내부 흰색 원 그리기 (도넛 모양을 만들기 위함)
             drawCircle(
                 color = White,
                 radius = indicatorOuterRadius * 0.5f,
