@@ -67,6 +67,7 @@ import com.capston.presentation.ui.home.ProfileScreen
 import com.capston.presentation.ui.search.SearchActivity
 import com.capston.presentation.viewmodel.DailyScheduleViewModel
 import com.capston.presentation.viewmodel.HomeViewModel
+import com.capston.presentation.viewmodel.LectureRoomViewModel
 import com.capston.presentation.viewmodel.LoginViewModel
 import com.capston.presentation.viewmodel.MyPageViewModel
 import com.capston.presentation.viewmodel.PlanViewModel
@@ -76,9 +77,12 @@ import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    val loginViewModel: LoginViewModel by viewModels()
     val homeViewModel: HomeViewModel by viewModels()
     val planViewModel: PlanViewModel by viewModels()
     val dailyScheduleViewModel: DailyScheduleViewModel by viewModels()
+    val lectureRoomViewModel: LectureRoomViewModel by viewModels()
+    val myPageViewModel: MyPageViewModel by viewModels()
 
     @Inject
     lateinit var loadingStateManager: LoadingStateManager
@@ -106,12 +110,6 @@ class MainActivity : ComponentActivity() {
 
         // UI 설정
         setContent {
-            val homeViewModel: HomeViewModel by viewModels()
-            val planViewModel: PlanViewModel by viewModels()
-            val dailyScheduleViewModel: DailyScheduleViewModel by viewModels()
-            val loginViewModel: LoginViewModel by viewModels()
-            val myPageViewModel: MyPageViewModel by viewModels()
-
             LaunchedEffect(Unit) {
                 homeViewModel.getDistinctHome()
                 homeViewModel.getDistinctHome.collectLatest { homeData ->
@@ -129,7 +127,13 @@ class MainActivity : ComponentActivity() {
 
             CapstonTheme {
                 Box(modifier = Modifier.fillMaxSize()) {
-                    SettingTopBottomBar(homeViewModel, planViewModel, dailyScheduleViewModel, loginViewModel, myPageViewModel)
+                    SettingTopBottomBar(
+                        homeViewModel = homeViewModel,
+                        planViewModel = planViewModel,
+                        dailyScheduleViewModel = dailyScheduleViewModel,
+                        lectureRoomViewModel = lectureRoomViewModel,
+                        loginViewModel = loginViewModel,
+                        myPageViewModel = myPageViewModel)
 
                     // 전역 로딩 인디케이터
                     LoadingIndicator(loadingStateManager)
@@ -230,7 +234,14 @@ fun SearchFieldWithIcons(
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun SettingTopBottomBar(homeViewModel: HomeViewModel, planViewModel: PlanViewModel, dailyScheduleViewModel: DailyScheduleViewModel, loginViewModel: LoginViewModel, myPageViewModel: MyPageViewModel) {
+fun SettingTopBottomBar(
+    homeViewModel: HomeViewModel,
+    planViewModel: PlanViewModel,
+    dailyScheduleViewModel: DailyScheduleViewModel,
+    lectureRoomViewModel: LectureRoomViewModel,
+    loginViewModel: LoginViewModel,
+    myPageViewModel: MyPageViewModel
+) {
     var bottomNavState by rememberSaveable { mutableIntStateOf(0) }
     val navController = rememberNavController()
 
@@ -259,7 +270,7 @@ fun SettingTopBottomBar(homeViewModel: HomeViewModel, planViewModel: PlanViewMod
                 composable(Screen.Calender.title) { CalenderScreen(homeViewModel, dailyScheduleViewModel) }
                 composable(Screen.LectureRoom.title) {
                     LectureRoomScreen(
-                        viewModel = planViewModel,
+                        lectureRoomViewModel = lectureRoomViewModel,
                         onPlanClick = { plan ->
                             navController.navigate("${Screen.PlanDetail.title}/${plan.planId}")
                         }
@@ -273,8 +284,7 @@ fun SettingTopBottomBar(homeViewModel: HomeViewModel, planViewModel: PlanViewMod
                     val planDetailResponse = GetPlanDetailResponse()
                     PlanDetailScreen(
                         planId = planId,
-                        planViewModel = planViewModel,
-                        homeViewModel = homeViewModel
+                        lectureRoomViewModel = lectureRoomViewModel
                     )
                 }
                 composable(Screen.Profile.title) { ProfileScreen(loginViewModel = loginViewModel, myPageViewModel = myPageViewModel) }

@@ -77,28 +77,23 @@ class LectureRoomViewModel @Inject constructor(
         }
     }
 
-    fun patchLessonSchedulesCheckToggle(
-        lessonScheduleId: Int
-    ) {
+    fun patchLessonSchedulesCheckToggle(lessonScheduleId: Int) {
         viewModelScope.launch {
-
-            val currentTime = System.currentTimeMillis()
-            val isCacheValid = currentTime - lastLoadTime < cacheValidDuration
-
-            if (isCacheValid) {
-                // 캐시된 데이터 사용, 로딩 인디케이터 표시 안 함
-                return@launch
-            }
-
             loadingStateManager.show()
             try {
-                patchLessonSchedulesCheckToggleUseCase(lessonScheduleId).collect {
-                    _patchLessonSchedulesCheckToggle.value = it
-                    // 체크 토글 후 홈 데이터 새로고침
-                    getDistinctHome()
+                patchLessonSchedulesCheckToggleUseCase(lessonScheduleId).collect { response ->
+                    _patchLessonSchedulesCheckToggle.value = response
+                    // 체크 토글 후 강의실 데이터 새로고침 (대신 getPlanLectureRoom 호출)
+                    getPlanLectureRoom()
+
+                    // 현재 보고 있는 계획 세부 정보도 새로고침
+                    val currentPlanId = _getPlanDetail.value.planId
+                    if (currentPlanId > 0) {
+                        getPlanDetail(currentPlanId)
+                    }
                 }
             } catch (e: Exception) {
-                Log.e("patch lesson schedule toggle 에러", e.message.toString())
+                Log.e("LectureRoomViewModel", "체크 토글 오류: ${e.message}", e)
             } finally {
                 loadingStateManager.hide()
             }
