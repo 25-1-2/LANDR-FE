@@ -176,7 +176,7 @@ fun SearchFieldWithIcons(
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxSize() // Use fillMaxSize to take up the full height
         ) {
             IconButton(onClick = onBackClick, modifier = Modifier.size(24.dp)) {
                 Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "뒤로 가기", tint = Color.Gray)
@@ -186,19 +186,25 @@ fun SearchFieldWithIcons(
                 value = searchQuery,
                 onValueChange = onQueryChanged,
                 singleLine = true,
-                textStyle = TextStyle(fontSize = 16.sp, color = Color.DarkGray),
+                textStyle = TextStyle(fontSize = 14.sp, color = Color.DarkGray),
                 modifier = Modifier
                     .weight(1f)
-                    .padding(horizontal = 8.dp, vertical = 13.dp),
+                    .padding(horizontal = 8.dp)
+                    .wrapContentHeight(Alignment.CenterVertically), // Center text vertically
                 decorationBox = { innerTextField ->
-                    if (searchQuery.isEmpty()) {
-                        Text(
-                            text = "계획 생성하고 싶은 강의를 선택하세요",
-                            fontSize = 12.sp,
-                            color = Color.Gray
-                        )
+                    Box(
+                        contentAlignment = Alignment.CenterStart,
+                        modifier = Modifier.fillMaxHeight()
+                    ) {
+                        if (searchQuery.isEmpty()) {
+                            Text(
+                                text = "계획 생성하고 싶은 강의를 선택하세요",
+                                fontSize = 12.sp,
+                                color = Color.Gray
+                            )
+                        }
+                        innerTextField()
                     }
-                    innerTextField()
                 }
             )
 
