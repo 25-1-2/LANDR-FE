@@ -3,6 +3,7 @@ package com.capston.presentation.ui.search
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
@@ -576,7 +577,15 @@ fun StudyDaysOfWeekSection(studyDayOfWeeks: MutableState<List<String>>) {
             Text(
                 text = "모두 선택",
                 style = MaterialTheme.typography.labelMedium,
-                modifier = Modifier.padding(bottom = 4.dp),
+                modifier = Modifier
+                    .padding(bottom = 4.dp)
+                    .clickable {
+                        val allDays = DayOfWeek.entries.map { it.name }
+                        val isAllSelected = selectedDays.value.containsAll(allDays)
+
+                        selectedDays.value = if (isAllSelected) emptySet() else allDays.toSet()
+                        studyDayOfWeeks.value = selectedDays.value.toList()
+                    },
                 color = MainPurple
             )
         }
