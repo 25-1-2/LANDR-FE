@@ -8,6 +8,7 @@ import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
@@ -73,6 +74,8 @@ import com.capston.presentation.viewmodel.MyPageViewModel
 import com.capston.presentation.viewmodel.PlanViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -87,7 +90,6 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var loadingStateManager: LoadingStateManager
 
-    // Declare the launcher at the top of your Activity/Fragment:
     // 알림 권한 승인을 위한 런처
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission(),
@@ -96,6 +98,18 @@ class MainActivity : ComponentActivity() {
             // FCM SDK (and your app) can post notifications.
         } else {
             // TODO: Inform user that that your app will not show notifications.
+        }
+    }
+
+    // Register for activity results using the new Activity Result API
+    // 검색 액티비티 실행 및 종료 시 OK를 받기 위한 런처
+    @RequiresApi(Build.VERSION_CODES.O)
+    private val startSearchForResult = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == RESULT_OK) {
+            // Refresh all views when returning with RESULT_OK
+            refreshAllData()
         }
     }
 
@@ -159,6 +173,18 @@ class MainActivity : ComponentActivity() {
                 requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
             }
         }
+    }
+
+    fun startSearchActivity() {
+        val intent = Intent(this, SearchActivity::class.java)
+        startSearchForResult.launch(intent)
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun refreshAllData() {
+        homeViewModel.getDistinctHome()
+        dailyScheduleViewModel.getDailySchedule(LocalDate.now().format(DateTimeFormatter.ISO_DATE))
+        lectureRoomViewModel.getPlanLectureRoom()
     }
 }
 
@@ -244,13 +270,19 @@ fun SettingTopBottomBar(
 ) {
     var bottomNavState by rememberSaveable { mutableIntStateOf(0) }
     val navController = rememberNavController()
+    val mainActivity = LocalActivity.current as MainActivity
 
     Scaffold(
         topBar = {
             TopBar(true)
         },
         bottomBar = {
-            BottomBar(navController, bottomNavState, { index -> bottomNavState = index})
+            BottomBar(
+                navController = navController,
+                bottomNavState = bottomNavState,
+                onNavItemClick = { index -> bottomNavState = index},
+                onSearchClick = { mainActivity.startSearchActivity() }
+            )
         },
         // 하단 시스템 바를 고려하도록 contentWindowInsets 설정
         contentWindowInsets = WindowInsets(0, 0, 0, 0)
@@ -358,7 +390,8 @@ fun TopBar(hasUnreadNotifications: Boolean) {
 fun BottomBar(
     navController: NavController,
     bottomNavState: Int,
-    onNavItemClick: (Int) -> Unit
+    onNavItemClick: (Int) -> Unit,
+    onSearchClick: () -> Unit
 ) {
     val items: List<Screen> = listOf(
         Screen.Home,
@@ -411,8 +444,10 @@ fun BottomBar(
 
         FloatingActionButton(
             onClick = {
-                val intent = Intent(context, SearchActivity::class.java)
-                context.startActivity(intent)
+//                val intent = Intent(context, SearchActivity::class.java)
+//                context.startActivity(intent)
+
+                onSearchClick()
             },
             containerColor = MainPurple,
             modifier = Modifier

@@ -1,6 +1,9 @@
 package com.capston.presentation.ui.search
 
+import android.app.Activity
+import android.os.Build
 import androidx.activity.ComponentActivity
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -36,6 +39,9 @@ import com.capston.presentation.theme.backgroundGray
 import com.capston.presentation.theme.chipGray
 import com.capston.presentation.theme.dividerGray
 import com.capston.presentation.theme.textGray
+import com.capston.presentation.viewmodel.DailyScheduleViewModel
+import com.capston.presentation.viewmodel.HomeViewModel
+import com.capston.presentation.viewmodel.LectureRoomViewModel
 import com.capston.presentation.viewmodel.LectureViewModel
 import com.capston.presentation.viewmodel.PlanViewModel
 import kotlinx.coroutines.CoroutineScope
@@ -43,6 +49,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.text.ParseException
 import java.text.SimpleDateFormat
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import java.util.Date
 import java.util.Locale
 
@@ -55,6 +63,7 @@ fun formatDate(millis: Long?): String {
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun MakePlanScreen(
     lectureViewModel: LectureViewModel,
@@ -118,7 +127,12 @@ fun MakePlanScreen(
             // 성공적인 응답을 받았음
             delay(1000) // 로딩 표시를 위한 지연
             loadingStateManager.hide()
-            (context as? ComponentActivity)?.finish()
+
+            // Set the result to RESULT_OK
+            if (context is ComponentActivity) {
+                context.setResult(Activity.RESULT_OK)
+                context.finish()
+            }
         }
     }
 

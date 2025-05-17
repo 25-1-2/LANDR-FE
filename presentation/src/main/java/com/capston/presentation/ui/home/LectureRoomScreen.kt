@@ -17,6 +17,9 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -34,8 +37,12 @@ fun LectureRoomScreen(
     lectureRoomViewModel: LectureRoomViewModel,
     onPlanClick: ((MyLecture) -> Unit)?
 ) {
-    val lectures = lectureRoomViewModel.getPlanLectureRoom
-    lectureRoomViewModel.getPlanLectureRoom()
+    val lectures by lectureRoomViewModel.getPlanLectureRoom.collectAsState()
+
+    // 화면이 처음 표시될 때 데이터를 로드
+    LaunchedEffect(Unit) {
+        lectureRoomViewModel.getPlanLectureRoom()
+    }
 
     Column(
         modifier = Modifier
@@ -49,7 +56,7 @@ fun LectureRoomScreen(
         )
 
         LazyColumn {
-            items(lectures.value) { lecture ->
+            items(lectures) { lecture ->
                 LectureItem(lecture = lecture, onClick = {
                     if (onPlanClick != null) { onPlanClick(lecture) }
                 })
