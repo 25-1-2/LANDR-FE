@@ -3,10 +3,12 @@ package com.capston.data.repository.remote.api
 import com.capston.domain.model.MyLecture
 import com.capston.domain.request.PatchPlanDto
 import com.capston.domain.request.PostNewPlanDto
+import com.capston.domain.response.plan.DeleteOnePlanResponse
 import com.capston.domain.response.plan.GetPlanDetailResponse
 import com.capston.domain.response.plan.LectureAliasResponse
 import com.capston.domain.response.plan.PostNewPlanResponse
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.PATCH
 import retrofit2.http.POST
@@ -35,4 +37,10 @@ interface PlanApi {
     suspend fun getPlanDetail(
         @Path("planId") planId: Int
     ): GetPlanDetailResponse
+
+    // 계획 상세 조회
+    @DELETE("/v1/plans/{planId}")
+    suspend fun deleteOnePlan(
+        @Path("planId") planId: Int
+    ): DeleteOnePlanResponse
 }
