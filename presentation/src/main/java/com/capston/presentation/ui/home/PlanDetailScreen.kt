@@ -23,6 +23,7 @@ import com.capston.domain.model.LessonSchedule
 import com.capston.domain.response.plan.GetPlanDetailResponse
 import com.capston.presentation.ui.common.CustomCheckBox
 import com.capston.presentation.viewmodel.HomeViewModel
+import com.capston.presentation.viewmodel.LectureRoomViewModel
 import com.capston.presentation.viewmodel.PlanViewModel
 
 import java.time.LocalDate
@@ -39,11 +40,10 @@ fun formatDate(dateString: String): String {
 @Composable
 fun PlanDetailScreen(
     planId: Int,
-    homeViewModel: HomeViewModel,
-    planViewModel: PlanViewModel
+    lectureRoomViewModel: LectureRoomViewModel
 ) {
-    val planDetailResponse by planViewModel.getPlanDetail.collectAsState()
-    planViewModel.getPlanDetail(planId)
+    val planDetailResponse by lectureRoomViewModel.getPlanDetail.collectAsState()
+    lectureRoomViewModel.getPlanDetail(planId)
 
     Column(
         modifier = Modifier
@@ -58,7 +58,7 @@ fun PlanDetailScreen(
             OneDaySection(
                 date = schedule.date,
                 lessonSchedules = schedule.lessonSchedules,
-                homeViewModel = homeViewModel
+                lectureRoomViewModel = lectureRoomViewModel
             )
         }
     }
@@ -93,7 +93,7 @@ fun TitleSection(planDetailResponse: GetPlanDetailResponse) {
 fun OneDaySection(
     date: String,
     lessonSchedules: List<LessonSchedule>,
-    homeViewModel: HomeViewModel
+    lectureRoomViewModel: LectureRoomViewModel
 ) {
     Column(
         modifier = Modifier.padding(vertical = 16.dp, horizontal = 8.dp)
@@ -107,7 +107,7 @@ fun OneDaySection(
         lessonSchedules.forEach { lessonSchedule ->
             TaskItem(
                 lessonSchedule = lessonSchedule,
-                homeViewModel = homeViewModel
+                lectureRoomViewModel = lectureRoomViewModel
             )
         }
     }
@@ -116,7 +116,7 @@ fun OneDaySection(
 @Composable
 fun TaskItem(
     lessonSchedule: LessonSchedule,
-    homeViewModel: HomeViewModel
+    lectureRoomViewModel: LectureRoomViewModel
 ) {
     // 각 체크박스의 상태를 기억합니다.
     var isChecked by remember { mutableStateOf(lessonSchedule.completed) }
@@ -129,7 +129,7 @@ fun TaskItem(
         CustomCheckBox (
             isChecked = isChecked,
             onCheckedChange = {
-                homeViewModel.patchLessonSchedulesCheckToggle(lessonSchedule.id)
+                lectureRoomViewModel.patchLessonSchedulesCheckToggle(lessonSchedule.id)
                 isChecked = !isChecked
             }
         )
