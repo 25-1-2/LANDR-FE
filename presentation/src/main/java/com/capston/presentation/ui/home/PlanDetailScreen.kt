@@ -36,6 +36,7 @@ import androidx.navigation.NavController
 import com.capston.domain.model.LessonSchedule
 import com.capston.domain.response.plan.GetPlanDetailResponse
 import com.capston.presentation.theme.LightGray2
+import com.capston.presentation.theme.MainPurple
 import com.capston.presentation.theme.backgroundGray
 import com.capston.presentation.theme.dividerGray
 import com.capston.presentation.theme.materialGray
@@ -265,25 +266,49 @@ fun TaskItem(
     // 각 체크박스의 상태를 기억합니다.
     var isChecked by remember { mutableStateOf(lessonSchedule.completed) }
     Row(
-        verticalAlignment = Alignment.Top,
+        verticalAlignment = Alignment.Bottom,
+        horizontalArrangement = Arrangement.SpaceBetween,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 8.dp)
+            .padding(top = 12.dp)
     ) {
-        CustomCheckBox (
-            isChecked = isChecked,
-            onCheckedChange = {
-                lectureRoomViewModel.patchLessonSchedulesCheckToggle(lessonSchedule.id)
-                isChecked = !isChecked
-            }
-        )
+        Row(
+            verticalAlignment = Alignment.Top,
+            modifier = Modifier
+                .weight(1f)
+                .padding(end = 4.dp)
+        ) {
+            CustomCheckBox (
+                isChecked = isChecked,
+                onCheckedChange = {
+                    lectureRoomViewModel.patchLessonSchedulesCheckToggle(lessonSchedule.id)
+                    isChecked = !isChecked
+                }
+            )
+            Text(
+                text = lessonSchedule.lessonTitle,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Normal,
+                lineHeight = 28.sp,
+                modifier = Modifier.padding(top = 12.dp)
+            )
+        }
+
+        // 칩을 커스텀한듯
         Text(
-            text = lessonSchedule.lessonTitle,
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Normal,
-            lineHeight = 28.sp,
-            modifier = Modifier.padding(top = 10.dp)
+            text = "${lessonSchedule.adjustedDuration}분",
+            style = MaterialTheme.typography.labelMedium,
+            color = MainPurple,
+            modifier = Modifier
+                .padding(bottom = 6.dp)
+                .border(
+                    width = 1.dp,
+                    color = MainPurple,
+                    shape = RoundedCornerShape(8.dp)
+                )
+                .padding(horizontal = 4.dp, vertical = 4.dp)
         )
+
     }
 }
 
