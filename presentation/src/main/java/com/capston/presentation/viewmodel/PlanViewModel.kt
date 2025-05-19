@@ -4,7 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.capston.domain.manager.LoadingStateManager
-import com.capston.domain.model.MyLecture
+import com.capston.domain.response.plan.GetPlanLectureRoomResponse
 import com.capston.domain.request.PatchPlanDto
 import com.capston.domain.request.PostNewPlanDto
 import com.capston.domain.response.plan.GetPlanDetailResponse
@@ -36,8 +36,8 @@ class PlanViewModel @Inject constructor(
     private val _patchPlanName = MutableStateFlow(LectureAliasResponse())  // 기본값 ""
     val patchPlanName: StateFlow<LectureAliasResponse> = _patchPlanName.asStateFlow()
 
-    private val _getPlanLectureRoom = MutableStateFlow(emptyList<MyLecture>())  // 기본값 ""
-    val getPlanLectureRoom: StateFlow<List<MyLecture>> = _getPlanLectureRoom.asStateFlow()
+    private val _getPlanLectureRoom = MutableStateFlow(emptyList<GetPlanLectureRoomResponse>())  // 기본값 ""
+    val getPlanLectureRoom: StateFlow<List<GetPlanLectureRoomResponse>> = _getPlanLectureRoom.asStateFlow()
 
     private val _getPlanDetail = MutableStateFlow(GetPlanDetailResponse())  // 기본값 ""
     val getPlanDetail: StateFlow<GetPlanDetailResponse> = _getPlanDetail.asStateFlow()

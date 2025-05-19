@@ -113,12 +113,9 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import com.capston.domain.model.DayAchievementDto
-import com.capston.domain.model.MyLecture
 import com.capston.domain.request.UpdateDDayRequest
 import com.capston.domain.response.enum_class.DayOfWeek
-import com.capston.domain.response.enum_class.Platform
 import com.capston.domain.response.home.DistinctHomeIdResponse
 import com.capston.domain.response.plan.LectureAliasResponse
 import com.capston.presentation.theme.LightGray5

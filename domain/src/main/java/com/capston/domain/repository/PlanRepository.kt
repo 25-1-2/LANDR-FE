@@ -1,6 +1,6 @@
 package com.capston.domain.repository
 
-import com.capston.domain.model.MyLecture
+import com.capston.domain.response.plan.GetPlanLectureRoomResponse
 import com.capston.domain.request.PatchPlanDto
 import com.capston.domain.request.PostNewPlanDto
 import com.capston.domain.response.plan.GetPlanDetailResponse
@@ -20,7 +20,7 @@ interface PlanRepository {
     ): LectureAliasResponse
 
     // 나의 강의실 조회
-    suspend fun getPlanLectureRoom(): List<MyLecture>
+    suspend fun getPlanLectureRoom(): List<GetPlanLectureRoomResponse>
 
     // 상세 계획 조회
     suspend fun getPlanDetail(

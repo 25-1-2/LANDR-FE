@@ -4,26 +4,12 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.capston.domain.manager.LoadingStateManager
-import com.capston.domain.model.LectureItemDto
-import com.capston.domain.model.MyLecture
-import com.capston.domain.model.NewPlanLesson
-import com.capston.domain.request.LectureDto
-import com.capston.domain.request.PatchPlanDto
-import com.capston.domain.request.PostNewPlanDto
+import com.capston.domain.response.plan.GetPlanLectureRoomResponse
 import com.capston.domain.response.CheckResponse
-import com.capston.domain.response.lecture.DistinctLectureResponse
-import com.capston.domain.response.lecture.LectureResponseDto
 import com.capston.domain.response.plan.GetPlanDetailResponse
-import com.capston.domain.response.plan.LectureAliasResponse
-import com.capston.domain.response.plan.PostNewPlanResponse
 import com.capston.domain.usecase.home.PatchLessonSchedulesCheckToggleUseCase
-import com.capston.domain.usecase.lecture.GetAllLectureUseCase
-import com.capston.domain.usecase.lecture.GetDistinctLectureUseCase
-import com.capston.domain.usecase.lecture.GetLessonsByLectureIdUseCase
 import com.capston.domain.usecase.plan.GetPlanDetailUseCase
 import com.capston.domain.usecase.plan.GetPlanLectureRoomUseCase
-import com.capston.domain.usecase.plan.PatchPlanNameUseCase
-import com.capston.domain.usecase.plan.PostNewPlanUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -40,8 +26,8 @@ class LectureRoomViewModel @Inject constructor(
     private val loadingStateManager: LoadingStateManager
 ) : ViewModel() {
 
-    private val _getPlanLectureRoom = MutableStateFlow(emptyList<MyLecture>())  // 기본값 ""
-    val getPlanLectureRoom: StateFlow<List<MyLecture>> = _getPlanLectureRoom.asStateFlow()
+    private val _getPlanLectureRoom = MutableStateFlow(emptyList<GetPlanLectureRoomResponse>())  // 기본값 ""
+    val getPlanLectureRoom: StateFlow<List<GetPlanLectureRoomResponse>> = _getPlanLectureRoom.asStateFlow()
 
     private val _getPlanDetail = MutableStateFlow(GetPlanDetailResponse())  // 기본값 ""
     val getPlanDetail: StateFlow<GetPlanDetailResponse> = _getPlanDetail.asStateFlow()
