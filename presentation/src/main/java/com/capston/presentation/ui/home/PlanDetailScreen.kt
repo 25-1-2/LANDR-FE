@@ -11,6 +11,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -38,6 +39,7 @@ import com.capston.presentation.theme.LightGray2
 import com.capston.presentation.theme.backgroundGray
 import com.capston.presentation.theme.dividerGray
 import com.capston.presentation.theme.materialGray
+import com.capston.presentation.theme.textGray
 import com.capston.presentation.ui.common.CustomCheckBox
 import com.capston.presentation.viewmodel.HomeViewModel
 import com.capston.presentation.viewmodel.LectureRoomViewModel
@@ -186,6 +188,8 @@ fun OneDaySection(
     lessonSchedules: List<LessonSchedule>,
     lectureRoomViewModel: LectureRoomViewModel
 ) {
+    val totalMinutes = lessonSchedules.sumOf { it.adjustedDuration }
+
     Column {
         Text(
             text = formatDate(date),
@@ -202,7 +206,46 @@ fun OneDaySection(
                     color = dividerGray,
                     shape = RoundedCornerShape(12.dp)
                 )
+                // border 내부 패딩
+                .padding(24.dp)
         ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // 하루 강의 개수
+                Text(
+                    text = "총 ${lessonSchedules.size}강",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                )
+
+                // 하루 강의 시간
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = ImageVector.vectorResource(R.drawable.icon_clock_filled),
+                        contentDescription = "시간",
+                        tint = materialGray,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "약 ${totalMinutes}분",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = textGray
+                    )
+                }
+            }
+
+            HorizontalDivider(
+//                modifier = Modifier.padding(bottom = 8.dp)
+            )
+
             lessonSchedules.forEach { lessonSchedule ->
                 TaskItem(
                     lessonSchedule = lessonSchedule,
@@ -225,7 +268,7 @@ fun TaskItem(
         verticalAlignment = Alignment.Top,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp)
+            .padding(top = 8.dp)
     ) {
         CustomCheckBox (
             isChecked = isChecked,
