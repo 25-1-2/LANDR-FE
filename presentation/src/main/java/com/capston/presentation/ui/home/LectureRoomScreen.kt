@@ -38,7 +38,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.capston.domain.model.MyLecture
+import com.capston.domain.response.plan.GetPlanLectureRoomResponse
 import com.capston.presentation.R
 import com.capston.presentation.theme.LightGray2
 import com.capston.presentation.theme.MainPurple
@@ -48,7 +48,7 @@ import com.capston.presentation.viewmodel.LectureRoomViewModel
 @Composable
 fun LectureRoomScreen(
     lectureRoomViewModel: LectureRoomViewModel,
-    onPlanClick: ((MyLecture) -> Unit)?
+    onPlanClick: ((GetPlanLectureRoomResponse) -> Unit)?
 ) {
     val lectures by lectureRoomViewModel.getPlanLectureRoom.collectAsState()
 
@@ -162,7 +162,7 @@ fun LectureRoomTopBar(hasUnreadNotifications: Boolean) {
 }
 
 @Composable
-fun LectureItem(lecture: MyLecture, onClick: () -> Unit) {
+fun LectureItem(lecture: GetPlanLectureRoomResponse, onClick: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -173,7 +173,7 @@ fun LectureItem(lecture: MyLecture, onClick: () -> Unit) {
             .padding(vertical = 16.dp)
     ) {
         Text(
-            text = "${lecture.platform} · ${lecture.teacher}",
+            text = "${lecture.platform.label} · ${lecture.teacher}",
             style = Typography.labelMedium,
             color = MainPurple,
             modifier = Modifier.padding(bottom = 8.dp)

@@ -1,7 +1,7 @@
 package com.capston.data.repository.remote.repositoryImpl
 
 import com.capston.domain.datasource.PlanDataSource
-import com.capston.domain.model.MyLecture
+import com.capston.domain.response.plan.GetPlanLectureRoomResponse
 import com.capston.domain.repository.PlanRepository
 import com.capston.domain.request.PatchPlanDto
 import com.capston.domain.request.PostNewPlanDto
@@ -21,7 +21,7 @@ class PlanRepositoryImpl @Inject constructor(
         patchPlanDto: PatchPlanDto
     ): LectureAliasResponse = planDataSource.patchPlanName(planId, patchPlanDto)
 
-    override suspend fun getPlanLectureRoom(): List<MyLecture> =
+    override suspend fun getPlanLectureRoom(): List<GetPlanLectureRoomResponse> =
         planDataSource.getPlanLectureRoom()
 
     override suspend fun getPlanDetail(

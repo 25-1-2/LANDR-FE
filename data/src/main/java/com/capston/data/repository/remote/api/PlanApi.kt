@@ -1,6 +1,6 @@
 package com.capston.data.repository.remote.api
 
-import com.capston.domain.model.MyLecture
+import com.capston.domain.response.plan.GetPlanLectureRoomResponse
 import com.capston.domain.request.PatchPlanDto
 import com.capston.domain.request.PostNewPlanDto
 import com.capston.domain.response.plan.DeleteOnePlanResponse
@@ -30,7 +30,7 @@ interface PlanApi {
 
     // 나의 강의실 조회
     @GET("/v1/plans/me")
-    suspend fun getPlanLectureRoom(): List<MyLecture>
+    suspend fun getPlanLectureRoom(): List<GetPlanLectureRoomResponse>
 
     // 계획 상세 조회
     @GET("/v1/plans/{planId}")
