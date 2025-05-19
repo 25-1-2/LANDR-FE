@@ -4,10 +4,12 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -34,6 +36,7 @@ import com.capston.domain.model.LessonSchedule
 import com.capston.domain.response.plan.GetPlanDetailResponse
 import com.capston.presentation.theme.LightGray2
 import com.capston.presentation.theme.backgroundGray
+import com.capston.presentation.theme.dividerGray
 import com.capston.presentation.theme.materialGray
 import com.capston.presentation.ui.common.CustomCheckBox
 import com.capston.presentation.viewmodel.HomeViewModel
@@ -183,21 +186,31 @@ fun OneDaySection(
     lessonSchedules: List<LessonSchedule>,
     lectureRoomViewModel: LectureRoomViewModel
 ) {
-    Column(
-        modifier = Modifier.padding(vertical = 16.dp, horizontal = 8.dp)
-    ) {
+    Column {
         Text(
             text = formatDate(date),
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Medium,
             modifier = Modifier.padding(bottom = 8.dp)
         )
-        lessonSchedules.forEach { lessonSchedule ->
-            TaskItem(
-                lessonSchedule = lessonSchedule,
-                lectureRoomViewModel = lectureRoomViewModel
-            )
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 32.dp)
+                .border(
+                    width = 1.dp,
+                    color = dividerGray,
+                    shape = RoundedCornerShape(12.dp)
+                )
+        ) {
+            lessonSchedules.forEach { lessonSchedule ->
+                TaskItem(
+                    lessonSchedule = lessonSchedule,
+                    lectureRoomViewModel = lectureRoomViewModel
+                )
+            }
         }
+
     }
 }
 
