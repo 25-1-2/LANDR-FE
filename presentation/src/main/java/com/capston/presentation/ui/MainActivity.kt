@@ -274,9 +274,9 @@ fun SettingTopBottomBar(
     val mainActivity = LocalActivity.current as MainActivity
 
     Scaffold(
-        topBar = {
-            TopBar(true)
-        },
+//        topBar = {
+//            TopBar(true)
+//        },
         bottomBar = {
             BottomBar(
                 navController = navController,
