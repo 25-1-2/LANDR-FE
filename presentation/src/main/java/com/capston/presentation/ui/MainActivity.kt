@@ -317,7 +317,8 @@ fun SettingTopBottomBar(
                     val planDetailResponse = GetPlanDetailResponse()
                     PlanDetailScreen(
                         planId = planId,
-                        lectureRoomViewModel = lectureRoomViewModel
+                        lectureRoomViewModel = lectureRoomViewModel,
+                        navController = navController
                     )
                 }
                 composable(Screen.Profile.title) { ProfileScreen(loginViewModel = loginViewModel, myPageViewModel = myPageViewModel) }
