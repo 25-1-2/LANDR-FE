@@ -17,8 +17,8 @@ interface LectureApi {
         @Query("cursorLectureId") cursorLectureId: String?,
         @Query("cursorCreatedAt") cursorCreatedAt: String?,
         @Query("offset") offset: String?,
-        @Query("platform") platform: Platform,
-        @Query("subject") subject: Subject
+        @Query("platform") platform: Platform? = null,
+        @Query("subject") subject: Subject? = null
     ): DistinctLectureResponse
 
     //강의 전체 조회
@@ -28,8 +28,8 @@ interface LectureApi {
         @Query("cursorLectureId") cursorLectureId: String?,
         @Query("cursorCreatedAt") cursorCreatedAt: String?,
         @Query("offset") offset: String?,
-        @Query("platform") platform: Platform,
-        @Query("subject") subject: Subject
+        @Query("platform") platform: Platform? = null,
+        @Query("subject") subject: Subject? = null
     ): DistinctLectureResponse
 
     // lecture id로 lesson 목록 조회

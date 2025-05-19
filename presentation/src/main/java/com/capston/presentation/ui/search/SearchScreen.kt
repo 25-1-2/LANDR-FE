@@ -2,7 +2,9 @@ package com.capston.presentation.ui.search
 
 import android.annotation.SuppressLint
 import android.content.Intent
+import android.os.Build
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -349,6 +351,35 @@ fun SearchScreen(
         Log.d("SearchScreen", "현재 표시 중인 아이템 수: ${allItems.size}, 로딩 중: $isLoadingMore")
     }
 
+    // 필터가 변경될 때마다 데이터를 새로 로드하기 위한 Effect
+    LaunchedEffect(selectedPlatforms, selectedSubjects) {
+        if (selectedPlatforms.isNotEmpty() || selectedSubjects.isNotEmpty()) {
+            Log.d("SearchScreen", "필터 변경됨: 플랫폼=${selectedPlatforms.map { it.label }}, 과목=${selectedSubjects.map { it.label }}")
+
+            // 필터 변경 시 데이터 초기화 및 재로딩
+            isLoading = true
+            allItems = emptyList()
+            cursorLectureId = ""
+            cursorCreatedAt = ""
+            hasMoreData = true
+
+            // 현재 모드에 따라 적절한 API 호출
+            loadFilteredLectures(
+                isSearchMode = isSearching,
+                lectureViewModel = lectureViewModel,
+                selectedPlatforms = selectedPlatforms,
+                selectedSubjects = selectedSubjects,
+                searchQuery = searchQuery,
+                cursorLectureId = cursorLectureId,
+                cursorCreatedAt = cursorCreatedAt,
+                offset = offset
+            )
+        } else if (selectedPlatforms.isEmpty() && selectedSubjects.isEmpty() && allItems.isEmpty()) {
+            // 모든 필터가 해제된 경우 전체 데이터 로드
+            shouldReloadData = true
+        }
+    }
+
     // 컴포넌트가 처음 로드될 때 전체 강의 조회
     LaunchedEffect(shouldReloadData) {
         if (shouldReloadData) {
@@ -402,21 +433,35 @@ fun SearchScreen(
                 Log.d("SearchScreen", "검색어 변경: $searchQuery")
                 isSearching = true
                 isLoading = true
-                // 검색 API 호출 시 파라미터 전달
-                lectureViewModel.getDistinctLecture(
-                    LectureDto(
-                        search = searchQuery,
-                        cursorLectureId = "",  // 첫 검색은 항상 커서 없이
+
+                // 필터 적용하여 검색
+                if (selectedPlatforms.isNotEmpty() || selectedSubjects.isNotEmpty()) {
+                    loadFilteredLectures(
+                        isSearchMode = true,
+                        lectureViewModel = lectureViewModel,
+                        selectedPlatforms = selectedPlatforms,
+                        selectedSubjects = selectedSubjects,
+                        searchQuery = searchQuery,
+                        cursorLectureId = "",
                         cursorCreatedAt = "",
                         offset = offset
                     )
-                )
+                } else {
+                    // 필터 없이 기본 검색
+                    lectureViewModel.getDistinctLecture(
+                        LectureDto(
+                            search = searchQuery,
+                            cursorLectureId = "",
+                            cursorCreatedAt = "",
+                            offset = offset
+                        )
+                    )
+                }
             } else {
                 isSearching = false
-                if (allLectureResponse.isNotEmpty()) {
-                    // 이미 로드된 전체 목록이 있으면 바로 처리
+                if (allLectureResponse.isNotEmpty() && selectedPlatforms.isEmpty() && selectedSubjects.isEmpty()) {
+                    // 필터가 없고 이미 로드된 전체 목록이 있으면 바로 처리
                     allItems = allLectureResponse.map { lecture ->
-
                         LectureItemDto(
                             id = lecture.id,
                             title = lecture.title,
@@ -431,9 +476,22 @@ fun SearchScreen(
                     isLoading = false
                     Log.d("SearchScreen", "캐시된 전체 목록 처리: ${allItems.size}개 항목")
                 } else {
-                    // 없으면 새로 로드
+                    // 필터가 있거나 캐시된 데이터가 없으면 새로 로드
                     isLoading = true
-                    lectureViewModel.getAllLecture(LectureDto(offset = offset))
+                    if (selectedPlatforms.isEmpty() && selectedSubjects.isEmpty()) {
+                        lectureViewModel.getAllLecture(LectureDto(offset = offset))
+                    } else {
+                        loadFilteredLectures(
+                            isSearchMode = false,
+                            lectureViewModel = lectureViewModel,
+                            selectedPlatforms = selectedPlatforms,
+                            selectedSubjects = selectedSubjects,
+                            searchQuery = "",
+                            cursorLectureId = "",
+                            cursorCreatedAt = "",
+                            offset = offset
+                        )
+                    }
                 }
             }
         }
@@ -445,7 +503,6 @@ fun SearchScreen(
             Log.d("SearchScreen", "검색 응답 처리 시작: nextCursor=${searchLectureResponse.nextCursor}, hasNext=${searchLectureResponse.hasNext}")
 
             val newItems = searchLectureResponse.data?.filterNotNull()?.map { lecture ->
-
                 LectureItemDto(
                     id = lecture.id,
                     title = lecture.title,
@@ -548,9 +605,43 @@ fun SearchScreen(
     }
 
     Column {
-        SearchTopBar(searchQuery = searchQuery, onQueryChanged = { searchQuery = it }, lectureViewModel = lectureViewModel)
+        SearchTopBar(
+            searchQuery = searchQuery,
+            onQueryChanged = { searchQuery = it },
+            lectureViewModel = lectureViewModel,
+            onSearchClick = {
+                if (searchQuery.isNotBlank()) {
+                    isSearching = true
+                    isLoading = true
 
-        // SearchScreen 내부의 해당 부분을 다음과 같이 변경합니다
+                    // 검색 버튼 클릭 시 필터 적용
+                    if (selectedPlatforms.isNotEmpty() || selectedSubjects.isNotEmpty()) {
+                        loadFilteredLectures(
+                            isSearchMode = true,
+                            lectureViewModel = lectureViewModel,
+                            selectedPlatforms = selectedPlatforms,
+                            selectedSubjects = selectedSubjects,
+                            searchQuery = searchQuery,
+                            cursorLectureId = "",
+                            cursorCreatedAt = "",
+                            offset = "20"
+                        )
+                    } else {
+                        // 필터 없이 검색
+                        lectureViewModel.getDistinctLecture(
+                            LectureDto(
+                                search = searchQuery,
+                                cursorLectureId = "",
+                                cursorCreatedAt = "",
+                                offset = "20"
+                            )
+                        )
+                    }
+                }
+            }
+        )
+
+        // 필터 바 컴포넌트
         LectureFilterBarDropdown(
             selectedPlatforms = selectedPlatforms,
             onPlatformSelected = { platform ->
@@ -558,7 +649,8 @@ fun SearchScreen(
                 selectedPlatforms = if (selectedPlatforms.contains(platform)) {
                     selectedPlatforms - platform
                 } else {
-                    selectedPlatforms + platform
+                    // 하나만 선택 가능하도록 변경
+                    listOf(platform)
                 }
             },
             selectedSubjects = selectedSubjects,
@@ -567,7 +659,8 @@ fun SearchScreen(
                 selectedSubjects = if (selectedSubjects.contains(subject)) {
                     selectedSubjects - subject
                 } else {
-                    selectedSubjects + subject
+                    // 하나만 선택 가능하도록 변경
+                    listOf(subject)
                 }
             },
             loadingStateManager = loadingStateManager
@@ -588,25 +681,38 @@ fun SearchScreen(
                         isLoadingMore = true
                         Log.d("SearchScreen", "추가 데이터 로드 요청: cursor=${cursorLectureId}, createdAt=${cursorCreatedAt}")
 
-                        if (isSearching) {
-                            // 검색 모드에서 다음 페이지 로드
-                            lectureViewModel.getDistinctLecture(
-                                LectureDto(
-                                    search = searchQuery,
-                                    cursorLectureId = cursorLectureId,
-                                    cursorCreatedAt = cursorCreatedAt,
-                                    offset = offset
-                                )
+                        // 스크롤로 추가 데이터 로드 시 필터 적용
+                        if (selectedPlatforms.isNotEmpty() || selectedSubjects.isNotEmpty()) {
+                            loadFilteredLectures(
+                                isSearchMode = isSearching,
+                                lectureViewModel = lectureViewModel,
+                                selectedPlatforms = selectedPlatforms,
+                                selectedSubjects = selectedSubjects,
+                                searchQuery = if (isSearching) searchQuery else "",
+                                cursorLectureId = cursorLectureId,
+                                cursorCreatedAt = cursorCreatedAt,
+                                offset = offset
                             )
                         } else {
-                            // 전체 목록 모드에서 다음 페이지 로드
-                            lectureViewModel.getAllLecture(
-                                LectureDto(
-                                    cursorLectureId = cursorLectureId,
-                                    cursorCreatedAt = cursorCreatedAt,
-                                    offset = offset
+                            // 필터 없이 추가 데이터 로드
+                            if (isSearching) {
+                                lectureViewModel.getDistinctLecture(
+                                    LectureDto(
+                                        search = searchQuery,
+                                        cursorLectureId = cursorLectureId,
+                                        cursorCreatedAt = cursorCreatedAt,
+                                        offset = offset
+                                    )
                                 )
-                            )
+                            } else {
+                                lectureViewModel.getAllLecture(
+                                    LectureDto(
+                                        cursorLectureId = cursorLectureId,
+                                        cursorCreatedAt = cursorCreatedAt,
+                                        offset = offset
+                                    )
+                                )
+                            }
                         }
                     }
                 } else {
@@ -615,6 +721,99 @@ fun SearchScreen(
             },
             loadingStateManager = loadingStateManager
         )
+    }
+}
+
+// 필터링된 강의 로드 함수 - 단일 플랫폼 및 단일 과목 지원
+fun loadFilteredLectures(
+    isSearchMode: Boolean,
+    lectureViewModel: LectureViewModel,
+    selectedPlatforms: List<Platform>,
+    selectedSubjects: List<Subject>,
+    searchQuery: String,
+    cursorLectureId: String,
+    cursorCreatedAt: String,
+    offset: String
+) {
+    // 선택된 플랫폼 및 과목이 모두 있는 경우 - 각 조합에 대해 별도 호출
+    if (selectedPlatforms.isNotEmpty() && selectedSubjects.isNotEmpty()) {
+        // 첫 번째 플랫폼과 첫 번째 과목 조합으로 호출
+        val platform = selectedPlatforms[0]
+        val subject = selectedSubjects[0]
+
+        Log.d("SearchScreen", "플랫폼과 과목 조합 호출: ${platform.name}, ${subject.name}")
+
+        val dto = LectureDto(
+            search = searchQuery,
+            cursorLectureId = cursorLectureId,
+            cursorCreatedAt = cursorCreatedAt,
+            offset = offset,
+            platform = platform,
+            subject = subject
+        )
+
+        if (isSearchMode) {
+            lectureViewModel.getDistinctLecture(dto)
+        } else {
+            lectureViewModel.getAllLecture(dto)
+        }
+    }
+    // 플랫폼만 선택된 경우
+    else if (selectedPlatforms.isNotEmpty()) {
+        val platform = selectedPlatforms[0]
+
+        Log.d("SearchScreen", "플랫폼만 호출: ${platform.name}")
+
+        val dto = LectureDto(
+            search = searchQuery,
+            cursorLectureId = cursorLectureId,
+            cursorCreatedAt = cursorCreatedAt,
+            offset = offset,
+            platform = platform
+        )
+
+        if (isSearchMode) {
+            lectureViewModel.getDistinctLecture(dto)
+        } else {
+            lectureViewModel.getAllLecture(dto)
+        }
+    }
+    // 과목만 선택된 경우
+    else if (selectedSubjects.isNotEmpty()) {
+        val subject = selectedSubjects[0]
+
+        Log.d("SearchScreen", "과목만 호출: ${subject.name}")
+
+        val dto = LectureDto(
+            search = searchQuery,
+            cursorLectureId = cursorLectureId,
+            cursorCreatedAt = cursorCreatedAt,
+            offset = offset,
+            subject = subject
+        )
+
+        if (isSearchMode) {
+            lectureViewModel.getDistinctLecture(dto)
+        } else {
+            lectureViewModel.getAllLecture(dto)
+        }
+    }
+    // 필터가 없는 경우
+    else {
+        Log.d("SearchScreen", "필터 없음 호출")
+
+        val dto = LectureDto(
+            search = searchQuery,
+            cursorLectureId = cursorLectureId,
+            cursorCreatedAt = cursorCreatedAt,
+            offset = offset
+        )
+
+        if (isSearchMode) {
+            lectureViewModel.getDistinctLecture(dto)
+        } else {
+            lectureViewModel.getAllLecture(dto)
+        }
     }
 }
 
@@ -732,6 +931,7 @@ fun SimplifiedInfiniteScrollList(
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun SearchNavHost(navController: NavHostController, planViewModel: PlanViewModel, lectureViewModel: LectureViewModel, loadingStateManager: LoadingStateManager) {
     NavHost(
@@ -905,7 +1105,8 @@ fun SearchLectureItem(
 fun SearchTopBar(
     searchQuery: String,
     onQueryChanged: (String) -> Unit,
-    lectureViewModel: LectureViewModel
+    lectureViewModel: LectureViewModel,
+    onSearchClick: () -> Unit
 ) {
     val context = LocalContext.current
 
@@ -919,22 +1120,14 @@ fun SearchTopBar(
                     context.startActivity(intent)
                 },
                 onSearchClick = {
-                    // 검색 버튼을 클릭했을 때 강제로 검색 실행
-                    if (searchQuery.isNotBlank()) {
-                        lectureViewModel.getDistinctLecture(
-                            LectureDto(
-                                search = searchQuery,
-                                cursorLectureId = "",
-                                cursorCreatedAt = "",
-                                offset = "20" // 검색 버튼 클릭 시에도 20개 가져오도록 수정
-                            )
-                        )
-                    }
+                    // 검색 버튼을 클릭했을 때 검색 실행
+                    onSearchClick()
                 }
             )
         }
     )
 }
+
 
 val Subject.bgColor: Color
     get() = when (this) {

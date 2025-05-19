@@ -31,12 +31,18 @@ class LectureDataSourceImpl @Inject constructor(
             lectureDto.cursorCreatedAt
         }
 
-        var result = lectureApi.getDistinctLecture(
-            search = lectureDto.search,
-            cursorLectureId = lectureDto.cursorLectureId,
-            cursorCreatedAt = createdAt, // 안전한 값 사용
-            offset = lectureDto.offset
-        )
+        var result = lectureDto.platform?.let {
+            lectureDto.subject?.let { it1 ->
+                lectureApi.getDistinctLecture(
+                    search = lectureDto.search,
+                    cursorLectureId = lectureDto.cursorLectureId,
+                    cursorCreatedAt = createdAt, // 안전한 값 사용
+                    offset = lectureDto.offset,
+                    platform = it,
+                    subject = it1
+                )
+            }
+        }
 
         Log.d("LectureDataSourceImpl", "서버 응답: $result")
 
@@ -86,7 +92,9 @@ class LectureDataSourceImpl @Inject constructor(
             search = lectureDto.search,
             cursorLectureId = lectureDto.cursorLectureId,
             cursorCreatedAt = createdAt, // 안전한 값 사용
-            offset = lectureDto.offset
+            offset = lectureDto.offset,
+            platform = lectureDto.platform,
+            subject = lectureDto.subject
         )
 
         Log.d("LectureDataSourceImpl", "전체 목록 서버 응답: $result")
