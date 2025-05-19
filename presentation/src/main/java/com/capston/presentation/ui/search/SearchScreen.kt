@@ -450,7 +450,6 @@ fun SearchScreen(
                     listOf(subject)
                 }
             },
-            loadingStateManager = loadingStateManager
         )
 
         // 개선된 무한 스크롤 리스트 구현
@@ -517,7 +516,6 @@ fun LectureFilterBarDropdown(
     onPlatformSelected: (Platform) -> Unit,
     selectedSubjects: List<Subject>,
     onSubjectSelected: (Subject) -> Unit,
-    loadingStateManager: LoadingStateManager
 ) {
     Row(
         modifier = Modifier
