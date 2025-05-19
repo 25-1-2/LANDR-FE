@@ -97,219 +97,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-@Composable
-fun LectureFilterBarDropdown(
-    selectedPlatforms: List<Platform>,
-    onPlatformSelected: (Platform) -> Unit,
-    selectedSubjects: List<Subject>,
-    onSubjectSelected: (Subject) -> Unit,
-    loadingStateManager: LoadingStateManager
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        // 왼쪽: 강의 사이트 필터
-        CompactFilterDropdown(
-            items = Platform.entries,
-            selectedItems = selectedPlatforms,
-            labelMapper = { it.label },
-            placeholderText = "강의 사이트", // 라벨을 placeholder로 표시
-            onItemSelected = { platform ->
-                // 다중 선택 토글 로직
-                if (selectedPlatforms.contains(platform)) {
-                    // 이미 선택된 항목이면 제거
-                    onPlatformSelected(platform)
-                } else {
-                    // 선택되지 않았으면 추가
-                    onPlatformSelected(platform)
-                }
-            },
-            modifier = Modifier.weight(1f)
-        )
-
-        // 오른쪽: 과목 필터
-        CompactFilterDropdown(
-            items = Subject.entries,
-            selectedItems = selectedSubjects,
-            labelMapper = { it.label },
-            placeholderText = "과목", // 라벨을 placeholder로 표시
-            onItemSelected = { subject ->
-                // 다중 선택 토글 로직
-                if (selectedSubjects.contains(subject)) {
-                    // 이미 선택된 항목이면 제거
-                    onSubjectSelected(subject)
-                } else {
-                    // 선택되지 않았으면 추가
-                    onSubjectSelected(subject)
-                }
-            },
-            modifier = Modifier.weight(1f)
-        )
-    }
-
-    // 선택된 항목 태그 표시 (한 줄에 모두 표시)
-    if (selectedPlatforms.isNotEmpty() || selectedSubjects.isNotEmpty()) {
-        LazyRow(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 2.dp),
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            // 플랫폼 태그 표시
-            itemsIndexed(selectedPlatforms) { _, platform ->
-                SuggestionChip(
-                    onClick = { onPlatformSelected(platform) }, // 클릭하면 제거
-                    label = {
-                        Text(
-                            text = platform.label,
-                            fontSize = 12.sp,
-                            style = MaterialTheme.typography.labelSmall
-                        )
-                    },
-                    icon = {
-                        Icon(
-                            imageVector = Icons.Filled.Close,
-                            contentDescription = "Remove",
-                            modifier = Modifier.size(12.dp)
-                        )
-                    },
-                    shape = RoundedCornerShape(6.dp),
-                    border = null,
-                    colors = SuggestionChipDefaults.suggestionChipColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f)
-                    )
-                )
-            }
-
-            // 과목 태그 표시
-            itemsIndexed(selectedSubjects) { _, subject ->
-                SuggestionChip(
-                    onClick = { onSubjectSelected(subject) }, // 클릭하면 제거
-                    label = {
-                        Text(
-                            text = subject.label,
-                            fontSize = 12.sp,
-                            style = MaterialTheme.typography.labelSmall
-                        )
-                    },
-                    icon = {
-                        Icon(
-                            imageVector = Icons.Filled.Close,
-                            contentDescription = "Remove",
-                            modifier = Modifier.size(12.dp)
-                        )
-                    },
-                    shape = RoundedCornerShape(6.dp),
-                    border = null,
-                    colors = SuggestionChipDefaults.suggestionChipColors(
-                        containerColor = subject.bgColor.copy(alpha = 0.7f)
-                    )
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun <T> CompactFilterDropdown(
-    items: List<T>,
-    selectedItems: List<T>,
-    labelMapper: (T) -> String,
-    placeholderText: String,
-    onItemSelected: (T) -> Unit,
-    leadingIcon: @Composable (() -> Unit)? = null,
-    modifier: Modifier = Modifier
-) {
-    var expanded by remember { mutableStateOf(false) }
-
-    Box(modifier = modifier) {
-        OutlinedCard(
-            shape = RoundedCornerShape(6.dp),
-            border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)),
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(32.dp)
-                .clickable(onClick = { expanded = true })
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 6.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                if (leadingIcon != null) {
-                    Box(modifier = Modifier.padding(end = 4.dp)) {
-                        leadingIcon()
-                    }
-                }
-
-                Text(
-                    text = placeholderText,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = if (selectedItems.isEmpty())
-                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                    else
-                        MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f)
-                )
-
-                Icon(
-                    imageVector = if (expanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
-                    contentDescription = if (expanded) "접기" else "펼치기",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(14.dp)
-                )
-            }
-        }
-
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false },
-            modifier = Modifier
-                .width(IntrinsicSize.Min)
-                .heightIn(max = 200.dp)
-                .background(White)
-        ) {
-            items.forEach { item ->
-                val isSelected = selectedItems.contains(item)
-                DropdownMenuItem(
-                    onClick = {
-                        onItemSelected(item)
-                        // 다중 선택 가능하도록 메뉴 유지
-                    },
-                    text = {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = labelMapper(item),
-                                style = MaterialTheme.typography.bodySmall,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.weight(1f)
-                            )
-
-                            if (isSelected) {
-                                Icon(
-                                    imageVector = Icons.Filled.Check,
-                                    contentDescription = "Selected",
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(14.dp)
-                                )
-                            }
-                        }
-                    }
-                )
-            }
-        }
-    }
-}
-
 @SuppressLint("RememberReturnType")
 @Composable
 fun SearchScreen(
@@ -724,6 +511,164 @@ fun SearchScreen(
     }
 }
 
+@Composable
+fun LectureFilterBarDropdown(
+    selectedPlatforms: List<Platform>,
+    onPlatformSelected: (Platform) -> Unit,
+    selectedSubjects: List<Subject>,
+    onSubjectSelected: (Subject) -> Unit,
+    loadingStateManager: LoadingStateManager
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        // 왼쪽: 강의 사이트 필터 - 선택된 항목을 드롭다운에 표시
+        CompactFilterDropdown(
+            items = Platform.entries,
+            selectedItems = selectedPlatforms,
+            labelMapper = { it.label },
+            // 선택된 플랫폼이 있으면 해당 라벨 표시, 없으면 기본 텍스트 표시
+            placeholderText = if (selectedPlatforms.isNotEmpty()) selectedPlatforms.first().label else "강의 사이트",
+            onItemSelected = { platform ->
+                // 다중 선택 토글 로직
+                if (selectedPlatforms.contains(platform)) {
+                    // 이미 선택된 항목이면 제거
+                    onPlatformSelected(platform)
+                } else {
+                    // 선택되지 않았으면 추가
+                    onPlatformSelected(platform)
+                }
+            },
+            modifier = Modifier.weight(1f)
+        )
+
+        // 오른쪽: 과목 필터 - 선택된 항목을 드롭다운에 표시
+        CompactFilterDropdown(
+            items = Subject.entries,
+            selectedItems = selectedSubjects,
+            labelMapper = { it.label },
+            // 선택된 과목이 있으면 해당 라벨 표시, 없으면 기본 텍스트 표시
+            placeholderText = if (selectedSubjects.isNotEmpty()) selectedSubjects.first().label else "과목",
+            onItemSelected = { subject ->
+                // 다중 선택 토글 로직
+                if (selectedSubjects.contains(subject)) {
+                    // 이미 선택된 항목이면 제거
+                    onSubjectSelected(subject)
+                } else {
+                    // 선택되지 않았으면 추가
+                    onSubjectSelected(subject)
+                }
+            },
+            modifier = Modifier.weight(1f)
+        )
+    }
+}
+
+@Composable
+fun <T> CompactFilterDropdown(
+    items: List<T>,
+    selectedItems: List<T>,
+    labelMapper: (T) -> String,
+    placeholderText: String,
+    onItemSelected: (T) -> Unit,
+    leadingIcon: @Composable (() -> Unit)? = null,
+    modifier: Modifier = Modifier
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Box(modifier = modifier) {
+        OutlinedCard(
+            shape = RoundedCornerShape(6.dp),
+            border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(32.dp)
+                .clickable(onClick = { expanded = true })
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 6.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (leadingIcon != null) {
+                    Box(modifier = Modifier.padding(end = 4.dp)) {
+                        leadingIcon()
+                    }
+                }
+
+                Text(
+                    text = placeholderText,
+                    style = MaterialTheme.typography.bodySmall,
+                    // 선택 여부에 따른 텍스트 색상 변경
+                    color = if (selectedItems.isEmpty())
+                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                    else
+                        MaterialTheme.colorScheme.primary,
+                    fontWeight = if (selectedItems.isEmpty()) FontWeight.Normal else FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
+                )
+
+                Icon(
+                    imageVector = if (expanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
+                    contentDescription = if (expanded) "접기" else "펼치기",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(14.dp)
+                )
+            }
+        }
+
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            modifier = Modifier
+                .width(IntrinsicSize.Min)
+                .heightIn(max = 200.dp)
+                .background(White)
+        ) {
+            items.forEach { item ->
+                val isSelected = selectedItems.contains(item)
+                DropdownMenuItem(
+                    onClick = {
+                        onItemSelected(item)
+                        // 선택 후 드롭다운 닫기 (단일 선택 경우)
+                        if (!isSelected) {
+                            expanded = false
+                        }
+                    },
+                    text = {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = labelMapper(item),
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.weight(1f)
+                            )
+
+                            if (isSelected) {
+                                Icon(
+                                    imageVector = Icons.Filled.Check,
+                                    contentDescription = "Selected",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                            }
+                        }
+                    }
+                )
+            }
+        }
+    }
+}
+
 // 필터링된 강의 로드 함수 - 단일 플랫폼 및 단일 과목 지원
 fun loadFilteredLectures(
     isSearchMode: Boolean,
@@ -735,85 +680,89 @@ fun loadFilteredLectures(
     cursorCreatedAt: String,
     offset: String
 ) {
-    // 선택된 플랫폼 및 과목이 모두 있는 경우 - 각 조합에 대해 별도 호출
-    if (selectedPlatforms.isNotEmpty() && selectedSubjects.isNotEmpty()) {
-        // 첫 번째 플랫폼과 첫 번째 과목 조합으로 호출
-        val platform = selectedPlatforms[0]
-        val subject = selectedSubjects[0]
+    try {
+        // 선택된 플랫폼 및 과목이 모두 있는 경우
+        if (selectedPlatforms.isNotEmpty() && selectedSubjects.isNotEmpty()) {
+            // 첫 번째 플랫폼과 첫 번째 과목 조합으로 호출
+            val platform = selectedPlatforms[0]
+            val subject = selectedSubjects[0]
 
-        Log.d("SearchScreen", "플랫폼과 과목 조합 호출: ${platform.name}, ${subject.name}")
+            Log.d("SearchScreen", "플랫폼과 과목 조합 호출: ${platform.name}, ${subject.name}")
 
-        val dto = LectureDto(
-            search = searchQuery,
-            cursorLectureId = cursorLectureId,
-            cursorCreatedAt = cursorCreatedAt,
-            offset = offset,
-            platform = platform,
-            subject = subject
-        )
+            val dto = LectureDto(
+                search = searchQuery,
+                cursorLectureId = cursorLectureId,
+                cursorCreatedAt = cursorCreatedAt,
+                offset = offset,
+                platform = platform,  // 객체 대신 name 문자열 전달
+                subject = subject    // 객체 대신 name 문자열 전달
+            )
 
-        if (isSearchMode) {
-            lectureViewModel.getDistinctLecture(dto)
-        } else {
-            lectureViewModel.getAllLecture(dto)
+            if (isSearchMode) {
+                lectureViewModel.getDistinctLecture(dto)
+            } else {
+                lectureViewModel.getAllLecture(dto)
+            }
         }
-    }
-    // 플랫폼만 선택된 경우
-    else if (selectedPlatforms.isNotEmpty()) {
-        val platform = selectedPlatforms[0]
+        // 플랫폼만 선택된 경우
+        else if (selectedPlatforms.isNotEmpty()) {
+            val platform = selectedPlatforms[0]
 
-        Log.d("SearchScreen", "플랫폼만 호출: ${platform.name}")
+            Log.d("SearchScreen", "플랫폼만 호출: ${platform.name}")
 
-        val dto = LectureDto(
-            search = searchQuery,
-            cursorLectureId = cursorLectureId,
-            cursorCreatedAt = cursorCreatedAt,
-            offset = offset,
-            platform = platform
-        )
+            val dto = LectureDto(
+                search = searchQuery,
+                cursorLectureId = cursorLectureId,
+                cursorCreatedAt = cursorCreatedAt,
+                offset = offset,
+                platform = platform // 객체 대신 name 문자열 전달
+            )
 
-        if (isSearchMode) {
-            lectureViewModel.getDistinctLecture(dto)
-        } else {
-            lectureViewModel.getAllLecture(dto)
+            if (isSearchMode) {
+                lectureViewModel.getDistinctLecture(dto)
+            } else {
+                lectureViewModel.getAllLecture(dto)
+            }
         }
-    }
-    // 과목만 선택된 경우
-    else if (selectedSubjects.isNotEmpty()) {
-        val subject = selectedSubjects[0]
+        // 과목만 선택된 경우
+        else if (selectedSubjects.isNotEmpty()) {
+            val subject = selectedSubjects[0]
 
-        Log.d("SearchScreen", "과목만 호출: ${subject.name}")
+            Log.d("SearchScreen", "과목만 호출: ${subject.name}")
 
-        val dto = LectureDto(
-            search = searchQuery,
-            cursorLectureId = cursorLectureId,
-            cursorCreatedAt = cursorCreatedAt,
-            offset = offset,
-            subject = subject
-        )
+            val dto = LectureDto(
+                search = searchQuery,
+                cursorLectureId = cursorLectureId,
+                cursorCreatedAt = cursorCreatedAt,
+                offset = offset,
+                subject = subject
+            )
 
-        if (isSearchMode) {
-            lectureViewModel.getDistinctLecture(dto)
-        } else {
-            lectureViewModel.getAllLecture(dto)
+            if (isSearchMode) {
+                lectureViewModel.getDistinctLecture(dto)
+            } else {
+                lectureViewModel.getAllLecture(dto)
+            }
         }
-    }
-    // 필터가 없는 경우
-    else {
-        Log.d("SearchScreen", "필터 없음 호출")
+        // 필터가 없는 경우
+        else {
+            Log.d("SearchScreen", "필터 없음 호출")
 
-        val dto = LectureDto(
-            search = searchQuery,
-            cursorLectureId = cursorLectureId,
-            cursorCreatedAt = cursorCreatedAt,
-            offset = offset
-        )
+            val dto = LectureDto(
+                search = searchQuery,
+                cursorLectureId = cursorLectureId,
+                cursorCreatedAt = cursorCreatedAt,
+                offset = offset
+            )
 
-        if (isSearchMode) {
-            lectureViewModel.getDistinctLecture(dto)
-        } else {
-            lectureViewModel.getAllLecture(dto)
+            if (isSearchMode) {
+                lectureViewModel.getDistinctLecture(dto)
+            } else {
+                lectureViewModel.getAllLecture(dto)
+            }
         }
+    } catch (e: Exception) {
+        Log.e("SearchScreen", "필터 적용 중 오류 발생: ${e.message}", e)
     }
 }
 
