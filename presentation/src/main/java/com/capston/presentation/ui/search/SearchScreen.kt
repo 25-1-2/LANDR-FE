@@ -333,7 +333,8 @@ fun SearchScreen(
 
     // 전체 목록 처리
     LaunchedEffect(allLectureResponse) {
-        if (!isSearching && allLectureResponse.isNotEmpty()) {
+        // 모든 경우에 응답을 처리하도록 조건 수정
+        if (allLectureResponse.isNotEmpty()) {
             Log.d("SearchScreen", "전체 목록 응답 변경 감지: ${allLectureResponse.size}개 항목")
             // 전체 목록 처리 로직
             val newItems = allLectureResponse.map { lecture ->
@@ -388,20 +389,39 @@ fun SearchScreen(
             onQueryChanged = { searchQuery = it },
             lectureViewModel = lectureViewModel,
             onSearchClick = {
-                if (searchQuery.isNotBlank()) {
-                    Log.d("SearchScreen", "검색 버튼 클릭: 검색어='$searchQuery', 검색 모드 전=${isSearching}")
+                // 이전에는 검색어가 비어있을 때 아무것도 하지 않았지만,
+                // 이제는 검색어가 비어있어도 전체 강의 목록을 보여줍니다.
+                Log.d("SearchScreen", "검색 버튼 클릭: 검색어='$searchQuery'")
 
-                    // 검색 모드 설정
+                // 로딩 상태 설정
+                isLoading = true
+
+                // 페이지네이션 초기화
+                allItems = emptyList()
+                cursorLectureId = ""
+                cursorCreatedAt = ""
+                hasMoreData = true
+
+                if (searchQuery.isBlank()) {
+                    // 검색어가 비어있으면 검색 모드 해제
+                    isSearching = false
+                    Log.d("SearchScreen", "빈 검색어 감지: 전체 목록 표시 모드로 전환")
+
+                    // 전체 목록 API 호출
+                    val dto = LectureDto(
+                        search = "",
+                        cursorLectureId = "",
+                        cursorCreatedAt = "",
+                        offset = offset,
+                        platform = selectedPlatform,  // 수정된 변수 사용
+                        subject = selectedSubject     // 수정된 변수 사용
+                    )
+
+                    lectureViewModel.getAllLecture(dto)
+                } else {
+                    // 검색어가 있으면 검색 모드 설정
                     isSearching = true
-                    isLoading = true
-
-                    Log.d("SearchScreen", "검색 모드 설정: 검색 모드 후=${isSearching}")
-
-                    // Reset pagination
-                    allItems = emptyList()
-                    cursorLectureId = ""
-                    cursorCreatedAt = ""
-                    hasMoreData = true
+                    Log.d("SearchScreen", "검색 모드 설정: 검색어='$searchQuery'")
 
                     // 검색 API 호출
                     val dto = LectureDto(
@@ -409,11 +429,11 @@ fun SearchScreen(
                         cursorLectureId = "",
                         cursorCreatedAt = "",
                         offset = offset,
-                        platform = selectedPlatform,  // Use directly
-                        subject = selectedSubject     // Use directly
+                        platform = selectedPlatform,  // 수정된 변수 사용
+                        subject = selectedSubject     // 수정된 변수 사용
                     )
 
-                    Log.d("SearchScreen", "검색 API 호출 요청: search=${dto.search}, platform=${dto.platform?.label ?: "없음"}, subject=${dto.subject?.label ?: "없음"}")
+                    Log.d("SearchScreen", "검색 API 호출: search='${dto.search}', platform=${dto.platform?.label ?: "없음"}, subject=${dto.subject?.label ?: "없음"}")
                     lectureViewModel.getDistinctLecture(dto)
                 }
             }
@@ -464,7 +484,8 @@ fun SearchScreen(
                     Log.d("SearchScreen", "추가 데이터 로드 무시: hasMore=$hasMoreData, isLoading=$isLoading, isLoadingMore=$isLoadingMore")
                 }
             },
-            loadingStateManager = loadingStateManager
+            loadingStateManager = loadingStateManager,
+            isSearching = isSearching
         )
     }
 }
@@ -676,7 +697,8 @@ fun SimplifiedInfiniteScrollList(
     isLoading: Boolean,
     isLoadingMore: Boolean,
     onLoadMore: () -> Unit,
-    loadingStateManager: LoadingStateManager
+    loadingStateManager: LoadingStateManager,
+    isSearching: Boolean
 ) {
     val listState = rememberLazyListState()
 
@@ -697,7 +719,15 @@ fun SimplifiedInfiniteScrollList(
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        if (lectureItems.isEmpty() && !isLoading) {
+        if (isLoading) {
+            // 로딩 중일 때 로딩 인디케이터 표시
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                LoadingIndicator(loadingStateManager)
+            }
+        } else if (lectureItems.isEmpty()) {
             // 검색 결과가 없을 때 메시지 표시
             Column(
                 modifier = Modifier
@@ -708,12 +738,12 @@ fun SimplifiedInfiniteScrollList(
             ) {
                 Image(
                     painter = painterResource(R.drawable.screen_search_empty_iv),
-                    contentDescription = "과목명",
+                    contentDescription = "검색 결과 없음",
                     modifier = Modifier.size(80.dp)
                 )
                 Spacer(modifier = Modifier.padding(5.dp))
                 Text(
-                    text = if (searchQuery.isBlank()) "강의 목록이 비어 있습니다." else "검색 결과가 없습니다.",
+                    text = if (isSearching) "검색 결과가 없습니다." else "강의 목록이 비어 있습니다.",
                     fontSize = 18.sp,
                     color = materialGray,
                     textAlign = TextAlign.Center
@@ -738,7 +768,8 @@ fun SimplifiedInfiniteScrollList(
                             // Store the selected lecture before navigating
                             lectureViewModel.selectLecture(item)
                             // Navigate with lecture ID instead of title
-                            navController.navigate("${Screen.Plan.title}/${item.id}")                        }
+                            navController.navigate("${Screen.Plan.title}/${item.id}")
+                        }
                     )
                 }
 
