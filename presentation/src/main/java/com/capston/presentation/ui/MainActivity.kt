@@ -251,7 +251,7 @@ fun SearchFieldWithIcons(
                 }
             }
 
-            IconButton(onClick = onSearchClick, modifier = Modifier.size(24.dp)) {
+            IconButton(onClick = { onSearchClick() }, modifier = Modifier.size(24.dp)) {
                 Icon(imageVector = Icons.Default.Search, contentDescription = "검색", tint = Color.Gray)
             }
         }

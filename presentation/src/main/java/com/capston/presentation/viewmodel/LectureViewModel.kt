@@ -59,12 +59,15 @@ class LectureViewModel @Inject constructor(
         viewModelScope.launch {
             loadingStateManager.show()
             try {
-                Log.d("LectureViewModel", "강의 검색 API 호출: search=${lectureDto.search}, cursor=${lectureDto.cursorLectureId}")
+                // 로그 함수 호출 추가
+                logLectureDtoParameters(lectureDto, "검색")
 
                 getDistinctLectureUseCase(lectureDto).collect { response ->
                     Log.d("LectureViewModel", "API 응답: ${response.data?.size ?: 0}개 항목")
                     if (response.data?.isNotEmpty() == true) {
                         Log.d("LectureViewModel", "첫 번째 항목: ${response.data?.first()?.title}")
+                    } else {
+                        Log.d("LectureViewModel", "응답에 항목이 없습니다. 검색어: '${lectureDto.search}'")
                     }
                     _distinctLecture.value = response
                 }
@@ -76,23 +79,13 @@ class LectureViewModel @Inject constructor(
         }
     }
 
-    // 기본 파라미터만 받는 함수 (기존 코드와의 호환성 유지)
-    fun getAllLecture() {
-        val lectureDto = LectureDto(
-            search = "",
-            cursorLectureId = "",
-            cursorCreatedAt = "",
-            offset = "10"
-        )
-        getAllLecture(lectureDto)
-    }
-
     // LectureDto를 직접 받는 함수
     fun getAllLecture(lectureDto: LectureDto) {
         viewModelScope.launch {
             loadingStateManager.show()
             try {
-                Log.d("LectureViewModel", "강의 목록 조회 API 호출: cursor=${lectureDto.cursorLectureId}")
+                // 로그 함수 호출 추가
+                logLectureDtoParameters(lectureDto, "전체 목록")
 
                 getAllLectureUseCase(lectureDto).collect { response ->
                     val lectures = response.data ?: emptyList()
@@ -153,4 +146,15 @@ class LectureViewModel @Inject constructor(
             }
         }
     }
+}
+
+// API 호출 시 명확한 정보를 로그에 기록하여 문제 추적을 용이하게 함
+fun logLectureDtoParameters(dto: LectureDto, apiName: String) {
+    Log.d("LectureViewModel", "===== $apiName API 호출 =====")
+    Log.d("LectureViewModel", "검색어: '${dto.search}'")
+    Log.d("LectureViewModel", "플랫폼: ${dto.platform?.label ?: "없음"}")
+    Log.d("LectureViewModel", "과목: ${dto.subject?.label ?: "없음"}")
+    Log.d("LectureViewModel", "커서 ID: ${dto.cursorLectureId}")
+    Log.d("LectureViewModel", "커서 생성일: ${dto.cursorCreatedAt ?: "없음"}")
+    Log.d("LectureViewModel", "오프셋: ${dto.offset}")
 }

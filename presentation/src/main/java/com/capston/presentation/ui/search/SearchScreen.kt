@@ -131,8 +131,8 @@ fun SearchScreen(
     var allItems by remember { mutableStateOf<List<LectureItemDto>>(emptyList()) }
 
     // Filter state
-    var selectedPlatforms by remember { mutableStateOf<List<Platform>>(emptyList()) }
-    var selectedSubjects by remember { mutableStateOf<List<Subject>>(emptyList()) }
+    var selectedPlatform by remember { mutableStateOf<Platform?>(null) }
+    var selectedSubject by remember { mutableStateOf<Subject?>(null) }
 
     // 디버깅용 - 현재 로드된 아이템 수 출력
     LaunchedEffect(allItems.size, isLoadingMore) {
@@ -141,8 +141,8 @@ fun SearchScreen(
 
     // 필터가 변경될 때마다 데이터를 새로 로드하기 위한 Effect
     // Modify the LaunchedEffect for filter changes:
-    LaunchedEffect(selectedPlatforms, selectedSubjects) {
-        Log.d("SearchScreen", "필터 변경됨: 플랫폼=${selectedPlatforms.map { it.label }}, 과목=${selectedSubjects.map { it.label }}, 검색모드=$isSearching, 검색어=$searchQuery")
+    LaunchedEffect(selectedPlatform, selectedSubject) {
+        Log.d("SearchScreen", "필터 변경됨: 플랫폼=${selectedPlatform?.label ?: "없음"}, 과목=${selectedSubject?.label ?: "없음"}, 검색모드=$isSearching, 검색어=$searchQuery")
 
         // Reset loading state
         isLoading = true
@@ -153,14 +153,14 @@ fun SearchScreen(
 
         // Critical - NEVER reset isSearching here, preserve the exact search state and query
 
-        // Use current search state without modification
+        // Create DTO with current state - directly use the nullable platform and subject
         val dto = LectureDto(
             search = if (isSearching) searchQuery else "",
             cursorLectureId = "",
             cursorCreatedAt = "",
             offset = offset,
-            platform = selectedPlatforms.firstOrNull(),
-            subject = selectedSubjects.firstOrNull()
+            platform = selectedPlatform,  // Use directly, already nullable
+            subject = selectedSubject     // Use directly, already nullable
         )
 
         // Call appropriate API based on current search mode
@@ -217,7 +217,6 @@ fun SearchScreen(
     // 검색어 변경 시 API 호출
     var searchJob by remember { mutableStateOf<Job?>(null) }
     // 3. Fix search to work properly with filters
-    // Modify searchQuery LaunchedEffect to ensure proper state handling
     LaunchedEffect(searchQuery) {
         searchJob?.cancel()
         searchJob = scope.launch {
@@ -228,6 +227,7 @@ fun SearchScreen(
             if (searchQuery.isBlank()) {
                 // 이전 isSearching 상태 저장
                 val wasSearching = isSearching
+                Log.d("SearchScreen", "빈 검색어 감지: 검색 모드 전환 (이전=$wasSearching -> 이후=false)")
 
                 // 검색모드 해제
                 isSearching = false
@@ -238,28 +238,27 @@ fun SearchScreen(
                     cursorLectureId = "",
                     cursorCreatedAt = "",
                     offset = offset,
-                    platform = selectedPlatforms.firstOrNull(),
-                    subject = selectedSubjects.firstOrNull()
+                    platform = selectedPlatform, // 수정된 변수 사용
+                    subject = selectedSubject    // 수정된 변수 사용
                 )
 
                 lectureViewModel.getAllLecture(dto)
             } else {
                 // 이전 isSearching 상태 저장
                 val wasSearching = isSearching
+                Log.d("SearchScreen", "검색어 감지: 검색 모드 전환 (이전=$wasSearching -> 이후=true)")
 
                 // 검색모드 설정
                 isSearching = true
                 isLoading = true
-
-                Log.d("SearchScreen", "검색모드 설정: 이전=$wasSearching, 현재=$isSearching")
 
                 val dto = LectureDto(
                     search = searchQuery,
                     cursorLectureId = "",
                     cursorCreatedAt = "",
                     offset = offset,
-                    platform = selectedPlatforms.firstOrNull(),
-                    subject = selectedSubjects.firstOrNull()
+                    platform = selectedPlatform, // 수정된 변수 사용
+                    subject = selectedSubject    // 수정된 변수 사용
                 )
 
                 lectureViewModel.getDistinctLecture(dto)
@@ -269,12 +268,14 @@ fun SearchScreen(
 
     // 검색 결과 처리
     LaunchedEffect(searchLectureResponse) {
-        // isSearching 체크 제거하고 로그만 추가
-        Log.d("SearchScreen", "검색 응답 수신: isSearching=$isSearching")
+        // 상태 보존에 관한 명확한 로그 추가
+        val currentSearchMode = isSearching // 현재 검색 모드 저장
+        Log.d("SearchScreen", "검색 응답 수신: isSearching=$currentSearchMode (보존)")
 
         val hasData = searchLectureResponse.data != null && searchLectureResponse.data!!.isNotEmpty()
         Log.d("SearchScreen", "검색 응답 내용: data=${searchLectureResponse.data != null}, 아이템수=${searchLectureResponse.data?.size ?: 0}, nextCursor=${searchLectureResponse.nextCursor}, hasNext=${searchLectureResponse.hasNext}")
 
+        // isSearching 상태를 유지하면서 응답 처리
         val newItems = searchLectureResponse.data?.filterNotNull()?.map { lecture ->
             LectureItemDto(
                 id = lecture.id,
@@ -288,12 +289,12 @@ fun SearchScreen(
             )
         } ?: emptyList()
 
-        Log.d("SearchScreen", "검색 결과 아이템 수: ${newItems.size}")
+        Log.d("SearchScreen", "검색 결과 아이템 수: ${newItems.size}, 검색 모드: $currentSearchMode")
 
         // 첫 페이지인 경우 교체, 아닌 경우 추가
         if (cursorLectureId.isEmpty() || isLoading) {
             allItems = newItems
-            Log.d("SearchScreen", "첫 페이지 로드: ${newItems.size}개 항목")
+            Log.d("SearchScreen", "첫 페이지 로드: ${newItems.size}개 항목, 검색 모드: $currentSearchMode")
         } else if (isLoadingMore) {
             // 중복 방지를 위해 ID 기반으로 필터링
             val existingIds = allItems.map { it.id }.toSet()
@@ -303,28 +304,31 @@ fun SearchScreen(
             allItems = allItems + uniqueNewItems
 
             // 로그 추가
-            Log.d("SearchScreen", "추가 데이터 로드: 기존 ${allItems.size - uniqueNewItems.size}개, 새로 추가 ${uniqueNewItems.size}개, 총 ${allItems.size}개")
+            Log.d("SearchScreen", "추가 데이터 로드: 기존 ${allItems.size - uniqueNewItems.size}개, 새로 추가 ${uniqueNewItems.size}개, 총 ${allItems.size}개, 검색 모드: $currentSearchMode")
         }
 
         // 페이지네이션 정보 업데이트 - API의 hasNext 값을 직접 사용
         hasMoreData = searchLectureResponse.hasNext
-        Log.d("SearchScreen", "다음 페이지 존재 여부: $hasMoreData")
+        Log.d("SearchScreen", "다음 페이지 존재 여부: $hasMoreData, 검색 모드: $currentSearchMode")
 
         // API로부터 온 커서 정보 사용 (null 안전하게)
         if (searchLectureResponse.nextCursor > 0) {
             cursorLectureId = searchLectureResponse.nextCursor.toString()
-            Log.d("SearchScreen", "다음 커서 업데이트: $cursorLectureId")
+            Log.d("SearchScreen", "다음 커서 업데이트: $cursorLectureId, 검색 모드: $currentSearchMode")
         }
 
         // API에서 제공한 생성일자 사용
         val nextCreatedAt = searchLectureResponse.nextCreatedAt
         if (nextCreatedAt != null && nextCreatedAt.isNotEmpty()) {
             cursorCreatedAt = nextCreatedAt
-            Log.d("SearchScreen", "다음 생성일자 업데이트: $cursorCreatedAt")
+            Log.d("SearchScreen", "다음 생성일자 업데이트: $cursorCreatedAt, 검색 모드: $currentSearchMode")
         }
 
         isLoading = false
         isLoadingMore = false
+
+        // isSearching 상태는 여기서 변경하지 않음 - 중요
+        // 이를 통해 이전에 설정된 검색 모드가 유지됨
     }
 
     // 전체 목록 처리
@@ -405,11 +409,11 @@ fun SearchScreen(
                         cursorLectureId = "",
                         cursorCreatedAt = "",
                         offset = offset,
-                        platform = selectedPlatforms.firstOrNull(),
-                        subject = selectedSubjects.firstOrNull()
+                        platform = selectedPlatform,  // Use directly
+                        subject = selectedSubject     // Use directly
                     )
 
-                    Log.d("SearchScreen", "검색 API 호출 요청: search=${dto.search}, platform=${dto.platform?.label}, subject=${dto.subject?.label}")
+                    Log.d("SearchScreen", "검색 API 호출 요청: search=${dto.search}, platform=${dto.platform?.label ?: "없음"}, subject=${dto.subject?.label ?: "없음"}")
                     lectureViewModel.getDistinctLecture(dto)
                 }
             }
@@ -417,26 +421,16 @@ fun SearchScreen(
 
         // 필터 바 컴포넌트
         LectureFilterBarDropdown(
-            selectedPlatforms = selectedPlatforms,
+            selectedPlatform = selectedPlatform,
             onPlatformSelected = { platform ->
-                // 토글 로직: 이미 선택되어 있으면 제거, 없으면 추가
-                selectedPlatforms = if (selectedPlatforms.contains(platform)) {
-                    selectedPlatforms - platform
-                } else {
-                    // 하나만 선택 가능하도록 변경
-                    listOf(platform)
-                }
+                // If selecting the same platform, clear it
+                selectedPlatform = if (selectedPlatform == platform) null else platform
             },
-            selectedSubjects = selectedSubjects,
+            selectedSubject = selectedSubject,
             onSubjectSelected = { subject ->
-                // 토글 로직: 이미 선택되어 있으면 제거, 없으면 추가
-                selectedSubjects = if (selectedSubjects.contains(subject)) {
-                    selectedSubjects - subject
-                } else {
-                    // 하나만 선택 가능하도록 변경
-                    listOf(subject)
-                }
-            },
+                // If selecting the same subject, clear it
+                selectedSubject = if (selectedSubject == subject) null else subject
+            }
         )
 
         // 개선된 무한 스크롤 리스트 구현
@@ -454,39 +448,17 @@ fun SearchScreen(
                         isLoadingMore = true
                         Log.d("SearchScreen", "추가 데이터 로드 요청: cursor=${cursorLectureId}, createdAt=${cursorCreatedAt}")
 
-                        // 스크롤로 추가 데이터 로드 시 필터 적용
-                        if (selectedPlatforms.isNotEmpty() || selectedSubjects.isNotEmpty()) {
-                            loadFilteredLectures(
-                                isSearchMode = isSearching,
-                                lectureViewModel = lectureViewModel,
-                                selectedPlatforms = selectedPlatforms,
-                                selectedSubjects = selectedSubjects,
-                                searchQuery = if (isSearching) searchQuery else "",
-                                cursorLectureId = cursorLectureId,
-                                cursorCreatedAt = cursorCreatedAt,
-                                offset = offset
-                            )
-                        } else {
-                            // 필터 없이 추가 데이터 로드
-                            if (isSearching) {
-                                lectureViewModel.getDistinctLecture(
-                                    LectureDto(
-                                        search = searchQuery,
-                                        cursorLectureId = cursorLectureId,
-                                        cursorCreatedAt = cursorCreatedAt,
-                                        offset = offset
-                                    )
-                                )
-                            } else {
-                                lectureViewModel.getAllLecture(
-                                    LectureDto(
-                                        cursorLectureId = cursorLectureId,
-                                        cursorCreatedAt = cursorCreatedAt,
-                                        offset = offset
-                                    )
-                                )
-                            }
-                        }
+                        // 로드 요청에 현재 필터 상태 포함
+                        loadFilteredLectures(
+                            isSearchMode = isSearching,
+                            lectureViewModel = lectureViewModel,
+                            selectedPlatform = selectedPlatform,  // Pass the nullable platform
+                            selectedSubject = selectedSubject,    // Pass the nullable subject
+                            searchQuery = if (isSearching) searchQuery else "",
+                            cursorLectureId = cursorLectureId,
+                            cursorCreatedAt = cursorCreatedAt,
+                            offset = offset
+                        )
                     }
                 } else {
                     Log.d("SearchScreen", "추가 데이터 로드 무시: hasMore=$hasMoreData, isLoading=$isLoading, isLoadingMore=$isLoadingMore")
@@ -499,9 +471,9 @@ fun SearchScreen(
 
 @Composable
 fun LectureFilterBarDropdown(
-    selectedPlatforms: List<Platform>,
+    selectedPlatform: Platform?,
     onPlatformSelected: (Platform) -> Unit,
-    selectedSubjects: List<Subject>,
+    selectedSubject: Subject?,
     onSubjectSelected: (Subject) -> Unit,
 ) {
     Row(
@@ -511,62 +483,34 @@ fun LectureFilterBarDropdown(
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         // 왼쪽: 강의 사이트 필터
-        CompactFilterDropdown(
+        SingleSelectFilterDropdown(
             items = Platform.entries,
-            selectedItems = selectedPlatforms,
+            selectedItem = selectedPlatform,
             labelMapper = { it.label },
-            placeholderText = if (selectedPlatforms.isNotEmpty()) selectedPlatforms.first().label else "강의 사이트",
-            onItemSelected = { platform ->
-                // 이미 선택된 항목이면 제거, 그렇지 않으면 추가
-                onPlatformSelected(platform)
-            },
-            // 필터 해제 버튼 추가
-            onClearSelection = {
-                // Log filter removal
-                //Log.d("SearchScreen", "플랫폼 필터 제거: 현재 검색모드=$isSearching, 검색어='$searchQuery'")
-
-                // Just clear the selected platform
-                if (selectedPlatforms.isNotEmpty()) {
-                    onPlatformSelected(selectedPlatforms.first())
-                }
-
-            },
+            placeholderText = selectedPlatform?.label ?: "강의 사이트",
+            onItemSelected = onPlatformSelected,
             modifier = Modifier.weight(1f)
         )
 
         // 오른쪽: 과목 필터
-        CompactFilterDropdown(
+        SingleSelectFilterDropdown(
             items = Subject.entries,
-            selectedItems = selectedSubjects,
+            selectedItem = selectedSubject,
             labelMapper = { it.label },
-            placeholderText = if (selectedSubjects.isNotEmpty()) selectedSubjects.first().label else "과목",
-            onItemSelected = { subject ->
-                // 이미 선택된 항목이면 제거, 그렇지 않으면 추가
-                onSubjectSelected(subject)
-            },
-            // 필터 해제 버튼 추가
-            onClearSelection = {
-                // Log filter removal
-                //Log.d("SearchScreen", "과목 필터 제거: 현재 검색모드=$isSearching, 검색어='$searchQuery'")
-
-                // Just clear the selected subject
-                if (selectedSubjects.isNotEmpty()) {
-                    onSubjectSelected(selectedSubjects.first())
-                }
-            },
+            placeholderText = selectedSubject?.label ?: "과목",
+            onItemSelected = onSubjectSelected,
             modifier = Modifier.weight(1f)
         )
     }
 }
 
 @Composable
-fun <T> CompactFilterDropdown(
+fun <T> SingleSelectFilterDropdown(
     items: List<T>,
-    selectedItems: List<T>,
+    selectedItem: T?,
     labelMapper: (T) -> String,
     placeholderText: String,
     onItemSelected: (T) -> Unit,
-    onClearSelection: () -> Unit,
     leadingIcon: @Composable (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
@@ -596,18 +540,18 @@ fun <T> CompactFilterDropdown(
                 Text(
                     text = placeholderText,
                     style = MaterialTheme.typography.bodySmall,
-                    color = if (selectedItems.isEmpty())
+                    color = if (selectedItem == null)
                         MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                     else
                         MaterialTheme.colorScheme.primary,
-                    fontWeight = if (selectedItems.isEmpty()) FontWeight.Normal else FontWeight.Bold,
+                    fontWeight = if (selectedItem == null) FontWeight.Normal else FontWeight.Bold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f)
                 )
 
                 // 선택된 항목이 있으면 닫기 버튼 표시
-                if (selectedItems.isNotEmpty()) {
+                if (selectedItem != null) {
                     Icon(
                         imageVector = Icons.Filled.Close,
                         contentDescription = "필터 해제",
@@ -616,8 +560,8 @@ fun <T> CompactFilterDropdown(
                             .size(14.dp)
                             .clickable(
                                 onClick = {
-                                    // Call the clear selection callback
-                                    onClearSelection()
+                                    // Call the onItemSelected with the current item to toggle it off
+                                    onItemSelected(selectedItem)
                                     // Close the dropdown
                                     expanded = false
                                 }
@@ -644,11 +588,11 @@ fun <T> CompactFilterDropdown(
                 .background(White)
         ) {
             items.forEach { item ->
-                val isSelected = selectedItems.contains(item)
+                val isSelected = selectedItem == item
                 DropdownMenuItem(
                     onClick = {
                         onItemSelected(item)
-                        // Only close if selecting a new item (not toggling an existing one)
+                        // Close the dropdown after selection if not toggling off
                         if (!isSelected) {
                             expanded = false
                         }
@@ -685,8 +629,8 @@ fun <T> CompactFilterDropdown(
 fun loadFilteredLectures(
     isSearchMode: Boolean,
     lectureViewModel: LectureViewModel,
-    selectedPlatforms: List<Platform>,
-    selectedSubjects: List<Subject>,
+    selectedPlatform: Platform?,
+    selectedSubject: Subject?,
     searchQuery: String,
     cursorLectureId: String,
     cursorCreatedAt: String,
@@ -694,7 +638,7 @@ fun loadFilteredLectures(
 ) {
     try {
         // Enhanced logging for debugging
-        Log.d("SearchScreen", "로드 요청: 모드=${if(isSearchMode) "검색" else "전체목록"}, 검색어='$searchQuery', 필터=${selectedPlatforms.size}개 플랫폼, ${selectedSubjects.size}개 과목")
+        Log.d("SearchScreen", "로드 요청: 모드=${if(isSearchMode) "검색" else "전체목록"}, 검색어='$searchQuery', 플랫폼=${selectedPlatform?.label ?: "없음"}, 과목=${selectedSubject?.label ?: "없음"}")
 
         // Create DTO with current state
         val dto = LectureDto(
@@ -702,9 +646,12 @@ fun loadFilteredLectures(
             cursorLectureId = cursorLectureId,
             cursorCreatedAt = cursorCreatedAt,
             offset = offset,
-            platform = selectedPlatforms.firstOrNull(),
-            subject = selectedSubjects.firstOrNull()
+            platform = selectedPlatform,  // Pass directly as nullable
+            subject = selectedSubject     // Pass directly as nullable
         )
+
+        // Log the exact parameters being sent
+        Log.d("SearchScreen", "API 요청 파라미터: search='${dto.search}', platform=${dto.platform?.label ?: "null"}, subject=${dto.subject?.label ?: "null"}, cursor=${dto.cursorLectureId}, createdAt=${dto.cursorCreatedAt}")
 
         // Use search mode to determine API
         if (isSearchMode) {
