@@ -106,7 +106,9 @@ import java.time.temporal.ChronoUnit
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.text.SpanStyle
@@ -118,6 +120,7 @@ import com.capston.domain.request.UpdateDDayRequest
 import com.capston.domain.response.enum_class.DayOfWeek
 import com.capston.domain.response.home.DistinctHomeIdResponse
 import com.capston.domain.response.plan.LectureAliasResponse
+import com.capston.presentation.theme.LightGray2
 import com.capston.presentation.theme.LightGray5
 import com.capston.presentation.theme.WarmPurple
 import com.capston.presentation.ui.common.CustomCheckBox
@@ -220,9 +223,13 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel, navCo
     // 이번주 학습 성취율 섹션 확장/축소 상태
     var isWeeklyExpanded by remember { mutableStateOf(true) }
 
-    Scaffold(modifier = Modifier.fillMaxSize()) {
+    Scaffold(
+        topBar = { HomeTopBar(hasUnreadNotifications = true) },
+        modifier = Modifier.fillMaxSize()
+    ) { innerPadding ->
         Column(
             modifier = Modifier
+                .padding(innerPadding)
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
         ) {
@@ -340,6 +347,57 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel, navCo
             showDeleteCompleteDialog = false
         }
     )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun HomeTopBar(hasUnreadNotifications: Boolean) {
+    Column {
+        TopAppBar(
+            modifier = Modifier
+                .padding(10.dp)
+                .height(80.dp),
+            title = {
+                // 앱 이름
+                Icon(
+                    painter = painterResource(id = R.drawable.landr_title_iv),
+                    contentDescription = "앱 이름",
+                    modifier = Modifier.size(70.dp),
+                    tint = Color.Unspecified
+                )
+            },
+            navigationIcon = {
+                Icon(
+                    painter = painterResource(R.drawable.ic_launcher),
+                    contentDescription = "앱 로고",
+                    modifier = Modifier
+                        .height(50.dp),
+                    tint = Color.Unspecified
+                )
+            },
+            actions = {
+                // 읽지 않은 알람이 있을 경우 빨간색 배지 표시
+                if (hasUnreadNotifications) {
+                    IconButton(onClick = { /* 알람 클릭 */ }) {
+                        Image(
+                            painter = painterResource(R.drawable.icon_notification_on),
+                            contentDescription = "alarm icon",
+                        )
+                    }
+                }
+
+                else {
+                    IconButton(onClick = { /* 알람 클릭 */ }) {
+                        Image(
+                            painter = painterResource(R.drawable.home_screen_notification_iv),
+                            contentDescription = "alarm icon",
+                        )
+                    }
+                }
+            }
+        )
+        HorizontalDivider(thickness = 1.dp, color = LightGray2)
+    }
 }
 
 // ProfileScreen에서 가져온 이번주 학습 성취율 관련 컴포넌트들
