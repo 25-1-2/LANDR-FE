@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -72,19 +74,6 @@ fun LectureRoomScreen(
                 HorizontalDivider()
             }
         }
-//        Column(
-//            modifier = Modifier
-//                .fillMaxSize()
-//                .padding(innerPadding)
-//                .padding(16.dp)
-//        ) {
-//            LazyColumn {
-//                items(lectures) { lecture ->
-//                    LectureItem(lecture) { onPlanClick?.invoke(lecture) }
-//                    HorizontalDivider()
-//                }
-//            }
-//        }
     }
 }
 
@@ -93,39 +82,31 @@ fun LectureRoomScreen(
 fun LectureRoomTopBar(hasUnreadNotifications: Boolean) {
     Column {
         TopAppBar(
-            title = {},
-            modifier = Modifier
-                .padding(10.dp)
-                .clip(RoundedCornerShape(20.dp))
-                .height(80.dp),
+            title = {
+//                Text(
+//                    text = "나의 강의실",
+//                    style = MaterialTheme.typography.titleLarge,
+//                    maxLines = 1,
+//                    overflow = TextOverflow.Ellipsis     // 길어질 때 … 처리
+//                )
+
+                // 앱 이름
+                Icon(
+                    painter = painterResource(id = R.drawable.landr_title_iv),
+                    contentDescription = "앱 이름",
+                    modifier = Modifier.size(70.dp),
+                    tint = Color.Unspecified
+                )
+            },
             navigationIcon = {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    // 앱 로고
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_launcher),
-                        contentDescription = "앱 로고",
-                        modifier = Modifier.size(50.dp),
-                        tint = Color.Unspecified
-                    )
-
-                    // 간격 추가
-                    Spacer(modifier = Modifier.width(5.dp))
-
-
-                    Text(
-                        text = "나의 강의실",
-                        style = Typography.headlineMedium,
-                    )
-                    // 앱 이름
-//                    Icon(
-//                        painter = painterResource(id = R.drawable.landr_title_iv),
-//                        contentDescription = "앱 이름",
-//                        modifier = Modifier.size(70.dp),
-//                        tint = Color.Unspecified
-//                    )
-                }
+                Icon(
+                    painter = painterResource(R.drawable.ic_launcher),
+                    contentDescription = "앱 로고",
+                    modifier = Modifier
+                        .height(50.dp)
+                        .padding(start = 8.dp), // 바 내부 기본 여백만큼
+                    tint = Color.Unspecified
+                )
             },
             actions = {
                 // 읽지 않은 알람이 있을 경우 빨간색 배지 표시
@@ -146,26 +127,6 @@ fun LectureRoomTopBar(hasUnreadNotifications: Boolean) {
                         )
                     }
                 }
-//                Box(contentAlignment = Alignment.TopEnd) {
-//                    IconButton(onClick = { /* 알람 클릭 */ }) {
-//                        Icon(
-//                            painter = painterResource(R.drawable.home_screen_notification_iv),
-//                            contentDescription = "alarm icon",
-//                        )
-//                    }
-//
-//                    // 읽지 않은 알람이 있을 경우 빨간색 배지 표시
-//                    if (hasUnreadNotifications) {
-//                        Box(
-//                            modifier = Modifier
-//                                .size(10.dp)
-//                                .align(Alignment.TopEnd)
-//                                .offset(x = (-12).dp, y = (10).dp) // 위치 조정
-//                                .background(Color.Red, shape = CircleShape)
-//                                .border(1.dp, Color.White, CircleShape)
-//                        )
-//                    }
-//                }
             }
         )
         HorizontalDivider(thickness = 1.dp, color = LightGray2)
