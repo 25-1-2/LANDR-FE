@@ -45,6 +45,7 @@ import androidx.compose.ui.unit.sp
 import com.capston.domain.response.enum_class.DayOfWeek
 import com.capston.domain.response.home.LessonScheduleResponse
 import com.capston.presentation.R
+import com.capston.presentation.theme.LightGray2
 import com.capston.presentation.theme.LightGray40
 import com.capston.presentation.theme.LightGray60
 import com.capston.presentation.theme.MainPurple
@@ -125,11 +126,13 @@ fun CalenderScreen(homeViewModel: HomeViewModel, dailyScheduleViewModel: DailySc
     }
 
     Scaffold(
+        topBar = { CalendarTopBar(hasUnreadNotifications = true) },
         modifier = Modifier.fillMaxSize()
-    ) {
+    ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .padding(innerPadding)
                 .padding(top = 16.dp, start = 20.dp, end = 20.dp) // 상단 + 좌우 패딩 추가
                 .nestedScroll(nestedScrollConnection)
                 .pointerInput(Unit) {
@@ -226,6 +229,57 @@ fun CalenderScreen(homeViewModel: HomeViewModel, dailyScheduleViewModel: DailySc
                 )
             }
         }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CalendarTopBar(hasUnreadNotifications: Boolean) {
+    Column {
+        TopAppBar(
+            modifier = Modifier
+                .padding(10.dp)
+                .height(80.dp),
+            title = {
+                // 앱 이름
+                Icon(
+                    painter = painterResource(id = R.drawable.landr_title_iv),
+                    contentDescription = "앱 이름",
+                    modifier = Modifier.size(70.dp),
+                    tint = Color.Unspecified
+                )
+            },
+            navigationIcon = {
+                Icon(
+                    painter = painterResource(R.drawable.ic_launcher),
+                    contentDescription = "앱 로고",
+                    modifier = Modifier
+                        .height(50.dp),
+                    tint = Color.Unspecified
+                )
+            },
+            actions = {
+                // 읽지 않은 알람이 있을 경우 빨간색 배지 표시
+                if (hasUnreadNotifications) {
+                    IconButton(onClick = { /* 알람 클릭 */ }) {
+                        Image(
+                            painter = painterResource(R.drawable.icon_notification_on),
+                            contentDescription = "alarm icon",
+                        )
+                    }
+                }
+
+                else {
+                    IconButton(onClick = { /* 알람 클릭 */ }) {
+                        Image(
+                            painter = painterResource(R.drawable.home_screen_notification_iv),
+                            contentDescription = "alarm icon",
+                        )
+                    }
+                }
+            }
+        )
+        HorizontalDivider(thickness = 1.dp, color = LightGray2)
     }
 }
 
