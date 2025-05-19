@@ -2,13 +2,19 @@ package com.capston.presentation.ui.home
 
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -17,10 +23,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.capston.presentation.R
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import com.capston.domain.model.LessonSchedule
 import com.capston.domain.response.plan.GetPlanDetailResponse
+import com.capston.presentation.theme.LightGray2
 import com.capston.presentation.ui.common.CustomCheckBox
 import com.capston.presentation.viewmodel.HomeViewModel
 import com.capston.presentation.viewmodel.LectureRoomViewModel
@@ -40,27 +49,61 @@ fun formatDate(dateString: String): String {
 @Composable
 fun PlanDetailScreen(
     planId: Int,
-    lectureRoomViewModel: LectureRoomViewModel
+    lectureRoomViewModel: LectureRoomViewModel,
+    navController: NavController,
 ) {
     val planDetailResponse by lectureRoomViewModel.getPlanDetail.collectAsState()
     lectureRoomViewModel.getPlanDetail(planId)
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 16.dp)
-            .verticalScroll(rememberScrollState())
-    ) {
-        TitleSection(planDetailResponse = planDetailResponse)
+    Scaffold(
+        topBar = { PlanDetailTopBar(navController = navController) }
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(horizontal = 16.dp)
+                .verticalScroll(rememberScrollState())
+        ) {
+            TitleSection(planDetailResponse = planDetailResponse)
 
-        // 날짜별 섹션
-        planDetailResponse.dailySchedules.forEach { schedule ->
-            OneDaySection(
-                date = schedule.date,
-                lessonSchedules = schedule.lessonSchedules,
-                lectureRoomViewModel = lectureRoomViewModel
-            )
+            // 날짜별 섹션
+            planDetailResponse.dailySchedules.forEach { schedule ->
+                OneDaySection(
+                    date = schedule.date,
+                    lessonSchedules = schedule.lessonSchedules,
+                    lectureRoomViewModel = lectureRoomViewModel
+                )
+            }
         }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PlanDetailTopBar(navController: NavController) {
+    Column {
+        TopAppBar(
+            title = {},
+            navigationIcon = {
+                IconButton(onClick = {
+                    navController.popBackStack()
+                }) {
+                    Image(
+                        painter = painterResource(id = R.drawable.icon_arrow_back),
+                        contentDescription = "뒤로 가기")
+                }
+            },
+            actions = {
+                IconButton(onClick = { /* 알람 클릭 */ }) {
+                    Image(
+                        painter = painterResource(R.drawable.icon_more_horizontal),
+                        contentDescription = "alarm icon",
+                    )
+                }
+            }
+        )
+        HorizontalDivider(thickness = 1.dp, color = LightGray2)
     }
 }
 

@@ -175,6 +175,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     fun startSearchActivity() {
         val intent = Intent(this, SearchActivity::class.java)
         startSearchForResult.launch(intent)
@@ -273,9 +274,9 @@ fun SettingTopBottomBar(
     val mainActivity = LocalActivity.current as MainActivity
 
     Scaffold(
-        topBar = {
-            TopBar(true)
-        },
+//        topBar = {
+//            TopBar(true)
+//        },
         bottomBar = {
             BottomBar(
                 navController = navController,
@@ -316,7 +317,8 @@ fun SettingTopBottomBar(
                     val planDetailResponse = GetPlanDetailResponse()
                     PlanDetailScreen(
                         planId = planId,
-                        lectureRoomViewModel = lectureRoomViewModel
+                        lectureRoomViewModel = lectureRoomViewModel,
+                        navController = navController
                     )
                 }
                 composable(Screen.Profile.title) { ProfileScreen(loginViewModel = loginViewModel, myPageViewModel = myPageViewModel) }
