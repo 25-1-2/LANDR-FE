@@ -34,8 +34,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -43,6 +46,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -92,6 +96,7 @@ import com.capston.presentation.R
 import com.capston.presentation.theme.CoolGray
 import com.capston.presentation.theme.DustyRose
 import com.capston.presentation.theme.LavenderGray
+import com.capston.presentation.theme.LightGray2
 import com.capston.presentation.theme.LightGray5
 import com.capston.presentation.theme.LightGray60
 import com.capston.presentation.theme.LightPurple
@@ -189,11 +194,13 @@ fun ProfileScreen(loginViewModel: LoginViewModel, myPageViewModel: MyPageViewMod
     }
 
     Scaffold(
+        topBar = { MyPageTopBar(hasUnreadNotifications = true) },
         modifier = Modifier.fillMaxSize()
-    ) {
+    ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .padding(innerPadding)
                 .verticalScroll(rememberScrollState()), // 전체 화면 사용
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -485,6 +492,57 @@ fun ProfileScreen(loginViewModel: LoginViewModel, myPageViewModel: MyPageViewMod
                     .padding(16.dp)
             )
         }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun MyPageTopBar(hasUnreadNotifications: Boolean) {
+    Column {
+        TopAppBar(
+            modifier = Modifier
+                .padding(10.dp)
+                .height(80.dp),
+            title = {
+                // 앱 이름
+                Icon(
+                    painter = painterResource(id = R.drawable.landr_title_iv),
+                    contentDescription = "앱 이름",
+                    modifier = Modifier.size(70.dp),
+                    tint = Color.Unspecified
+                )
+            },
+            navigationIcon = {
+                Icon(
+                    painter = painterResource(R.drawable.ic_launcher),
+                    contentDescription = "앱 로고",
+                    modifier = Modifier
+                        .height(50.dp),
+                    tint = Color.Unspecified
+                )
+            },
+            actions = {
+                // 읽지 않은 알람이 있을 경우 빨간색 배지 표시
+                if (hasUnreadNotifications) {
+                    IconButton(onClick = { /* 알람 클릭 */ }) {
+                        Image(
+                            painter = painterResource(R.drawable.icon_notification_on),
+                            contentDescription = "alarm icon",
+                        )
+                    }
+                }
+
+                else {
+                    IconButton(onClick = { /* 알람 클릭 */ }) {
+                        Image(
+                            painter = painterResource(R.drawable.home_screen_notification_iv),
+                            contentDescription = "alarm icon",
+                        )
+                    }
+                }
+            }
+        )
+        HorizontalDivider(thickness = 1.dp, color = LightGray2)
     }
 }
 
