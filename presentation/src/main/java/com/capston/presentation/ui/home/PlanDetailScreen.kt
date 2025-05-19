@@ -3,9 +3,11 @@ package com.capston.presentation.ui.home
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -18,6 +20,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -30,6 +33,8 @@ import androidx.navigation.NavController
 import com.capston.domain.model.LessonSchedule
 import com.capston.domain.response.plan.GetPlanDetailResponse
 import com.capston.presentation.theme.LightGray2
+import com.capston.presentation.theme.backgroundGray
+import com.capston.presentation.theme.materialGray
 import com.capston.presentation.ui.common.CustomCheckBox
 import com.capston.presentation.viewmodel.HomeViewModel
 import com.capston.presentation.viewmodel.LectureRoomViewModel
@@ -62,7 +67,7 @@ fun PlanDetailScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(horizontal = 16.dp)
+                .padding(horizontal = 20.dp)
                 .verticalScroll(rememberScrollState())
         ) {
             TitleSection(planDetailResponse = planDetailResponse)
@@ -112,22 +117,62 @@ fun TitleSection(planDetailResponse: GetPlanDetailResponse) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 16.dp),
+            .padding(vertical = 24.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.Top
     ) {
         Text(
             text = planDetailResponse.lectureTitle,
             style = MaterialTheme.typography.headlineSmall,
-            modifier = Modifier.weight(10f),
-        )
-        Icon(
-            imageVector = ImageVector.vectorResource(R.drawable.icon_reschedule),
-            contentDescription = "일정 변경",
-            tint = Color(0xFF3F15EA),
             modifier = Modifier
-                .clickable { /*…*/ }
+                .padding(end = 8.dp)
+                .weight(10f),
         )
+        Column(
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // 재스케줄링 버튼
+            IconButton(
+                onClick = {},
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(
+                        color = backgroundGray
+                    )
+            ) {
+                Icon(
+                    imageVector = ImageVector.vectorResource(R.drawable.icon_reschedule),
+                    contentDescription = "일정 변경",
+                    tint = materialGray,
+                    modifier = Modifier
+                        .padding(8.dp)
+                        .clickable { /*…*/ }
+                )
+            }
+
+            // 그룹원 추가 버튼
+            IconButton(
+                onClick = {},
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(
+                        color = backgroundGray
+                    )
+            ) {
+                Icon(
+                    imageVector = ImageVector.vectorResource(R.drawable.icon_group),
+                    contentDescription = "그룹 추가",
+                    tint = materialGray,
+                    modifier = Modifier
+                        .padding(8.dp)
+                        .clickable { /*…*/ }
+                )
+            }
+        }
+
+
     }
 }
 
