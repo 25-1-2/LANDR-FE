@@ -94,6 +94,14 @@ fun PlanDetailTopBar(navController: NavController) {
                         contentDescription = "뒤로 가기")
                 }
             },
+            actions = {
+                IconButton(onClick = { /* 알람 클릭 */ }) {
+                    Image(
+                        painter = painterResource(R.drawable.icon_more_horizontal),
+                        contentDescription = "alarm icon",
+                    )
+                }
+            }
         )
         HorizontalDivider(thickness = 1.dp, color = LightGray2)
     }
