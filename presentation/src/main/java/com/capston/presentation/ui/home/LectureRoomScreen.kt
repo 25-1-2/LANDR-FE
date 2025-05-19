@@ -82,6 +82,9 @@ fun LectureRoomScreen(
 fun LectureRoomTopBar(hasUnreadNotifications: Boolean) {
     Column {
         TopAppBar(
+            modifier = Modifier
+                .padding(10.dp)
+                .height(80.dp),
             title = {
 //                Text(
 //                    text = "나의 강의실",
@@ -103,8 +106,7 @@ fun LectureRoomTopBar(hasUnreadNotifications: Boolean) {
                     painter = painterResource(R.drawable.ic_launcher),
                     contentDescription = "앱 로고",
                     modifier = Modifier
-                        .height(50.dp)
-                        .padding(start = 8.dp), // 바 내부 기본 여백만큼
+                        .height(50.dp),
                     tint = Color.Unspecified
                 )
             },
