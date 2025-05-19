@@ -175,6 +175,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     fun startSearchActivity() {
         val intent = Intent(this, SearchActivity::class.java)
         startSearchForResult.launch(intent)
