@@ -39,9 +39,6 @@ import com.capston.presentation.theme.backgroundGray
 import com.capston.presentation.theme.chipGray
 import com.capston.presentation.theme.dividerGray
 import com.capston.presentation.theme.textGray
-import com.capston.presentation.viewmodel.DailyScheduleViewModel
-import com.capston.presentation.viewmodel.HomeViewModel
-import com.capston.presentation.viewmodel.LectureRoomViewModel
 import com.capston.presentation.viewmodel.LectureViewModel
 import com.capston.presentation.viewmodel.PlanViewModel
 import kotlinx.coroutines.CoroutineScope
@@ -49,8 +46,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.text.ParseException
 import java.text.SimpleDateFormat
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 import java.util.Date
 import java.util.Locale
 
@@ -189,7 +184,7 @@ fun MakePlanScreen(
     }
 
     Scaffold(
-        topBar = { PlanTopBar(navController = navController) }
+        topBar = { MakePlanTopBar(navController = navController) }
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -307,7 +302,7 @@ fun isStartDateBeforeEndDate(startDateStr: String, endDateStr: String): Boolean 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PlanTopBar(navController: NavController) {
+fun MakePlanTopBar(navController: NavController) {
     Column {
         TopAppBar(
             title = {},
