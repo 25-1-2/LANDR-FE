@@ -43,6 +43,7 @@ import com.capston.presentation.R
 import com.capston.presentation.theme.LightGray2
 import com.capston.presentation.theme.MainPurple
 import com.capston.presentation.theme.Typography
+import com.capston.presentation.theme.textGray
 import com.capston.presentation.viewmodel.LectureRoomViewModel
 
 @Composable
@@ -60,25 +61,30 @@ fun LectureRoomScreen(
     Scaffold(
         topBar = { LectureRoomTopBar(hasUnreadNotifications = true) }
     ) { innerPadding ->
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(16.dp)
+                .padding(horizontal = 16.dp)
         ) {
-            Text(
-                text = "🎓 나의 강의실",
-                style = Typography.headlineMedium,
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
-
-            LazyColumn {
-                items(lectures) { lecture ->
-                    LectureItem(lecture) { onPlanClick?.invoke(lecture) }
-                    HorizontalDivider()
-                }
+            items(lectures) { lecture ->
+                LectureItem(lecture) { onPlanClick?.invoke(lecture) }
+                HorizontalDivider()
             }
         }
+//        Column(
+//            modifier = Modifier
+//                .fillMaxSize()
+//                .padding(innerPadding)
+//                .padding(16.dp)
+//        ) {
+//            LazyColumn {
+//                items(lectures) { lecture ->
+//                    LectureItem(lecture) { onPlanClick?.invoke(lecture) }
+//                    HorizontalDivider()
+//                }
+//            }
+//        }
     }
 }
 
@@ -107,13 +113,18 @@ fun LectureRoomTopBar(hasUnreadNotifications: Boolean) {
                     // 간격 추가
                     Spacer(modifier = Modifier.width(5.dp))
 
-                    // 앱 이름
-                    Icon(
-                        painter = painterResource(id = R.drawable.landr_title_iv),
-                        contentDescription = "앱 이름",
-                        modifier = Modifier.size(70.dp),
-                        tint = Color.Unspecified
+
+                    Text(
+                        text = "나의 강의실",
+                        style = Typography.headlineMedium,
                     )
+                    // 앱 이름
+//                    Icon(
+//                        painter = painterResource(id = R.drawable.landr_title_iv),
+//                        contentDescription = "앱 이름",
+//                        modifier = Modifier.size(70.dp),
+//                        tint = Color.Unspecified
+//                    )
                 }
             },
             actions = {
@@ -180,19 +191,21 @@ fun LectureItem(lecture: GetPlanLectureRoomResponse, onClick: () -> Unit) {
         )
 
         Row(
-            verticalAlignment = Alignment.CenterVertically,
+            verticalAlignment = Alignment.Bottom,
             horizontalArrangement = Arrangement.SpaceBetween,
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(
                 text = lecture.lectureTitle,
                 style = Typography.titleMedium,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                modifier = Modifier
+                    .weight(1f)          // ← 폭을 제한하고
+                    .padding(end = 16.dp)
             )
             Text(
                 text = "${lecture.completedLessons}/${lecture.totalLessons}",
-                style = MaterialTheme.typography.labelSmall
+                style = MaterialTheme.typography.labelMedium,
+                color = textGray
             )
         }
     }
