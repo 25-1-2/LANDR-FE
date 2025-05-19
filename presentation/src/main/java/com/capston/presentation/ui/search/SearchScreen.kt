@@ -140,31 +140,26 @@ fun SearchScreen(
 
     // 필터가 변경될 때마다 데이터를 새로 로드하기 위한 Effect
     LaunchedEffect(selectedPlatforms, selectedSubjects) {
-        if (selectedPlatforms.isNotEmpty() || selectedSubjects.isNotEmpty()) {
-            Log.d("SearchScreen", "필터 변경됨: 플랫폼=${selectedPlatforms.map { it.label }}, 과목=${selectedSubjects.map { it.label }}")
+        Log.d("SearchScreen", "필터 변경됨: 플랫폼=${selectedPlatforms.map { it.label }}, 과목=${selectedSubjects.map { it.label }}")
 
-            // 필터 변경 시 데이터 초기화 및 재로딩
-            isLoading = true
-            allItems = emptyList()
-            cursorLectureId = ""
-            cursorCreatedAt = ""
-            hasMoreData = true
+        // Reset state completely
+        isLoading = true
+        allItems = emptyList()
+        cursorLectureId = ""
+        cursorCreatedAt = ""
+        hasMoreData = true
 
-            // 현재 모드에 따라 적절한 API 호출
-            loadFilteredLectures(
-                isSearchMode = isSearching,
-                lectureViewModel = lectureViewModel,
-                selectedPlatforms = selectedPlatforms,
-                selectedSubjects = selectedSubjects,
-                searchQuery = searchQuery,
-                cursorLectureId = cursorLectureId,
-                cursorCreatedAt = cursorCreatedAt,
-                offset = offset
-            )
-        } else if (selectedPlatforms.isEmpty() && selectedSubjects.isEmpty() && allItems.isEmpty()) {
-            // 모든 필터가 해제된 경우 전체 데이터 로드
-            shouldReloadData = true
-        }
+        // Always reload data when filters change (including when they're removed)
+        loadFilteredLectures(
+            isSearchMode = isSearching,  // Maintain search mode
+            lectureViewModel = lectureViewModel,
+            selectedPlatforms = selectedPlatforms,
+            selectedSubjects = selectedSubjects,
+            searchQuery = if (isSearching) searchQuery else "",  // Keep search query if in search mode
+            cursorLectureId = "",
+            cursorCreatedAt = "",
+            offset = offset
+        )
     }
 
     // 컴포넌트가 처음 로드될 때 전체 강의 조회
@@ -204,82 +199,48 @@ fun SearchScreen(
 
     // 검색어 변경 시 API 호출
     var searchJob by remember { mutableStateOf<Job?>(null) }
+    // 3. Fix search to work properly with filters
     LaunchedEffect(searchQuery) {
         searchJob?.cancel()
         searchJob = scope.launch {
-            // 검색 상태 초기화
+            // Reset search state
             cursorLectureId = ""
             cursorCreatedAt = ""
             hasMoreData = true
             allItems = emptyList()
 
-            delay(300) // 타이핑하는 동안 여러 번 API 호출하지 않도록 지연 (디바운싱)
+            delay(300) // Debounce
 
-            // 검색어가 비어있지 않은 경우만 검색 수행
-            if (searchQuery.isNotBlank()) {
-                Log.d("SearchScreen", "검색어 변경: $searchQuery")
+            if (searchQuery.isBlank()) {
+                isSearching = false
+                isLoading = true
+
+                // Load filtered or unfiltered list based on current filter state
+                loadFilteredLectures(
+                    isSearchMode = false,
+                    lectureViewModel = lectureViewModel,
+                    selectedPlatforms = selectedPlatforms,
+                    selectedSubjects = selectedSubjects,
+                    searchQuery = "",
+                    cursorLectureId = "",
+                    cursorCreatedAt = "",
+                    offset = offset
+                )
+            } else {
                 isSearching = true
                 isLoading = true
 
-                // 필터 적용하여 검색
-                if (selectedPlatforms.isNotEmpty() || selectedSubjects.isNotEmpty()) {
-                    loadFilteredLectures(
-                        isSearchMode = true,
-                        lectureViewModel = lectureViewModel,
-                        selectedPlatforms = selectedPlatforms,
-                        selectedSubjects = selectedSubjects,
-                        searchQuery = searchQuery,
-                        cursorLectureId = "",
-                        cursorCreatedAt = "",
-                        offset = offset
-                    )
-                } else {
-                    // 필터 없이 기본 검색
-                    lectureViewModel.getDistinctLecture(
-                        LectureDto(
-                            search = searchQuery,
-                            cursorLectureId = "",
-                            cursorCreatedAt = "",
-                            offset = offset
-                        )
-                    )
-                }
-            } else {
-                isSearching = false
-                if (allLectureResponse.isNotEmpty() && selectedPlatforms.isEmpty() && selectedSubjects.isEmpty()) {
-                    // 필터가 없고 이미 로드된 전체 목록이 있으면 바로 처리
-                    allItems = allLectureResponse.map { lecture ->
-                        LectureItemDto(
-                            id = lecture.id,
-                            title = lecture.title,
-                            platform = lecture.platform,
-                            teacher = lecture.teacher,
-                            subject = lecture.subject,
-                            createdAt = lecture.createdAt,
-                            tag = lecture.tag,
-                            totalLessons = lecture.totalLessons
-                        )
-                    }
-                    isLoading = false
-                    Log.d("SearchScreen", "캐시된 전체 목록 처리: ${allItems.size}개 항목")
-                } else {
-                    // 필터가 있거나 캐시된 데이터가 없으면 새로 로드
-                    isLoading = true
-                    if (selectedPlatforms.isEmpty() && selectedSubjects.isEmpty()) {
-                        lectureViewModel.getAllLecture(LectureDto(offset = offset))
-                    } else {
-                        loadFilteredLectures(
-                            isSearchMode = false,
-                            lectureViewModel = lectureViewModel,
-                            selectedPlatforms = selectedPlatforms,
-                            selectedSubjects = selectedSubjects,
-                            searchQuery = "",
-                            cursorLectureId = "",
-                            cursorCreatedAt = "",
-                            offset = offset
-                        )
-                    }
-                }
+                // Load filtered search using current filters
+                loadFilteredLectures(
+                    isSearchMode = true,
+                    lectureViewModel = lectureViewModel,
+                    selectedPlatforms = selectedPlatforms,
+                    selectedSubjects = selectedSubjects,
+                    searchQuery = searchQuery,
+                    cursorLectureId = "",
+                    cursorCreatedAt = "",
+                    offset = offset
+                )
             }
         }
     }
@@ -523,41 +484,41 @@ fun LectureFilterBarDropdown(
             .padding(horizontal = 16.dp, vertical = 4.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        // 왼쪽: 강의 사이트 필터 - 선택된 항목을 드롭다운에 표시
+        // 왼쪽: 강의 사이트 필터
         CompactFilterDropdown(
             items = Platform.entries,
             selectedItems = selectedPlatforms,
             labelMapper = { it.label },
-            // 선택된 플랫폼이 있으면 해당 라벨 표시, 없으면 기본 텍스트 표시
             placeholderText = if (selectedPlatforms.isNotEmpty()) selectedPlatforms.first().label else "강의 사이트",
             onItemSelected = { platform ->
-                // 다중 선택 토글 로직
-                if (selectedPlatforms.contains(platform)) {
-                    // 이미 선택된 항목이면 제거
-                    onPlatformSelected(platform)
-                } else {
-                    // 선택되지 않았으면 추가
-                    onPlatformSelected(platform)
+                // 이미 선택된 항목이면 제거, 그렇지 않으면 추가
+                onPlatformSelected(platform)
+            },
+            // 필터 해제 버튼 추가
+            onClearSelection = {
+                // 모든 플랫폼 필터 제거 - 단일 선택이므로 이미 선택된 플랫폼만 제거하면 됨
+                if (selectedPlatforms.isNotEmpty()) {
+                    onPlatformSelected(selectedPlatforms.first())
                 }
             },
             modifier = Modifier.weight(1f)
         )
 
-        // 오른쪽: 과목 필터 - 선택된 항목을 드롭다운에 표시
+        // 오른쪽: 과목 필터
         CompactFilterDropdown(
             items = Subject.entries,
             selectedItems = selectedSubjects,
             labelMapper = { it.label },
-            // 선택된 과목이 있으면 해당 라벨 표시, 없으면 기본 텍스트 표시
             placeholderText = if (selectedSubjects.isNotEmpty()) selectedSubjects.first().label else "과목",
             onItemSelected = { subject ->
-                // 다중 선택 토글 로직
-                if (selectedSubjects.contains(subject)) {
-                    // 이미 선택된 항목이면 제거
-                    onSubjectSelected(subject)
-                } else {
-                    // 선택되지 않았으면 추가
-                    onSubjectSelected(subject)
+                // 이미 선택된 항목이면 제거, 그렇지 않으면 추가
+                onSubjectSelected(subject)
+            },
+            // 필터 해제 버튼 추가
+            onClearSelection = {
+                // 모든 과목 필터 제거 - 단일 선택이므로 이미 선택된 과목만 제거하면 됨
+                if (selectedSubjects.isNotEmpty()) {
+                    onSubjectSelected(selectedSubjects.first())
                 }
             },
             modifier = Modifier.weight(1f)
@@ -572,6 +533,7 @@ fun <T> CompactFilterDropdown(
     labelMapper: (T) -> String,
     placeholderText: String,
     onItemSelected: (T) -> Unit,
+    onClearSelection: () -> Unit,  // 필터 해제 콜백 추가
     leadingIcon: @Composable (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
@@ -601,7 +563,6 @@ fun <T> CompactFilterDropdown(
                 Text(
                     text = placeholderText,
                     style = MaterialTheme.typography.bodySmall,
-                    // 선택 여부에 따른 텍스트 색상 변경
                     color = if (selectedItems.isEmpty())
                         MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                     else
@@ -611,6 +572,22 @@ fun <T> CompactFilterDropdown(
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f)
                 )
+
+                // 선택된 항목이 있으면 닫기 버튼 표시
+                if (selectedItems.isNotEmpty()) {
+                    Icon(
+                        imageVector = Icons.Filled.Close,
+                        contentDescription = "필터 해제",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier
+                            .size(14.dp)
+                            .clickable(onClick = {
+                                onClearSelection()
+                                expanded = false
+                            })
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                }
 
                 Icon(
                     imageVector = if (expanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
@@ -679,85 +656,42 @@ fun loadFilteredLectures(
     offset: String
 ) {
     try {
-        // 선택된 플랫폼 및 과목이 모두 있는 경우
-        if (selectedPlatforms.isNotEmpty() && selectedSubjects.isNotEmpty()) {
-            // 첫 번째 플랫폼과 첫 번째 과목 조합으로 호출
-            val platform = selectedPlatforms[0]
-            val subject = selectedSubjects[0]
+        // Create a base DTO with common parameters
+        val baseDto = LectureDto(
+            search = searchQuery,
+            cursorLectureId = cursorLectureId,
+            cursorCreatedAt = cursorCreatedAt,
+            offset = offset
+        )
 
-            Log.d("SearchScreen", "플랫폼과 과목 조합 호출: ${platform.name}, ${subject.name}")
-
-            val dto = LectureDto(
-                search = searchQuery,
-                cursorLectureId = cursorLectureId,
-                cursorCreatedAt = cursorCreatedAt,
-                offset = offset,
-                platform = platform,  // 객체 대신 name 문자열 전달
-                subject = subject    // 객체 대신 name 문자열 전달
-            )
-
-            if (isSearchMode) {
-                lectureViewModel.getDistinctLecture(dto)
-            } else {
-                lectureViewModel.getAllLecture(dto)
+        // Apply filters conditionally
+        val dto = when {
+            selectedPlatforms.isNotEmpty() && selectedSubjects.isNotEmpty() -> {
+                Log.d("SearchScreen", "플랫폼과 과목 조합 호출: ${selectedPlatforms[0].name}, ${selectedSubjects[0].name}")
+                baseDto.copy(
+                    platform = selectedPlatforms[0],
+                    subject = selectedSubjects[0]
+                )
+            }
+            selectedPlatforms.isNotEmpty() -> {
+                Log.d("SearchScreen", "플랫폼만 호출: ${selectedPlatforms[0].name}")
+                baseDto.copy(platform = selectedPlatforms[0])
+            }
+            selectedSubjects.isNotEmpty() -> {
+                Log.d("SearchScreen", "과목만 호출: ${selectedSubjects[0].name}")
+                baseDto.copy(subject = selectedSubjects[0])
+            }
+            else -> {
+                Log.d("SearchScreen", "필터 없음 호출")
+                baseDto
             }
         }
-        // 플랫폼만 선택된 경우
-        else if (selectedPlatforms.isNotEmpty()) {
-            val platform = selectedPlatforms[0]
 
-            Log.d("SearchScreen", "플랫폼만 호출: ${platform.name}")
-
-            val dto = LectureDto(
-                search = searchQuery,
-                cursorLectureId = cursorLectureId,
-                cursorCreatedAt = cursorCreatedAt,
-                offset = offset,
-                platform = platform // 객체 대신 name 문자열 전달
-            )
-
-            if (isSearchMode) {
-                lectureViewModel.getDistinctLecture(dto)
-            } else {
-                lectureViewModel.getAllLecture(dto)
-            }
-        }
-        // 과목만 선택된 경우
-        else if (selectedSubjects.isNotEmpty()) {
-            val subject = selectedSubjects[0]
-
-            Log.d("SearchScreen", "과목만 호출: ${subject.name}")
-
-            val dto = LectureDto(
-                search = searchQuery,
-                cursorLectureId = cursorLectureId,
-                cursorCreatedAt = cursorCreatedAt,
-                offset = offset,
-                subject = subject
-            )
-
-            if (isSearchMode) {
-                lectureViewModel.getDistinctLecture(dto)
-            } else {
-                lectureViewModel.getAllLecture(dto)
-            }
-        }
-        // 필터가 없는 경우
-        else {
-            Log.d("SearchScreen", "필터 없음 호출")
-
-            val dto = LectureDto(
-                search = searchQuery,
-                cursorLectureId = cursorLectureId,
-                cursorCreatedAt = cursorCreatedAt,
-                offset = offset
-            )
-
-            if (isSearchMode) {
-                lectureViewModel.getDistinctLecture(dto)
-            } else {
-                lectureViewModel.getAllLecture(dto)
-            }
+        // Use the appropriate API based on search mode
+        if (isSearchMode) {
+            lectureViewModel.getDistinctLecture(dto)
+        } else {
+            lectureViewModel.getAllLecture(dto)
         }
     } catch (e: Exception) {
         Log.e("SearchScreen", "필터 적용 중 오류 발생: ${e.message}", e)
