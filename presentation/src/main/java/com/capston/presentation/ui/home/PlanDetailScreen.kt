@@ -11,7 +11,10 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Divider
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -19,6 +22,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -29,6 +33,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.capston.presentation.R
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.sp
@@ -63,11 +68,22 @@ fun PlanDetailScreen(
     lectureRoomViewModel: LectureRoomViewModel,
     navController: NavController,
 ) {
+    var showDeleteDropdown by remember { mutableStateOf(false) }
+    var showDeleteConfirmDialog by remember { mutableStateOf(false) }
+    val context = LocalContext.current
     val planDetailResponse by lectureRoomViewModel.getPlanDetail.collectAsState()
     lectureRoomViewModel.getPlanDetail(planId)
 
     Scaffold(
-        topBar = { PlanDetailTopBar(navController = navController) }
+        topBar = {
+            PlanDetailTopBar(
+                navController = navController,
+                showMenu = showDeleteDropdown,
+                onMenuClick = { showDeleteDropdown = !showDeleteDropdown },
+                onMenuDismiss = { showDeleteDropdown = false },
+                onDeleteClick = { showDeleteConfirmDialog = true }
+            )
+        }
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -87,12 +103,45 @@ fun PlanDetailScreen(
                 )
             }
         }
+
+        // 삭제 확인 다이얼로그
+        if (showDeleteConfirmDialog) {
+            AlertDialog(
+                onDismissRequest = { showDeleteConfirmDialog = false },
+                title = { Text("계획 삭제") },
+                text = { Text("이 계획을 삭제하시겠습니까?") },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            // 삭제 로직 실행
+                            // lectureRoomViewModel.deletePlan(planId)
+                            // Toast.makeText(context, "계획이 삭제되었습니다", Toast.LENGTH_SHORT).show()
+                            navController.popBackStack() // 이전 화면으로 돌아가기
+
+                            showDeleteConfirmDialog = false
+                        }
+                    ) {
+                        Text("삭제", color = Color.Red)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showDeleteConfirmDialog = false }) {
+                        Text("취소")
+                    }
+                }
+            )
+        }
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PlanDetailTopBar(navController: NavController) {
+fun PlanDetailTopBar(
+    navController: NavController,
+    showMenu: Boolean,
+    onMenuClick: () -> Unit,
+    onMenuDismiss: () -> Unit,
+    onDeleteClick: () -> Unit) {
     Column {
         TopAppBar(
             title = {},
@@ -106,10 +155,37 @@ fun PlanDetailTopBar(navController: NavController) {
                 }
             },
             actions = {
-                IconButton(onClick = { /* 알람 클릭 */ }) {
+                IconButton(onClick = onMenuClick) {
                     Image(
                         painter = painterResource(R.drawable.icon_more_horizontal),
                         contentDescription = "alarm icon",
+                    )
+                }
+
+                DropdownMenu(
+                    expanded = showMenu,
+                    onDismissRequest = onMenuDismiss,
+                    modifier = Modifier
+                        .background(Color.White)
+                        .width(150.dp)
+                ) {
+                    DropdownMenuItem(
+                        text = {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.icon_trash), // 삭제 아이콘 리소스 필요
+                                    contentDescription = "삭제",
+                                    tint = Color.Red,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("삭제하기", color = Color.Red)
+                            }
+                        },
+                        onClick = {
+                            onMenuDismiss()
+                            onDeleteClick()
+                        }
                     )
                 }
             }
