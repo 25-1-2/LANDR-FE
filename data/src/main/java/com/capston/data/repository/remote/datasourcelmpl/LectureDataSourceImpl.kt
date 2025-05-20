@@ -17,11 +17,13 @@ class LectureDataSourceImpl @Inject constructor(
 ) : LectureDataSource {
 
     override suspend fun getDistinctLecture(lectureDto: LectureDto): Flow<DistinctLectureResponse> = flow {
-        // API 호출 전에 로그 추가
-        Log.d("LectureDataSourceImpl", "API 호출: search=${lectureDto.search}, " +
+        // API 호출 전에 로그 추가 - 더 자세한 정보 포함
+        Log.d("LectureDataSourceImpl", "API 호출: search='${lectureDto.search}', " +
                 "cursorLectureId=${lectureDto.cursorLectureId}, " +
                 "cursorCreatedAt=${lectureDto.cursorCreatedAt}, " +
-                "offset=${lectureDto.offset}")
+                "offset=${lectureDto.offset}, " +
+                "platform=${lectureDto.platform?.label ?: "없음"}, " +
+                "subject=${lectureDto.subject?.label ?: "없음"}")
 
         // cursorCreatedAt이 null이면 빈 문자열로 처리
         val createdAt = if (lectureDto.cursorCreatedAt.isNullOrEmpty()) {
@@ -31,13 +33,28 @@ class LectureDataSourceImpl @Inject constructor(
             lectureDto.cursorCreatedAt
         }
 
-        var result = lectureApi.getDistinctLecture(
-            search = lectureDto.search,
-            cursorLectureId = lectureDto.cursorLectureId,
-            cursorCreatedAt = createdAt, // 안전한 값 사용
-            offset = lectureDto.offset
-        )
+        // 수정된 부분: filter 조건을 개선하고 API 호출 부분을 직접 사용
+        var result: DistinctLectureResponse? = null
 
+        try {
+            // 직접 API 호출 - platform과 subject가 모두 null인 경우도 처리
+            result = lectureApi.getDistinctLecture(
+                search = lectureDto.search,
+                cursorLectureId = lectureDto.cursorLectureId,
+                cursorCreatedAt = createdAt,
+                offset = lectureDto.offset,
+                platform = lectureDto.platform,  // 이제 nullable 값 직접 전달
+                subject = lectureDto.subject     // 이제 nullable 값 직접 전달
+            )
+
+            Log.d("LectureDataSourceImpl", "API 호출 성공: ${result.data?.size ?: 0}개 항목")
+        } catch (e: Exception) {
+            Log.e("LectureDataSourceImpl", "API 호출 오류: ${e.message}", e)
+            // 오류 발생시 빈 응답 생성
+            result = DistinctLectureResponse(data = emptyList())
+        }
+
+        // 이하 기존 코드와 동일...
         Log.d("LectureDataSourceImpl", "서버 응답: $result")
 
         // 응답 후처리 - nextCreateAt이 null인 경우 처리
@@ -61,34 +78,47 @@ class LectureDataSourceImpl @Inject constructor(
         }
 
         emit(result)
-    }.catch { e ->
-        val errorMessage = e.message ?: "알 수 없는 오류 발생"
-        Log.e("getDistinctLecture", "예외 발생: $errorMessage")
-        // 오류 처리
     }
 
     override suspend fun getAllLecture(lectureDto: LectureDto): Flow<DistinctLectureResponse> = flow {
-        // API 호출 전에 로그 추가
+        // API 호출 전에 로그 추가 - 더 자세한 정보 포함
         Log.d("LectureDataSourceImpl", "전체 목록 API 호출: " +
+                "search='${lectureDto.search}', " +
                 "cursorLectureId=${lectureDto.cursorLectureId}, " +
                 "cursorCreatedAt=${lectureDto.cursorCreatedAt}, " +
-                "offset=${lectureDto.offset}")
+                "offset=${lectureDto.offset}, " +
+                "platform=${lectureDto.platform?.label ?: "없음"}, " +
+                "subject=${lectureDto.subject?.label ?: "없음"}")
 
         // cursorCreatedAt이 null이면 빈 문자열로 처리
         val createdAt = if (lectureDto.cursorCreatedAt.isNullOrEmpty()) {
-            // 빈 값일 때 대체값 생성 - 현재 시간보다 먼 미래 날짜로 설정하여 영향이 없도록
+            // 빈 값일 때 대체값 생성
             "2099-12-31T23:59:59.999999"
         } else {
             lectureDto.cursorCreatedAt
         }
 
-        var result = lectureApi.getDistinctLecture(
-            search = lectureDto.search,
-            cursorLectureId = lectureDto.cursorLectureId,
-            cursorCreatedAt = createdAt, // 안전한 값 사용
-            offset = lectureDto.offset
-        )
+        // 직접 API 호출 - platform과 subject가 모두 null인 경우도 처리
+        var result: DistinctLectureResponse? = null
 
+        try {
+            result = lectureApi.getDistinctLecture(
+                search = lectureDto.search,
+                cursorLectureId = lectureDto.cursorLectureId,
+                cursorCreatedAt = createdAt,
+                offset = lectureDto.offset,
+                platform = lectureDto.platform,  // 이제 nullable 값 직접 전달
+                subject = lectureDto.subject     // 이제 nullable 값 직접 전달
+            )
+
+            Log.d("LectureDataSourceImpl", "전체 목록 API 호출 성공: ${result.data?.size ?: 0}개 항목")
+        } catch (e: Exception) {
+            Log.e("LectureDataSourceImpl", "전체 목록 API 호출 오류: ${e.message}", e)
+            // 오류 발생시 빈 응답 생성
+            result = DistinctLectureResponse(data = emptyList())
+        }
+
+        // 이하 기존 코드와 동일...
         Log.d("LectureDataSourceImpl", "전체 목록 서버 응답: $result")
 
         // 응답 후처리 - nextCreateAt이 null인 경우 처리
@@ -112,10 +142,6 @@ class LectureDataSourceImpl @Inject constructor(
         }
 
         emit(result)
-    }.catch { e ->
-        val errorMessage = e.message ?: "알 수 없는 오류 발생"
-        Log.e("getAllLecture", "예외 발생: $errorMessage")
-        // 오류 처리
     }
 
     override suspend fun getLessonsByLectureId(lectureId: Int): GetLessonsByLectureIdResponse {

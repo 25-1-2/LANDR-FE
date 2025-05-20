@@ -2,7 +2,9 @@ package com.capston.presentation.ui.search
 
 import android.annotation.SuppressLint
 import android.content.Intent
+import android.os.Build
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -21,6 +23,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -60,8 +64,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Color.Companion.Transparent
 import androidx.compose.ui.graphics.Color.Companion.White
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -76,6 +82,11 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.airbnb.lottie.compose.LottieAnimation
+import com.airbnb.lottie.compose.LottieCompositionSpec
+import com.airbnb.lottie.compose.LottieConstants
+import com.airbnb.lottie.compose.animateLottieCompositionAsState
+import com.airbnb.lottie.compose.rememberLottieComposition
 import com.capston.domain.manager.LoadingStateManager
 import com.capston.domain.request.LectureDto
 import com.capston.domain.response.enum_class.Platform
@@ -94,219 +105,7 @@ import com.capston.presentation.viewmodel.PlanViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-
-@Composable
-fun LectureFilterBarDropdown(
-    selectedPlatforms: List<Platform>,
-    onPlatformSelected: (Platform) -> Unit,
-    selectedSubjects: List<Subject>,
-    onSubjectSelected: (Subject) -> Unit,
-    loadingStateManager: LoadingStateManager
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        // 왼쪽: 강의 사이트 필터
-        CompactFilterDropdown(
-            items = Platform.entries,
-            selectedItems = selectedPlatforms,
-            labelMapper = { it.label },
-            placeholderText = "강의 사이트", // 라벨을 placeholder로 표시
-            onItemSelected = { platform ->
-                // 다중 선택 토글 로직
-                if (selectedPlatforms.contains(platform)) {
-                    // 이미 선택된 항목이면 제거
-                    onPlatformSelected(platform)
-                } else {
-                    // 선택되지 않았으면 추가
-                    onPlatformSelected(platform)
-                }
-            },
-            modifier = Modifier.weight(1f)
-        )
-
-        // 오른쪽: 과목 필터
-        CompactFilterDropdown(
-            items = Subject.entries,
-            selectedItems = selectedSubjects,
-            labelMapper = { it.label },
-            placeholderText = "과목", // 라벨을 placeholder로 표시
-            onItemSelected = { subject ->
-                // 다중 선택 토글 로직
-                if (selectedSubjects.contains(subject)) {
-                    // 이미 선택된 항목이면 제거
-                    onSubjectSelected(subject)
-                } else {
-                    // 선택되지 않았으면 추가
-                    onSubjectSelected(subject)
-                }
-            },
-            modifier = Modifier.weight(1f)
-        )
-    }
-
-    // 선택된 항목 태그 표시 (한 줄에 모두 표시)
-    if (selectedPlatforms.isNotEmpty() || selectedSubjects.isNotEmpty()) {
-        LazyRow(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 2.dp),
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            // 플랫폼 태그 표시
-            itemsIndexed(selectedPlatforms) { _, platform ->
-                SuggestionChip(
-                    onClick = { onPlatformSelected(platform) }, // 클릭하면 제거
-                    label = {
-                        Text(
-                            text = platform.label,
-                            fontSize = 12.sp,
-                            style = MaterialTheme.typography.labelSmall
-                        )
-                    },
-                    icon = {
-                        Icon(
-                            imageVector = Icons.Filled.Close,
-                            contentDescription = "Remove",
-                            modifier = Modifier.size(12.dp)
-                        )
-                    },
-                    shape = RoundedCornerShape(6.dp),
-                    border = null,
-                    colors = SuggestionChipDefaults.suggestionChipColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f)
-                    )
-                )
-            }
-
-            // 과목 태그 표시
-            itemsIndexed(selectedSubjects) { _, subject ->
-                SuggestionChip(
-                    onClick = { onSubjectSelected(subject) }, // 클릭하면 제거
-                    label = {
-                        Text(
-                            text = subject.label,
-                            fontSize = 12.sp,
-                            style = MaterialTheme.typography.labelSmall
-                        )
-                    },
-                    icon = {
-                        Icon(
-                            imageVector = Icons.Filled.Close,
-                            contentDescription = "Remove",
-                            modifier = Modifier.size(12.dp)
-                        )
-                    },
-                    shape = RoundedCornerShape(6.dp),
-                    border = null,
-                    colors = SuggestionChipDefaults.suggestionChipColors(
-                        containerColor = subject.bgColor.copy(alpha = 0.7f)
-                    )
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun <T> CompactFilterDropdown(
-    items: List<T>,
-    selectedItems: List<T>,
-    labelMapper: (T) -> String,
-    placeholderText: String,
-    onItemSelected: (T) -> Unit,
-    leadingIcon: @Composable (() -> Unit)? = null,
-    modifier: Modifier = Modifier
-) {
-    var expanded by remember { mutableStateOf(false) }
-
-    Box(modifier = modifier) {
-        OutlinedCard(
-            shape = RoundedCornerShape(6.dp),
-            border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)),
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(32.dp)
-                .clickable(onClick = { expanded = true })
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 6.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                if (leadingIcon != null) {
-                    Box(modifier = Modifier.padding(end = 4.dp)) {
-                        leadingIcon()
-                    }
-                }
-
-                Text(
-                    text = placeholderText,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = if (selectedItems.isEmpty())
-                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                    else
-                        MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f)
-                )
-
-                Icon(
-                    imageVector = if (expanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
-                    contentDescription = if (expanded) "접기" else "펼치기",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(14.dp)
-                )
-            }
-        }
-
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false },
-            modifier = Modifier
-                .width(IntrinsicSize.Min)
-                .heightIn(max = 200.dp)
-                .background(White)
-        ) {
-            items.forEach { item ->
-                val isSelected = selectedItems.contains(item)
-                DropdownMenuItem(
-                    onClick = {
-                        onItemSelected(item)
-                        // 다중 선택 가능하도록 메뉴 유지
-                    },
-                    text = {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = labelMapper(item),
-                                style = MaterialTheme.typography.bodySmall,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.weight(1f)
-                            )
-
-                            if (isSelected) {
-                                Icon(
-                                    imageVector = Icons.Filled.Check,
-                                    contentDescription = "Selected",
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(14.dp)
-                                )
-                            }
-                        }
-                    }
-                )
-            }
-        }
-    }
-}
+import java.text.SimpleDateFormat
 
 @SuppressLint("RememberReturnType")
 @Composable
@@ -341,12 +140,41 @@ fun SearchScreen(
     var allItems by remember { mutableStateOf<List<LectureItemDto>>(emptyList()) }
 
     // Filter state
-    var selectedPlatforms by remember { mutableStateOf<List<Platform>>(emptyList()) }
-    var selectedSubjects by remember { mutableStateOf<List<Subject>>(emptyList()) }
+    var selectedPlatform by remember { mutableStateOf<Platform?>(null) }
+    var selectedSubject by remember { mutableStateOf<Subject?>(null) }
 
     // 디버깅용 - 현재 로드된 아이템 수 출력
     LaunchedEffect(allItems.size, isLoadingMore) {
         Log.d("SearchScreen", "현재 표시 중인 아이템 수: ${allItems.size}, 로딩 중: $isLoadingMore")
+    }
+
+    // 필터가 변경될 때마다 데이터를 새로 로드하기 위한 Effect
+    LaunchedEffect(selectedPlatform, selectedSubject) {
+        Log.d("SearchScreen", "필터 변경됨: 플랫폼=${selectedPlatform?.label ?: "없음"}, 과목=${selectedSubject?.label ?: "없음"}, 검색모드=$isSearching, 검색어=$searchQuery")
+
+        // Reset loading state
+        isLoading = true
+        allItems = emptyList()
+        cursorLectureId = ""
+        cursorCreatedAt = ""
+        hasMoreData = true
+
+        // Create DTO with current state - directly use the nullable platform and subject
+        val dto = LectureDto(
+            search = if (isSearching) searchQuery else "",
+            cursorLectureId = "",
+            cursorCreatedAt = "",
+            offset = offset,
+            platform = selectedPlatform,
+            subject = selectedSubject
+        )
+
+        // Call appropriate API based on current search mode
+        if (isSearching) {
+            lectureViewModel.getDistinctLecture(dto)
+        } else {
+            lectureViewModel.getAllLecture(dto)
+        }
     }
 
     // 컴포넌트가 처음 로드될 때 전체 강의 조회
@@ -354,19 +182,29 @@ fun SearchScreen(
         if (shouldReloadData) {
             Log.d("SearchScreen", "전체 강의 조회 (재로딩) 시작")
             isLoading = true
+            isSearching = false // 명시적으로 검색 모드 해제
             allItems = emptyList() // 기존 항목 초기화
             cursorLectureId = "" // 커서 초기화
             cursorCreatedAt = "" // 커서 초기화
             hasMoreData = true  // 데이터가 더 있다고 가정
 
+            val currentTime : Long = System.currentTimeMillis()
+            val dataFormat4 = SimpleDateFormat("HH:mm:ss.sss")
+
+            Log.d("페이지 로드 전 시간: ", dataFormat4.format(currentTime))
+
             // 첫 번째 페이지 로드
             lectureViewModel.getAllLecture(LectureDto(
                 offset = offset,
                 cursorLectureId = "",
-                cursorCreatedAt = ""
+                cursorCreatedAt = "",
+                search = "" // 명시적으로 빈 검색어 지정
             ))
 
+            Log.d("페이지 로드 후 시간: ", dataFormat4.format(currentTime))
+
             shouldReloadData = false
+            isLoading = false
         }
     }
 
@@ -386,66 +224,77 @@ fun SearchScreen(
 
     // 검색어 변경 시 API 호출
     var searchJob by remember { mutableStateOf<Job?>(null) }
-    LaunchedEffect(searchQuery) {
+
+    LaunchedEffect(searchQuery, selectedPlatform, selectedSubject, shouldReloadData) {
+
+        // Cancel any ongoing job
         searchJob?.cancel()
         searchJob = scope.launch {
-            // 검색 상태 초기화
+            delay(300) // Debounce
+
+            // Reset states
+            isLoading = true
+            Log.d("SearchScreen", "⚠️ SETTING isLoading = TRUE")
+
             cursorLectureId = ""
             cursorCreatedAt = ""
             hasMoreData = true
-            allItems = emptyList()
 
-            delay(300) // 타이핑하는 동안 여러 번 API 호출하지 않도록 지연 (디바운싱)
+            // Determine whether to search or load full list
+            val wasSearching = isSearching
+            isSearching = searchQuery.isNotBlank()
 
-            // 검색어가 비어있지 않은 경우만 검색 수행
-            if (searchQuery.isNotBlank()) {
-                Log.d("SearchScreen", "검색어 변경: $searchQuery")
-                isSearching = true
-                isLoading = true
-                // 검색 API 호출 시 파라미터 전달
-                lectureViewModel.getDistinctLecture(
-                    LectureDto(
+            // Important: Clear items when toggling modes
+            if (wasSearching != isSearching) {
+                allItems = emptyList()
+                Log.d("SearchScreen", "모드 전환: ${if(isSearching) "검색 모드" else "전체 목록 모드"}")
+            }
+
+            try {
+                if (isSearching) {
+                    val dto = LectureDto(
                         search = searchQuery,
-                        cursorLectureId = "",  // 첫 검색은 항상 커서 없이
+                        cursorLectureId = "",
                         cursorCreatedAt = "",
-                        offset = offset
+                        offset = offset,
+                        platform = selectedPlatform,
+                        subject = selectedSubject
                     )
-                )
-            } else {
-                isSearching = false
-                if (allLectureResponse.isNotEmpty()) {
-                    // 이미 로드된 전체 목록이 있으면 바로 처리
-                    allItems = allLectureResponse.map { lecture ->
-
-                        LectureItemDto(
-                            id = lecture.id,
-                            title = lecture.title,
-                            platform = lecture.platform,
-                            teacher = lecture.teacher,
-                            subject = lecture.subject,
-                            createdAt = lecture.createdAt,
-                            tag = lecture.tag,
-                            totalLessons = lecture.totalLessons
-                        )
-                    }
-                    isLoading = false
-                    Log.d("SearchScreen", "캐시된 전체 목록 처리: ${allItems.size}개 항목")
+                    lectureViewModel.getDistinctLecture(dto)
                 } else {
-                    // 없으면 새로 로드
-                    isLoading = true
-                    lectureViewModel.getAllLecture(LectureDto(offset = offset))
+                    val dto = LectureDto(
+                        search = "",
+                        cursorLectureId = "",
+                        cursorCreatedAt = "",
+                        offset = offset,
+                        platform = selectedPlatform,
+                        subject = selectedSubject
+                    )
+                    lectureViewModel.getAllLecture(dto)
                 }
+            } catch (e: Exception) {
+                Log.e("SearchScreen", "API 호출 오류: ${e.message}", e)
+                isLoading = false // Reset on error
+            }
+            finally {
+                // Add this log
+                Log.d("SearchScreen", "⚠️ SETTING isLoading = FALSE")
+                isLoading = false
+                isLoadingMore = false
             }
         }
     }
 
     // 검색 결과 처리
     LaunchedEffect(searchLectureResponse) {
-        if (isSearching) {
-            Log.d("SearchScreen", "검색 응답 처리 시작: nextCursor=${searchLectureResponse.nextCursor}, hasNext=${searchLectureResponse.hasNext}")
+        try {
+            Log.d("SearchScreen", "검색 결과 응답 수신: ${searchLectureResponse.data?.size ?: 0}개 항목")
 
+            // 검색 결과가 있는지 확인
+            val hasData = searchLectureResponse.data != null && searchLectureResponse.data!!.isNotEmpty()
+
+            // 검색 결과를 LectureItemDto로 변환
             val newItems = searchLectureResponse.data?.filterNotNull()?.map { lecture ->
-
                 LectureItemDto(
                     id = lecture.id,
                     title = lecture.title,
@@ -456,41 +305,51 @@ fun SearchScreen(
                     tag = lecture.tag,
                     totalLessons = lecture.totalLessons
                 )
-            } ?: emptyList()
+            } ?: emptyList<LectureItemDto>()
 
-            // 첫 페이지인 경우 교체, 아닌 경우 추가
-            if (cursorLectureId.isEmpty() || isLoading) {
-                allItems = newItems
-                Log.d("SearchScreen", "첫 페이지 로드: ${newItems.size}개 항목")
-            } else if (isLoadingMore) {
-                // 중복 방지를 위해 ID 기반으로 필터링
-                val existingIds = allItems.map { it.id }.toSet()
-                val uniqueNewItems = newItems.filter { it.id !in existingIds }
+            // 현재 검색 모드인지 확인 (결과가 돌아왔을 때도 검색 모드 유지 중인지)
+            if (isSearching) {
+                if (cursorLectureId.isEmpty() || isLoading) {
+                    // 첫 페이지 로드 - 목록 완전히 대체
+                    allItems = newItems
+                    Log.d("SearchScreen", "검색 첫 페이지 로드: ${newItems.size}개 항목")
+                } else if (isLoadingMore && newItems.isNotEmpty()) {
+                    // 추가 페이지 로드 - 중복 제거하고 목록에 추가
+                    val existingIds = allItems.map { it.id }.toSet()
+                    val uniqueNewItems = newItems.filter { it.id !in existingIds }
 
-                // 새 아이템들을 기존 리스트에 추가
-                allItems = allItems + uniqueNewItems
+                    if (uniqueNewItems.isNotEmpty()) {
+                        allItems = allItems + uniqueNewItems
+                        Log.d("SearchScreen", "검색 추가 로드: 기존 ${allItems.size - uniqueNewItems.size}개, 새로 추가 ${uniqueNewItems.size}개, 총 ${allItems.size}개")
+                    } else {
+                        Log.d("SearchScreen", "검색 추가 로드: 모든 항목이 이미 목록에 있음")
+                    }
+                }
 
-                // 로그 추가
-                Log.d("SearchScreen", "추가 데이터 로드: 기존 ${allItems.size - uniqueNewItems.size}개, 새로 추가 ${uniqueNewItems.size}개, 총 ${allItems.size}개")
+                // 다음 페이지 존재 여부 업데이트
+                hasMoreData = searchLectureResponse.hasNext
+                Log.d("SearchScreen", "검색 다음 페이지 존재 여부: $hasMoreData")
+
+                // 커서 ID 업데이트
+                if (searchLectureResponse.nextCursor > 0) {
+                    cursorLectureId = searchLectureResponse.nextCursor.toString()
+                    Log.d("SearchScreen", "검색 다음 커서 ID 설정: $cursorLectureId")
+                }
+
+                // 커서 생성일 업데이트
+                val nextCreatedAt = searchLectureResponse.nextCreatedAt
+                if (nextCreatedAt != null && nextCreatedAt.isNotEmpty()) {
+                    cursorCreatedAt = nextCreatedAt
+                    Log.d("SearchScreen", "검색 다음 커서 생성일 설정: $cursorCreatedAt")
+                }
+            } else {
+                // 검색 모드가 아닌데 검색 결과가 도착한 경우 (비동기 타이밍 문제)
+                Log.d("SearchScreen", "검색 결과가 도착했지만 현재 검색 모드가 아님 - 무시")
             }
-
-            // 페이지네이션 정보 업데이트 - API의 hasNext 값을 직접 사용
-            hasMoreData = searchLectureResponse.hasNext
-            Log.d("SearchScreen", "다음 페이지 존재 여부: $hasMoreData")
-
-            // API로부터 온 커서 정보 사용 (null 안전하게)
-            if (searchLectureResponse.nextCursor > 0) {
-                cursorLectureId = searchLectureResponse.nextCursor.toString()
-                Log.d("SearchScreen", "다음 커서 업데이트: $cursorLectureId")
-            }
-
-            // API에서 제공한 생성일자 사용
-            val nextCreatedAt = searchLectureResponse.nextCreatedAt
-            if (nextCreatedAt != null && nextCreatedAt.isNotEmpty()) {
-                cursorCreatedAt = nextCreatedAt
-                Log.d("SearchScreen", "다음 생성일자 업데이트: $cursorCreatedAt")
-            }
-
+        } catch (e: Exception) {
+            Log.e("SearchScreen", "오류 발생: ${e.message}", e)
+        } finally {
+            // ALWAYS reset loading states here, not elsewhere
             isLoading = false
             isLoadingMore = false
         }
@@ -498,123 +357,367 @@ fun SearchScreen(
 
     // 전체 목록 처리
     LaunchedEffect(allLectureResponse) {
-        if (!isSearching && allLectureResponse.isNotEmpty()) {
-            Log.d("SearchScreen", "전체 목록 응답 변경 감지: ${allLectureResponse.size}개 항목")
-            // 전체 목록 처리 로직
-            val newItems = allLectureResponse.map { lecture ->
-                LectureItemDto(
-                    id = lecture.id,
-                    title = lecture.title,
-                    platform = lecture.platform,
-                    teacher = lecture.teacher,
-                    subject = lecture.subject,
-                    createdAt = lecture.createdAt,
-                    tag = lecture.tag,
-                    totalLessons = lecture.totalLessons
-                )
-            }
+        Log.d("SearchScreen", "전체 목록 응답 변경 감지: ${allLectureResponse.size}개 항목")
 
-            // 첫 요청이면 목록 교체, 아니면 추가
-            if (cursorLectureId.isEmpty() || isLoading) {
-                allItems = newItems
-                Log.d("SearchScreen", "전체 목록 첫 페이지 로드: ${newItems.size}개 항목")
-            } else if (isLoadingMore) {
-                // 중복 방지를 위해 ID 기반으로 필터링
-                val existingIds = allItems.map { it.id }.toSet()
-                val uniqueNewItems = newItems.filter { it.id !in existingIds }
-
-                // 새 아이템들을 기존 리스트에 추가
-                allItems = allItems + uniqueNewItems
-
-                // 로그 추가
-                Log.d("SearchScreen", "전체 목록 추가 로드: 기존 ${allItems.size - uniqueNewItems.size}개, 새로 추가 ${uniqueNewItems.size}개, 총 ${allItems.size}개")
-            }
-
-            // 새로운 아이템이 없으면 더 이상 데이터가 없다고 판단
-            hasMoreData = newItems.isNotEmpty()
-            Log.d("SearchScreen", "전체 목록 다음 페이지 존재 여부: $hasMoreData")
-
-            // 마지막 아이템의 ID와 생성일자를 커서로 사용
-            if (newItems.isNotEmpty()) {
-                val lastItem = newItems.last()
-                cursorLectureId = lastItem.id.toString()
-                cursorCreatedAt = lastItem.createdAt ?: ""
-                Log.d("SearchScreen", "전체 목록 다음 커서 설정: id=${cursorLectureId}, createdAt=${cursorCreatedAt}")
-            }
-
-            isLoading = false
-            isLoadingMore = false
+        val newItems = allLectureResponse.map { lecture ->
+            LectureItemDto(
+                id = lecture.id,
+                title = lecture.title,
+                platform = lecture.platform,
+                teacher = lecture.teacher,
+                subject = lecture.subject,
+                createdAt = lecture.createdAt,
+                tag = lecture.tag,
+                totalLessons = lecture.totalLessons
+            )
         }
+
+        if (cursorLectureId.isEmpty() || isLoading) {
+            allItems = newItems
+            Log.d("SearchScreen", "전체 목록 첫 페이지 로드: ${newItems.size}개 항목")
+        } else if (isLoadingMore && newItems.isNotEmpty()) {
+            val existingIds = allItems.map { it.id }.toSet()
+            val uniqueNewItems = newItems.filter { it.id !in existingIds }
+
+            allItems = allItems + uniqueNewItems
+            Log.d("SearchScreen", "전체 목록 추가 로드: 기존 ${allItems.size - uniqueNewItems.size}개, 새로 추가 ${uniqueNewItems.size}개, 총 ${allItems.size}개")
+        }
+
+        hasMoreData = newItems.isNotEmpty()
+        Log.d("SearchScreen", "전체 목록 다음 페이지 존재 여부: $hasMoreData")
+
+        if (newItems.isNotEmpty()) {
+            val lastItem = newItems.last()
+            cursorLectureId = lastItem.id.toString()
+            cursorCreatedAt = lastItem.createdAt ?: ""
+            Log.d("SearchScreen", "전체 목록 다음 커서 설정: id=${cursorLectureId}, createdAt=${cursorCreatedAt}")
+        }
+
+        // Reset loading states
+        isLoading = false
+        isLoadingMore = false
     }
 
-    Column {
-        SearchTopBar(searchQuery = searchQuery, onQueryChanged = { searchQuery = it }, lectureViewModel = lectureViewModel)
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .imePadding() // 키보드 패딩 추가
+    ) {
+        // 기본 UI 컨텐츠
+        Column {
+            // 상단바
+            SearchTopBar(
+                searchQuery = searchQuery,
+                onQueryChanged = { searchQuery = it },
+                lectureViewModel = lectureViewModel,
+                onSearchClick = {}
+            )
 
-        // SearchScreen 내부의 해당 부분을 다음과 같이 변경합니다
-        LectureFilterBarDropdown(
-            selectedPlatforms = selectedPlatforms,
-            onPlatformSelected = { platform ->
-                // 토글 로직: 이미 선택되어 있으면 제거, 없으면 추가
-                selectedPlatforms = if (selectedPlatforms.contains(platform)) {
-                    selectedPlatforms - platform
-                } else {
-                    selectedPlatforms + platform
+            // 필터 바 컴포넌트
+            LectureFilterBarDropdown(
+                selectedPlatform = selectedPlatform,
+                onPlatformSelected = { platform ->
+                    selectedPlatform = if (selectedPlatform == platform) null else platform
+                },
+                selectedSubject = selectedSubject,
+                onSubjectSelected = { subject ->
+                    selectedSubject = if (selectedSubject == subject) null else subject
                 }
-            },
-            selectedSubjects = selectedSubjects,
-            onSubjectSelected = { subject ->
-                // 토글 로직: 이미 선택되어 있으면 제거, 없으면 추가
-                selectedSubjects = if (selectedSubjects.contains(subject)) {
-                    selectedSubjects - subject
-                } else {
-                    selectedSubjects + subject
-                }
-            },
-            loadingStateManager = loadingStateManager
-        )
+            )
 
-        // 개선된 무한 스크롤 리스트 구현
-        SimplifiedInfiniteScrollList(
-            navController = navController,
-            lectureViewModel = lectureViewModel,
-            lectureItems = allItems,
-            searchQuery = searchQuery,
-            hasMoreData = hasMoreData,
-            isLoading = isLoading,
-            isLoadingMore = isLoadingMore,
-            onLoadMore = {
-                if (hasMoreData && !isLoading && !isLoadingMore) {
-                    scope.launch {
-                        isLoadingMore = true
-                        Log.d("SearchScreen", "추가 데이터 로드 요청: cursor=${cursorLectureId}, createdAt=${cursorCreatedAt}")
+            // 리스트 컨텐츠를 포함하는 Box
+            Box(modifier = Modifier.weight(1f)) {
+                // 무한 스크롤 리스트
+                SimplifiedInfiniteScrollList(
+                    navController = navController,
+                    lectureViewModel = lectureViewModel,
+                    lectureItems = allItems,
+                    searchQuery = searchQuery,
+                    hasMoreData = hasMoreData,
+                    isLoading = isLoading,
+                    isLoadingMore = isLoadingMore,
+                    onLoadMore = {
+                        if (hasMoreData && !isLoading) {
+                            scope.launch {
+                                isLoadingMore = true
+                                Log.d("SearchScreen", "추가 데이터 로드 요청: cursor=${cursorLectureId}, createdAt=${cursorCreatedAt}")
 
-                        if (isSearching) {
-                            // 검색 모드에서 다음 페이지 로드
-                            lectureViewModel.getDistinctLecture(
-                                LectureDto(
-                                    search = searchQuery,
+                                loadFilteredLectures(
+                                    isSearchMode = isSearching,
+                                    lectureViewModel = lectureViewModel,
+                                    selectedPlatform = selectedPlatform,
+                                    selectedSubject = selectedSubject,
+                                    searchQuery = if (isSearching) searchQuery else "",
                                     cursorLectureId = cursorLectureId,
                                     cursorCreatedAt = cursorCreatedAt,
                                     offset = offset
                                 )
-                            )
+                            }
                         } else {
-                            // 전체 목록 모드에서 다음 페이지 로드
-                            lectureViewModel.getAllLecture(
-                                LectureDto(
-                                    cursorLectureId = cursorLectureId,
-                                    cursorCreatedAt = cursorCreatedAt,
-                                    offset = offset
-                                )
-                            )
+                            Log.d("SearchScreen", "추가 데이터 로드 무시: hasMore=$hasMoreData, isLoading=$isLoading, isLoadingMore=$isLoadingMore")
+                        }
+                    },
+                    loadingStateManager = loadingStateManager,
+                    isSearching = isSearching
+                )
+
+                // 추가 로딩 인디케이터 (하단에 떠있는 형태)
+                if (isLoadingMore) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .padding(bottom = 16.dp)
+                            .size(60.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        val composition by rememberLottieComposition(
+                            LottieCompositionSpec.Asset("loading_dot.json")
+                        )
+                        val progress by animateLottieCompositionAsState(
+                            composition,
+                            iterations = LottieConstants.IterateForever
+                        )
+                        LottieAnimation(
+                            composition = composition,
+                            progress = { progress },
+                            modifier = Modifier.size(40.dp)
+                        )
+                    }
+                }
+            }
+        }
+
+        // 초기 로딩 인디케이터 (전체 화면 오버레이)
+        if (isLoading) {
+            LaunchedEffect(isLoading) {
+                // Empty effect just to trigger recomposition
+            }
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .pointerInput(Unit) {
+                        // 이벤트 처리는 하되 아무 동작도 하지 않음 (이벤트 전파 허용)
+                        awaitPointerEventScope {
+                            while (true) {
+                                val event = awaitPointerEvent()
+                                // 이벤트를 소비하지 않음 (하위 뷰로 전달)
+                            }
                         }
                     }
-                } else {
-                    Log.d("SearchScreen", "추가 데이터 로드 무시: hasMore=$hasMoreData, isLoading=$isLoading, isLoadingMore=$isLoadingMore")
-                }
-            },
-            loadingStateManager = loadingStateManager
+                    .background(Color.Black.copy(alpha = 0.5f)),
+                contentAlignment = Alignment.Center
+            ) {
+                val composition by rememberLottieComposition(
+                    LottieCompositionSpec.Asset("loading_dot.json")
+                )
+                val progress by animateLottieCompositionAsState(
+                    composition,
+                    iterations = LottieConstants.IterateForever
+                )
+                LottieAnimation(
+                    composition = composition,
+                    progress = { progress },
+                    modifier = Modifier.size(50.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun LectureFilterBarDropdown(
+    selectedPlatform: Platform?,
+    onPlatformSelected: (Platform) -> Unit,
+    selectedSubject: Subject?,
+    onSubjectSelected: (Subject) -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        // 왼쪽: 강의 사이트 필터
+        SingleSelectFilterDropdown(
+            items = Platform.entries,
+            selectedItem = selectedPlatform,
+            labelMapper = { it.label },
+            placeholderText = selectedPlatform?.label ?: "강의 사이트",
+            onItemSelected = onPlatformSelected,
+            modifier = Modifier.weight(1f)
         )
+
+        // 오른쪽: 과목 필터
+        SingleSelectFilterDropdown(
+            items = Subject.entries,
+            selectedItem = selectedSubject,
+            labelMapper = { it.label },
+            placeholderText = selectedSubject?.label ?: "과목",
+            onItemSelected = onSubjectSelected,
+            modifier = Modifier.weight(1f)
+        )
+    }
+}
+
+@Composable
+fun <T> SingleSelectFilterDropdown(
+    items: List<T>,
+    selectedItem: T?,
+    labelMapper: (T) -> String,
+    placeholderText: String,
+    onItemSelected: (T) -> Unit,
+    leadingIcon: @Composable (() -> Unit)? = null,
+    modifier: Modifier = Modifier
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Box(modifier = modifier) {
+        OutlinedCard(
+            shape = RoundedCornerShape(6.dp),
+            border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(32.dp)
+                .clickable(onClick = { expanded = true })
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 6.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (leadingIcon != null) {
+                    Box(modifier = Modifier.padding(end = 4.dp)) {
+                        leadingIcon()
+                    }
+                }
+
+                Text(
+                    text = placeholderText,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (selectedItem == null)
+                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                    else
+                        MaterialTheme.colorScheme.primary,
+                    fontWeight = if (selectedItem == null) FontWeight.Normal else FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
+                )
+
+                // 선택된 항목이 있으면 닫기 버튼 표시
+                if (selectedItem != null) {
+                    Icon(
+                        imageVector = Icons.Filled.Close,
+                        contentDescription = "필터 해제",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier
+                            .size(14.dp)
+                            .clickable(
+                                onClick = {
+                                    // Call the onItemSelected with the current item to toggle it off
+                                    onItemSelected(selectedItem)
+                                    // Close the dropdown
+                                    expanded = false
+                                }
+                            )
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                }
+
+                Icon(
+                    imageVector = if (expanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
+                    contentDescription = if (expanded) "접기" else "펼치기",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(14.dp)
+                )
+            }
+        }
+
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            modifier = Modifier
+                .width(IntrinsicSize.Min)
+                .heightIn(max = 200.dp)
+                .background(White)
+        ) {
+            items.forEach { item ->
+                val isSelected = selectedItem == item
+                DropdownMenuItem(
+                    onClick = {
+                        onItemSelected(item)
+                        // Close the dropdown after selection if not toggling off
+                        if (!isSelected) {
+                            expanded = false
+                        }
+                    },
+                    text = {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = labelMapper(item),
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.weight(1f)
+                            )
+
+                            if (isSelected) {
+                                Icon(
+                                    imageVector = Icons.Filled.Check,
+                                    contentDescription = "Selected",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                            }
+                        }
+                    }
+                )
+            }
+        }
+    }
+}
+
+// 필터링된 강의 로드 함수 - 단일 플랫폼 및 단일 과목 지원
+fun loadFilteredLectures(
+    isSearchMode: Boolean,
+    lectureViewModel: LectureViewModel,
+    selectedPlatform: Platform?,
+    selectedSubject: Subject?,
+    searchQuery: String,
+    cursorLectureId: String,
+    cursorCreatedAt: String,
+    offset: String
+) {
+    try {
+        // Enhanced logging for debugging
+        Log.d("SearchScreen", "로드 요청: 모드=${if(isSearchMode) "검색" else "전체목록"}, 검색어='$searchQuery', 플랫폼=${selectedPlatform?.label ?: "없음"}, 과목=${selectedSubject?.label ?: "없음"}")
+
+        // Create DTO with current state
+        val dto = LectureDto(
+            search = searchQuery,
+            cursorLectureId = cursorLectureId,
+            cursorCreatedAt = cursorCreatedAt,
+            offset = offset,
+            platform = selectedPlatform,  // Pass directly as nullable
+            subject = selectedSubject     // Pass directly as nullable
+        )
+
+        // Log the exact parameters being sent
+        Log.d("SearchScreen", "API 요청 파라미터: search='${dto.search}', platform=${dto.platform?.label ?: "null"}, subject=${dto.subject?.label ?: "null"}, cursor=${dto.cursorLectureId}, createdAt=${dto.cursorCreatedAt}")
+
+        // Use search mode to determine API
+        if (isSearchMode) {
+            Log.d("SearchScreen", "검색 API 호출: '${dto.search}', 플랫폼=${dto.platform?.label ?: "없음"}, 과목=${dto.subject?.label ?: "없음"}")
+            lectureViewModel.getDistinctLecture(dto)
+        } else {
+            Log.d("SearchScreen", "전체 목록 API 호출: 플랫폼=${dto.platform?.label ?: "없음"}, 과목=${dto.subject?.label ?: "없음"}")
+            lectureViewModel.getAllLecture(dto)
+        }
+    } catch (e: Exception) {
+        Log.e("SearchScreen", "API 호출 중 오류 발생: ${e.message}", e)
     }
 }
 
@@ -628,17 +731,15 @@ fun SimplifiedInfiniteScrollList(
     isLoading: Boolean,
     isLoadingMore: Boolean,
     onLoadMore: () -> Unit,
-    loadingStateManager: LoadingStateManager
+    loadingStateManager: LoadingStateManager,
+    isSearching: Boolean
 ) {
     val listState = rememberLazyListState()
 
-    // 간소화된 스크롤 감지 로직
     LaunchedEffect(listState, lectureItems.size) {
         snapshotFlow {
             val lastVisibleItem = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
             val totalItemCount = lectureItems.size
-
-            // 마지막 아이템에 접근하면 더 로드
             lastVisibleItem >= totalItemCount - 5 && totalItemCount > 0
         }.collect { isAtEnd ->
             if (isAtEnd && hasMoreData && !isLoading && !isLoadingMore) {
@@ -648,90 +749,88 @@ fun SimplifiedInfiniteScrollList(
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        if (lectureItems.isEmpty() && !isLoading) {
-            // 검색 결과가 없을 때 메시지 표시
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Image(
-                    painter = painterResource(R.drawable.screen_search_empty_iv),
-                    contentDescription = "과목명",
-                    modifier = Modifier.size(80.dp)
-                )
-                Spacer(modifier = Modifier.padding(5.dp))
-                Text(
-                    text = if (searchQuery.isBlank()) "강의 목록이 비어 있습니다." else "검색 결과가 없습니다.",
-                    fontSize = 18.sp,
-                    color = materialGray,
-                    textAlign = TextAlign.Center
-                )
-            }
-        } else {
-            // 강의 목록 표시
-            LazyColumn(
-                state = listState,
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                // 각 아이템 표시
-                itemsIndexed(
-                    items = lectureItems,
-                    key = { _, item -> item.id } // 고유 ID로 키 사용
-                ) { index, item ->
-                    SearchLectureItem(
-                        lectureItem = item,
-                        searchQuery = searchQuery,
-                        onClick = {
-                            // Store the selected lecture before navigating
-                            lectureViewModel.selectLecture(item)
-                            // Navigate with lecture ID instead of title
-                            navController.navigate("${Screen.Plan.title}/${item.id}")                        }
-                    )
-                }
-
-                // 로딩 인디케이터
-                if (isLoadingMore) {
-                    item {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            LoadingIndicator(loadingStateManager)
-                        }
-                    }
-                }
-
-                // 더 이상 데이터가 없는 경우 메시지 표시
-                if (!hasMoreData && lectureItems.isNotEmpty()) {
-                    item {
-                        Text(
-                            text = "모든 강의를 불러왔습니다 (총 ${lectureItems.size}개)",
-                            fontSize = 14.sp,
-                            color = materialGray,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            textAlign = TextAlign.Center
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .imePadding() // 키보드 높이에 따라 자동으로 패딩 적용
+            .navigationBarsPadding() // 네비게이션 바도 고려
+    ) {
+        when {
+            // 1. 항목이 있으면 항상 리스트 표시
+            lectureItems.isNotEmpty() -> {
+                LazyColumn(
+                    state = listState,
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    itemsIndexed(
+                        items = lectureItems,
+                        key = { _, item -> item.id }
+                    ) { _, item ->
+                        SearchLectureItem(
+                            lectureItem = item,
+                            searchQuery = searchQuery,
+                            onClick = {
+                                lectureViewModel.selectLecture(item)
+                                navController.navigate("${Screen.Plan.title}/${item.id}")
+                            }
                         )
                     }
-                }
 
-                // 바닥에 약간의 여백 추가
-                item {
-                    Spacer(modifier = Modifier.height(60.dp))
+                    if (!hasMoreData) {
+                        item {
+                            Text(
+                                text = "모든 강의를 불러왔습니다 (총 ${lectureItems.size}개)",
+                                fontSize = 14.sp,
+                                color = materialGray,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+
+                    item {
+                        Spacer(modifier = Modifier.height(60.dp))
+                    }
                 }
+            }
+
+            // 2. 항목이 없고 검색 중이면 "검색 결과 없음" 표시
+            isSearching && !isLoading -> {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Image(
+                        painter = painterResource(R.drawable.screen_search_empty_iv),
+                        contentDescription = "검색 결과 없음",
+                        modifier = Modifier.size(80.dp)
+                    )
+                    Spacer(modifier = Modifier.padding(5.dp))
+                    Text(
+                        text = "검색 결과가 없습니다.",
+                        fontSize = 18.sp,
+                        color = materialGray,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+
+            // 3. 항목이 없고 검색 중이 아니면 아무것도 표시하지 않음
+            // (전체 API는 이미 호출되었고, 로딩 인디케이터가 표시 중)
+            else -> {
+                // 아무것도 표시하지 않음 (비어있는 상태)
             }
         }
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun SearchNavHost(navController: NavHostController, planViewModel: PlanViewModel, lectureViewModel: LectureViewModel, loadingStateManager: LoadingStateManager) {
     NavHost(
@@ -769,27 +868,34 @@ fun SearchLectureItem(
 ) {
     // null 안전하게 처리
     val title = lectureItem.title
+    val teacher = lectureItem.teacher
     val query = searchQuery
 
-    // 검색어가 포함된 부분을 하이라이트하는 함수
-    val annotatedString = buildAnnotatedString {
-        var startIndex = 0
+    // 검색어가 포함된 부분을 하이라이트하는 함수 (재사용 가능하도록 추출)
+    fun getHighlightedText(text: String, searchQuery: String): AnnotatedString {
+        return buildAnnotatedString {
+            if (searchQuery.isNotEmpty()) {
+                var startIndex = 0
+                var searchPos = text.indexOf(searchQuery, ignoreCase = true)
 
-        if (query.isNotEmpty()) {
-            var searchPos = title.indexOf(query, ignoreCase = true)
-            while (searchPos != -1) {
-                append(title.substring(startIndex, searchPos))
-                withStyle(style = SpanStyle(color = MainPurple, fontWeight = FontWeight.Bold)) {
-                    append(title.substring(searchPos, searchPos + query.length))
+                while (searchPos != -1) {
+                    append(text.substring(startIndex, searchPos))
+                    withStyle(style = SpanStyle(color = MainPurple, fontWeight = FontWeight.Bold)) {
+                        append(text.substring(searchPos, searchPos + searchQuery.length))
+                    }
+                    startIndex = searchPos + searchQuery.length
+                    searchPos = text.indexOf(searchQuery, startIndex, ignoreCase = true)
                 }
-                startIndex = searchPos + query.length
-                searchPos = title.indexOf(query, startIndex, ignoreCase = true)
+                append(text.substring(startIndex))
+            } else {
+                append(text)
             }
-            append(title.substring(startIndex))
-        } else {
-            append(title)
         }
     }
+
+    // 제목과 선생님 이름에 검색어 하이라이트 적용
+    val highlightedTitle = getHighlightedText(title, query)
+    val highlightedTeacher = getHighlightedText(teacher, query)
 
     Box(
         modifier = Modifier
@@ -850,14 +956,14 @@ fun SearchLectureItem(
                     verticalAlignment = Alignment.Top
                 ) {
                     Text(
-                        text = annotatedString,
+                        text = highlightedTitle,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier
-                            .weight(1f) // 제목이 차지할 공간 확보
-                            .padding(end = 8.dp) // "몇 강"과의 간격
+                            .weight(1f)
+                            .padding(end = 8.dp)
                     )
 
                     Box(
@@ -883,8 +989,9 @@ fun SearchLectureItem(
                         .fillMaxWidth()
                         .padding(top = 2.dp),
                 ) {
+                    // 여기서 선생님 이름에 하이라이트 적용
                     Text(
-                        text = lectureItem.teacher,
+                        text = highlightedTeacher,
                         color = textGray,
                         fontSize = 14.sp
                     )
@@ -905,7 +1012,8 @@ fun SearchLectureItem(
 fun SearchTopBar(
     searchQuery: String,
     onQueryChanged: (String) -> Unit,
-    lectureViewModel: LectureViewModel
+    lectureViewModel: LectureViewModel,
+    onSearchClick: () -> Unit
 ) {
     val context = LocalContext.current
 
@@ -919,22 +1027,14 @@ fun SearchTopBar(
                     context.startActivity(intent)
                 },
                 onSearchClick = {
-                    // 검색 버튼을 클릭했을 때 강제로 검색 실행
-                    if (searchQuery.isNotBlank()) {
-                        lectureViewModel.getDistinctLecture(
-                            LectureDto(
-                                search = searchQuery,
-                                cursorLectureId = "",
-                                cursorCreatedAt = "",
-                                offset = "20" // 검색 버튼 클릭 시에도 20개 가져오도록 수정
-                            )
-                        )
-                    }
+                    // 검색 버튼을 클릭했을 때 검색 실행
+                    onSearchClick()
                 }
             )
         }
     )
 }
+
 
 val Subject.bgColor: Color
     get() = when (this) {
