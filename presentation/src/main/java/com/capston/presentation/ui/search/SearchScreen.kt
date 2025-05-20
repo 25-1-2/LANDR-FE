@@ -23,6 +23,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -389,7 +391,11 @@ fun SearchScreen(
         isLoadingMore = false
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .imePadding() // 키보드 패딩 추가
+    ) {
         // 기본 UI 컨텐츠
         Column {
             // 상단바
@@ -737,7 +743,12 @@ fun SimplifiedInfiniteScrollList(
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .imePadding() // 키보드 높이에 따라 자동으로 패딩 적용
+            .navigationBarsPadding() // 네비게이션 바도 고려
+    ) {
         if (!isLoading && lectureItems.isEmpty()) {
             // 검색 결과가 없을 때 - isLoading 조건 제거
             Column(
