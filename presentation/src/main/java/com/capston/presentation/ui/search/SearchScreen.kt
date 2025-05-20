@@ -64,6 +64,7 @@ import androidx.compose.ui.graphics.Color.Companion.Transparent
 import androidx.compose.ui.graphics.Color.Companion.White
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -849,27 +850,34 @@ fun SearchLectureItem(
 ) {
     // null 안전하게 처리
     val title = lectureItem.title
+    val teacher = lectureItem.teacher
     val query = searchQuery
 
-    // 검색어가 포함된 부분을 하이라이트하는 함수
-    val annotatedString = buildAnnotatedString {
-        var startIndex = 0
+    // 검색어가 포함된 부분을 하이라이트하는 함수 (재사용 가능하도록 추출)
+    fun getHighlightedText(text: String, searchQuery: String): AnnotatedString {
+        return buildAnnotatedString {
+            if (searchQuery.isNotEmpty()) {
+                var startIndex = 0
+                var searchPos = text.indexOf(searchQuery, ignoreCase = true)
 
-        if (query.isNotEmpty()) {
-            var searchPos = title.indexOf(query, ignoreCase = true)
-            while (searchPos != -1) {
-                append(title.substring(startIndex, searchPos))
-                withStyle(style = SpanStyle(color = MainPurple, fontWeight = FontWeight.Bold)) {
-                    append(title.substring(searchPos, searchPos + query.length))
+                while (searchPos != -1) {
+                    append(text.substring(startIndex, searchPos))
+                    withStyle(style = SpanStyle(color = MainPurple, fontWeight = FontWeight.Bold)) {
+                        append(text.substring(searchPos, searchPos + searchQuery.length))
+                    }
+                    startIndex = searchPos + searchQuery.length
+                    searchPos = text.indexOf(searchQuery, startIndex, ignoreCase = true)
                 }
-                startIndex = searchPos + query.length
-                searchPos = title.indexOf(query, startIndex, ignoreCase = true)
+                append(text.substring(startIndex))
+            } else {
+                append(text)
             }
-            append(title.substring(startIndex))
-        } else {
-            append(title)
         }
     }
+
+    // 제목과 선생님 이름에 검색어 하이라이트 적용
+    val highlightedTitle = getHighlightedText(title, query)
+    val highlightedTeacher = getHighlightedText(teacher, query)
 
     Box(
         modifier = Modifier
@@ -930,14 +938,14 @@ fun SearchLectureItem(
                     verticalAlignment = Alignment.Top
                 ) {
                     Text(
-                        text = annotatedString,
+                        text = highlightedTitle,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier
-                            .weight(1f) // 제목이 차지할 공간 확보
-                            .padding(end = 8.dp) // "몇 강"과의 간격
+                            .weight(1f)
+                            .padding(end = 8.dp)
                     )
 
                     Box(
@@ -963,8 +971,9 @@ fun SearchLectureItem(
                         .fillMaxWidth()
                         .padding(top = 2.dp),
                 ) {
+                    // 여기서 선생님 이름에 하이라이트 적용
                     Text(
-                        text = lectureItem.teacher,
+                        text = highlightedTeacher,
                         color = textGray,
                         fontSize = 14.sp
                     )
