@@ -62,6 +62,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Color.Companion.Transparent
 import androidx.compose.ui.graphics.Color.Companion.White
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
@@ -140,23 +141,12 @@ fun SearchScreen(
     var selectedPlatform by remember { mutableStateOf<Platform?>(null) }
     var selectedSubject by remember { mutableStateOf<Subject?>(null) }
 
-    // 최소 로딩 시간을 보장하기 위한 변수 추가
-    var responseReceived by remember { mutableStateOf(false) }
-
-    // 로컬 로딩 표시 상태 - 이것으로 강제 로딩 인디케이터를 제어
-    var showForcedLoading by remember { mutableStateOf(false) }
-    // 최소 로딩 표시 시간 (ms)
-    val minLoadingDisplayTime = 500L
-    // 로딩 시작 시간 저장
-    var loadingStartTime by remember { mutableStateOf(0L) }
-
     // 디버깅용 - 현재 로드된 아이템 수 출력
     LaunchedEffect(allItems.size, isLoadingMore) {
         Log.d("SearchScreen", "현재 표시 중인 아이템 수: ${allItems.size}, 로딩 중: $isLoadingMore")
     }
 
     // 필터가 변경될 때마다 데이터를 새로 로드하기 위한 Effect
-    // Modify the LaunchedEffect for filter changes:
     LaunchedEffect(selectedPlatform, selectedSubject) {
         Log.d("SearchScreen", "필터 변경됨: 플랫폼=${selectedPlatform?.label ?: "없음"}, 과목=${selectedSubject?.label ?: "없음"}, 검색모드=$isSearching, 검색어=$searchQuery")
 
@@ -167,16 +157,14 @@ fun SearchScreen(
         cursorCreatedAt = ""
         hasMoreData = true
 
-        // Critical - NEVER reset isSearching here, preserve the exact search state and query
-
         // Create DTO with current state - directly use the nullable platform and subject
         val dto = LectureDto(
             search = if (isSearching) searchQuery else "",
             cursorLectureId = "",
             cursorCreatedAt = "",
             offset = offset,
-            platform = selectedPlatform,  // Use directly, already nullable
-            subject = selectedSubject     // Use directly, already nullable
+            platform = selectedPlatform,
+            subject = selectedSubject
         )
 
         // Call appropriate API based on current search mode
@@ -238,9 +226,6 @@ fun SearchScreen(
         searchJob = scope.launch {
             delay(300) // Debounce
 
-            // 로딩 시작 시간 기록
-            loadingStartTime = System.currentTimeMillis()
-
             Log.d("SearchScreen", "검색 요청 시작: 검색어='$searchQuery', 현재 isSearching=$isSearching")
 
             if (searchQuery.isBlank()) {
@@ -267,7 +252,7 @@ fun SearchScreen(
             }
 
             // 로딩 인디케이터 타이머
-            delay(1000) // 3초 타임아웃
+            delay(1000) // 타임아웃
             if (isLoading) {
                 Log.d("SearchScreen", "검색 타임아웃 - 로딩 상태 강제 해제: 검색어='$searchQuery'")
                 isLoading = false
@@ -318,22 +303,11 @@ fun SearchScreen(
             Log.d("SearchScreen", "검색 요청: '$searchQuery'")
             lectureViewModel.getDistinctLecture(dto)
         }
-
-//        // 최소 로딩 시간 - 500ms로 줄이기
-//        forceLoadingJob = scope.launch {
-//            delay(500)
-//            showForcedLoading = false
-//        }
     }
 
     // 검색 결과 처리
-    // 기존 검색 결과 처리 로직 수정
     LaunchedEffect(searchLectureResponse) {
         val hasData = searchLectureResponse.data != null && searchLectureResponse.data!!.isNotEmpty()
-
-        // 로딩 시작 후 경과 시간 계산
-        val elapsedTime = System.currentTimeMillis() - loadingStartTime
-        val remainingTime = minLoadingDisplayTime - elapsedTime
 
         val newItems = searchLectureResponse.data?.filterNotNull()?.map { lecture ->
             LectureItemDto(
@@ -372,6 +346,7 @@ fun SearchScreen(
         isLoadingMore = false
     }
 
+    // 전체 목록 처리
     LaunchedEffect(allLectureResponse) {
         Log.d("SearchScreen", "전체 목록 응답 변경 감지: ${allLectureResponse.size}개 항목")
 
@@ -414,64 +389,126 @@ fun SearchScreen(
         isLoadingMore = false
     }
 
-    Column {
+    Box(modifier = Modifier.fillMaxSize()) {
+        // 기본 UI 컨텐츠
+        Column {
+            // 상단바
+            SearchTopBar(
+                searchQuery = searchQuery,
+                onQueryChanged = { searchQuery = it },
+                lectureViewModel = lectureViewModel,
+                onSearchClick = handleSearchClick
+            )
 
-        // SearchScreen 함수 내에서 검색 버튼 클릭 처리
-        SearchTopBar(
-            searchQuery = searchQuery,
-            onQueryChanged = { searchQuery = it },
-            lectureViewModel = lectureViewModel,
-            onSearchClick = handleSearchClick
-        )
+            // 필터 바 컴포넌트
+            LectureFilterBarDropdown(
+                selectedPlatform = selectedPlatform,
+                onPlatformSelected = { platform ->
+                    selectedPlatform = if (selectedPlatform == platform) null else platform
+                },
+                selectedSubject = selectedSubject,
+                onSubjectSelected = { subject ->
+                    selectedSubject = if (selectedSubject == subject) null else subject
+                }
+            )
 
-        // 필터 바 컴포넌트
-        LectureFilterBarDropdown(
-            selectedPlatform = selectedPlatform,
-            onPlatformSelected = { platform ->
-                // If selecting the same platform, clear it
-                selectedPlatform = if (selectedPlatform == platform) null else platform
-            },
-            selectedSubject = selectedSubject,
-            onSubjectSelected = { subject ->
-                // If selecting the same subject, clear it
-                selectedSubject = if (selectedSubject == subject) null else subject
-            }
-        )
+            // 리스트 컨텐츠를 포함하는 Box
+            Box(modifier = Modifier.weight(1f)) {
+                // 무한 스크롤 리스트
+                SimplifiedInfiniteScrollList(
+                    navController = navController,
+                    lectureViewModel = lectureViewModel,
+                    lectureItems = allItems,
+                    searchQuery = searchQuery,
+                    hasMoreData = hasMoreData,
+                    isLoading = isLoading,
+                    isLoadingMore = isLoadingMore,
+                    onLoadMore = {
+                        if (hasMoreData && !isLoading && !isLoadingMore) {
+                            scope.launch {
+                                isLoadingMore = true
+                                Log.d("SearchScreen", "추가 데이터 로드 요청: cursor=${cursorLectureId}, createdAt=${cursorCreatedAt}")
 
-        // 개선된 무한 스크롤 리스트 구현
-        SimplifiedInfiniteScrollList(
-            navController = navController,
-            lectureViewModel = lectureViewModel,
-            lectureItems = allItems,
-            searchQuery = searchQuery,
-            hasMoreData = hasMoreData,
-            isLoading = isLoading,
-            isLoadingMore = isLoadingMore,
-            onLoadMore = {
-                if (hasMoreData && !isLoading && !isLoadingMore) {
-                    scope.launch {
-                        isLoadingMore = true
-                        Log.d("SearchScreen", "추가 데이터 로드 요청: cursor=${cursorLectureId}, createdAt=${cursorCreatedAt}")
+                                loadFilteredLectures(
+                                    isSearchMode = isSearching,
+                                    lectureViewModel = lectureViewModel,
+                                    selectedPlatform = selectedPlatform,
+                                    selectedSubject = selectedSubject,
+                                    searchQuery = if (isSearching) searchQuery else "",
+                                    cursorLectureId = cursorLectureId,
+                                    cursorCreatedAt = cursorCreatedAt,
+                                    offset = offset
+                                )
+                            }
+                        } else {
+                            Log.d("SearchScreen", "추가 데이터 로드 무시: hasMore=$hasMoreData, isLoading=$isLoading, isLoadingMore=$isLoadingMore")
+                        }
+                    },
+                    loadingStateManager = loadingStateManager,
+                    isSearching = isSearching
+                )
 
-                        // 로드 요청에 현재 필터 상태 포함
-                        loadFilteredLectures(
-                            isSearchMode = isSearching,
-                            lectureViewModel = lectureViewModel,
-                            selectedPlatform = selectedPlatform,  // Pass the nullable platform
-                            selectedSubject = selectedSubject,    // Pass the nullable subject
-                            searchQuery = if (isSearching) searchQuery else "",
-                            cursorLectureId = cursorLectureId,
-                            cursorCreatedAt = cursorCreatedAt,
-                            offset = offset
+                // 추가 로딩 인디케이터 (하단에 떠있는 형태)
+                if (isLoadingMore) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .padding(bottom = 16.dp)
+                            .size(60.dp)
+                            .background(
+                                color = Color.White.copy(alpha = 0.9f),
+                                shape = RoundedCornerShape(30.dp)
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        val composition by rememberLottieComposition(
+                            LottieCompositionSpec.Asset("loading_dot.json")
+                        )
+                        val progress by animateLottieCompositionAsState(
+                            composition,
+                            iterations = LottieConstants.IterateForever
+                        )
+                        LottieAnimation(
+                            composition = composition,
+                            progress = { progress },
+                            modifier = Modifier.size(40.dp)
                         )
                     }
-                } else {
-                    Log.d("SearchScreen", "추가 데이터 로드 무시: hasMore=$hasMoreData, isLoading=$isLoading, isLoadingMore=$isLoadingMore")
                 }
-            },
-            loadingStateManager = loadingStateManager,
-            isSearching = isSearching
-        )
+            }
+        }
+
+        // 초기 로딩 인디케이터 (전체 화면 오버레이)
+        if (isLoading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .pointerInput(Unit) {
+                        // 이벤트 처리는 하되 아무 동작도 하지 않음 (이벤트 전파 허용)
+                        awaitPointerEventScope {
+                            while (true) {
+                                val event = awaitPointerEvent()
+                                // 이벤트를 소비하지 않음 (하위 뷰로 전달)
+                            }
+                        }
+                    }
+                    .background(Color.Black.copy(alpha = 0.5f)),
+                contentAlignment = Alignment.Center
+            ) {
+                val composition by rememberLottieComposition(
+                    LottieCompositionSpec.Asset("loading_dot.json")
+                )
+                val progress by animateLottieCompositionAsState(
+                    composition,
+                    iterations = LottieConstants.IterateForever
+                )
+                LottieAnimation(
+                    composition = composition,
+                    progress = { progress },
+                    modifier = Modifier.size(50.dp)
+                )
+            }
+        }
     }
 }
 
@@ -701,37 +738,7 @@ fun SimplifiedInfiniteScrollList(
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        // 로딩 인디케이터를 정중앙에 오버레이로 표시 (이벤트 전달 허용)
-        if (isLoading && !isLoadingMore) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .clickable(enabled = false, onClick = {}) // 클릭 이벤트는 무시하되 아래 뷰로 전달
-                    .background(Color.Black.copy(alpha = 0.3f)), // 약간의 반투명 배경 추가
-                contentAlignment = Alignment.Center
-            ) {
-                val composition by rememberLottieComposition(
-                    LottieCompositionSpec.Asset("loading_dot.json")
-                )
-                val progress by animateLottieCompositionAsState(
-                    composition,
-                    iterations = LottieConstants.IterateForever
-                )
-
-                // 로딩 애니메이션 주변에 약간의 배경 추가
-                Box(
-                    modifier = Modifier
-                        .size(80.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    LottieAnimation(
-                        composition = composition,
-                        progress = { progress },
-                        modifier = Modifier.size(50.dp)
-                    )
-                }
-            }
-        } else if (!isLoading && lectureItems.isEmpty()) {
+        if (!isLoading && lectureItems.isEmpty()) {
             // 검색 결과가 없을 때 - isLoading 조건 제거
             Column(
                 modifier = Modifier
@@ -749,7 +756,7 @@ fun SimplifiedInfiniteScrollList(
 
                 // 검색 모드에 따라 메시지 표시
                 Text(
-                    text = "검색 결과가 없습니다.",
+                    text = if (isSearching) "검색 결과가 없습니다." else "강의 목록이 비어 있습니다.",
                     fontSize = 18.sp,
                     color = materialGray,
                     textAlign = TextAlign.Center
@@ -776,19 +783,7 @@ fun SimplifiedInfiniteScrollList(
                     )
                 }
 
-                // loading more일 때 bottom에 loading indicator 추가
-//                if (isLoadingMore) {
-//                    item {
-//                        Box(
-//                            modifier = Modifier
-//                                .fillMaxWidth()
-//                                .padding(16.dp),
-//                            contentAlignment = Alignment.Center
-//                        ) {
-//                            LoadingIndicator(loadingStateManager)
-//                        }
-//                    }
-//                }
+                // 로딩 인디케이터는 제거 - 외부에서 처리
 
                 if (!hasMoreData && lectureItems.isNotEmpty()) {
                     item {
