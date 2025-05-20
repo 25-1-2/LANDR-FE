@@ -126,10 +126,6 @@ fun SearchScreen(
     // 검색 중인지 여부를 추적
     var isSearching by remember { mutableStateOf(false) }
 
-    // 강제 로딩 타이머 관련 상태
-    var forceLoadingActive by remember { mutableStateOf(false) }
-    var forceLoadingJob by remember { mutableStateOf<Job?>(null) }
-
     // 페이지네이션 상태
     var cursorLectureId by remember { mutableStateOf("") }
     var cursorCreatedAt by remember { mutableStateOf("") }
@@ -247,10 +243,6 @@ fun SearchScreen(
 
             Log.d("SearchScreen", "검색 요청 시작: 검색어='$searchQuery', 현재 isSearching=$isSearching")
 
-            // 로컬 로딩 인디케이터 활성화 추가
-            showForcedLoading = true
-            forceLoadingJob?.cancel()
-
             if (searchQuery.isBlank()) {
                 isSearching = false
                 isLoading = true
@@ -275,12 +267,10 @@ fun SearchScreen(
             }
 
             // 로딩 인디케이터 타이머
-            forceLoadingJob = scope.launch {
-                delay(800) // 800ms로 조정 (더 빠른 피드백)
-                showForcedLoading = false
-                if (isLoading) {
-                    isLoading = false
-                }
+            delay(1000) // 3초 타임아웃
+            if (isLoading) {
+                Log.d("SearchScreen", "검색 타임아웃 - 로딩 상태 강제 해제: 검색어='$searchQuery'")
+                isLoading = false
             }
         }
     }
@@ -290,12 +280,6 @@ fun SearchScreen(
 
         // 추가 로그
         Log.d("SearchScreen", "검색 상태 설정: ${if (searchQuery.isBlank()) "전체 목록 모드" else "검색 모드"}")
-
-        // 로컬 로딩 강제 활성화
-        showForcedLoading = true
-
-        // 현재 실행 중인 강제 로딩 작업이 있다면 취소
-        forceLoadingJob?.cancel()
 
         // 페이지네이션 초기화
         allItems = emptyList()
@@ -335,11 +319,11 @@ fun SearchScreen(
             lectureViewModel.getDistinctLecture(dto)
         }
 
-        // 최소 로딩 시간 - 500ms로 줄이기
-        forceLoadingJob = scope.launch {
-            delay(500)
-            showForcedLoading = false
-        }
+//        // 최소 로딩 시간 - 500ms로 줄이기
+//        forceLoadingJob = scope.launch {
+//            delay(500)
+//            showForcedLoading = false
+//        }
     }
 
     // 검색 결과 처리
@@ -350,24 +334,6 @@ fun SearchScreen(
         // 로딩 시작 후 경과 시간 계산
         val elapsedTime = System.currentTimeMillis() - loadingStartTime
         val remainingTime = minLoadingDisplayTime - elapsedTime
-
-        // 최소 로딩 시간이 지났으면 즉시 로딩 인디케이터 숨김
-        if (remainingTime <= 0) {
-            showForcedLoading = false
-            isLoading = false
-            isLoadingMore = false
-            forceLoadingJob?.cancel() // 기존 타이머 취소
-        }
-        // 최소 로딩 시간이 아직 지나지 않았으면 남은 시간만 대기
-        else {
-            forceLoadingJob?.cancel() // 기존 타이머 취소
-            forceLoadingJob = scope.launch {
-                delay(remainingTime)
-                showForcedLoading = false
-                isLoading = false
-                isLoadingMore = false
-            }
-        }
 
         val newItems = searchLectureResponse.data?.filterNotNull()?.map { lecture ->
             LectureItemDto(
@@ -401,41 +367,13 @@ fun SearchScreen(
             cursorCreatedAt = nextCreatedAt
         }
 
-        // 중요: 강제 로딩 타이머가 활성화되어 있지 않은 경우에만 로딩 상태 해제
-        if (!forceLoadingActive) {
-            isLoading = false
-            isLoadingMore = false
-        }
+        // 로딩 상태 초기화
+        isLoading = false
+        isLoadingMore = false
     }
 
-    // 전체 목록 처리
     LaunchedEffect(allLectureResponse) {
-        Log.d("SearchScreen", "전체 목록 응답 감지: ${allLectureResponse.size}개, isSearching=$isSearching")
-
-        // 응답 수신 표시
-        responseReceived = true
-
-        // 로딩 시작 후 경과 시간 계산
-        val elapsedTime = System.currentTimeMillis() - loadingStartTime
-        val remainingTime = minLoadingDisplayTime - elapsedTime
-
-        // 최소 로딩 시간이 지났으면 즉시 로딩 인디케이터 숨김
-        if (remainingTime <= 0) {
-            showForcedLoading = false
-            isLoading = false
-            isLoadingMore = false
-            forceLoadingJob?.cancel() // 기존 타이머 취소
-        }
-        // 최소 로딩 시간이 아직 지나지 않았으면 남은 시간만 대기
-        else {
-            forceLoadingJob?.cancel() // 기존 타이머 취소
-            forceLoadingJob = scope.launch {
-                delay(remainingTime)
-                showForcedLoading = false
-                isLoading = false
-                isLoadingMore = false
-            }
-        }
+        Log.d("SearchScreen", "전체 목록 응답 변경 감지: ${allLectureResponse.size}개 항목")
 
         val newItems = allLectureResponse.map { lecture ->
             LectureItemDto(
@@ -474,35 +412,6 @@ fun SearchScreen(
         // Reset loading states
         isLoading = false
         isLoadingMore = false
-
-        // 로딩 상태 관리 수정
-        if (!forceLoadingActive) {
-            isLoading = false
-            isLoadingMore = false
-        }
-    }
-
-    // 로딩 인디케이터를 Box 안에 추가하여 전체 화면 위에 표시
-    if (showForcedLoading) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.3f)), // 약간의 반투명 배경 추가
-            contentAlignment = Alignment.Center
-        ) {
-            val composition by rememberLottieComposition(
-                LottieCompositionSpec.Asset("loading_dot.json")
-            )
-            val progress by animateLottieCompositionAsState(
-                composition,
-                iterations = LottieConstants.IterateForever
-            )
-            LottieAnimation(
-                composition = composition,
-                progress = { progress },
-                modifier = Modifier.size(50.dp)
-            )
-        }
     }
 
     Column {
@@ -536,7 +445,7 @@ fun SearchScreen(
             lectureItems = allItems,
             searchQuery = searchQuery,
             hasMoreData = hasMoreData,
-            isLoading = isLoading || forceLoadingActive,
+            isLoading = isLoading,
             isLoadingMore = isLoadingMore,
             onLoadMore = {
                 if (hasMoreData && !isLoading && !isLoadingMore) {
@@ -792,23 +701,35 @@ fun SimplifiedInfiniteScrollList(
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        if (isLoading && lectureItems.isEmpty()) {
-            // 초기 로딩 중일 때
+        // 로딩 인디케이터를 정중앙에 오버레이로 표시 (이벤트 전달 허용)
+        if (isLoading && !isLoadingMore) {
             Box(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clickable(enabled = false, onClick = {}) // 클릭 이벤트는 무시하되 아래 뷰로 전달
+                    .background(Color.Black.copy(alpha = 0.3f)), // 약간의 반투명 배경 추가
                 contentAlignment = Alignment.Center
             ) {
-                LoadingIndicator(loadingStateManager)
+                val composition by rememberLottieComposition(
+                    LottieCompositionSpec.Asset("loading_dot.json")
+                )
+                val progress by animateLottieCompositionAsState(
+                    composition,
+                    iterations = LottieConstants.IterateForever
+                )
 
-                // 디버그용 - 로딩 시간 표시
-//                LaunchedEffect(Unit) {
-//                    var seconds = 0
-//                    while(true) {
-//                        delay(1000)
-//                        seconds++
-//                        Log.d("LoadingDebug", "로딩 중... $seconds 초")
-//                    }
-//                }
+                // 로딩 애니메이션 주변에 약간의 배경 추가
+                Box(
+                    modifier = Modifier
+                        .size(80.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    LottieAnimation(
+                        composition = composition,
+                        progress = { progress },
+                        modifier = Modifier.size(50.dp)
+                    )
+                }
             }
         } else if (!isLoading && lectureItems.isEmpty()) {
             // 검색 결과가 없을 때 - isLoading 조건 제거
@@ -856,18 +777,18 @@ fun SimplifiedInfiniteScrollList(
                 }
 
                 // loading more일 때 bottom에 loading indicator 추가
-                if (isLoadingMore) {
-                    item {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            LoadingIndicator(loadingStateManager)
-                        }
-                    }
-                }
+//                if (isLoadingMore) {
+//                    item {
+//                        Box(
+//                            modifier = Modifier
+//                                .fillMaxWidth()
+//                                .padding(16.dp),
+//                            contentAlignment = Alignment.Center
+//                        ) {
+//                            LoadingIndicator(loadingStateManager)
+//                        }
+//                    }
+//                }
 
                 if (!hasMoreData && lectureItems.isNotEmpty()) {
                     item {
