@@ -204,6 +204,7 @@ fun SearchScreen(
             Log.d("페이지 로드 후 시간: ", dataFormat4.format(currentTime))
 
             shouldReloadData = false
+            isLoading = false
         }
     }
 
@@ -222,66 +223,95 @@ fun SearchScreen(
     }
 
     // 검색어 변경 시 API 호출
+    // 검색어 변경 시 API 호출
     var searchJob by remember { mutableStateOf<Job?>(null) }
-    LaunchedEffect(searchQuery) {
+
+    LaunchedEffect(searchQuery, selectedPlatform, selectedSubject, shouldReloadData) {
+
+        // Cancel any ongoing job
         searchJob?.cancel()
         searchJob = scope.launch {
             delay(300) // Debounce
 
-            Log.d("SearchScreen", "검색 요청 시작: 검색어='$searchQuery', 현재 isSearching=$isSearching")
+            // Reset states
+            isLoading = true
+            Log.d("SearchScreen", "⚠️ SETTING isLoading = TRUE")
 
-            if (searchQuery.isBlank()) {
-                isSearching = false
-                isLoading = true
-                shouldReloadData = true
-            } else {
-                isSearching = true
-                isLoading = true
+            cursorLectureId = ""
+            cursorCreatedAt = ""
+            hasMoreData = true
 
-                // 기존 아이템 초기화 추가
+            // Determine whether to search or load full list
+            val wasSearching = isSearching
+            isSearching = searchQuery.isNotBlank()
+
+            // Important: Clear items when toggling modes
+            if (wasSearching != isSearching) {
                 allItems = emptyList()
-
-                val dto = LectureDto(
-                    search = searchQuery,
-                    cursorLectureId = "",
-                    cursorCreatedAt = "",
-                    offset = offset,
-                    platform = selectedPlatform,
-                    subject = selectedSubject
-                )
-
-                lectureViewModel.getDistinctLecture(dto)
+                Log.d("SearchScreen", "모드 전환: ${if(isSearching) "검색 모드" else "전체 목록 모드"}")
             }
 
-            // 로딩 인디케이터 타이머
-            delay(1000) // 타임아웃
-            if (isLoading) {
-                Log.d("SearchScreen", "검색 타임아웃 - 로딩 상태 강제 해제: 검색어='$searchQuery'")
+            try {
+                if (isSearching) {
+                    val dto = LectureDto(
+                        search = searchQuery,
+                        cursorLectureId = "",
+                        cursorCreatedAt = "",
+                        offset = offset,
+                        platform = selectedPlatform,
+                        subject = selectedSubject
+                    )
+                    lectureViewModel.getDistinctLecture(dto)
+                } else {
+                    val dto = LectureDto(
+                        search = "",
+                        cursorLectureId = "",
+                        cursorCreatedAt = "",
+                        offset = offset,
+                    )
+                    lectureViewModel.getAllLecture(dto)
+                }
+            } catch (e: Exception) {
+                Log.e("SearchScreen", "API 호출 오류: ${e.message}", e)
+                isLoading = false // Reset on error
+            }
+            finally {
+                // Add this log
+                Log.d("SearchScreen", "⚠️ SETTING isLoading = FALSE")
                 isLoading = false
+                isLoadingMore = false
             }
         }
     }
 
     val handleSearchClick = {
+        // Cancel any existing search job
+        searchJob?.cancel()
+
+        // Set loading state
+        isLoading = true
+
         hasMoreData = true
+        cursorLectureId = ""
+        cursorCreatedAt = ""
 
         if (searchQuery.isBlank()) {
             isSearching = false
+            allItems = emptyList() // Add explicit type parameter
 
             val dto = LectureDto(
                 search = "",
                 cursorLectureId = "",
                 cursorCreatedAt = "",
                 offset = offset,
-                platform = selectedPlatform,
-                subject = selectedSubject
             )
 
-            // 로그 추가
+            // Log
             Log.d("SearchScreen", "전체 강의 목록 요청")
             lectureViewModel.getAllLecture(dto)
         } else {
             isSearching = true
+            allItems = emptyList<LectureItemDto>() // Add explicit type parameter
 
             val dto = LectureDto(
                 search = searchQuery,
@@ -292,7 +322,7 @@ fun SearchScreen(
                 subject = selectedSubject
             )
 
-            // 로그 추가
+            // Log
             Log.d("SearchScreen", "검색 요청: '$searchQuery'")
             lectureViewModel.getDistinctLecture(dto)
         }
@@ -300,43 +330,72 @@ fun SearchScreen(
 
     // 검색 결과 처리
     LaunchedEffect(searchLectureResponse) {
-        val hasData = searchLectureResponse.data != null && searchLectureResponse.data!!.isNotEmpty()
+        try {
+            Log.d("SearchScreen", "검색 결과 응답 수신: ${searchLectureResponse.data?.size ?: 0}개 항목")
 
-        val newItems = searchLectureResponse.data?.filterNotNull()?.map { lecture ->
-            LectureItemDto(
-                id = lecture.id,
-                title = lecture.title,
-                platform = lecture.platform,
-                teacher = lecture.teacher,
-                createdAt = lecture.createdAt,
-                subject = lecture.subject,
-                tag = lecture.tag,
-                totalLessons = lecture.totalLessons
-            )
-        } ?: emptyList()
+            // 검색 결과가 있는지 확인
+            val hasData = searchLectureResponse.data != null && searchLectureResponse.data!!.isNotEmpty()
 
-        if (cursorLectureId.isEmpty() || isLoading) {
-            allItems = newItems
-        } else if (isLoadingMore && newItems.isNotEmpty()) {
-            val existingIds = allItems.map { it.id }.toSet()
-            val uniqueNewItems = newItems.filter { it.id !in existingIds }
-            allItems = allItems + uniqueNewItems
+            // 검색 결과를 LectureItemDto로 변환
+            val newItems = searchLectureResponse.data?.filterNotNull()?.map { lecture ->
+                LectureItemDto(
+                    id = lecture.id,
+                    title = lecture.title,
+                    platform = lecture.platform,
+                    teacher = lecture.teacher,
+                    createdAt = lecture.createdAt,
+                    subject = lecture.subject,
+                    tag = lecture.tag,
+                    totalLessons = lecture.totalLessons
+                )
+            } ?: emptyList<LectureItemDto>()
+
+            // 현재 검색 모드인지 확인 (결과가 돌아왔을 때도 검색 모드 유지 중인지)
+            if (isSearching) {
+                if (cursorLectureId.isEmpty() || isLoading) {
+                    // 첫 페이지 로드 - 목록 완전히 대체
+                    allItems = newItems
+                    Log.d("SearchScreen", "검색 첫 페이지 로드: ${newItems.size}개 항목")
+                } else if (isLoadingMore && newItems.isNotEmpty()) {
+                    // 추가 페이지 로드 - 중복 제거하고 목록에 추가
+                    val existingIds = allItems.map { it.id }.toSet()
+                    val uniqueNewItems = newItems.filter { it.id !in existingIds }
+
+                    if (uniqueNewItems.isNotEmpty()) {
+                        allItems = allItems + uniqueNewItems
+                        Log.d("SearchScreen", "검색 추가 로드: 기존 ${allItems.size - uniqueNewItems.size}개, 새로 추가 ${uniqueNewItems.size}개, 총 ${allItems.size}개")
+                    } else {
+                        Log.d("SearchScreen", "검색 추가 로드: 모든 항목이 이미 목록에 있음")
+                    }
+                }
+
+                // 다음 페이지 존재 여부 업데이트
+                hasMoreData = searchLectureResponse.hasNext
+                Log.d("SearchScreen", "검색 다음 페이지 존재 여부: $hasMoreData")
+
+                // 커서 ID 업데이트
+                if (searchLectureResponse.nextCursor > 0) {
+                    cursorLectureId = searchLectureResponse.nextCursor.toString()
+                    Log.d("SearchScreen", "검색 다음 커서 ID 설정: $cursorLectureId")
+                }
+
+                // 커서 생성일 업데이트
+                val nextCreatedAt = searchLectureResponse.nextCreatedAt
+                if (nextCreatedAt != null && nextCreatedAt.isNotEmpty()) {
+                    cursorCreatedAt = nextCreatedAt
+                    Log.d("SearchScreen", "검색 다음 커서 생성일 설정: $cursorCreatedAt")
+                }
+            } else {
+                // 검색 모드가 아닌데 검색 결과가 도착한 경우 (비동기 타이밍 문제)
+                Log.d("SearchScreen", "검색 결과가 도착했지만 현재 검색 모드가 아님 - 무시")
+            }
+        } catch (e: Exception) {
+            Log.e("SearchScreen", "오류 발생: ${e.message}", e)
+        } finally {
+            // ALWAYS reset loading states here, not elsewhere
+            isLoading = false
+            isLoadingMore = false
         }
-
-        hasMoreData = searchLectureResponse.hasNext
-
-        if (searchLectureResponse.nextCursor > 0) {
-            cursorLectureId = searchLectureResponse.nextCursor.toString()
-        }
-
-        val nextCreatedAt = searchLectureResponse.nextCreatedAt
-        if (nextCreatedAt != null && nextCreatedAt.isNotEmpty()) {
-            cursorCreatedAt = nextCreatedAt
-        }
-
-        // 로딩 상태 초기화
-        isLoading = false
-        isLoadingMore = false
     }
 
     // 전체 목록 처리
@@ -421,7 +480,7 @@ fun SearchScreen(
                     isLoading = isLoading,
                     isLoadingMore = isLoadingMore,
                     onLoadMore = {
-                        if (hasMoreData && !isLoading && !isLoadingMore) {
+                        if (hasMoreData && !isLoading) {
                             scope.launch {
                                 isLoadingMore = true
                                 Log.d("SearchScreen", "추가 데이터 로드 요청: cursor=${cursorLectureId}, createdAt=${cursorCreatedAt}")
@@ -477,6 +536,9 @@ fun SearchScreen(
 
         // 초기 로딩 인디케이터 (전체 화면 오버레이)
         if (isLoading) {
+            LaunchedEffect(isLoading) {
+                // Empty effect just to trigger recomposition
+            }
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -740,70 +802,76 @@ fun SimplifiedInfiniteScrollList(
             .imePadding() // 키보드 높이에 따라 자동으로 패딩 적용
             .navigationBarsPadding() // 네비게이션 바도 고려
     ) {
-        if (!isLoading && lectureItems.isEmpty()) {
-            // 검색 결과가 없을 때 - isLoading 조건 제거
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Image(
-                    painter = painterResource(R.drawable.screen_search_empty_iv),
-                    contentDescription = "검색 결과 없음",
-                    modifier = Modifier.size(80.dp)
-                )
-                Spacer(modifier = Modifier.padding(5.dp))
-
-                // 검색 모드에 따라 메시지 표시
-                Text(
-                    text = "검색 결과가 없습니다.",
-                    fontSize = 18.sp,
-                    color = materialGray,
-                    textAlign = TextAlign.Center
-                )
-            }
-        } else {
-            // 결과가 있을 때 리스트 표시
-            LazyColumn(
-                state = listState,
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                itemsIndexed(
-                    items = lectureItems,
-                    key = { _, item -> item.id }
-                ) { index, item ->
-                    SearchLectureItem(
-                        lectureItem = item,
-                        searchQuery = searchQuery,
-                        onClick = {
-                            lectureViewModel.selectLecture(item)
-                            navController.navigate("${Screen.Plan.title}/${item.id}")
-                        }
-                    )
-                }
-
-                // 로딩 인디케이터는 제거 - 외부에서 처리
-
-                if (!hasMoreData && lectureItems.isNotEmpty()) {
-                    item {
-                        Text(
-                            text = "모든 강의를 불러왔습니다 (총 ${lectureItems.size}개)",
-                            fontSize = 14.sp,
-                            color = materialGray,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            textAlign = TextAlign.Center
+        when {
+            // 1. 항목이 있으면 항상 리스트 표시
+            lectureItems.isNotEmpty() -> {
+                LazyColumn(
+                    state = listState,
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    itemsIndexed(
+                        items = lectureItems,
+                        key = { _, item -> item.id }
+                    ) { _, item ->
+                        SearchLectureItem(
+                            lectureItem = item,
+                            searchQuery = searchQuery,
+                            onClick = {
+                                lectureViewModel.selectLecture(item)
+                                navController.navigate("${Screen.Plan.title}/${item.id}")
+                            }
                         )
                     }
-                }
 
-                item {
-                    Spacer(modifier = Modifier.height(60.dp))
+                    if (!hasMoreData) {
+                        item {
+                            Text(
+                                text = "모든 강의를 불러왔습니다 (총 ${lectureItems.size}개)",
+                                fontSize = 14.sp,
+                                color = materialGray,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+
+                    item {
+                        Spacer(modifier = Modifier.height(60.dp))
+                    }
                 }
+            }
+
+            // 2. 항목이 없고 검색 중이면 "검색 결과 없음" 표시
+            isSearching && !isLoading -> {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Image(
+                        painter = painterResource(R.drawable.screen_search_empty_iv),
+                        contentDescription = "검색 결과 없음",
+                        modifier = Modifier.size(80.dp)
+                    )
+                    Spacer(modifier = Modifier.padding(5.dp))
+                    Text(
+                        text = "검색 결과가 없습니다.",
+                        fontSize = 18.sp,
+                        color = materialGray,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+
+            // 3. 항목이 없고 검색 중이 아니면 아무것도 표시하지 않음
+            // (전체 API는 이미 호출되었고, 로딩 인디케이터가 표시 중)
+            else -> {
+                // 아무것도 표시하지 않음 (비어있는 상태)
             }
         }
     }

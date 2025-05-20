@@ -43,21 +43,9 @@ class LectureViewModel @Inject constructor(
     private val _lessonsByLectureId = MutableStateFlow<List<NewPlanLesson>>(emptyList())
     val lessonsByLectureId: StateFlow<List<NewPlanLesson>> = _lessonsByLectureId
 
-    // 검색어만 받는 함수 (기존 코드와의 호환성 유지)
-    fun getDistinctLecture(searchName: String) {
-        val lectureDto = LectureDto(
-            search = searchName,
-            cursorLectureId = "",
-            cursorCreatedAt = "",
-            offset = "10"
-        )
-        getDistinctLecture(lectureDto)
-    }
-
     // LectureDto를 직접 받는 함수
     fun getDistinctLecture(lectureDto: LectureDto) {
         viewModelScope.launch {
-            loadingStateManager.show()
             try {
                 // 로그 함수 호출 추가
                 logLectureDtoParameters(lectureDto, "검색")
@@ -73,8 +61,6 @@ class LectureViewModel @Inject constructor(
                 }
             } catch (e: Exception) {
                 Log.e("LectureViewModel", "강의 조회 실패: ${e.message}", e)
-            } finally {
-                loadingStateManager.hide()
             }
         }
     }
@@ -82,7 +68,6 @@ class LectureViewModel @Inject constructor(
     // LectureDto를 직접 받는 함수
     fun getAllLecture(lectureDto: LectureDto) {
         viewModelScope.launch {
-            loadingStateManager.show()
             try {
                 // 로그 함수 호출 추가
                 logLectureDtoParameters(lectureDto, "전체 목록")
@@ -101,8 +86,6 @@ class LectureViewModel @Inject constructor(
             } catch (e: Exception) {
                 Log.e("LectureViewModel", "강의 목록 조회 실패: ${e.message}", e)
                 _allLectureList.value = emptyList()
-            } finally {
-                loadingStateManager.hide()
             }
         }
     }
