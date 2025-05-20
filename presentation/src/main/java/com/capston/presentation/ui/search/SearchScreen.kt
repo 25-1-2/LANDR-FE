@@ -288,43 +288,54 @@ fun SearchScreen(
         // Cancel any existing search job
         searchJob?.cancel()
 
-        // Set loading state
-        isLoading = true
+        // Create a new job that handles the search and loading state properly
+        searchJob = scope.launch {
+            try {
+                // Set loading state
+                isLoading = true
+                Log.d("SearchScreen", "⚠️ SEARCH BUTTON: Setting isLoading = TRUE")
 
-        hasMoreData = true
-        cursorLectureId = ""
-        cursorCreatedAt = ""
+                hasMoreData = true
+                cursorLectureId = ""
+                cursorCreatedAt = ""
 
-        if (searchQuery.isBlank()) {
-            isSearching = false
-            allItems = emptyList() // Add explicit type parameter
+                if (searchQuery.isBlank()) {
+                    isSearching = false
+                    allItems = emptyList<LectureItemDto>()
 
-            val dto = LectureDto(
-                search = "",
-                cursorLectureId = "",
-                cursorCreatedAt = "",
-                offset = offset,
-            )
+                    val dto = LectureDto(
+                        search = "",
+                        cursorLectureId = "",
+                        cursorCreatedAt = "",
+                        offset = offset,
+                        platform = selectedPlatform,  // Include filters here too
+                        subject = selectedSubject
+                    )
 
-            // Log
-            Log.d("SearchScreen", "전체 강의 목록 요청")
-            lectureViewModel.getAllLecture(dto)
-        } else {
-            isSearching = true
-            allItems = emptyList<LectureItemDto>() // Add explicit type parameter
+                    Log.d("SearchScreen", "전체 강의 목록 요청")
+                    lectureViewModel.getAllLecture(dto)
+                } else {
+                    isSearching = true
+                    allItems = emptyList<LectureItemDto>()
 
-            val dto = LectureDto(
-                search = searchQuery,
-                cursorLectureId = "",
-                cursorCreatedAt = "",
-                offset = offset,
-                platform = selectedPlatform,
-                subject = selectedSubject
-            )
+                    val dto = LectureDto(
+                        search = searchQuery,
+                        cursorLectureId = "",
+                        cursorCreatedAt = "",
+                        offset = offset,
+                        platform = selectedPlatform,
+                        subject = selectedSubject
+                    )
 
-            // Log
-            Log.d("SearchScreen", "검색 요청: '$searchQuery'")
-            lectureViewModel.getDistinctLecture(dto)
+                    Log.d("SearchScreen", "검색 요청: '$searchQuery'")
+                    lectureViewModel.getDistinctLecture(dto)
+                }
+            } catch (e: Exception) {
+                Log.e("SearchScreen", "검색 버튼 오류: ${e.message}", e)
+            } finally {
+                isLoading = false
+                isLoadingMore = false
+            }
         }
     }
 
