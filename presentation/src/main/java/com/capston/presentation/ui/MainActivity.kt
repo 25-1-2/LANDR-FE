@@ -229,7 +229,7 @@ fun SearchFieldWithIcons(
                     ) {
                         if (searchQuery.isEmpty()) {
                             Text(
-                                text = "계획 생성하고 싶은 강의를 선택하세요",
+                                text = "계획을 생성하고 싶은 강의 또는 선생님을 검색하세요",
                                 fontSize = 12.sp,
                                 color = Color.Gray
                             )
