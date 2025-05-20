@@ -263,15 +263,6 @@ fun SearchScreen(
     }
 
     val handleSearchClick = {
-        Log.d("SearchScreen", "검색 버튼 클릭: 검색어='$searchQuery'")
-
-        // 추가 로그
-        Log.d("SearchScreen", "검색 상태 설정: ${if (searchQuery.isBlank()) "전체 목록 모드" else "검색 모드"}")
-
-        // 페이지네이션 초기화
-        allItems = emptyList()
-        cursorLectureId = ""
-        cursorCreatedAt = ""
         hasMoreData = true
 
         if (searchQuery.isBlank()) {
@@ -767,7 +758,7 @@ fun SimplifiedInfiniteScrollList(
 
                 // 검색 모드에 따라 메시지 표시
                 Text(
-                    text = if (isSearching) "검색 결과가 없습니다." else "강의 목록이 비어 있습니다.",
+                    text = "검색 결과가 없습니다.",
                     fontSize = 18.sp,
                     color = materialGray,
                     textAlign = TextAlign.Center
