@@ -223,7 +223,6 @@ fun SearchScreen(
     }
 
     // 검색어 변경 시 API 호출
-    // 검색어 변경 시 API 호출
     var searchJob by remember { mutableStateOf<Job?>(null) }
 
     LaunchedEffect(searchQuery, selectedPlatform, selectedSubject, shouldReloadData) {
@@ -280,61 +279,6 @@ fun SearchScreen(
             finally {
                 // Add this log
                 Log.d("SearchScreen", "⚠️ SETTING isLoading = FALSE")
-                isLoading = false
-                isLoadingMore = false
-            }
-        }
-    }
-
-    val handleSearchClick = {
-        // Cancel any existing search job
-        searchJob?.cancel()
-
-        // Create a new job that handles the search and loading state properly
-        searchJob = scope.launch {
-            try {
-                // Set loading state
-                isLoading = true
-                Log.d("SearchScreen", "⚠️ SEARCH BUTTON: Setting isLoading = TRUE")
-
-                hasMoreData = true
-                cursorLectureId = ""
-                cursorCreatedAt = ""
-
-                if (searchQuery.isBlank()) {
-                    isSearching = false
-                    allItems = emptyList<LectureItemDto>()
-
-                    val dto = LectureDto(
-                        search = "",
-                        cursorLectureId = "",
-                        cursorCreatedAt = "",
-                        offset = offset,
-                        platform = selectedPlatform,  // Include filters here too
-                        subject = selectedSubject
-                    )
-
-                    Log.d("SearchScreen", "전체 강의 목록 요청")
-                    lectureViewModel.getAllLecture(dto)
-                } else {
-                    isSearching = true
-                    allItems = emptyList<LectureItemDto>()
-
-                    val dto = LectureDto(
-                        search = searchQuery,
-                        cursorLectureId = "",
-                        cursorCreatedAt = "",
-                        offset = offset,
-                        platform = selectedPlatform,
-                        subject = selectedSubject
-                    )
-
-                    Log.d("SearchScreen", "검색 요청: '$searchQuery'")
-                    lectureViewModel.getDistinctLecture(dto)
-                }
-            } catch (e: Exception) {
-                Log.e("SearchScreen", "검색 버튼 오류: ${e.message}", e)
-            } finally {
                 isLoading = false
                 isLoadingMore = false
             }
@@ -466,7 +410,7 @@ fun SearchScreen(
                 searchQuery = searchQuery,
                 onQueryChanged = { searchQuery = it },
                 lectureViewModel = lectureViewModel,
-                onSearchClick = handleSearchClick
+                onSearchClick = {}
             )
 
             // 필터 바 컴포넌트
@@ -523,11 +467,7 @@ fun SearchScreen(
                         modifier = Modifier
                             .align(Alignment.BottomCenter)
                             .padding(bottom = 16.dp)
-                            .size(60.dp)
-                            .background(
-                                color = Color.White.copy(alpha = 0.9f),
-                                shape = RoundedCornerShape(30.dp)
-                            ),
+                            .size(60.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         val composition by rememberLottieComposition(
