@@ -268,6 +268,8 @@ fun SearchScreen(
                         cursorLectureId = "",
                         cursorCreatedAt = "",
                         offset = offset,
+                        platform = selectedPlatform,
+                        subject = selectedSubject
                     )
                     lectureViewModel.getAllLecture(dto)
                 }
