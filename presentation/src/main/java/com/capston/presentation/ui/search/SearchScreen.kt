@@ -79,6 +79,11 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.airbnb.lottie.compose.LottieAnimation
+import com.airbnb.lottie.compose.LottieCompositionSpec
+import com.airbnb.lottie.compose.LottieConstants
+import com.airbnb.lottie.compose.animateLottieCompositionAsState
+import com.airbnb.lottie.compose.rememberLottieComposition
 import com.capston.domain.manager.LoadingStateManager
 import com.capston.domain.request.LectureDto
 import com.capston.domain.response.enum_class.Platform
@@ -121,6 +126,10 @@ fun SearchScreen(
     // 검색 중인지 여부를 추적
     var isSearching by remember { mutableStateOf(false) }
 
+    // 강제 로딩 타이머 관련 상태
+    var forceLoadingActive by remember { mutableStateOf(false) }
+    var forceLoadingJob by remember { mutableStateOf<Job?>(null) }
+
     // 페이지네이션 상태
     var cursorLectureId by remember { mutableStateOf("") }
     var cursorCreatedAt by remember { mutableStateOf("") }
@@ -134,6 +143,16 @@ fun SearchScreen(
     // Filter state
     var selectedPlatform by remember { mutableStateOf<Platform?>(null) }
     var selectedSubject by remember { mutableStateOf<Subject?>(null) }
+
+    // 최소 로딩 시간을 보장하기 위한 변수 추가
+    var responseReceived by remember { mutableStateOf(false) }
+
+    // 로컬 로딩 표시 상태 - 이것으로 강제 로딩 인디케이터를 제어
+    var showForcedLoading by remember { mutableStateOf(false) }
+    // 최소 로딩 표시 시간 (ms)
+    val minLoadingDisplayTime = 500L
+    // 로딩 시작 시간 저장
+    var loadingStartTime by remember { mutableStateOf(0L) }
 
     // 디버깅용 - 현재 로드된 아이템 수 출력
     LaunchedEffect(allItems.size, isLoadingMore) {
@@ -177,6 +196,7 @@ fun SearchScreen(
         if (shouldReloadData) {
             Log.d("SearchScreen", "전체 강의 조회 (재로딩) 시작")
             isLoading = true
+            isSearching = false // 명시적으로 검색 모드 해제
             allItems = emptyList() // 기존 항목 초기화
             cursorLectureId = "" // 커서 초기화
             cursorCreatedAt = "" // 커서 초기화
@@ -187,12 +207,12 @@ fun SearchScreen(
 
             Log.d("페이지 로드 전 시간: ", dataFormat4.format(currentTime))
 
-
             // 첫 번째 페이지 로드
             lectureViewModel.getAllLecture(LectureDto(
                 offset = offset,
                 cursorLectureId = "",
-                cursorCreatedAt = ""
+                cursorCreatedAt = "",
+                search = "" // 명시적으로 빈 검색어 지정
             ))
 
             Log.d("페이지 로드 후 시간: ", dataFormat4.format(currentTime))
@@ -217,29 +237,24 @@ fun SearchScreen(
 
     // 검색어 변경 시 API 호출
     var searchJob by remember { mutableStateOf<Job?>(null) }
-    // 3. Fix search to work properly with filters
-    // 검색 함수에 안전장치 추가
     LaunchedEffect(searchQuery) {
         searchJob?.cancel()
         searchJob = scope.launch {
             delay(300) // Debounce
 
+            // 로딩 시작 시간 기록
+            loadingStartTime = System.currentTimeMillis()
+
             Log.d("SearchScreen", "검색 요청 시작: 검색어='$searchQuery', 현재 isSearching=$isSearching")
+
+            // 로컬 로딩 인디케이터 활성화 추가
+            showForcedLoading = true
+            forceLoadingJob?.cancel()
 
             if (searchQuery.isBlank()) {
                 isSearching = false
                 isLoading = true
-
-                val dto = LectureDto(
-                    search = "",
-                    cursorLectureId = "",
-                    cursorCreatedAt = "",
-                    offset = offset,
-                    platform = selectedPlatform,
-                    subject = selectedSubject
-                )
-
-                lectureViewModel.getAllLecture(dto)
+                shouldReloadData = true
             } else {
                 isSearching = true
                 isLoading = true
@@ -257,27 +272,102 @@ fun SearchScreen(
                 )
 
                 lectureViewModel.getDistinctLecture(dto)
+            }
 
-                // 중요: 타임아웃 안전장치 추가
-                delay(3000) // 3초 타임아웃
+            // 로딩 인디케이터 타이머
+            forceLoadingJob = scope.launch {
+                delay(800) // 800ms로 조정 (더 빠른 피드백)
+                showForcedLoading = false
                 if (isLoading) {
-                    Log.d("SearchScreen", "검색 타임아웃 - 로딩 상태 강제 해제: 검색어='$searchQuery'")
                     isLoading = false
                 }
             }
         }
     }
 
-    // 검색 결과 처리
-    // 검색 결과 처리
-    LaunchedEffect(searchLectureResponse) {
-        // 상태 보존에 관한 명확한 로그 추가
-        val currentSearchMode = isSearching
-        Log.d("SearchScreen", "검색 응답 수신: isSearching=$currentSearchMode (보존)")
+    val handleSearchClick = {
+        Log.d("SearchScreen", "검색 버튼 클릭: 검색어='$searchQuery'")
 
-        // valid data 있는지 확인
+        // 추가 로그
+        Log.d("SearchScreen", "검색 상태 설정: ${if (searchQuery.isBlank()) "전체 목록 모드" else "검색 모드"}")
+
+        // 로컬 로딩 강제 활성화
+        showForcedLoading = true
+
+        // 현재 실행 중인 강제 로딩 작업이 있다면 취소
+        forceLoadingJob?.cancel()
+
+        // 페이지네이션 초기화
+        allItems = emptyList()
+        cursorLectureId = ""
+        cursorCreatedAt = ""
+        hasMoreData = true
+
+        if (searchQuery.isBlank()) {
+            isSearching = false
+
+            val dto = LectureDto(
+                search = "",
+                cursorLectureId = "",
+                cursorCreatedAt = "",
+                offset = offset,
+                platform = selectedPlatform,
+                subject = selectedSubject
+            )
+
+            // 로그 추가
+            Log.d("SearchScreen", "전체 강의 목록 요청")
+            lectureViewModel.getAllLecture(dto)
+        } else {
+            isSearching = true
+
+            val dto = LectureDto(
+                search = searchQuery,
+                cursorLectureId = "",
+                cursorCreatedAt = "",
+                offset = offset,
+                platform = selectedPlatform,
+                subject = selectedSubject
+            )
+
+            // 로그 추가
+            Log.d("SearchScreen", "검색 요청: '$searchQuery'")
+            lectureViewModel.getDistinctLecture(dto)
+        }
+
+        // 최소 로딩 시간 - 500ms로 줄이기
+        forceLoadingJob = scope.launch {
+            delay(500)
+            showForcedLoading = false
+        }
+    }
+
+    // 검색 결과 처리
+    // 기존 검색 결과 처리 로직 수정
+    LaunchedEffect(searchLectureResponse) {
         val hasData = searchLectureResponse.data != null && searchLectureResponse.data!!.isNotEmpty()
-        Log.d("SearchScreen", "검색 응답 내용: data=${searchLectureResponse.data != null}, 아이템수=${searchLectureResponse.data?.size ?: 0}, nextCursor=${searchLectureResponse.nextCursor}, hasNext=${searchLectureResponse.hasNext}")
+
+        // 로딩 시작 후 경과 시간 계산
+        val elapsedTime = System.currentTimeMillis() - loadingStartTime
+        val remainingTime = minLoadingDisplayTime - elapsedTime
+
+        // 최소 로딩 시간이 지났으면 즉시 로딩 인디케이터 숨김
+        if (remainingTime <= 0) {
+            showForcedLoading = false
+            isLoading = false
+            isLoadingMore = false
+            forceLoadingJob?.cancel() // 기존 타이머 취소
+        }
+        // 최소 로딩 시간이 아직 지나지 않았으면 남은 시간만 대기
+        else {
+            forceLoadingJob?.cancel() // 기존 타이머 취소
+            forceLoadingJob = scope.launch {
+                delay(remainingTime)
+                showForcedLoading = false
+                isLoading = false
+                isLoadingMore = false
+            }
+        }
 
         val newItems = searchLectureResponse.data?.filterNotNull()?.map { lecture ->
             LectureItemDto(
@@ -292,45 +382,60 @@ fun SearchScreen(
             )
         } ?: emptyList()
 
-        Log.d("SearchScreen", "검색 결과 아이템 수: ${newItems.size}, 검색 모드: $currentSearchMode")
-
         if (cursorLectureId.isEmpty() || isLoading) {
             allItems = newItems
-            Log.d("SearchScreen", "첫 페이지 로드: ${newItems.size}개 항목, 검색 모드: $currentSearchMode")
         } else if (isLoadingMore && newItems.isNotEmpty()) {
-            // Only add items if we're loading more AND there are new items
             val existingIds = allItems.map { it.id }.toSet()
             val uniqueNewItems = newItems.filter { it.id !in existingIds }
-
             allItems = allItems + uniqueNewItems
-            Log.d("SearchScreen", "추가 데이터 로드: 기존 ${allItems.size - uniqueNewItems.size}개, 새로 추가 ${uniqueNewItems.size}개, 총 ${allItems.size}개, 검색 모드: $currentSearchMode")
         }
 
-        // 업데이트
         hasMoreData = searchLectureResponse.hasNext
-        Log.d("SearchScreen", "다음 페이지 존재 여부: $hasMoreData, 검색 모드: $currentSearchMode")
 
         if (searchLectureResponse.nextCursor > 0) {
             cursorLectureId = searchLectureResponse.nextCursor.toString()
-            Log.d("SearchScreen", "다음 커서 업데이트: $cursorLectureId, 검색 모드: $currentSearchMode")
         }
-        //-----------------
 
         val nextCreatedAt = searchLectureResponse.nextCreatedAt
         if (nextCreatedAt != null && nextCreatedAt.isNotEmpty()) {
             cursorCreatedAt = nextCreatedAt
-            Log.d("SearchScreen", "다음 생성일자 업데이트: $cursorCreatedAt, 검색 모드: $currentSearchMode")
         }
 
-        // 로딩 상태 초기화
-        isLoading = false
-        isLoadingMore = false
+        // 중요: 강제 로딩 타이머가 활성화되어 있지 않은 경우에만 로딩 상태 해제
+        if (!forceLoadingActive) {
+            isLoading = false
+            isLoadingMore = false
+        }
     }
 
     // 전체 목록 처리
-    // 전체 목록 처리
     LaunchedEffect(allLectureResponse) {
-        Log.d("SearchScreen", "전체 목록 응답 변경 감지: ${allLectureResponse.size}개 항목")
+        Log.d("SearchScreen", "전체 목록 응답 감지: ${allLectureResponse.size}개, isSearching=$isSearching")
+
+        // 응답 수신 표시
+        responseReceived = true
+
+        // 로딩 시작 후 경과 시간 계산
+        val elapsedTime = System.currentTimeMillis() - loadingStartTime
+        val remainingTime = minLoadingDisplayTime - elapsedTime
+
+        // 최소 로딩 시간이 지났으면 즉시 로딩 인디케이터 숨김
+        if (remainingTime <= 0) {
+            showForcedLoading = false
+            isLoading = false
+            isLoadingMore = false
+            forceLoadingJob?.cancel() // 기존 타이머 취소
+        }
+        // 최소 로딩 시간이 아직 지나지 않았으면 남은 시간만 대기
+        else {
+            forceLoadingJob?.cancel() // 기존 타이머 취소
+            forceLoadingJob = scope.launch {
+                delay(remainingTime)
+                showForcedLoading = false
+                isLoading = false
+                isLoadingMore = false
+            }
+        }
 
         val newItems = allLectureResponse.map { lecture ->
             LectureItemDto(
@@ -369,62 +474,45 @@ fun SearchScreen(
         // Reset loading states
         isLoading = false
         isLoadingMore = false
+
+        // 로딩 상태 관리 수정
+        if (!forceLoadingActive) {
+            isLoading = false
+            isLoadingMore = false
+        }
+    }
+
+    // 로딩 인디케이터를 Box 안에 추가하여 전체 화면 위에 표시
+    if (showForcedLoading) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.3f)), // 약간의 반투명 배경 추가
+            contentAlignment = Alignment.Center
+        ) {
+            val composition by rememberLottieComposition(
+                LottieCompositionSpec.Asset("loading_dot.json")
+            )
+            val progress by animateLottieCompositionAsState(
+                composition,
+                iterations = LottieConstants.IterateForever
+            )
+            LottieAnimation(
+                composition = composition,
+                progress = { progress },
+                modifier = Modifier.size(50.dp)
+            )
+        }
     }
 
     Column {
+
+        // SearchScreen 함수 내에서 검색 버튼 클릭 처리
         SearchTopBar(
             searchQuery = searchQuery,
             onQueryChanged = { searchQuery = it },
             lectureViewModel = lectureViewModel,
-            onSearchClick = {
-                // 이전에는 검색어가 비어있을 때 아무것도 하지 않았지만,
-                // 이제는 검색어가 비어있어도 전체 강의 목록을 보여줍니다.
-                Log.d("SearchScreen", "검색 버튼 클릭: 검색어='$searchQuery'")
-
-                // 로딩 상태 설정
-                isLoading = true
-
-                // 페이지네이션 초기화
-                allItems = emptyList()
-                cursorLectureId = ""
-                cursorCreatedAt = ""
-                hasMoreData = true
-
-                if (searchQuery.isBlank()) {
-                    // 검색어가 비어있으면 검색 모드 해제
-                    isSearching = false
-                    Log.d("SearchScreen", "빈 검색어 감지: 전체 목록 표시 모드로 전환")
-
-                    // 전체 목록 API 호출
-                    val dto = LectureDto(
-                        search = "",
-                        cursorLectureId = "",
-                        cursorCreatedAt = "",
-                        offset = offset,
-                        platform = selectedPlatform,  // 수정된 변수 사용
-                        subject = selectedSubject     // 수정된 변수 사용
-                    )
-
-                    lectureViewModel.getAllLecture(dto)
-                } else {
-                    // 검색어가 있으면 검색 모드 설정
-                    isSearching = true
-                    Log.d("SearchScreen", "검색 모드 설정: 검색어='$searchQuery'")
-
-                    // 검색 API 호출
-                    val dto = LectureDto(
-                        search = searchQuery,
-                        cursorLectureId = "",
-                        cursorCreatedAt = "",
-                        offset = offset,
-                        platform = selectedPlatform,  // 수정된 변수 사용
-                        subject = selectedSubject     // 수정된 변수 사용
-                    )
-
-                    Log.d("SearchScreen", "검색 API 호출: search='${dto.search}', platform=${dto.platform?.label ?: "없음"}, subject=${dto.subject?.label ?: "없음"}")
-                    lectureViewModel.getDistinctLecture(dto)
-                }
-            }
+            onSearchClick = handleSearchClick
         )
 
         // 필터 바 컴포넌트
@@ -448,7 +536,7 @@ fun SearchScreen(
             lectureItems = allItems,
             searchQuery = searchQuery,
             hasMoreData = hasMoreData,
-            isLoading = isLoading,
+            isLoading = isLoading || forceLoadingActive,
             isLoadingMore = isLoadingMore,
             onLoadMore = {
                 if (hasMoreData && !isLoading && !isLoadingMore) {
@@ -711,6 +799,16 @@ fun SimplifiedInfiniteScrollList(
                 contentAlignment = Alignment.Center
             ) {
                 LoadingIndicator(loadingStateManager)
+
+                // 디버그용 - 로딩 시간 표시
+//                LaunchedEffect(Unit) {
+//                    var seconds = 0
+//                    while(true) {
+//                        delay(1000)
+//                        seconds++
+//                        Log.d("LoadingDebug", "로딩 중... $seconds 초")
+//                    }
+//                }
             }
         } else if (!isLoading && lectureItems.isEmpty()) {
             // 검색 결과가 없을 때 - isLoading 조건 제거
@@ -727,8 +825,10 @@ fun SimplifiedInfiniteScrollList(
                     modifier = Modifier.size(80.dp)
                 )
                 Spacer(modifier = Modifier.padding(5.dp))
+
+                // 검색 모드에 따라 메시지 표시
                 Text(
-                    text = if (isSearching) "검색 결과가 없습니다." else "강의 목록이 비어 있습니다.",
+                    text = "검색 결과가 없습니다.",
                     fontSize = 18.sp,
                     color = materialGray,
                     textAlign = TextAlign.Center
