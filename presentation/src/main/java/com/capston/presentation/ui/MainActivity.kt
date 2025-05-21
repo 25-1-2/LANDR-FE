@@ -386,67 +386,6 @@ fun SettingTopBottomBar(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun TopBar(hasUnreadNotifications: Boolean) {
-    Column {
-        TopAppBar(
-            title = {},
-            modifier = Modifier
-                .padding(10.dp)
-                .clip(RoundedCornerShape(20.dp))
-                .height(80.dp),
-            navigationIcon = {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    // 앱 로고
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_launcher),
-                        contentDescription = "앱 로고",
-                        modifier = Modifier.size(50.dp),
-                        tint = Color.Unspecified
-                    )
-
-                    // 간격 추가
-                    Spacer(modifier = Modifier.width(5.dp))
-
-                    // 앱 이름
-                    Icon(
-                        painter = painterResource(id = R.drawable.landr_title_iv),
-                        contentDescription = "앱 이름",
-                        modifier = Modifier.size(70.dp),
-                        tint = Color.Unspecified
-                    )
-                }
-            },
-            actions = {
-                Box(contentAlignment = Alignment.TopEnd) {
-                    IconButton(onClick = { /* 알람 클릭 */ }) {
-                        Icon(
-                            painter = painterResource(R.drawable.home_screen_notification_iv),
-                            contentDescription = "alarm icon",
-                        )
-                    }
-
-                    // 읽지 않은 알람이 있을 경우 빨간색 배지 표시
-                    if (hasUnreadNotifications) {
-                        Box(
-                            modifier = Modifier
-                                .size(10.dp)
-                                .align(Alignment.TopEnd)
-                                .offset(x = (-12).dp, y = (10).dp) // 위치 조정
-                                .background(Color.Red, shape = CircleShape)
-                                .border(1.dp, Color.White, CircleShape)
-                        )
-                    }
-                }
-            }
-        )
-        Divider(color = LightGray2, thickness = 1.dp)
-    }
-}
-
 @Composable
 fun BottomBar(
     navController: NavController,
