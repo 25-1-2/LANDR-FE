@@ -457,40 +457,42 @@ fun ProfileScreen(loginViewModel: LoginViewModel, myPageViewModel: MyPageViewMod
             // 하단 여백
             Spacer(modifier = Modifier.height(20.dp))
 
-            Text(
-                text = "로그아웃",
-                color = MainPurple,
+            Spacer(modifier = Modifier.weight(1f))
+
+// Box를 사용하여 가로 중앙 정렬
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable {
-                        scope.launch {
-                            // Perform logout in coroutine
-                            loginViewModel.logout()
+                    .padding(bottom = 32.dp), // 하단 여백 추가
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "로그아웃",
+                    color = MainPurple,
+                    fontSize = 16.sp, // 폰트 크기 키우기
+                    modifier = Modifier
+                        .clickable {
+                            scope.launch {
+                                // 로그아웃
+                                loginViewModel.logout()
 
-                            try {
-                                // Create a completely new task with LoginActivity
-                                val intent = Intent(context, LoginActivity::class.java).apply {
-                                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or
-                                            Intent.FLAG_ACTIVITY_CLEAR_TASK
+                                try {
+                                    // 로그인 액티비티 이동
+                                    val intent = Intent(context, LoginActivity::class.java).apply {
+                                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+                                                Intent.FLAG_ACTIVITY_CLEAR_TASK
+                                    }
+
+                                    Log.d("ProfileScreen", "Starting LoginActivity, context: $context")
+                                    context.startActivity(intent)
+                                } catch (e: Exception) {
+                                    Log.e("ProfileScreen", "Error during logout navigation: ${e.message}", e)
                                 }
-
-                                // Log before navigation
-                                Log.d("ProfileScreen", "Starting LoginActivity, context: $context")
-                                context.startActivity(intent)
-
-//                                // Force stop the current app process (use with caution)
-//                                if (context is Activity) {
-//                                    Log.d("ProfileScreen", "Finishing activity")
-//                                    context.finishAffinity()
-//                                    android.os.Process.killProcess(android.os.Process.myPid())
-//                                }
-                            } catch (e: Exception) {
-                                Log.e("ProfileScreen", "Error during logout navigation: ${e.message}", e)
                             }
                         }
-                    }
-                    .padding(16.dp)
-            )
+                        .padding(16.dp)
+                )
+            }
         }
     }
 }
