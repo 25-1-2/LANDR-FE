@@ -186,6 +186,27 @@ fun PlanDetailTopBar(
                         .background(Color.White)
                         .width(150.dp)
                 ) {
+                    // 계획 수정
+                    DropdownMenuItem(
+                        text = {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.icon_edit_pencil),
+                                    contentDescription = "수정",
+                                    tint = Color.Black,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("수정하기", color = Color.Black)
+                            }
+                        },
+                        onClick = {
+                            onMenuDismiss()
+//                            onDeleteClick()
+                        }
+                    )
+
+                    // 계획 삭제
                     DropdownMenuItem(
                         text = {
                             Row(verticalAlignment = Alignment.CenterVertically) {

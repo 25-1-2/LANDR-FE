@@ -38,7 +38,6 @@ class PlanViewModel @Inject constructor(
 
     fun postNewPlan(postNewPlanDto: PostNewPlanDto) {
         viewModelScope.launch {
-            loadingStateManager.show()
             postNewPlanUseCase(postNewPlanDto)
                 .catch { e ->
                     Log.e("PlanViewModel", "postPlanDetail 에러: ${e.message}")
