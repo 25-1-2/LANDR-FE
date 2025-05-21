@@ -75,17 +75,15 @@ class LectureRoomViewModel @Inject constructor(
         }
     }
 
-    fun postPlanReschedule(planId: Int) {
-        viewModelScope.launch {
-            postPlanRescheduleUseCase(planId)
-                .catch { e ->
-                    Log.e("LectureRoomViewModel", "postPlanReschedule 에러: ${e.message}")
-                }
-                .collect { response ->  // 값 저장
-                    _postPlanRescheduleResponse.value = response // 공백 제거 후 저장
-                    Log.d("LectureRoomViewModel", "postPlanReschedule 업데이트됨: $response")
-                }
-        }
+    fun postPlanReschedule(planId: Int) = viewModelScope.launch {
+        postPlanRescheduleUseCase(planId)
+            .catch { e ->
+                Log.e("LectureRoomViewModel", "postPlanReschedule 에러: ${e.message}")
+            }
+            .collect { response ->  // 값 저장
+                _postPlanRescheduleResponse.value = response // 공백 제거 후 저장
+                Log.d("LectureRoomViewModel", "postPlanReschedule 업데이트됨: $response")
+            }
     }
 
     fun deleteOnePlan(planId: Int) {

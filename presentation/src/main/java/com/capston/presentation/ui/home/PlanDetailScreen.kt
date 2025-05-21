@@ -36,6 +36,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.LifecycleCoroutineScope
 import androidx.navigation.NavController
 import com.capston.domain.manager.LoadingStateManager
 import com.capston.domain.response.plan.GetPlanDetailResponse
@@ -48,6 +49,8 @@ import com.capston.presentation.theme.materialGray
 import com.capston.presentation.theme.textGray
 import com.capston.presentation.ui.common.CustomCheckBox
 import com.capston.presentation.viewmodel.LectureRoomViewModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -70,8 +73,13 @@ fun PlanDetailScreen(
     var showDeleteDropdown by remember { mutableStateOf(false) }
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+
     val planDetailResponse by lectureRoomViewModel.getPlanDetailResponse.collectAsState()
-    lectureRoomViewModel.getPlanDetail(planId)
+
+    LaunchedEffect(planId) {
+        lectureRoomViewModel.getPlanDetail(planId)
+    }
 
     Scaffold(
         topBar = {
@@ -95,7 +103,8 @@ fun PlanDetailScreen(
                 planId = planId,
                 lectureRoomViewModel = lectureRoomViewModel,
                 planDetailResponse = planDetailResponse,
-                loadingStateManager = loadingStateManager
+                loadingStateManager = loadingStateManager,
+                coroutineScope = coroutineScope
             )
 
             // 날짜별 섹션
@@ -207,6 +216,7 @@ fun TitleSection(
     planId: Int,
     lectureRoomViewModel: LectureRoomViewModel,
     planDetailResponse: GetPlanDetailResponse,
+    coroutineScope: CoroutineScope,
     loadingStateManager: LoadingStateManager
 ) {
     Row(
@@ -238,16 +248,24 @@ fun TitleSection(
             ) {
                 Icon(
                     imageVector = ImageVector.vectorResource(R.drawable.icon_reschedule),
-                    contentDescription = "일정 변경",
+                    contentDescription = "재스케줄링",
                     tint = materialGray,
                     modifier = Modifier
                         .padding(8.dp)
                         .clickable {
-                            loadingStateManager.show()
-                            lectureRoomViewModel.postPlanReschedule(planId)
-                            lectureRoomViewModel.getPlanDetail(planId)
-                            loadingStateManager.hide()
+                            coroutineScope.launch {
+                                loadingStateManager.show()
+                                try {
+                                    // 재스케줄링을 시작하고 완료될 때까지 기다립니다
+                                    val rescheduleJob = lectureRoomViewModel.postPlanReschedule(planId)
+                                    rescheduleJob.join()
 
+                                    // 이제 업데이트된 데이터 가져오기
+                                    lectureRoomViewModel.getPlanDetail(planId)
+                                } finally {
+                                    loadingStateManager.hide()
+                                }
+                            }
                         }
                 )
             }
