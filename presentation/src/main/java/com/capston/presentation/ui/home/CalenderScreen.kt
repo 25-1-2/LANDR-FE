@@ -787,23 +787,23 @@ fun DraggableLessonContainer(
                 isExpanded = isExpanded // 확장 상태 전달
             )
 
-            // 축소 상태일 때만 그라데이션 오버레이와 힌트 표시
-            if (!isExpanded && todayLessonList.size > 3) {
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .fillMaxWidth()
-                        .height(40.dp)
-                        .background(
-                            brush = Brush.verticalGradient(
-                                colors = listOf(
-                                    Color.Transparent,
-                                    Color.White.copy(alpha = 0.9f)
-                                )
-                            )
-                        )
-                )
-            }
+//            // 축소 상태일 때만 그라데이션 오버레이와 힌트 표시
+//            if (!isExpanded && todayLessonList.size > 3) {
+//                Box(
+//                    modifier = Modifier
+//                        .align(Alignment.BottomCenter)
+//                        .fillMaxWidth()
+//                        .height(40.dp)
+//                        .background(
+//                            brush = Brush.verticalGradient(
+//                                colors = listOf(
+//                                    Color.Transparent,
+//                                    Color.White.copy(alpha = 0.9f)
+//                                )
+//                            )
+//                        )
+//                )
+//            }
         }
     }
 }
