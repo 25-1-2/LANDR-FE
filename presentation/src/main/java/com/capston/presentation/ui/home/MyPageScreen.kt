@@ -1255,7 +1255,7 @@ fun LectureItem(lecture: CompletedPlanDto, isLastItem: Boolean) {
 }
 
 // Canvas 컨텍스트 내에서 말풍선 그리기 함수
-private fun DrawScope.drawBubbleWithText(text: String, minutes: Int, position: Offset) {
+private fun DrawScope.drawBubbleWithText(text: String, minutes: Int, maxHour: Int, topSubject: String, position: Offset) {
     // 말풍선 배경
     val bubbleWidth = 70.dp.toPx()
     val bubbleHeight = 40.dp.toPx()
@@ -1290,7 +1290,7 @@ private fun DrawScope.drawBubbleWithText(text: String, minutes: Int, position: O
         position.x,
         position.y, // 약간의 수직 중앙 정렬 조정
         android.graphics.Paint().apply {
-            color = android.graphics.Color.BLACK
+            color = if (minutes == maxHour) MainPurple.toArgb() else Color.Black.toArgb()
             textAlign = android.graphics.Paint.Align.CENTER
             textSize = 14.sp.toPx()
             isFakeBoldText = true
@@ -1542,6 +1542,10 @@ fun SubjectPieChartWithBubbles(subjects: List<SubjectDataDto>, angles: List<Floa
 
         var startAngle = -90f // 12시 방향에서 시작
 
+        val maxHours = subjects.maxOf { it.hours }
+        val topSubjects = subjects.filter { it.hours == maxHours }
+        val topSubjectsText = topSubjects.joinToString(", ") { it.subject.label }
+
         // 각 과목별 부분 그리기
         subjects.forEachIndexed { index, subject ->
             val sweepAngle = animatedValues[index].value
@@ -1567,7 +1571,7 @@ fun SubjectPieChartWithBubbles(subjects: List<SubjectDataDto>, angles: List<Floa
                 val bubbleY = center.y + bubbleDistance * kotlin.math.sin(midAngleRad).toFloat()
 
                 // 말풍선 배경 그리기
-                drawBubbleWithText(subject.subject.label, subject.hours, Offset(bubbleX, bubbleY))
+                drawBubbleWithText(subject.subject.label, subject.hours, maxHours, topSubjectsText, Offset(bubbleX, bubbleY))
             }
 
             // 다음 시작 각도 업데이트
