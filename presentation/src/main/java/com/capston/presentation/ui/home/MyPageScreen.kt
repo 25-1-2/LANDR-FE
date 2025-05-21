@@ -1455,7 +1455,7 @@ fun SubjectDistributionGraph(
                         append("에 ")
                         if (maxHours >= 60) {
                             withStyle(style = SpanStyle(color = SubPurple)) {
-                                append((maxHours / 60).toString() + "시간")
+                                append((maxHours / 60).toString() + "시간 " + (maxHours % 60).toString() + "분")
                             }
                         }
                         else {
@@ -2075,7 +2075,7 @@ fun DynamicWeeklyBarChart(
                         // 분 표시
                         Text(
                             text = if (data.totalMinutes>= 60){
-                                "${data.totalMinutes/60}시간"
+                                "${data.totalMinutes/60}시간 ${data.totalMinutes%60}분"
                             } else {
                                 "${data.totalMinutes}분"
                             },
