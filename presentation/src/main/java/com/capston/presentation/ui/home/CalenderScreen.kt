@@ -102,26 +102,47 @@ fun CalenderScreen(homeViewModel: HomeViewModel, dailyScheduleViewModel: DailySc
     val nestedScrollConnection = remember {
         object : NestedScrollConnection {
             override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                // 현재 시간 체크
-                val currentTime = System.currentTimeMillis()
-
-                // 달력 영역에서만 드래그 처리 (calendarHeight 범위 내에서만)
-                // 또는 확장/축소 중인 상태에서만 드래그 처리
+                // 드래그 감지 시 (수직 스크롤)
                 if (source == NestedScrollSource.Drag && abs(available.y) > 3f) {
-                    // 드래그 감도 계수
-                    val delta = available.y * 0.01f
+                    val delta = available.y * 0.02f // 감도 조절 가능
 
-                    // 현재 달력이 확장/축소 중인지 또는 달력 영역 내인지 확인
-                    val isCalendarResize = calendarExpandRatio != 0.2f && calendarExpandRatio != 1f
+                    // 드래그 방향 확인
+                    val isDraggingUp = available.y < 0
+                    val isDraggingDown = available.y > 0
 
-                    if (isCalendarResize) {
-                        // 달력 크기 조절 중일 때만 이벤트 소비
+                    // 달력 상태 확인
+                    val isCalendarAtMax = calendarExpandRatio >= 1f
+                    val isCalendarAtMin = calendarExpandRatio <= 0.2f
+
+                    // 우선순위 1: 달력이 최대/최소가 아닐 때는 항상 달력 조절 먼저
+                    if (!isCalendarAtMax && !isCalendarAtMin) {
                         calendarExpandRatio = (calendarExpandRatio + delta).coerceIn(0.2f, 1f)
-                        return available // 드래그 이벤트 소비
+                        return available // 이벤트 소비
                     }
-                }
 
-                // 달력 크기 조절 중이 아니면 스크롤 이벤트를 소비하지 않음 (자식 컴포넌트로 전달)
+                    // 우선순위 2: 달력이 최소 상태에서 아래로 드래그 (확장) 또는
+                    // 최대 상태에서 위로 드래그 (축소)하는 경우 달력 조절
+                    if ((isCalendarAtMin && isDraggingDown) || (isCalendarAtMax && isDraggingUp)) {
+                        calendarExpandRatio = (calendarExpandRatio + delta).coerceIn(0.2f, 1f)
+                        return available // 이벤트 소비
+                    }
+
+                    // 그 외 경우는 목록 스크롤을 위해 이벤트 통과시킴
+                    return Offset.Zero
+                }
+                return Offset.Zero // 다른 스크롤 이벤트는 무시하지 않음
+            }
+
+            // 이 메서드는 자식 컴포넌트의 스크롤이 최대/최소에 도달했을 때 호출됨
+            override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset {
+                // 자식이 소비하지 않은 스크롤이 있고, 드래그 중일 때
+                if (source == NestedScrollSource.Drag && abs(available.y) > 3f) {
+                    val delta = available.y * 0.02f
+
+                    // 달력 조절 (목록 스크롤이 끝난 후 남은 스크롤 활용)
+                    calendarExpandRatio = (calendarExpandRatio + delta).coerceIn(0.2f, 1f)
+                    return available // 남은 스크롤 소비
+                }
                 return Offset.Zero
             }
         }
