@@ -7,6 +7,7 @@ import com.capston.domain.response.plan.DeleteOnePlanResponse
 import com.capston.domain.response.plan.GetPlanDetailResponse
 import com.capston.domain.response.plan.LectureAliasResponse
 import com.capston.domain.response.plan.PostNewPlanResponse
+import com.capston.domain.response.plan.PostPlanRescheduleResponse
 
 interface PlanRepository {
     // 강의 생성
@@ -28,7 +29,12 @@ interface PlanRepository {
         planId: Int
     ): GetPlanDetailResponse
 
-    // 상세 계획 조회
+    // 재스케줄링
+    suspend fun postPlanReschedule(
+        planId: Int
+    ): PostPlanRescheduleResponse
+
+    // 계획 삭제
     suspend fun deleteOnePlan(
         planId: Int
     ): DeleteOnePlanResponse

@@ -9,6 +9,7 @@ import com.capston.domain.response.plan.DeleteOnePlanResponse
 import com.capston.domain.response.plan.GetPlanDetailResponse
 import com.capston.domain.response.plan.LectureAliasResponse
 import com.capston.domain.response.plan.PostNewPlanResponse
+import com.capston.domain.response.plan.PostPlanRescheduleResponse
 import javax.inject.Inject
 
 class PlanDataSourceImpl @Inject constructor(
@@ -28,6 +29,10 @@ class PlanDataSourceImpl @Inject constructor(
 
     override suspend fun getPlanDetail(planId: Int): GetPlanDetailResponse {
         return planApi.getPlanDetail(planId)
+    }
+
+    override suspend fun postPlanReschedule(planId: Int): PostPlanRescheduleResponse {
+        return planApi.postPlanReschedule(planId)
     }
 
     override suspend fun deleteOnePlan(planId: Int): DeleteOnePlanResponse {

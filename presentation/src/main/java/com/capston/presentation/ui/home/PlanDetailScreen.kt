@@ -1,7 +1,6 @@
 package com.capston.presentation.ui.home
 
 import android.os.Build
-import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -38,8 +37,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.capston.domain.model.LessonSchedule
 import com.capston.domain.response.plan.GetPlanDetailResponse
+import com.capston.domain.response.plan.PlanDetailLessonSchedule
 import com.capston.presentation.theme.LightGray2
 import com.capston.presentation.theme.MainPurple
 import com.capston.presentation.theme.backgroundGray
@@ -96,7 +95,7 @@ fun PlanDetailScreen(
             planDetailResponse.dailySchedules.forEach { schedule ->
                 OneDaySection(
                     date = schedule.date,
-                    lessonSchedules = schedule.lessonSchedules,
+                    planDetailLessonSchedules = schedule.lessonSchedules,
                     lectureRoomViewModel = lectureRoomViewModel
                 )
             }
@@ -264,10 +263,10 @@ fun TitleSection(planDetailResponse: GetPlanDetailResponse) {
 @Composable
 fun OneDaySection(
     date: String,
-    lessonSchedules: List<LessonSchedule>,
+    planDetailLessonSchedules: List<PlanDetailLessonSchedule>,
     lectureRoomViewModel: LectureRoomViewModel
 ) {
-    val totalMinutes = lessonSchedules.sumOf { it.adjustedDuration }
+    val totalMinutes = planDetailLessonSchedules.sumOf { it.adjustedDuration }
 
     Column {
         Text(
@@ -297,7 +296,7 @@ fun OneDaySection(
             ) {
                 // 하루 강의 개수
                 Text(
-                    text = "총 ${lessonSchedules.size}강",
+                    text = "총 ${planDetailLessonSchedules.size}강",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                 )
@@ -325,9 +324,9 @@ fun OneDaySection(
 //                modifier = Modifier.padding(bottom = 8.dp)
             )
 
-            lessonSchedules.forEach { lessonSchedule ->
+            planDetailLessonSchedules.forEach { lessonSchedule ->
                 TaskItem(
-                    lessonSchedule = lessonSchedule,
+                    planDetailLessonSchedule = lessonSchedule,
                     lectureRoomViewModel = lectureRoomViewModel
                 )
             }
@@ -338,11 +337,11 @@ fun OneDaySection(
 
 @Composable
 fun TaskItem(
-    lessonSchedule: LessonSchedule,
+    planDetailLessonSchedule: PlanDetailLessonSchedule,
     lectureRoomViewModel: LectureRoomViewModel
 ) {
     // 각 체크박스의 상태를 기억합니다.
-    var isChecked by remember { mutableStateOf(lessonSchedule.completed) }
+    var isChecked by remember { mutableStateOf(planDetailLessonSchedule.completed) }
     Row(
         verticalAlignment = Alignment.Bottom,
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -359,12 +358,12 @@ fun TaskItem(
             CustomCheckBox (
                 isChecked = isChecked,
                 onCheckedChange = {
-                    lectureRoomViewModel.patchLessonSchedulesCheckToggle(lessonSchedule.id)
+                    lectureRoomViewModel.patchLessonSchedulesCheckToggle(planDetailLessonSchedule.id)
                     isChecked = !isChecked
                 }
             )
             Text(
-                text = lessonSchedule.lessonTitle,
+                text = planDetailLessonSchedule.lessonTitle,
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Normal,
                 lineHeight = 28.sp,
@@ -374,7 +373,7 @@ fun TaskItem(
 
         // 칩을 커스텀한듯
         Text(
-            text = "${lessonSchedule.adjustedDuration}분",
+            text = "${planDetailLessonSchedule.adjustedDuration}분",
             style = MaterialTheme.typography.labelMedium,
             color = MainPurple,
             modifier = Modifier
