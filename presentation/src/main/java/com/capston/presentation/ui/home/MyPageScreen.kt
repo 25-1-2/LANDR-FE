@@ -70,6 +70,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -361,7 +362,7 @@ fun ProfileScreen(loginViewModel: LoginViewModel, myPageViewModel: MyPageViewMod
 
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "${mypageState.subjectAchievementList.size}개",
+                            text = "${mypageState.inProgressLectureCount}개",
                             color = Color.White,
                             style = MaterialTheme.typography.bodyMedium,
                             fontSize = 18.sp
@@ -457,40 +458,42 @@ fun ProfileScreen(loginViewModel: LoginViewModel, myPageViewModel: MyPageViewMod
             // 하단 여백
             Spacer(modifier = Modifier.height(20.dp))
 
-            Text(
-                text = "로그아웃",
-                color = MainPurple,
+            Spacer(modifier = Modifier.weight(1f))
+
+// Box를 사용하여 가로 중앙 정렬
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable {
-                        scope.launch {
-                            // Perform logout in coroutine
-                            loginViewModel.logout()
+                    .padding(bottom = 32.dp), // 하단 여백 추가
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "로그아웃",
+                    color = MainPurple,
+                    fontSize = 16.sp, // 폰트 크기 키우기
+                    modifier = Modifier
+                        .clickable {
+                            scope.launch {
+                                // 로그아웃
+                                loginViewModel.logout()
 
-                            try {
-                                // Create a completely new task with LoginActivity
-                                val intent = Intent(context, LoginActivity::class.java).apply {
-                                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or
-                                            Intent.FLAG_ACTIVITY_CLEAR_TASK
+                                try {
+                                    // 로그인 액티비티 이동
+                                    val intent = Intent(context, LoginActivity::class.java).apply {
+                                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+                                                Intent.FLAG_ACTIVITY_CLEAR_TASK
+                                    }
+
+                                    Log.d("ProfileScreen", "Starting LoginActivity, context: $context")
+                                    context.startActivity(intent)
+                                } catch (e: Exception) {
+                                    Log.e("ProfileScreen", "Error during logout navigation: ${e.message}", e)
                                 }
-
-                                // Log before navigation
-                                Log.d("ProfileScreen", "Starting LoginActivity, context: $context")
-                                context.startActivity(intent)
-
-//                                // Force stop the current app process (use with caution)
-//                                if (context is Activity) {
-//                                    Log.d("ProfileScreen", "Finishing activity")
-//                                    context.finishAffinity()
-//                                    android.os.Process.killProcess(android.os.Process.myPid())
-//                                }
-                            } catch (e: Exception) {
-                                Log.e("ProfileScreen", "Error during logout navigation: ${e.message}", e)
                             }
                         }
-                    }
-                    .padding(16.dp)
-            )
+                        .padding(16.dp)
+                )
+            }
         }
     }
 }
@@ -1252,10 +1255,10 @@ fun LectureItem(lecture: CompletedPlanDto, isLastItem: Boolean) {
 }
 
 // Canvas 컨텍스트 내에서 말풍선 그리기 함수
-private fun DrawScope.drawBubbleWithText(text: String, position: Offset) {
+private fun DrawScope.drawBubbleWithText(text: String, minutes: Int, maxHour: Int, topSubject: String, position: Offset) {
     // 말풍선 배경
-    val bubbleWidth = 50.dp.toPx()
-    val bubbleHeight = 30.dp.toPx()
+    val bubbleWidth = 70.dp.toPx()
+    val bubbleHeight = 40.dp.toPx()
     val cornerRadius = 10.dp.toPx()
 
     drawRoundRect(
@@ -1285,12 +1288,30 @@ private fun DrawScope.drawBubbleWithText(text: String, position: Offset) {
     drawContext.canvas.nativeCanvas.drawText(
         text,
         position.x,
-        position.y + 5.dp.toPx(), // 약간의 수직 중앙 정렬 조정
+        position.y, // 약간의 수직 중앙 정렬 조정
         android.graphics.Paint().apply {
-            color = android.graphics.Color.BLACK
+            color = if (minutes == maxHour) MainPurple.toArgb() else Color.Black.toArgb()
             textAlign = android.graphics.Paint.Align.CENTER
             textSize = 14.sp.toPx()
             isFakeBoldText = true
+        }
+    )
+
+    // Draw minutes text below the subject name
+    val minutesText = if (minutes >= 60) {
+        "${minutes / 60}시간 ${minutes % 60}분"
+    } else {
+        "${minutes}분"
+    }
+
+    drawContext.canvas.nativeCanvas.drawText(
+        minutesText,
+        position.x,
+        position.y + 15.dp.toPx(), // 과목 이름 아래에 표시
+        android.graphics.Paint().apply {
+            color = textGray.toArgb()
+            textAlign = android.graphics.Paint.Align.CENTER
+            textSize = 12.sp.toPx()
         }
     )
 }
@@ -1453,7 +1474,7 @@ fun SubjectDistributionGraph(
                         append("에 ")
                         if (maxHours >= 60) {
                             withStyle(style = SpanStyle(color = SubPurple)) {
-                                append((maxHours / 60).toString() + "시간")
+                                append((maxHours / 60).toString() + "시간 " + (maxHours % 60).toString() + "분")
                             }
                         }
                         else {
@@ -1521,6 +1542,10 @@ fun SubjectPieChartWithBubbles(subjects: List<SubjectDataDto>, angles: List<Floa
 
         var startAngle = -90f // 12시 방향에서 시작
 
+        val maxHours = subjects.maxOf { it.hours }
+        val topSubjects = subjects.filter { it.hours == maxHours }
+        val topSubjectsText = topSubjects.joinToString(", ") { it.subject.label }
+
         // 각 과목별 부분 그리기
         subjects.forEachIndexed { index, subject ->
             val sweepAngle = animatedValues[index].value
@@ -1546,7 +1571,7 @@ fun SubjectPieChartWithBubbles(subjects: List<SubjectDataDto>, angles: List<Floa
                 val bubbleY = center.y + bubbleDistance * kotlin.math.sin(midAngleRad).toFloat()
 
                 // 말풍선 배경 그리기
-                drawBubbleWithText(subject.subject.label, Offset(bubbleX, bubbleY))
+                drawBubbleWithText(subject.subject.label, subject.hours, maxHours, topSubjectsText, Offset(bubbleX, bubbleY))
             }
 
             // 다음 시작 각도 업데이트
@@ -2073,7 +2098,7 @@ fun DynamicWeeklyBarChart(
                         // 분 표시
                         Text(
                             text = if (data.totalMinutes>= 60){
-                                "${data.totalMinutes/60}시간"
+                                "${data.totalMinutes/60}시간 ${data.totalMinutes%60}분"
                             } else {
                                 "${data.totalMinutes}분"
                             },

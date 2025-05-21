@@ -35,6 +35,7 @@ import com.google.firebase.messaging.FirebaseMessaging
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -147,8 +148,11 @@ class LoginActivity : ComponentActivity() {
                                 token
                             )
                         )
-                        startActivity(Intent(this, MainActivity::class.java))
-                        finish()
+                        lifecycleScope.launch {
+                            delay(1000) // Wait for token to be saved and processed
+                            startActivity(Intent(this@LoginActivity, MainActivity::class.java))
+                            finish()
+                        }
                     }
                 } else {
                     // If sign in fails, display a message to the user
