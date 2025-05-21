@@ -36,15 +36,8 @@ class PlanViewModel @Inject constructor(
     private val _patchPlanName = MutableStateFlow(LectureAliasResponse())  // 기본값 ""
     val patchPlanName: StateFlow<LectureAliasResponse> = _patchPlanName.asStateFlow()
 
-    private val _getPlanLectureRoom = MutableStateFlow(emptyList<GetPlanLectureRoomResponse>())  // 기본값 ""
-    val getPlanLectureRoom: StateFlow<List<GetPlanLectureRoomResponse>> = _getPlanLectureRoom.asStateFlow()
-
-    private val _getPlanDetail = MutableStateFlow(GetPlanDetailResponse())  // 기본값 ""
-    val getPlanDetail: StateFlow<GetPlanDetailResponse> = _getPlanDetail.asStateFlow()
-
     fun postNewPlan(postNewPlanDto: PostNewPlanDto) {
         viewModelScope.launch {
-            loadingStateManager.show()
             postNewPlanUseCase(postNewPlanDto)
                 .catch { e ->
                     Log.e("PlanViewModel", "postPlanDetail 에러: ${e.message}")
@@ -69,34 +62,6 @@ class PlanViewModel @Inject constructor(
                     Log.d("PlanViewModel", "patchPlanName 업데이트됨: $response")
                 }
             loadingStateManager.hide()
-        }
-    }
-
-    fun getPlanLectureRoom() {
-        viewModelScope.launch {
-            loadingStateManager.show()
-            getPlanLectureRoomUseCase()
-                .catch { e ->
-                    Log.e("PlanViewModel", "getPlanLectureRoom 에러: ${e.message}")
-                }
-                .collect { response ->  // 값 저장
-                    _getPlanLectureRoom.value = response // 공백 제거 후 저장
-                    Log.d("PlanViewModel", "getPlanLectureRoom 업데이트됨: $response")
-                }
-            loadingStateManager.hide()
-        }
-    }
-
-    fun getPlanDetail(planId: Int) {
-        viewModelScope.launch {
-            getPlanDetailUseCase(planId)
-                .catch { e ->
-                    Log.e("PlanViewModel", "getPlanDetail 에러: ${e.message}")
-                }
-                .collect { response ->  // 값 저장
-                    _getPlanDetail.value = response // 공백 제거 후 저장
-                    Log.d("PlanViewModel", "getPlanDetail 업데이트됨: $response")
-                }
         }
     }
 }

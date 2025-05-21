@@ -20,7 +20,6 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
@@ -36,7 +35,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -54,7 +52,6 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.capston.domain.manager.LoadingStateManager
 import com.capston.domain.response.plan.GetPlanDetailResponse
-import com.capston.presentation.R
 import com.capston.presentation.theme.CapstonTheme
 import com.capston.presentation.theme.LightGray2
 import com.capston.presentation.theme.LightGray4_40
@@ -107,7 +104,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    // Register for activity results using the new Activity Result API
     // 검색 액티비티 실행 및 종료 시 OK를 받기 위한 런처
     @RequiresApi(Build.VERSION_CODES.O)
     private val startSearchForResult = registerForActivityResult(
@@ -150,13 +146,15 @@ class MainActivity : ComponentActivity() {
 
             CapstonTheme {
                 Box(modifier = Modifier.fillMaxSize()) {
-                    SettingTopBottomBar(
+                    MainBottomBar(
                         homeViewModel = homeViewModel,
                         planViewModel = planViewModel,
                         dailyScheduleViewModel = dailyScheduleViewModel,
                         lectureRoomViewModel = lectureRoomViewModel,
                         loginViewModel = loginViewModel,
-                        myPageViewModel = myPageViewModel)
+                        myPageViewModel = myPageViewModel,
+                        loadingStateManager = loadingStateManager
+                    )
 
                     // 전역 로딩 인디케이터
                     LoadingIndicator(loadingStateManager)
@@ -270,13 +268,14 @@ fun SearchFieldWithIcons(
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun SettingTopBottomBar(
+fun MainBottomBar(
     homeViewModel: HomeViewModel,
     planViewModel: PlanViewModel,
     dailyScheduleViewModel: DailyScheduleViewModel,
     lectureRoomViewModel: LectureRoomViewModel,
     loginViewModel: LoginViewModel,
-    myPageViewModel: MyPageViewModel
+    myPageViewModel: MyPageViewModel,
+    loadingStateManager: LoadingStateManager
 ) {
     var bottomNavState by rememberSaveable { mutableIntStateOf(0) }
     val navController = rememberNavController()
@@ -312,9 +311,6 @@ fun SettingTopBottomBar(
     }
 
     Scaffold(
-//        topBar = {
-//            TopBar(true)
-//        },
         bottomBar = {
             BottomBar(
                 navController = navController,
@@ -377,7 +373,8 @@ fun SettingTopBottomBar(
                     PlanDetailScreen(
                         planId = planId,
                         lectureRoomViewModel = lectureRoomViewModel,
-                        navController = navController
+                        navController = navController,
+                        loadingStateManager = loadingStateManager
                     )
                 }
                 composable(Screen.Profile.title) { ProfileScreen(loginViewModel = loginViewModel, myPageViewModel = myPageViewModel) }

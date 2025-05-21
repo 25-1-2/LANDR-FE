@@ -3,9 +3,11 @@ package com.capston.domain.datasource
 import com.capston.domain.response.plan.GetPlanLectureRoomResponse
 import com.capston.domain.request.PatchPlanDto
 import com.capston.domain.request.PostNewPlanDto
+import com.capston.domain.response.plan.DeleteOnePlanResponse
 import com.capston.domain.response.plan.GetPlanDetailResponse
 import com.capston.domain.response.plan.LectureAliasResponse
 import com.capston.domain.response.plan.PostNewPlanResponse
+import com.capston.domain.response.plan.PostPlanRescheduleResponse
 
 interface PlanDataSource {
     // 강의 생성
@@ -26,4 +28,14 @@ interface PlanDataSource {
     suspend fun getPlanDetail(
         planId: Int,
     ): GetPlanDetailResponse
+
+    // 재스케줄링
+    suspend fun postPlanReschedule(
+        planId: Int,
+    ): PostPlanRescheduleResponse
+
+    // 계획 삭제
+    suspend fun deleteOnePlan(
+        planId: Int,
+    ): DeleteOnePlanResponse
 }

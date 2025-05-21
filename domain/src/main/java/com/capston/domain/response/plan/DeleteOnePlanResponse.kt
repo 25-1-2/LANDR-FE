@@ -1,4 +1,5 @@
 package com.capston.domain.response.plan
 
-class DeleteOnePlanResponse {
-}
+data class DeleteOnePlanResponse(
+    val message: String = ""
+)
