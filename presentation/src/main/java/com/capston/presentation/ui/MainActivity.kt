@@ -8,6 +8,7 @@ import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -73,6 +74,7 @@ import com.capston.presentation.viewmodel.LoginViewModel
 import com.capston.presentation.viewmodel.MyPageViewModel
 import com.capston.presentation.viewmodel.PlanViewModel
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -86,6 +88,10 @@ class MainActivity : ComponentActivity() {
     val dailyScheduleViewModel: DailyScheduleViewModel by viewModels()
     val lectureRoomViewModel: LectureRoomViewModel by viewModels()
     val myPageViewModel: MyPageViewModel by viewModels()
+
+    // 뒤로가기 두 번 누르기 위한 변수들
+    var backPressedTime: Long = 0
+    val BACK_PRESS_INTERVAL: Long = 2000 // 2초 내에 두 번 눌러야 함
 
     @Inject
     lateinit var loadingStateManager: LoadingStateManager
@@ -119,12 +125,15 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
+        loginViewModel.checkAccessToken()
+
         // 알림 권한 묻기
         askNotificationPermission()
 
         // UI 설정
         setContent {
             LaunchedEffect(Unit) {
+                delay(500)
                 homeViewModel.getDistinctHome()
                 homeViewModel.getDistinctHome.collectLatest { homeData ->
                     val dday = homeData.dday
@@ -272,6 +281,35 @@ fun SettingTopBottomBar(
     var bottomNavState by rememberSaveable { mutableIntStateOf(0) }
     val navController = rememberNavController()
     val mainActivity = LocalActivity.current as MainActivity
+    val context = LocalContext.current
+
+    // 뒤로가기 처리 추가 - 상태를 기반으로 처리
+    BackHandler {
+        if (bottomNavState == 0) {
+            // 홈 화면에서는 원래 코드대로 앱 종료 로직 실행
+            val currentTime = System.currentTimeMillis()
+            if (currentTime - mainActivity.backPressedTime < mainActivity.BACK_PRESS_INTERVAL) {
+                mainActivity.finish()
+            } else {
+                mainActivity.backPressedTime = currentTime
+                android.widget.Toast.makeText(
+                    context,
+                    "한 번 더 뒤로가기를 누르면 앱이 종료됩니다",
+                    android.widget.Toast.LENGTH_SHORT
+                ).show()
+            }
+        } else {
+            // 어떤 화면에서든 항상 홈으로 강제 이동
+            bottomNavState = 0
+
+            // 백스택을 완전히 비우고 홈으로 이동
+            navController.navigate(Screen.Home.title) {
+                popUpTo(0) {
+                    inclusive = true
+                }
+            }
+        }
+    }
 
     Scaffold(
 //        topBar = {
@@ -281,7 +319,28 @@ fun SettingTopBottomBar(
             BottomBar(
                 navController = navController,
                 bottomNavState = bottomNavState,
-                onNavItemClick = { index -> bottomNavState = index},
+                onNavItemClick = { index ->
+                    // 이전 상태와 현재 선택한 상태가 같지 않을 때만 처리
+                    if (bottomNavState != index) {
+                        bottomNavState = index
+                        val destination = when (index) {
+                            0 -> Screen.Home.title
+                            1 -> Screen.Calender.title
+                            2 -> Screen.LectureRoom.title
+                            3 -> Screen.Profile.title
+                            else -> Screen.Home.title
+                        }
+
+                        // 이동 시 백스택을 완전히 비우고 새 화면으로 교체
+                        navController.navigate(destination) {
+                            // 백스택 완전히 비우기 - 그래프 ID를 사용
+                            popUpTo(0) {
+                                inclusive = true
+                            }
+                            launchSingleTop = true
+                        }
+                    }
+                },
                 onSearchClick = { mainActivity.startSearchActivity() }
             )
         },
@@ -327,67 +386,6 @@ fun SettingTopBottomBar(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun TopBar(hasUnreadNotifications: Boolean) {
-    Column {
-        TopAppBar(
-            title = {},
-            modifier = Modifier
-                .padding(10.dp)
-                .clip(RoundedCornerShape(20.dp))
-                .height(80.dp),
-            navigationIcon = {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    // 앱 로고
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_launcher),
-                        contentDescription = "앱 로고",
-                        modifier = Modifier.size(50.dp),
-                        tint = Color.Unspecified
-                    )
-
-                    // 간격 추가
-                    Spacer(modifier = Modifier.width(5.dp))
-
-                    // 앱 이름
-                    Icon(
-                        painter = painterResource(id = R.drawable.landr_title_iv),
-                        contentDescription = "앱 이름",
-                        modifier = Modifier.size(70.dp),
-                        tint = Color.Unspecified
-                    )
-                }
-            },
-            actions = {
-                Box(contentAlignment = Alignment.TopEnd) {
-                    IconButton(onClick = { /* 알람 클릭 */ }) {
-                        Icon(
-                            painter = painterResource(R.drawable.home_screen_notification_iv),
-                            contentDescription = "alarm icon",
-                        )
-                    }
-
-                    // 읽지 않은 알람이 있을 경우 빨간색 배지 표시
-                    if (hasUnreadNotifications) {
-                        Box(
-                            modifier = Modifier
-                                .size(10.dp)
-                                .align(Alignment.TopEnd)
-                                .offset(x = (-12).dp, y = (10).dp) // 위치 조정
-                                .background(Color.Red, shape = CircleShape)
-                                .border(1.dp, Color.White, CircleShape)
-                        )
-                    }
-                }
-            }
-        )
-        Divider(color = LightGray2, thickness = 1.dp)
-    }
-}
-
 @Composable
 fun BottomBar(
     navController: NavController,
@@ -426,7 +424,7 @@ fun BottomBar(
                     selected = bottomNavState == index,
                     onClick = {
                         onNavItemClick(index)
-                        navController.navigate(item.title) // 클릭 시 해당 화면으로 이동
+                        //navController.navigate(item.title) // 클릭 시 해당 화면으로 이동
                     },
                     icon = {
                         when (val icon = if (bottomNavState == index) item.selectedIcon else item.unselectedIcon) {

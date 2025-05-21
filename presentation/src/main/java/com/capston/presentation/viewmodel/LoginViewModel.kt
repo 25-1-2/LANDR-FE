@@ -14,7 +14,10 @@ import com.capston.domain.usecase.login.PostLoginInfoUseCase
 import com.capston.domain.usecase.token.ClearTokensUseCase
 import com.capston.domain.usecase.token.GetAccessTokenUseCase
 import com.capston.domain.usecase.token.SaveAccessTokenUseCase
+import com.google.firebase.Firebase
+import com.google.firebase.auth.auth
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -46,25 +49,28 @@ class LoginViewModel @Inject constructor(
     fun postLogin(loginDto: LoginDto) {
         viewModelScope.launch {
             loadingStateManager.show()
-            postLoginInfoUseCase(loginDto)
-                .catch { e ->
-                    Log.e("LoginViewModel", "postLogin error: ${e.message}")
-                    // 실패 처리를 위한 추가 로직 추가 가능
-                }
-                .collect { response ->
-                    _loginResponse.value = response
-                    _loginSuccess.value = true
-                    Log.d("LoginViewModel", "로그인 성공! Access Token: ${response.token}")
+            try {
+                postLoginInfoUseCase(loginDto)
+                    .catch { e ->
+                        Log.e("LoginViewModel", "postLogin error: ${e.message}")
+                    }
+                    .collect { response ->
+                        _loginResponse.value = response
+                        _loginSuccess.value = true
+                        Log.d("LoginViewModel", "로그인 성공! Access Token: ${response.token}")
 
-                    // 토큰 저장 (비동기 작업)
-                    saveAccessTokenUseCase(
-                        response.token,
-                    )
-                    Log.d("LoginViewModel", "토큰 저장 요청 완료")
+                        // Ensure token is fully saved before continuing
+                        saveAccessTokenUseCase(response.token)
 
-                    checkAccessToken()
-                }
+                        // Wait a moment to ensure token is properly stored
+                        delay(500)
+
+                        // Check if token is actually stored
+                        checkAccessToken()
+                    }
+            } finally {
                 loadingStateManager.hide()
+            }
         }
     }
 
@@ -82,6 +88,10 @@ class LoginViewModel @Inject constructor(
     fun logout() {
         viewModelScope.launch {
             loadingStateManager.show()
+
+            // Firebase 로그아웃 처리 추가
+            Firebase.auth.signOut()
+
             clearTokensUseCase()
 
             Log.d("LoginViewModel", "Tokens and saved name cleared")
