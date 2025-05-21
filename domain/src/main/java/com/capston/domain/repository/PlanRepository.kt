@@ -3,6 +3,7 @@ package com.capston.domain.repository
 import com.capston.domain.response.plan.GetPlanLectureRoomResponse
 import com.capston.domain.request.PatchPlanDto
 import com.capston.domain.request.PostNewPlanDto
+import com.capston.domain.response.plan.DeleteOnePlanResponse
 import com.capston.domain.response.plan.GetPlanDetailResponse
 import com.capston.domain.response.plan.LectureAliasResponse
 import com.capston.domain.response.plan.PostNewPlanResponse
@@ -26,4 +27,9 @@ interface PlanRepository {
     suspend fun getPlanDetail(
         planId: Int
     ): GetPlanDetailResponse
+
+    // 상세 계획 조회
+    suspend fun deleteOnePlan(
+        planId: Int
+    ): DeleteOnePlanResponse
 }

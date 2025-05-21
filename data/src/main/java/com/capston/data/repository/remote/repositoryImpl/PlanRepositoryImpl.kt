@@ -5,6 +5,7 @@ import com.capston.domain.response.plan.GetPlanLectureRoomResponse
 import com.capston.domain.repository.PlanRepository
 import com.capston.domain.request.PatchPlanDto
 import com.capston.domain.request.PostNewPlanDto
+import com.capston.domain.response.plan.DeleteOnePlanResponse
 import com.capston.domain.response.plan.GetPlanDetailResponse
 import com.capston.domain.response.plan.LectureAliasResponse
 import com.capston.domain.response.plan.PostNewPlanResponse
@@ -27,4 +28,8 @@ class PlanRepositoryImpl @Inject constructor(
     override suspend fun getPlanDetail(
         planId: Int
     ): GetPlanDetailResponse = planDataSource.getPlanDetail(planId)
+
+    override suspend fun deleteOnePlan(
+        planId: Int
+    ): DeleteOnePlanResponse = planDataSource.deleteOnePlan(planId)
 }

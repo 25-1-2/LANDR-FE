@@ -3,6 +3,7 @@ package com.capston.domain.datasource
 import com.capston.domain.response.plan.GetPlanLectureRoomResponse
 import com.capston.domain.request.PatchPlanDto
 import com.capston.domain.request.PostNewPlanDto
+import com.capston.domain.response.plan.DeleteOnePlanResponse
 import com.capston.domain.response.plan.GetPlanDetailResponse
 import com.capston.domain.response.plan.LectureAliasResponse
 import com.capston.domain.response.plan.PostNewPlanResponse
@@ -26,4 +27,9 @@ interface PlanDataSource {
     suspend fun getPlanDetail(
         planId: Int,
     ): GetPlanDetailResponse
+
+    // 강의 상세 조회
+    suspend fun deleteOnePlan(
+        planId: Int,
+    ): DeleteOnePlanResponse
 }

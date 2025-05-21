@@ -1,6 +1,7 @@
 package com.capston.presentation.ui.home
 
 import android.os.Build
+import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -12,7 +13,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Divider
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -47,9 +47,7 @@ import com.capston.presentation.theme.dividerGray
 import com.capston.presentation.theme.materialGray
 import com.capston.presentation.theme.textGray
 import com.capston.presentation.ui.common.CustomCheckBox
-import com.capston.presentation.viewmodel.HomeViewModel
 import com.capston.presentation.viewmodel.LectureRoomViewModel
-import com.capston.presentation.viewmodel.PlanViewModel
 
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -71,7 +69,7 @@ fun PlanDetailScreen(
     var showDeleteDropdown by remember { mutableStateOf(false) }
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
-    val planDetailResponse by lectureRoomViewModel.getPlanDetail.collectAsState()
+    val planDetailResponse by lectureRoomViewModel.getPlanDetailResponse.collectAsState()
     lectureRoomViewModel.getPlanDetail(planId)
 
     Scaffold(
@@ -114,8 +112,12 @@ fun PlanDetailScreen(
                     TextButton(
                         onClick = {
                             // 삭제 로직 실행
-                            // lectureRoomViewModel.deletePlan(planId)
-                            // Toast.makeText(context, "계획이 삭제되었습니다", Toast.LENGTH_SHORT).show()
+                            lectureRoomViewModel.deleteOnePlan(planId)
+//                            Toast.makeText(
+//                                context,
+//                                lectureRoomViewModel.deleteOnePlanResponse.value.message,
+//                                Toast.LENGTH_SHORT
+//                            ).show()
                             navController.popBackStack() // 이전 화면으로 돌아가기
 
                             showDeleteConfirmDialog = false
