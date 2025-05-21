@@ -52,11 +52,11 @@ class LectureRoomViewModel @Inject constructor(
             loadingStateManager.show()
             getPlanLectureRoomUseCase()
                 .catch { e ->
-                    Log.e("PlanViewModel", "getPlanLectureRoom 에러: ${e.message}")
+                    Log.e("LectureRoomViewModel", "getPlanLectureRoom 에러: ${e.message}")
                 }
                 .collect { response ->  // 값 저장
                     _getPlanLectureRoomResponse.value = response // 공백 제거 후 저장
-                    Log.d("PlanViewModel", "getPlanLectureRoom 업데이트됨: $response")
+                    Log.d("LectureRoomViewModel", "getPlanLectureRoom 업데이트됨: $response")
                 }
             loadingStateManager.hide()
         }
@@ -66,11 +66,11 @@ class LectureRoomViewModel @Inject constructor(
         viewModelScope.launch {
             getPlanDetailUseCase(planId)
                 .catch { e ->
-                    Log.e("PlanViewModel", "getPlanDetail 에러: ${e.message}")
+                    Log.e("LectureRoomViewModel", "getPlanDetail 에러: ${e.message}")
                 }
                 .collect { response ->  // 값 저장
                     _getPlanDetailResponse.value = response // 공백 제거 후 저장
-                    Log.d("PlanViewModel", "getPlanDetail 업데이트됨: $response")
+                    Log.d("LectureRoomViewModel", "getPlanDetail 업데이트됨: $response")
                 }
         }
     }
@@ -79,11 +79,11 @@ class LectureRoomViewModel @Inject constructor(
         viewModelScope.launch {
             postPlanRescheduleUseCase(planId)
                 .catch { e ->
-                    Log.e("PlanViewModel", "postPlanReschedule 에러: ${e.message}")
+                    Log.e("LectureRoomViewModel", "postPlanReschedule 에러: ${e.message}")
                 }
                 .collect { response ->  // 값 저장
                     _postPlanRescheduleResponse.value = response // 공백 제거 후 저장
-                    Log.d("PlanViewModel", "postPlanReschedule 업데이트됨: $response")
+                    Log.d("LectureRoomViewModel", "postPlanReschedule 업데이트됨: $response")
                 }
         }
     }
@@ -92,11 +92,11 @@ class LectureRoomViewModel @Inject constructor(
         viewModelScope.launch {
             deleteOnePlanUseCase(planId)
                 .catch { e ->
-                    Log.e("PlanViewModel", "deleteOnePlan 에러: ${e.message}")
+                    Log.e("LectureRoomViewModel", "deleteOnePlan 에러: ${e.message}")
                 }
                 .collect { response ->  // 값 저장
                     _deleteOnePlanResponse.value = response // 공백 제거 후 저장
-                    Log.d("PlanViewModel", "deleteOnePlan 업데이트됨: $response")
+                    Log.d("LectureRoomViewModel", "deleteOnePlan 업데이트됨: $response")
                 }
         }
     }

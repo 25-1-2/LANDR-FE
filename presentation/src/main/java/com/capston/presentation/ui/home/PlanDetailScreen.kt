@@ -37,6 +37,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.capston.domain.manager.LoadingStateManager
 import com.capston.domain.response.plan.GetPlanDetailResponse
 import com.capston.domain.response.plan.PlanDetailLessonSchedule
 import com.capston.presentation.theme.LightGray2
@@ -64,6 +65,7 @@ fun PlanDetailScreen(
     planId: Int,
     lectureRoomViewModel: LectureRoomViewModel,
     navController: NavController,
+    loadingStateManager: LoadingStateManager
 ) {
     var showDeleteDropdown by remember { mutableStateOf(false) }
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
@@ -89,7 +91,12 @@ fun PlanDetailScreen(
                 .padding(horizontal = 20.dp)
                 .verticalScroll(rememberScrollState())
         ) {
-            TitleSection(planDetailResponse = planDetailResponse)
+            TitleSection(
+                planId = planId,
+                lectureRoomViewModel = lectureRoomViewModel,
+                planDetailResponse = planDetailResponse,
+                loadingStateManager = loadingStateManager
+            )
 
             // 날짜별 섹션
             planDetailResponse.dailySchedules.forEach { schedule ->
@@ -196,7 +203,12 @@ fun PlanDetailTopBar(
 }
 
 @Composable
-fun TitleSection(planDetailResponse: GetPlanDetailResponse) {
+fun TitleSection(
+    planId: Int,
+    lectureRoomViewModel: LectureRoomViewModel,
+    planDetailResponse: GetPlanDetailResponse,
+    loadingStateManager: LoadingStateManager
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -230,7 +242,13 @@ fun TitleSection(planDetailResponse: GetPlanDetailResponse) {
                     tint = materialGray,
                     modifier = Modifier
                         .padding(8.dp)
-                        .clickable { /*…*/ }
+                        .clickable {
+                            loadingStateManager.show()
+                            lectureRoomViewModel.postPlanReschedule(planId)
+                            lectureRoomViewModel.getPlanDetail(planId)
+                            loadingStateManager.hide()
+
+                        }
                 )
             }
 

@@ -40,7 +40,7 @@ interface PlanApi {
     ): GetPlanDetailResponse
 
     // 재스케줄링
-    @POST("/v1/plans")
+    @POST("/v1/plans/{planId}/reschedule")
     suspend fun postPlanReschedule(
         @Path("planId") planId: Int
     ): PostPlanRescheduleResponse
