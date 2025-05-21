@@ -14,6 +14,8 @@ import com.capston.domain.usecase.login.PostLoginInfoUseCase
 import com.capston.domain.usecase.token.ClearTokensUseCase
 import com.capston.domain.usecase.token.GetAccessTokenUseCase
 import com.capston.domain.usecase.token.SaveAccessTokenUseCase
+import com.google.firebase.Firebase
+import com.google.firebase.auth.auth
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -86,6 +88,10 @@ class LoginViewModel @Inject constructor(
     fun logout() {
         viewModelScope.launch {
             loadingStateManager.show()
+
+            // Firebase 로그아웃 처리 추가
+            Firebase.auth.signOut()
+
             clearTokensUseCase()
 
             Log.d("LoginViewModel", "Tokens and saved name cleared")
