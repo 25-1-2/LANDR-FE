@@ -73,6 +73,7 @@ import com.capston.presentation.viewmodel.LoginViewModel
 import com.capston.presentation.viewmodel.MyPageViewModel
 import com.capston.presentation.viewmodel.PlanViewModel
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -119,12 +120,15 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
+        loginViewModel.checkAccessToken()
+
         // 알림 권한 묻기
         askNotificationPermission()
 
         // UI 설정
         setContent {
             LaunchedEffect(Unit) {
+                delay(500)
                 homeViewModel.getDistinctHome()
                 homeViewModel.getDistinctHome.collectLatest { homeData ->
                     val dday = homeData.dday
