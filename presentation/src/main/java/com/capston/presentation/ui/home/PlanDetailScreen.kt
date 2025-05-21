@@ -378,6 +378,11 @@ fun TaskItem(
 ) {
     // 각 체크박스의 상태를 기억합니다.
     var isChecked by remember { mutableStateOf(planDetailLessonSchedule.completed) }
+
+    LaunchedEffect(planDetailLessonSchedule.completed) {
+        isChecked = planDetailLessonSchedule.completed
+    }
+
     Row(
         verticalAlignment = Alignment.Bottom,
         horizontalArrangement = Arrangement.SpaceBetween,
