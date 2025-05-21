@@ -105,16 +105,24 @@ fun CalenderScreen(homeViewModel: HomeViewModel, dailyScheduleViewModel: DailySc
                 // 현재 시간 체크
                 val currentTime = System.currentTimeMillis()
 
-                // 클릭 후 일정 시간 내의 드래그는 무시하지 않음
+                // 달력 영역에서만 드래그 처리 (calendarHeight 범위 내에서만)
+                // 또는 확장/축소 중인 상태에서만 드래그 처리
                 if (source == NestedScrollSource.Drag && abs(available.y) > 3f) {
                     // 드래그 감도 계수
-                    val delta = available.y * 0.007f  // 감도 약간 증가
+                    val delta = available.y * 0.01f
 
-                    // 드래그 양에 비례해서 달력 크기 조절 (0.2~1.0 범위)
-                    calendarExpandRatio = (calendarExpandRatio + delta).coerceIn(0.2f, 1f)
-                    return available // 드래그 이벤트 소비
+                    // 현재 달력이 확장/축소 중인지 또는 달력 영역 내인지 확인
+                    val isCalendarResize = calendarExpandRatio != 0.2f && calendarExpandRatio != 1f
+
+                    if (isCalendarResize) {
+                        // 달력 크기 조절 중일 때만 이벤트 소비
+                        calendarExpandRatio = (calendarExpandRatio + delta).coerceIn(0.2f, 1f)
+                        return available // 드래그 이벤트 소비
+                    }
                 }
-                return Offset.Zero // 다른 스크롤 이벤트는 무시
+
+                // 달력 크기 조절 중이 아니면 스크롤 이벤트를 소비하지 않음 (자식 컴포넌트로 전달)
+                return Offset.Zero
             }
         }
     }
