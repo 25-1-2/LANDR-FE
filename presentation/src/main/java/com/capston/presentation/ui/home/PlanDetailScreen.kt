@@ -55,7 +55,7 @@ import java.time.format.DateTimeFormatter
 @RequiresApi(Build.VERSION_CODES.O)
 fun formatDate(dateString: String): String {
     val parsedDate = LocalDate.parse(dateString) // "2025-03-22"
-    val formatter = DateTimeFormatter.ofPattern("yyyy년 MM월 dd일")
+    val formatter = DateTimeFormatter.ofPattern("yyyy년 MM월 dd일 (E)")
     return parsedDate.format(formatter)
 }
 
