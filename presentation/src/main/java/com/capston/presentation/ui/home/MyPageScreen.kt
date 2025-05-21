@@ -70,6 +70,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -1254,10 +1255,10 @@ fun LectureItem(lecture: CompletedPlanDto, isLastItem: Boolean) {
 }
 
 // Canvas 컨텍스트 내에서 말풍선 그리기 함수
-private fun DrawScope.drawBubbleWithText(text: String, position: Offset) {
+private fun DrawScope.drawBubbleWithText(text: String, minutes: Int, position: Offset) {
     // 말풍선 배경
-    val bubbleWidth = 50.dp.toPx()
-    val bubbleHeight = 30.dp.toPx()
+    val bubbleWidth = 70.dp.toPx()
+    val bubbleHeight = 40.dp.toPx()
     val cornerRadius = 10.dp.toPx()
 
     drawRoundRect(
@@ -1287,12 +1288,30 @@ private fun DrawScope.drawBubbleWithText(text: String, position: Offset) {
     drawContext.canvas.nativeCanvas.drawText(
         text,
         position.x,
-        position.y + 5.dp.toPx(), // 약간의 수직 중앙 정렬 조정
+        position.y, // 약간의 수직 중앙 정렬 조정
         android.graphics.Paint().apply {
             color = android.graphics.Color.BLACK
             textAlign = android.graphics.Paint.Align.CENTER
             textSize = 14.sp.toPx()
             isFakeBoldText = true
+        }
+    )
+
+    // Draw minutes text below the subject name
+    val minutesText = if (minutes >= 60) {
+        "${minutes / 60}시간 ${minutes % 60}분"
+    } else {
+        "${minutes}분"
+    }
+
+    drawContext.canvas.nativeCanvas.drawText(
+        minutesText,
+        position.x,
+        position.y + 15.dp.toPx(), // 과목 이름 아래에 표시
+        android.graphics.Paint().apply {
+            color = textGray.toArgb()
+            textAlign = android.graphics.Paint.Align.CENTER
+            textSize = 12.sp.toPx()
         }
     )
 }
@@ -1548,7 +1567,7 @@ fun SubjectPieChartWithBubbles(subjects: List<SubjectDataDto>, angles: List<Floa
                 val bubbleY = center.y + bubbleDistance * kotlin.math.sin(midAngleRad).toFloat()
 
                 // 말풍선 배경 그리기
-                drawBubbleWithText(subject.subject.label, Offset(bubbleX, bubbleY))
+                drawBubbleWithText(subject.subject.label, subject.hours, Offset(bubbleX, bubbleY))
             }
 
             // 다음 시작 각도 업데이트
