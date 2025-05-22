@@ -129,19 +129,7 @@ class MainActivity : ComponentActivity() {
         // UI 설정
         setContent {
             LaunchedEffect(Unit) {
-                delay(500)
                 homeViewModel.getDistinctHome()
-                homeViewModel.getDistinctHome.collectLatest { homeData ->
-                    val dday = homeData.dday
-                    if (dday != null && dday.ddayId > 0) {
-                        homeViewModel.getDDay(dday.ddayId)
-                    } else {
-                        // Handle the case when there's no D-Day
-                        Log.d("HomeScreen", "No D-Day information available")
-                    }
-                }
-
-                loginViewModel.getUserProfile()
             }
 
             CapstonTheme {
