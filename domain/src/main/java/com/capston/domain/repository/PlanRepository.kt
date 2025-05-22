@@ -6,7 +6,6 @@ import com.capston.domain.request.PostNewPlanDto
 import com.capston.domain.response.MessageResponse
 import com.capston.domain.response.plan.GetPlanDetailResponse
 import com.capston.domain.response.plan.LectureAliasResponse
-import com.capston.domain.response.plan.PostNewPlanResponse
 import com.capston.domain.response.plan.PostPlanRescheduleResponse
 
 interface PlanRepository {

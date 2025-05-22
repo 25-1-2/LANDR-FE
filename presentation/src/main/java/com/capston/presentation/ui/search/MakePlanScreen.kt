@@ -112,8 +112,9 @@ fun MakePlanScreen(
         )
     }
     val dailyTime = remember { mutableIntStateOf(120) } // Default to 120 mins
-    val startDate = remember { mutableStateOf("시작일 선택") }
-    val endDate = remember { mutableStateOf("종료일 선택") }
+    val today = formatDate(System.currentTimeMillis())
+    val startDate = remember { mutableStateOf(today) }
+    val endDate = remember { mutableStateOf(today) }
     val playbackSpeed = remember { mutableDoubleStateOf(1.0) }
 
     // 응답을 관찰하여 액티비티 종료 처리
