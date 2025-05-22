@@ -12,6 +12,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -36,6 +37,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import androidx.lifecycle.LifecycleCoroutineScope
 import androidx.navigation.NavController
 import com.capston.domain.manager.LoadingStateManager
@@ -50,6 +52,7 @@ import com.capston.presentation.theme.textGray
 import com.capston.presentation.ui.common.CustomCheckBox
 import com.capston.presentation.viewmodel.LectureRoomViewModel
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 import java.time.LocalDate
@@ -76,82 +79,113 @@ fun PlanDetailScreen(
     val coroutineScope = rememberCoroutineScope()
 
     val planDetailResponse by lectureRoomViewModel.getPlanDetailResponse.collectAsState()
+    val isLoading by loadingStateManager.isLoading.collectAsState()
 
     LaunchedEffect(planId) {
         lectureRoomViewModel.getPlanDetail(planId)
     }
 
-    Scaffold(
-        topBar = {
-            PlanDetailTopBar(
-                navController = navController,
-                showMenu = showDeleteDropdown,
-                onMenuClick = { showDeleteDropdown = !showDeleteDropdown },
-                onMenuDismiss = { showDeleteDropdown = false },
-                onDeleteClick = { showDeleteConfirmDialog = true }
-            )
-        }
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(horizontal = 20.dp)
-                .verticalScroll(rememberScrollState())
-        ) {
-            TitleSection(
-                planId = planId,
-                lectureRoomViewModel = lectureRoomViewModel,
-                planDetailResponse = planDetailResponse,
-                loadingStateManager = loadingStateManager,
-                coroutineScope = coroutineScope
-            )
-
-            // 날짜별 섹션
-            planDetailResponse.dailySchedules.forEach { schedule ->
-                OneDaySection(
-                    date = schedule.date,
-                    planDetailLessonSchedules = schedule.lessonSchedules,
-                    lectureRoomViewModel = lectureRoomViewModel
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
+            topBar = {
+                PlanDetailTopBar(
+                    navController = navController,
+                    showMenu = showDeleteDropdown,
+                    onMenuClick = { showDeleteDropdown = !showDeleteDropdown },
+                    onMenuDismiss = { showDeleteDropdown = false },
+                    onDeleteClick = { showDeleteConfirmDialog = true }
                 )
             }
-        }
+        ) { innerPadding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .padding(horizontal = 20.dp)
+                    .verticalScroll(rememberScrollState())
+            ) {
+                TitleSection(
+                    planId = planId,
+                    lectureRoomViewModel = lectureRoomViewModel,
+                    planDetailResponse = planDetailResponse,
+                    loadingStateManager = loadingStateManager,
+                    coroutineScope = coroutineScope
+                )
 
-        // 삭제 확인 다이얼로그
-        if (showDeleteConfirmDialog) {
-            AlertDialog(
-                containerColor = Color.White,
-                iconContentColor = Color.Black,
-                titleContentColor = Color.Black,
-                textContentColor = Color.Black,
-                tonalElevation = 0.dp, // 그림자 효과 제거
-                onDismissRequest = { showDeleteConfirmDialog = false },
-                title = { Text("계획 삭제") },
-                text = { Text("이 계획을 삭제하시겠습니까?") },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            // 삭제 로직 실행
-                            lectureRoomViewModel.deleteOnePlan(planId)
+                // 날짜별 섹션
+                planDetailResponse.dailySchedules.forEach { schedule ->
+                    OneDaySection(
+                        date = schedule.date,
+                        planDetailLessonSchedules = schedule.lessonSchedules,
+                        lectureRoomViewModel = lectureRoomViewModel
+                    )
+                }
+            }
+
+            // 삭제 확인 다이얼로그
+            if (showDeleteConfirmDialog) {
+                AlertDialog(
+                    containerColor = Color.White,
+                    iconContentColor = Color.Black,
+                    titleContentColor = Color.Black,
+                    textContentColor = Color.Black,
+                    tonalElevation = 0.dp, // 그림자 효과 제거
+                    onDismissRequest = { showDeleteConfirmDialog = false },
+                    title = { Text("계획 삭제") },
+                    text = { Text("이 계획을 삭제하시겠습니까?") },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                // 삭제 로직 실행
+                                lectureRoomViewModel.deleteOnePlan(planId)
 //                            Toast.makeText(
 //                                context,
 //                                lectureRoomViewModel.deleteOnePlanResponse.value.message,
 //                                Toast.LENGTH_SHORT
 //                            ).show()
-                            navController.popBackStack() // 이전 화면으로 돌아가기
+                                navController.popBackStack() // 이전 화면으로 돌아가기
 
-                            showDeleteConfirmDialog = false
+                                showDeleteConfirmDialog = false
+                            }
+                        ) {
+                            Text("삭제", color = Color.Red)
                         }
-                    ) {
-                        Text("삭제", color = Color.Red)
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showDeleteConfirmDialog = false }) {
+                            Text("취소")
+                        }
                     }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showDeleteConfirmDialog = false }) {
-                        Text("취소")
-                    }
+                )
+            }
+        }
+
+        // 로딩 오버레이
+        if (isLoading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.5f))
+                    .zIndex(999f),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    CircularProgressIndicator(
+                        color = MainPurple,
+                        modifier = Modifier.size(48.dp)
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "재스케줄링 중입니다...",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = Color.White,
+                        fontWeight = FontWeight.Medium
+                    )
                 }
-            )
+            }
         }
     }
 }
@@ -163,7 +197,8 @@ fun PlanDetailTopBar(
     showMenu: Boolean,
     onMenuClick: () -> Unit,
     onMenuDismiss: () -> Unit,
-    onDeleteClick: () -> Unit) {
+    onDeleteClick: () -> Unit
+) {
     Column {
         TopAppBar(
             title = {},
@@ -173,7 +208,8 @@ fun PlanDetailTopBar(
                 }) {
                     Image(
                         painter = painterResource(id = R.drawable.icon_arrow_back),
-                        contentDescription = "뒤로 가기")
+                        contentDescription = "뒤로 가기"
+                    )
                 }
             },
             actions = {
@@ -264,7 +300,23 @@ fun TitleSection(
         ) {
             // 재스케줄링 버튼
             IconButton(
-                onClick = {},
+                onClick = {
+                    coroutineScope.launch {
+                        loadingStateManager.show()
+                        try {
+                            // 재스케줄링을 시작하고 완료될 때까지 기다립니다
+                            val rescheduleJob = lectureRoomViewModel.postPlanReschedule(planId)
+                            rescheduleJob.join()
+
+                            // 이제 업데이트된 데이터 가져오기
+                            lectureRoomViewModel.getPlanDetail(planId)
+
+                            delay(1000)
+                        } finally {
+                            loadingStateManager.hide()
+                        }
+                    }
+                },
                 modifier = Modifier
                     .size(40.dp)
                     .clip(CircleShape)
@@ -276,23 +328,7 @@ fun TitleSection(
                     imageVector = ImageVector.vectorResource(R.drawable.icon_reschedule),
                     contentDescription = "재스케줄링",
                     tint = materialGray,
-                    modifier = Modifier
-                        .padding(8.dp)
-                        .clickable {
-                            coroutineScope.launch {
-                                loadingStateManager.show()
-                                try {
-                                    // 재스케줄링을 시작하고 완료될 때까지 기다립니다
-                                    val rescheduleJob = lectureRoomViewModel.postPlanReschedule(planId)
-                                    rescheduleJob.join()
-
-                                    // 이제 업데이트된 데이터 가져오기
-                                    lectureRoomViewModel.getPlanDetail(planId)
-                                } finally {
-                                    loadingStateManager.hide()
-                                }
-                            }
-                        }
+                    modifier = Modifier.padding(8.dp)
                 )
             }
 
