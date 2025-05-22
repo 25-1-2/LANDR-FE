@@ -3,7 +3,7 @@ package com.capston.data.repository.remote.api
 import com.capston.domain.response.plan.GetPlanLectureRoomResponse
 import com.capston.domain.request.PatchPlanDto
 import com.capston.domain.request.PostNewPlanDto
-import com.capston.domain.response.plan.DeleteOnePlanResponse
+import com.capston.domain.response.MessageResponse
 import com.capston.domain.response.plan.GetPlanDetailResponse
 import com.capston.domain.response.plan.LectureAliasResponse
 import com.capston.domain.response.plan.PostNewPlanResponse
@@ -20,7 +20,7 @@ interface PlanApi {
     @POST("/v1/plans")
     suspend fun postNewPlan(
         @Body postNewPlanDto: PostNewPlanDto
-    ): PostNewPlanResponse
+    ): MessageResponse
 
     // 강의 별명 수정
     @PATCH("/v1/plans/{planId}/lecture-name")
@@ -49,5 +49,5 @@ interface PlanApi {
     @DELETE("/v1/plans/{planId}")
     suspend fun deleteOnePlan(
         @Path("planId") planId: Int
-    ): DeleteOnePlanResponse
+    ): MessageResponse
 }
