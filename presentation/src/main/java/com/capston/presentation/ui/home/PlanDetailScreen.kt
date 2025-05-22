@@ -517,6 +517,7 @@ fun TaskItem(
 
                     // 서버 업데이트 (백그라운드에서 실행)
                     lectureRoomViewModel.patchLessonSchedulesCheckToggle(planDetailLessonSchedule.id)
+                    isChecked = !isChecked
                 }
             )
             Text(
