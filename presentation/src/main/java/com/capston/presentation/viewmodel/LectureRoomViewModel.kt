@@ -32,13 +32,13 @@ class LectureRoomViewModel @Inject constructor(
     private val loadingStateManager: LoadingStateManager
 ) : ViewModel() {
 
-    private val _getPlanLectureRoomResponse = MutableStateFlow(emptyList<GetPlanLectureRoomResponse>())
+    private val _getPlanLectureRoomResponse = MutableStateFlow(emptyList<GetPlanLectureRoomResponse>())  // 기본값 ""
     val getPlanLectureRoomResponse: StateFlow<List<GetPlanLectureRoomResponse>> = _getPlanLectureRoomResponse.asStateFlow()
 
-    private val _getPlanDetailResponse = MutableStateFlow(GetPlanDetailResponse())
+    private val _getPlanDetailResponse = MutableStateFlow(GetPlanDetailResponse())  // 기본값 ""
     val getPlanDetailResponse: StateFlow<GetPlanDetailResponse> = _getPlanDetailResponse.asStateFlow()
 
-    private val _postPlanRescheduleResponse = MutableStateFlow(PostPlanRescheduleResponse())
+    private val _postPlanRescheduleResponse = MutableStateFlow(PostPlanRescheduleResponse())  // 기본값 ""
     val postPlanRescheduleResponse: StateFlow<PostPlanRescheduleResponse> = _postPlanRescheduleResponse.asStateFlow()
 
     private val _deleteOnePlanResponse = MutableStateFlow(MessageResponse())  // 기본값 ""

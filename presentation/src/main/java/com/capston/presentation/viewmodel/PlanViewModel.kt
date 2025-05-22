@@ -8,7 +8,7 @@ import com.capston.domain.request.PatchPlanDto
 import com.capston.domain.request.PostNewPlanDto
 import com.capston.domain.response.MessageResponse
 import com.capston.domain.response.plan.LectureAliasResponse
-import com.capston.domain.usecase.plan.GetPlanDetailUseCase
+\import com.capston.domain.usecase.plan.GetPlanDetailUseCase
 import com.capston.domain.usecase.plan.GetPlanLectureRoomUseCase
 import com.capston.domain.usecase.plan.PatchPlanNameUseCase
 import com.capston.domain.usecase.plan.PostNewPlanUseCase
