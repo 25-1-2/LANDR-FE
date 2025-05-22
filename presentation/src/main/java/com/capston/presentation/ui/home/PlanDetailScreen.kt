@@ -149,6 +149,42 @@ fun PlanDetailScreen(
                             onClick = {
                                 // 삭제 로직 실행
                                 lectureRoomViewModel.deleteOnePlan(planId)
+//                            Toast.makeText(
+//                                context,
+//                                lectureRoomViewModel.deleteOnePlanResponse.value.message,
+//                                Toast.LENGTH_SHORT
+//                            ).show()
+                                navController.popBackStack() // 이전 화면으로 돌아가기
+
+                                showDeleteConfirmDialog = false
+                            }
+                        ) {
+                            Text("삭제", color = Color.Red)
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showDeleteConfirmDialog = false }) {
+                            Text("취소")
+                        }
+                    }
+                )
+            }
+            // 삭제 확인 다이얼로그
+            if (showDeleteConfirmDialog) {
+                AlertDialog(
+                    containerColor = Color.White,
+                    iconContentColor = Color.Black,
+                    titleContentColor = Color.Black,
+                    textContentColor = Color.Black,
+                    tonalElevation = 0.dp, // 그림자 효과 제거
+                    onDismissRequest = { showDeleteConfirmDialog = false },
+                    title = { Text("계획 삭제") },
+                    text = { Text("이 계획을 삭제하시겠습니까?") },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                // 삭제 로직 실행
+                                lectureRoomViewModel.deleteOnePlan(planId)
                                 navController.popBackStack() // 이전 화면으로 돌아가기
                                 showDeleteConfirmDialog = false
                             }
@@ -499,6 +535,7 @@ fun TaskItem(
             )
         }
 
+        // 칩을 커스텀한듯
         Text(
             text = "${planDetailLessonSchedule.adjustedDuration}분",
             style = MaterialTheme.typography.labelMedium,
@@ -512,6 +549,7 @@ fun TaskItem(
                 )
                 .padding(horizontal = 4.dp, vertical = 4.dp)
         )
+
     }
 }
 
