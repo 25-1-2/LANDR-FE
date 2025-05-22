@@ -27,6 +27,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -91,6 +92,11 @@ fun PlanDetailScreen(
 
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
+            modifier = Modifier
+                .fillMaxSize()
+                .then(
+                    if (isLoading) Modifier.blur(8.dp) else Modifier
+                ),
             topBar = {
                 PlanDetailTopBar(
                     navController = navController,
@@ -166,30 +172,35 @@ fun PlanDetailScreen(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.5f))
+                    .background(Color.Transparent)
                     .zIndex(999f),
                 contentAlignment = Alignment.Center
             ) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
+                    verticalArrangement = Arrangement.Center,
+//                    modifier = Modifier
+//                        .background(
+//                            Color.White.copy(alpha = 0.95f),
+//                            shape = RoundedCornerShape(16.dp)
+//                        )
+//                        .padding(32.dp)
                 ) {
                     Image(
                         painter = painterResource(id = R.drawable.screen_home_todaylesson_empty_iv),
-                        contentDescription = "재스케줄링 이미지"
+                        contentDescription = "재스케줄링 이미지",
+                        modifier = Modifier.padding(start = 40.dp)
                     )
-                    Spacer(modifier = Modifier.height(16.dp))
                     LottieAnimation(
                         composition = composition,
                         iterations = LottieConstants.IterateForever,
-                        modifier = Modifier.size(48.dp)
+                        modifier = Modifier.size(64.dp)
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
                         text = "재스케줄링 중입니다...",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = Color.White,
-                        fontWeight = FontWeight.Medium
+                        style = MaterialTheme.typography.headlineLarge,
+                        color = Color.Black,
                     )
                 }
             }
