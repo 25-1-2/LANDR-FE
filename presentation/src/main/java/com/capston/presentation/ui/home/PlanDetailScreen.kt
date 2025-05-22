@@ -40,6 +40,10 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.lifecycle.LifecycleCoroutineScope
 import androidx.navigation.NavController
+import com.airbnb.lottie.compose.LottieAnimation
+import com.airbnb.lottie.compose.LottieCompositionSpec
+import com.airbnb.lottie.compose.LottieConstants
+import com.airbnb.lottie.compose.rememberLottieComposition
 import com.capston.domain.manager.LoadingStateManager
 import com.capston.domain.response.plan.GetPlanDetailResponse
 import com.capston.domain.response.plan.PlanDetailLessonSchedule
@@ -70,16 +74,16 @@ fun formatDate(dateString: String): String {
 fun PlanDetailScreen(
     planId: Int,
     lectureRoomViewModel: LectureRoomViewModel,
-    navController: NavController,
-    loadingStateManager: LoadingStateManager
+    navController: NavController  // loadingStateManager 파라미터 제거
 ) {
-    var showDeleteDropdown by remember { mutableStateOf(false) }
-    var showDeleteConfirmDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
+    var showDeleteDropdown by remember { mutableStateOf(false) }
+    var showDeleteConfirmDialog by remember { mutableStateOf(false) }
+    var isLoading by remember { mutableStateOf(false) }
+
     val planDetailResponse by lectureRoomViewModel.getPlanDetailResponse.collectAsState()
-    val isLoading by loadingStateManager.isLoading.collectAsState()
 
     LaunchedEffect(planId) {
         lectureRoomViewModel.getPlanDetail(planId)
@@ -108,8 +112,9 @@ fun PlanDetailScreen(
                     planId = planId,
                     lectureRoomViewModel = lectureRoomViewModel,
                     planDetailResponse = planDetailResponse,
-                    loadingStateManager = loadingStateManager,
-                    coroutineScope = coroutineScope
+                    coroutineScope = coroutineScope,
+                    isLoading = isLoading,
+                    onLoadingChange = { isLoading = it }
                 )
 
                 // 날짜별 섹션
@@ -138,13 +143,7 @@ fun PlanDetailScreen(
                             onClick = {
                                 // 삭제 로직 실행
                                 lectureRoomViewModel.deleteOnePlan(planId)
-//                            Toast.makeText(
-//                                context,
-//                                lectureRoomViewModel.deleteOnePlanResponse.value.message,
-//                                Toast.LENGTH_SHORT
-//                            ).show()
                                 navController.popBackStack() // 이전 화면으로 돌아가기
-
                                 showDeleteConfirmDialog = false
                             }
                         ) {
@@ -162,6 +161,8 @@ fun PlanDetailScreen(
 
         // 로딩 오버레이
         if (isLoading) {
+            val composition by rememberLottieComposition(LottieCompositionSpec.Asset("loading_dot.json"))
+
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -178,8 +179,9 @@ fun PlanDetailScreen(
                         contentDescription = "재스케줄링 이미지"
                     )
                     Spacer(modifier = Modifier.height(16.dp))
-                    CircularProgressIndicator(
-                        color = MainPurple,
+                    LottieAnimation(
+                        composition = composition,
+                        iterations = LottieConstants.IterateForever,
                         modifier = Modifier.size(48.dp)
                     )
                     Spacer(modifier = Modifier.height(16.dp))
@@ -284,7 +286,8 @@ fun TitleSection(
     lectureRoomViewModel: LectureRoomViewModel,
     planDetailResponse: GetPlanDetailResponse,
     coroutineScope: CoroutineScope,
-    loadingStateManager: LoadingStateManager
+    isLoading: Boolean,
+    onLoadingChange: (Boolean) -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -307,7 +310,7 @@ fun TitleSection(
             IconButton(
                 onClick = {
                     coroutineScope.launch {
-                        loadingStateManager.show()
+                        onLoadingChange(true)
                         try {
                             // 재스케줄링을 시작하고 완료될 때까지 기다립니다
                             val rescheduleJob = lectureRoomViewModel.postPlanReschedule(planId)
@@ -318,7 +321,7 @@ fun TitleSection(
 
                             delay(1000)
                         } finally {
-                            loadingStateManager.hide()
+                            onLoadingChange(false)
                         }
                     }
                 },

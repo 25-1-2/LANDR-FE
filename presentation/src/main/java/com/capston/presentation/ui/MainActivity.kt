@@ -374,7 +374,6 @@ fun MainBottomBar(
                         planId = planId,
                         lectureRoomViewModel = lectureRoomViewModel,
                         navController = navController,
-                        loadingStateManager = loadingStateManager
                     )
                 }
                 composable(Screen.Profile.title) { ProfileScreen(loginViewModel = loginViewModel, myPageViewModel = myPageViewModel) }
