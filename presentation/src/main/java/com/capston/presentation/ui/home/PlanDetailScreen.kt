@@ -27,6 +27,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -76,6 +77,9 @@ fun PlanDetailScreen(
     lectureRoomViewModel: LectureRoomViewModel,
     navController: NavController  // loadingStateManager 파라미터 제거
 ) {
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+
     var showDeleteDropdown by remember { mutableStateOf(false) }
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
@@ -145,42 +149,6 @@ fun PlanDetailScreen(
                             onClick = {
                                 // 삭제 로직 실행
                                 lectureRoomViewModel.deleteOnePlan(planId)
-//                            Toast.makeText(
-//                                context,
-//                                lectureRoomViewModel.deleteOnePlanResponse.value.message,
-//                                Toast.LENGTH_SHORT
-//                            ).show()
-                                navController.popBackStack() // 이전 화면으로 돌아가기
-
-                                showDeleteConfirmDialog = false
-                            }
-                        ) {
-                            Text("삭제", color = Color.Red)
-                        }
-                    },
-                    dismissButton = {
-                        TextButton(onClick = { showDeleteConfirmDialog = false }) {
-                            Text("취소")
-                        }
-                    }
-                )
-            }
-            // 삭제 확인 다이얼로그
-            if (showDeleteConfirmDialog) {
-                AlertDialog(
-                    containerColor = Color.White,
-                    iconContentColor = Color.Black,
-                    titleContentColor = Color.Black,
-                    textContentColor = Color.Black,
-                    tonalElevation = 0.dp, // 그림자 효과 제거
-                    onDismissRequest = { showDeleteConfirmDialog = false },
-                    title = { Text("계획 삭제") },
-                    text = { Text("이 계획을 삭제하시겠습니까?") },
-                    confirmButton = {
-                        TextButton(
-                            onClick = {
-                                // 삭제 로직 실행
-                                lectureRoomViewModel.deleteOnePlan(planId)
                                 navController.popBackStack() // 이전 화면으로 돌아가기
                                 showDeleteConfirmDialog = false
                             }
@@ -204,7 +172,7 @@ fun PlanDetailScreen(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.2f))
+                    .background(Color.Transparent)
                     .zIndex(999f),
                 contentAlignment = Alignment.Center
             ) {
@@ -230,8 +198,8 @@ fun PlanDetailScreen(
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        text = "계획을 수정하고 있어요...",
-                        style = MaterialTheme.typography.headlineMedium,
+                        text = "재스케줄링 중입니다...",
+                        style = MaterialTheme.typography.headlineLarge,
                         color = Color.Black,
                     )
                 }
@@ -509,13 +477,9 @@ fun TaskItem(
                 .weight(1f)
                 .padding(end = 4.dp)
         ) {
-            CustomCheckBox(
+            CustomCheckBox (
                 isChecked = isChecked,
                 onCheckedChange = {
-                    // 즉시 UI 업데이트 (사용자 경험 향상)
-                    isChecked = !isChecked
-
-                    // 서버 업데이트 (백그라운드에서 실행)
                     lectureRoomViewModel.patchLessonSchedulesCheckToggle(planDetailLessonSchedule.id)
                     isChecked = !isChecked
                 }
