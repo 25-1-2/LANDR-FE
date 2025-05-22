@@ -142,6 +142,9 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel, navCo
 
     val homeState by homeViewModel.getDistinctHome.collectAsState()
     val dDayState by homeViewModel.dDay.collectAsState()
+    // D-Day 관련 상태 관리 - 우선순위: dDayState -> homeState.dday
+    // 현재 D-Day 데이터 안전하게 가져오기
+    val currentDDayData = dDayState ?: homeState.dday
 
     // 나의 학습 현황
     val totalCompletedLessons = homeState.userProgress.totalCompletedLessons // 들은 강의 개수
@@ -163,14 +166,29 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel, navCo
     var isExamBottomSheetVisible by rememberSaveable { mutableStateOf(false) }
     val examModalBottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    // D-Day 관련 상태 관리
-    var examTitle by rememberSaveable {
-        mutableStateOf(dDayState?.title ?: "")
+    var examTitle by remember { mutableStateOf("") }
+    var examDate by remember { mutableStateOf("") }
+    var dDay by remember { mutableStateOf("D-Day") }
+
+    // 안전한 D-Day ID 체크 함수
+    fun getSafeDDayId(): Int? {
+        return try {
+            currentDDayData?.ddayId?.takeIf { it > 0 }
+        } catch (e: Exception) {
+            Log.e("HomeScreen", "Error getting D-Day ID: ${e.message}")
+            null
+        }
     }
-    var examDate by rememberSaveable {
-        mutableStateOf(dDayState?.goalDate ?: "")
+
+    // 안전한 D-Day 존재 여부 체크 함수
+    fun hasSafeDDay(): Boolean {
+        return try {
+            getSafeDDayId() != null
+        } catch (e: Exception) {
+            Log.e("HomeScreen", "Error checking D-Day existence: ${e.message}")
+            false
+        }
     }
-    var dDay by rememberSaveable { mutableStateOf("D-Day") }
 
     fun calculateDDay(dateString: String): String {
         if (dateString.isBlank()) return "D-Day"
@@ -191,7 +209,7 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel, navCo
         }
     }
 
-    // D-Day 상태 업데이트 - dDayState가 변경될 때마다 실행
+    // D-Day 상태 업데이트 - 현재 D-Day 데이터가 변경될 때마다 실행
     LaunchedEffect(dDayState) {
         if (dDayState != null) {
             examTitle = dDayState!!.title
@@ -202,21 +220,6 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel, navCo
             examTitle = ""
             examDate = ""
             dDay = "D-Day"
-        }
-    }
-
-    // 앱 초기화 시 데이터 로드
-    LaunchedEffect(Unit) {
-        try {
-            val dday = homeState.dday
-            if (dday != null && dday.ddayId > 0) {
-                homeViewModel.patchDDay(
-                    dday.ddayId,
-                    UpdateDDayRequest(dday.title ?: "", dday.goalDate ?: "")
-                )
-            }
-        } catch (e: Exception) {
-            Log.e("HomeScreen", "Error patching D-Day: ${e.message}", e)
         }
     }
 
@@ -327,17 +330,27 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel, navCo
         },
         onDeleteExam = {
             try {
-                val ddayId = dDayState?.ddayId
-                if (ddayId != null && ddayId > 0) {
+                val ddayId = getSafeDDayId()
+                Log.d("HomeScreen", "Deleting D-Day: ddayId=$ddayId")
+
+                if (ddayId != null) {
                     homeViewModel.deleteDDay(ddayId)
                     showDeleteCompleteDialog = true
+
+                    // 삭제 후 데이터 새로고침
+                    scope.launch {
+                        kotlinx.coroutines.delay(500) // 서버 처리 시간 대기
+                        homeViewModel.getDistinctHome()
+                    }
+                } else {
+                    Log.w("HomeScreen", "Cannot delete D-Day: no valid ID found")
                 }
             } catch (e: Exception) {
                 Log.e("HomeScreen", "Error deleting D-Day: ${e.message}", e)
             }
             isExamBottomSheetVisible = false
         },
-        hasDDay = dDayState?.ddayId != null && (dDayState!!.ddayId > 0)
+        hasDDay = hasSafeDDay() // 안전한 체크 함수 사용
     )
 
     // 바텀시트 외부에 삭제 완료 다이얼로그 표시
