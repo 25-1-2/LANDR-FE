@@ -216,4 +216,9 @@ class LoginActivity : ComponentActivity() {
             }
         }
     }
+<<<<<<< HEAD
 }
+=======
+}
+
+>>>>>>> 3502772 (REFACTOR(LoginActivity) : 로그아웃 코드 삭제)
