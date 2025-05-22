@@ -173,6 +173,11 @@ fun PlanDetailScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.screen_home_todaylesson_empty_iv),
+                        contentDescription = "재스케줄링 이미지"
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
                     CircularProgressIndicator(
                         color = MainPurple,
                         modifier = Modifier.size(48.dp)
