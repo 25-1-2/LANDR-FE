@@ -46,6 +46,9 @@ class LoginViewModel @Inject constructor(
     private val _getUserprofile = MutableStateFlow(UserProfileResponse())
     val getUserProfile: StateFlow<UserProfileResponse> = _getUserprofile.asStateFlow()
 
+    private val _isTokenSaved = MutableStateFlow(false)
+    val isTokenSaved: StateFlow<Boolean> = _isTokenSaved
+
     fun postLogin(loginDto: LoginDto) {
         viewModelScope.launch {
             loadingStateManager.show()
@@ -61,6 +64,7 @@ class LoginViewModel @Inject constructor(
 
                         // Ensure token is fully saved before continuing
                         saveAccessTokenUseCase(response.token)
+                        _isTokenSaved.value = true
 
                         // Wait a moment to ensure token is properly stored
                         delay(500)
