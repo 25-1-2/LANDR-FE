@@ -27,7 +27,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -77,9 +76,6 @@ fun PlanDetailScreen(
     lectureRoomViewModel: LectureRoomViewModel,
     navController: NavController  // loadingStateManager 파라미터 제거
 ) {
-    val context = LocalContext.current
-    val coroutineScope = rememberCoroutineScope()
-
     var showDeleteDropdown by remember { mutableStateOf(false) }
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
@@ -493,12 +489,9 @@ fun TaskItem(
     planDetailLessonSchedule: PlanDetailLessonSchedule,
     lectureRoomViewModel: LectureRoomViewModel
 ) {
-    // 각 체크박스의 상태를 remember로 관리하되, 초기값은 서버 데이터 사용
-    var isChecked by remember(planDetailLessonSchedule.id, planDetailLessonSchedule.completed) {
-        mutableStateOf(planDetailLessonSchedule.completed)
-    }
+    // 각 체크박스의 상태를 기억합니다.
+    var isChecked by remember { mutableStateOf(planDetailLessonSchedule.completed) }
 
-    // 서버 데이터가 변경되면 로컬 상태도 동기화
     LaunchedEffect(planDetailLessonSchedule.completed) {
         isChecked = planDetailLessonSchedule.completed
     }
