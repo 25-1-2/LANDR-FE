@@ -12,6 +12,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -26,6 +27,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -36,8 +38,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import androidx.lifecycle.LifecycleCoroutineScope
 import androidx.navigation.NavController
+import com.airbnb.lottie.compose.LottieAnimation
+import com.airbnb.lottie.compose.LottieCompositionSpec
+import com.airbnb.lottie.compose.LottieConstants
+import com.airbnb.lottie.compose.rememberLottieComposition
 import com.capston.domain.manager.LoadingStateManager
 import com.capston.domain.response.plan.GetPlanDetailResponse
 import com.capston.domain.response.plan.PlanDetailLessonSchedule
@@ -50,6 +57,7 @@ import com.capston.presentation.theme.textGray
 import com.capston.presentation.ui.common.CustomCheckBox
 import com.capston.presentation.viewmodel.LectureRoomViewModel
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 import java.time.LocalDate
@@ -67,13 +75,14 @@ fun formatDate(dateString: String): String {
 fun PlanDetailScreen(
     planId: Int,
     lectureRoomViewModel: LectureRoomViewModel,
-    navController: NavController,
-    loadingStateManager: LoadingStateManager
+    navController: NavController  // loadingStateManager 파라미터 제거
 ) {
-    var showDeleteDropdown by remember { mutableStateOf(false) }
-    var showDeleteConfirmDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
+
+    var showDeleteDropdown by remember { mutableStateOf(false) }
+    var showDeleteConfirmDialog by remember { mutableStateOf(false) }
+    var isLoading by remember { mutableStateOf(false) }
 
     val planDetailResponse by lectureRoomViewModel.getPlanDetailResponse.collectAsState()
 
@@ -81,77 +90,120 @@ fun PlanDetailScreen(
         lectureRoomViewModel.getPlanDetail(planId)
     }
 
-    Scaffold(
-        topBar = {
-            PlanDetailTopBar(
-                navController = navController,
-                showMenu = showDeleteDropdown,
-                onMenuClick = { showDeleteDropdown = !showDeleteDropdown },
-                onMenuDismiss = { showDeleteDropdown = false },
-                onDeleteClick = { showDeleteConfirmDialog = true }
-            )
-        }
-    ) { innerPadding ->
-        Column(
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
-                .padding(horizontal = 20.dp)
-                .verticalScroll(rememberScrollState())
-        ) {
-            TitleSection(
-                planId = planId,
-                lectureRoomViewModel = lectureRoomViewModel,
-                planDetailResponse = planDetailResponse,
-                loadingStateManager = loadingStateManager,
-                coroutineScope = coroutineScope
-            )
+                .then(
+                    if (isLoading) Modifier.blur(8.dp) else Modifier
+                ),
+            topBar = {
+                PlanDetailTopBar(
+                    navController = navController,
+                    showMenu = showDeleteDropdown,
+                    onMenuClick = { showDeleteDropdown = !showDeleteDropdown },
+                    onMenuDismiss = { showDeleteDropdown = false },
+                    onDeleteClick = { showDeleteConfirmDialog = true }
+                )
+            }
+        ) { innerPadding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .padding(horizontal = 20.dp)
+                    .verticalScroll(rememberScrollState())
+            ) {
+                TitleSection(
+                    planId = planId,
+                    lectureRoomViewModel = lectureRoomViewModel,
+                    planDetailResponse = planDetailResponse,
+                    coroutineScope = coroutineScope,
+                    isLoading = isLoading,
+                    onLoadingChange = { isLoading = it }
+                )
 
-            // 날짜별 섹션
-            planDetailResponse.dailySchedules.forEach { schedule ->
-                OneDaySection(
-                    date = schedule.date,
-                    planDetailLessonSchedules = schedule.lessonSchedules,
-                    lectureRoomViewModel = lectureRoomViewModel
+                // 날짜별 섹션
+                planDetailResponse.dailySchedules.forEach { schedule ->
+                    OneDaySection(
+                        date = schedule.date,
+                        planDetailLessonSchedules = schedule.lessonSchedules,
+                        lectureRoomViewModel = lectureRoomViewModel
+                    )
+                }
+            }
+
+            // 삭제 확인 다이얼로그
+            if (showDeleteConfirmDialog) {
+                AlertDialog(
+                    containerColor = Color.White,
+                    iconContentColor = Color.Black,
+                    titleContentColor = Color.Black,
+                    textContentColor = Color.Black,
+                    tonalElevation = 0.dp, // 그림자 효과 제거
+                    onDismissRequest = { showDeleteConfirmDialog = false },
+                    title = { Text("계획 삭제") },
+                    text = { Text("이 계획을 삭제하시겠습니까?") },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                // 삭제 로직 실행
+                                lectureRoomViewModel.deleteOnePlan(planId)
+                                navController.popBackStack() // 이전 화면으로 돌아가기
+                                showDeleteConfirmDialog = false
+                            }
+                        ) {
+                            Text("삭제", color = Color.Red)
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showDeleteConfirmDialog = false }) {
+                            Text("취소")
+                        }
+                    }
                 )
             }
         }
 
-        // 삭제 확인 다이얼로그
-        if (showDeleteConfirmDialog) {
-            AlertDialog(
-                containerColor = Color.White,
-                iconContentColor = Color.Black,
-                titleContentColor = Color.Black,
-                textContentColor = Color.Black,
-                tonalElevation = 0.dp, // 그림자 효과 제거
-                onDismissRequest = { showDeleteConfirmDialog = false },
-                title = { Text("계획 삭제") },
-                text = { Text("이 계획을 삭제하시겠습니까?") },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            // 삭제 로직 실행
-                            lectureRoomViewModel.deleteOnePlan(planId)
-//                            Toast.makeText(
-//                                context,
-//                                lectureRoomViewModel.deleteOnePlanResponse.value.message,
-//                                Toast.LENGTH_SHORT
-//                            ).show()
-                            navController.popBackStack() // 이전 화면으로 돌아가기
+        // 로딩 오버레이
+        if (isLoading) {
+            val composition by rememberLottieComposition(LottieCompositionSpec.Asset("loading_dot.json"))
 
-                            showDeleteConfirmDialog = false
-                        }
-                    ) {
-                        Text("삭제", color = Color.Red)
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showDeleteConfirmDialog = false }) {
-                        Text("취소")
-                    }
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.2f))
+                    .zIndex(999f),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+//                    modifier = Modifier
+//                        .background(
+//                            Color.White.copy(alpha = 0.95f),
+//                            shape = RoundedCornerShape(16.dp)
+//                        )
+//                        .padding(32.dp)
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.screen_home_todaylesson_empty_iv),
+                        contentDescription = "재스케줄링 이미지",
+                        modifier = Modifier.padding(start = 40.dp)
+                    )
+                    LottieAnimation(
+                        composition = composition,
+                        iterations = LottieConstants.IterateForever,
+                        modifier = Modifier.size(64.dp)
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "계획을 수정하고 있어요...",
+                        style = MaterialTheme.typography.headlineMedium,
+                        color = Color.Black,
+                    )
                 }
-            )
+            }
         }
     }
 }
@@ -163,7 +215,8 @@ fun PlanDetailTopBar(
     showMenu: Boolean,
     onMenuClick: () -> Unit,
     onMenuDismiss: () -> Unit,
-    onDeleteClick: () -> Unit) {
+    onDeleteClick: () -> Unit
+) {
     Column {
         TopAppBar(
             title = {},
@@ -173,7 +226,8 @@ fun PlanDetailTopBar(
                 }) {
                     Image(
                         painter = painterResource(id = R.drawable.icon_arrow_back),
-                        contentDescription = "뒤로 가기")
+                        contentDescription = "뒤로 가기"
+                    )
                 }
             },
             actions = {
@@ -243,7 +297,8 @@ fun TitleSection(
     lectureRoomViewModel: LectureRoomViewModel,
     planDetailResponse: GetPlanDetailResponse,
     coroutineScope: CoroutineScope,
-    loadingStateManager: LoadingStateManager
+    isLoading: Boolean,
+    onLoadingChange: (Boolean) -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -264,7 +319,23 @@ fun TitleSection(
         ) {
             // 재스케줄링 버튼
             IconButton(
-                onClick = {},
+                onClick = {
+                    coroutineScope.launch {
+                        onLoadingChange(true)
+                        try {
+                            // 재스케줄링을 시작하고 완료될 때까지 기다립니다
+                            val rescheduleJob = lectureRoomViewModel.postPlanReschedule(planId)
+                            rescheduleJob.join()
+
+                            // 이제 업데이트된 데이터 가져오기
+                            lectureRoomViewModel.getPlanDetail(planId)
+
+                            delay(1000)
+                        } finally {
+                            onLoadingChange(false)
+                        }
+                    }
+                },
                 modifier = Modifier
                     .size(40.dp)
                     .clip(CircleShape)
@@ -276,23 +347,7 @@ fun TitleSection(
                     imageVector = ImageVector.vectorResource(R.drawable.icon_reschedule),
                     contentDescription = "재스케줄링",
                     tint = materialGray,
-                    modifier = Modifier
-                        .padding(8.dp)
-                        .clickable {
-                            coroutineScope.launch {
-                                loadingStateManager.show()
-                                try {
-                                    // 재스케줄링을 시작하고 완료될 때까지 기다립니다
-                                    val rescheduleJob = lectureRoomViewModel.postPlanReschedule(planId)
-                                    rescheduleJob.join()
-
-                                    // 이제 업데이트된 데이터 가져오기
-                                    lectureRoomViewModel.getPlanDetail(planId)
-                                } finally {
-                                    loadingStateManager.hide()
-                                }
-                            }
-                        }
+                    modifier = Modifier.padding(8.dp)
                 )
             }
 

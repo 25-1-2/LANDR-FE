@@ -56,8 +56,6 @@ class LoginActivity : ComponentActivity() {
         val currentUser = auth.currentUser
         Log.d("LoginActivity", "currentUser: ${currentUser?.uid}")
 
-//        signOut(CredentialManager.create(this))
-
         // 이미 로그인되어 있는지 확인
         if (currentUser != null) {
             // 로그인 상태이면 MainActivity로 이동
@@ -170,22 +168,6 @@ class LoginActivity : ComponentActivity() {
             } else {
                 Log.w("LoginActivity", "Fetching FCM token failed", task.exception)
                 onTokenReceived(null)
-            }
-        }
-    }
-
-    private fun signOut(credentialManager: CredentialManager) {
-        // Firebase sign out
-        auth.signOut()
-
-        // When a user signs out, clear the current user credential state from all credential providers.
-        lifecycleScope.launch {
-            try {
-                val clearRequest = ClearCredentialStateRequest()
-                credentialManager.clearCredentialState(clearRequest)
-//                updateUI(null)
-            } catch (e: ClearCredentialException) {
-                Log.e("LoginActivity", "Couldn't clear user credentials: ${e.localizedMessage}")
             }
         }
     }
