@@ -172,7 +172,7 @@ fun PlanDetailScreen(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color.Transparent)
+                    .background(Color.Black.copy(alpha = 0.2f))
                     .zIndex(999f),
                 contentAlignment = Alignment.Center
             ) {
@@ -198,8 +198,8 @@ fun PlanDetailScreen(
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        text = "재스케줄링 중입니다...",
-                        style = MaterialTheme.typography.headlineLarge,
+                        text = "계획을 수정하고 있어요...",
+                        style = MaterialTheme.typography.headlineMedium,
                         color = Color.Black,
                     )
                 }
