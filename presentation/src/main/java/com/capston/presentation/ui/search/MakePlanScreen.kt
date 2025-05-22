@@ -118,7 +118,7 @@ fun MakePlanScreen(
 
     // 응답을 관찰하여 액티비티 종료 처리
     LaunchedEffect(planResponse, requestSent) {
-        if (requestSent && planResponse.id != 0) {
+        if (requestSent && planResponse.message.isNotEmpty()) {
             // 성공적인 응답을 받았음
             delay(1000) // 로딩 표시를 위한 지연
             loadingStateManager.hide()

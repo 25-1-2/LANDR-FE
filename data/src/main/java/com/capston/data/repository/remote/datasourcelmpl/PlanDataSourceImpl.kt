@@ -5,7 +5,7 @@ import com.capston.domain.datasource.PlanDataSource
 import com.capston.domain.response.plan.GetPlanLectureRoomResponse
 import com.capston.domain.request.PatchPlanDto
 import com.capston.domain.request.PostNewPlanDto
-import com.capston.domain.response.plan.DeleteOnePlanResponse
+import com.capston.domain.response.MessageResponse
 import com.capston.domain.response.plan.GetPlanDetailResponse
 import com.capston.domain.response.plan.LectureAliasResponse
 import com.capston.domain.response.plan.PostNewPlanResponse
@@ -15,7 +15,7 @@ import javax.inject.Inject
 class PlanDataSourceImpl @Inject constructor(
     private val planApi: PlanApi
 ) : PlanDataSource {
-    override suspend fun postNewPlan(postNewPlanDto: PostNewPlanDto): PostNewPlanResponse {
+    override suspend fun postNewPlan(postNewPlanDto: PostNewPlanDto): MessageResponse {
         return planApi.postNewPlan(postNewPlanDto)
     }
 
@@ -35,7 +35,7 @@ class PlanDataSourceImpl @Inject constructor(
         return planApi.postPlanReschedule(planId)
     }
 
-    override suspend fun deleteOnePlan(planId: Int): DeleteOnePlanResponse {
+    override suspend fun deleteOnePlan(planId: Int): MessageResponse {
         return planApi.deleteOnePlan(planId)
     }
 }

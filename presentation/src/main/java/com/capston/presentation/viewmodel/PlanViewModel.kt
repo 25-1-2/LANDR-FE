@@ -7,6 +7,7 @@ import com.capston.domain.manager.LoadingStateManager
 import com.capston.domain.response.plan.GetPlanLectureRoomResponse
 import com.capston.domain.request.PatchPlanDto
 import com.capston.domain.request.PostNewPlanDto
+import com.capston.domain.response.MessageResponse
 import com.capston.domain.response.plan.GetPlanDetailResponse
 import com.capston.domain.response.plan.LectureAliasResponse
 import com.capston.domain.response.plan.PostNewPlanResponse
@@ -30,8 +31,8 @@ class PlanViewModel @Inject constructor(
     private val getPlanDetailUseCase: GetPlanDetailUseCase,
     private val loadingStateManager: LoadingStateManager
 ) : ViewModel() {
-    private val _postNewPlanResponse = MutableStateFlow(PostNewPlanResponse())  // 기본값 ""
-    val postNewPlanResponse: StateFlow<PostNewPlanResponse> = _postNewPlanResponse.asStateFlow()
+    private val _postNewPlanResponse = MutableStateFlow(MessageResponse())  // 기본값 ""
+    val postNewPlanResponse: StateFlow<MessageResponse> = _postNewPlanResponse.asStateFlow()
 
     private val _patchPlanName = MutableStateFlow(LectureAliasResponse())  // 기본값 ""
     val patchPlanName: StateFlow<LectureAliasResponse> = _patchPlanName.asStateFlow()
@@ -40,11 +41,11 @@ class PlanViewModel @Inject constructor(
         viewModelScope.launch {
             postNewPlanUseCase(postNewPlanDto)
                 .catch { e ->
-                    Log.e("PlanViewModel", "postPlanDetail 에러: ${e.message}")
+                    Log.e("PlanViewModel", "postNewPlan 에러: ${e.message}")
                 }
                 .collect { response ->  // 값 저장
                     _postNewPlanResponse.value = response // 공백 제거 후 저장
-                    Log.d("PlanViewModel", "postPlanDetail 업데이트됨: $response")
+                    Log.d("PlanViewModel", "postNewPlan 업데이트됨: $response")
                 }
 //            loadingStateManager.hide()
         }
