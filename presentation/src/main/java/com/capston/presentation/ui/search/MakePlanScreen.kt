@@ -870,11 +870,12 @@ fun StartEndLectureSection(
 
 @Composable
 fun PlaybackSpeedSection(playbackSpeed: MutableState<Double>) {
-    var speed by remember { mutableFloatStateOf(1.0f) } // 기본값 1.0배속
+    // 0부터 10까지의 인덱스를 배속 값으로 매핑 (0 → 1.0, 10 → 2.0)
+    var speed by remember { mutableIntStateOf(0) }
 
     // Update the external state when the slider value changes
     LaunchedEffect(speed) {
-        playbackSpeed.value = speed.toDouble()
+        playbackSpeed.value = 1.0 + speed * 0.1
     }
 
     Column {
@@ -890,7 +891,7 @@ fun PlaybackSpeedSection(playbackSpeed: MutableState<Double>) {
                 style = MaterialTheme.typography.titleSmall,
             )
             Text(
-                text = String.format("%.1fx", speed),
+                text = String.format(Locale.KOREA, "%.1fx", 1.0 + speed * 0.1),
                 style = MaterialTheme.typography.titleSmall,
                 color = MainPurple,
             )
@@ -906,10 +907,10 @@ fun PlaybackSpeedSection(playbackSpeed: MutableState<Double>) {
         }
 
         Slider(
-            value = speed,
-            onValueChange = { speed = it },
-            valueRange = 1.0f..2.0f,
-            steps = 10, // 소수점 단위로 조절 (0.1 단위로 1.0 ~ 2.0)
+            value = speed.toFloat(),
+            onValueChange = { speed = it.toInt() },
+            valueRange = 0f..10f,
+            steps = 9, // 10단계 → 중간 9개의 간격
         )
     }
 }
