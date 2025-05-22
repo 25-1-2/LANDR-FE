@@ -3,7 +3,6 @@ package com.capston.domain.usecase.plan
 import com.capston.domain.repository.PlanRepository
 import com.capston.domain.request.PostNewPlanDto
 import com.capston.domain.response.MessageResponse
-import com.capston.domain.response.plan.PostNewPlanResponse
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
