@@ -12,7 +12,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -39,13 +38,11 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
-import androidx.lifecycle.LifecycleCoroutineScope
 import androidx.navigation.NavController
 import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.rememberLottieComposition
-import com.capston.domain.manager.LoadingStateManager
 import com.capston.domain.response.plan.GetPlanDetailResponse
 import com.capston.domain.response.plan.PlanDetailLessonSchedule
 import com.capston.presentation.theme.LightGray2
@@ -55,20 +52,11 @@ import com.capston.presentation.theme.dividerGray
 import com.capston.presentation.theme.materialGray
 import com.capston.presentation.theme.textGray
 import com.capston.presentation.ui.common.CustomCheckBox
+import com.capston.presentation.ui.common.LandrUtil.Companion.formatDateYMDE
 import com.capston.presentation.viewmodel.LectureRoomViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-
-@RequiresApi(Build.VERSION_CODES.O)
-fun formatDate(dateString: String): String {
-    val parsedDate = LocalDate.parse(dateString) // "2025-03-22"
-    val formatter = DateTimeFormatter.ofPattern("yyyy년 MM월 dd일 (E)")
-    return parsedDate.format(formatter)
-}
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -98,7 +86,7 @@ fun PlanDetailScreen(
                     if (isLoading) Modifier.blur(8.dp) else Modifier
                 ),
             topBar = {
-                PlanDetailTopBar(
+                SinglePlanTopBar(
                     navController = navController,
                     showMenu = showDeleteDropdown,
                     onMenuClick = { showDeleteDropdown = !showDeleteDropdown },
@@ -114,7 +102,7 @@ fun PlanDetailScreen(
                     .padding(horizontal = 20.dp)
                     .verticalScroll(rememberScrollState())
             ) {
-                TitleSection(
+                SinglePlanTitleSection(
                     planId = planId,
                     lectureRoomViewModel = lectureRoomViewModel,
                     planDetailResponse = planDetailResponse,
@@ -210,7 +198,7 @@ fun PlanDetailScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PlanDetailTopBar(
+fun SinglePlanTopBar(
     navController: NavController,
     showMenu: Boolean,
     onMenuClick: () -> Unit,
@@ -292,7 +280,7 @@ fun PlanDetailTopBar(
 }
 
 @Composable
-fun TitleSection(
+fun SinglePlanTitleSection(
     planId: Int,
     lectureRoomViewModel: LectureRoomViewModel,
     planDetailResponse: GetPlanDetailResponse,
@@ -387,7 +375,7 @@ fun OneDaySection(
 
     Column {
         Text(
-            text = formatDate(date),
+            text = formatDateYMDE(date),
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Medium,
             modifier = Modifier.padding(bottom = 8.dp)
