@@ -1,14 +1,11 @@
 package com.capston.data.repository.remote.datasourcelmpl
 
 import android.util.Log
-import com.capston.domain.base.BaseLoadingState
 import com.capston.data.repository.remote.api.HomeApi
 import com.capston.domain.datasource.HomeDataSource
 import com.capston.domain.request.UpdateDDayRequest
-import com.capston.domain.response.BaseResponse
 import com.capston.domain.response.CheckResponse
 import com.capston.domain.response.home.DistinctHomeIdResponse
-import com.capston.domain.response.BaseResult
 import com.capston.domain.response.home.DDayResponse
 import com.capston.domain.response.home.TodayScheduleResponse
 import com.capston.domain.response.home.UserProgressResponse
@@ -17,7 +14,6 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
 import org.json.JSONException
 import org.json.JSONObject
-import retrofit2.HttpException
 import javax.inject.Inject
 
 class HomeDataSourceImpl @Inject constructor(

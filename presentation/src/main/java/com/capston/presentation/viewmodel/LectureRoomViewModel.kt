@@ -6,7 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.capston.domain.manager.LoadingStateManager
 import com.capston.domain.response.plan.GetPlanLectureRoomResponse
 import com.capston.domain.response.CheckResponse
-import com.capston.domain.response.plan.DeleteOnePlanResponse
+import com.capston.domain.response.MessageResponse
 import com.capston.domain.response.plan.GetPlanDetailResponse
 import com.capston.domain.response.plan.PostPlanRescheduleResponse
 import com.capston.domain.usecase.home.PatchLessonSchedulesCheckToggleUseCase
@@ -41,8 +41,8 @@ class LectureRoomViewModel @Inject constructor(
     private val _postPlanRescheduleResponse = MutableStateFlow(PostPlanRescheduleResponse())  // 기본값 ""
     val postPlanRescheduleResponse: StateFlow<PostPlanRescheduleResponse> = _postPlanRescheduleResponse.asStateFlow()
 
-    private val _deleteOnePlanResponse = MutableStateFlow(DeleteOnePlanResponse())  // 기본값 ""
-    val deleteOnePlanResponse: StateFlow<DeleteOnePlanResponse> = _deleteOnePlanResponse.asStateFlow()
+    private val _deleteOnePlanResponse = MutableStateFlow(MessageResponse())  // 기본값 ""
+    val deleteOnePlanResponse: StateFlow<MessageResponse> = _deleteOnePlanResponse.asStateFlow()
 
     private val _patchLessonSchedulesCheckToggle = MutableStateFlow(CheckResponse())
     val patchLessonSchedulesCheckToggle = _patchLessonSchedulesCheckToggle

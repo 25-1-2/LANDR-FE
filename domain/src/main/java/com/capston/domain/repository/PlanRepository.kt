@@ -3,17 +3,16 @@ package com.capston.domain.repository
 import com.capston.domain.response.plan.GetPlanLectureRoomResponse
 import com.capston.domain.request.PatchPlanDto
 import com.capston.domain.request.PostNewPlanDto
-import com.capston.domain.response.plan.DeleteOnePlanResponse
+import com.capston.domain.response.MessageResponse
 import com.capston.domain.response.plan.GetPlanDetailResponse
 import com.capston.domain.response.plan.LectureAliasResponse
-import com.capston.domain.response.plan.PostNewPlanResponse
 import com.capston.domain.response.plan.PostPlanRescheduleResponse
 
 interface PlanRepository {
     // 강의 생성
     suspend fun postNewPlan(
         postNewPlanDto: PostNewPlanDto
-    ): PostNewPlanResponse
+    ): MessageResponse
 
     // 강의 별명 수정
     suspend fun patchPlanName(
@@ -37,5 +36,5 @@ interface PlanRepository {
     // 계획 삭제
     suspend fun deleteOnePlan(
         planId: Int
-    ): DeleteOnePlanResponse
+    ): MessageResponse
 }

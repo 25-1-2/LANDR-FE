@@ -46,6 +46,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.text.ParseException
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
@@ -55,6 +56,54 @@ fun formatDate(millis: Long?): String {
         sdf.format(Date(millis))
     } else {
         ""
+    }
+}
+
+// Calendar.DAY_OF_WEEK를 DayOfWeek enum name으로 변환
+fun calendarDayOfWeekToEnumName(calendarDayOfWeek: Int): String {
+    return when (calendarDayOfWeek) {
+        Calendar.SUNDAY -> DayOfWeek.SUN.name
+        Calendar.MONDAY -> DayOfWeek.MON.name
+        Calendar.TUESDAY -> DayOfWeek.TUE.name
+        Calendar.WEDNESDAY -> DayOfWeek.WED.name
+        Calendar.THURSDAY -> DayOfWeek.THU.name
+        Calendar.FRIDAY -> DayOfWeek.FRI.name
+        Calendar.SATURDAY -> DayOfWeek.SAT.name
+        else -> ""
+    }
+}
+
+// 선택한 요일들이 기간 내에 존재하는지 확인
+fun checkSelectedDaysExistInPeriod(
+    startDateStr: String,
+    endDateStr: String,
+    selectedDays: List<String>
+): Boolean {
+    if (startDateStr == "시작일 선택" || endDateStr == "종료일 선택") return false
+
+    try {
+        val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+        val startDate = dateFormat.parse(startDateStr) ?: return false
+        val endDate = dateFormat.parse(endDateStr) ?: return false
+
+        val calendar = Calendar.getInstance()
+        calendar.time = startDate
+
+        val daysInPeriod = mutableSetOf<String>()
+
+        // 시작일부터 종료일까지 모든 날짜의 요일을 수집
+        while (!calendar.time.after(endDate)) {
+            val dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK)
+            val enumName = calendarDayOfWeekToEnumName(dayOfWeek)
+            daysInPeriod.add(enumName)
+            calendar.add(Calendar.DAY_OF_MONTH, 1)
+        }
+
+        // 선택한 요일 중 하나라도 기간 내에 존재하는지 확인
+        return selectedDays.any { it in daysInPeriod }
+
+    } catch (e: ParseException) {
+        return false
     }
 }
 
@@ -112,13 +161,14 @@ fun MakePlanScreen(
         )
     }
     val dailyTime = remember { mutableIntStateOf(120) } // Default to 120 mins
-    val startDate = remember { mutableStateOf("시작일 선택") }
-    val endDate = remember { mutableStateOf("종료일 선택") }
+    val today = formatDate(System.currentTimeMillis())
+    val startDate = remember { mutableStateOf(today) }
+    val endDate = remember { mutableStateOf(today) }
     val playbackSpeed = remember { mutableDoubleStateOf(1.0) }
 
     // 응답을 관찰하여 액티비티 종료 처리
     LaunchedEffect(planResponse, requestSent) {
-        if (requestSent && planResponse.id != 0) {
+        if (requestSent && planResponse.message.isNotEmpty()) {
             // 성공적인 응답을 받았음
             delay(1000) // 로딩 표시를 위한 지연
             loadingStateManager.hide()
@@ -176,6 +226,10 @@ fun MakePlanScreen(
             }
             startLessonId.intValue > endLessonId.intValue -> {
                 errorMessage = "시작 강의는 마지막 강의보다 먼저여야 합니다."
+                false
+            }
+            planType.value == "PERIOD" && !checkSelectedDaysExistInPeriod(startDate.value, endDate.value, studyDayOfWeeks.value) -> {
+                errorMessage = "선택한 기간 내에 공부할 요일이 존재하지 않습니다. 기간 또는 요일을 다시 선택해주세요."
                 false
             }
 
@@ -869,11 +923,12 @@ fun StartEndLectureSection(
 
 @Composable
 fun PlaybackSpeedSection(playbackSpeed: MutableState<Double>) {
-    var speed by remember { mutableFloatStateOf(1.0f) } // 기본값 1.0배속
+    // 0부터 10까지의 인덱스를 배속 값으로 매핑 (0 → 1.0, 10 → 2.0)
+    var speed by remember { mutableIntStateOf(0) }
 
     // Update the external state when the slider value changes
     LaunchedEffect(speed) {
-        playbackSpeed.value = speed.toDouble()
+        playbackSpeed.value = 1.0 + speed * 0.1
     }
 
     Column {
@@ -889,7 +944,7 @@ fun PlaybackSpeedSection(playbackSpeed: MutableState<Double>) {
                 style = MaterialTheme.typography.titleSmall,
             )
             Text(
-                text = String.format("%.1fx", speed),
+                text = String.format(Locale.KOREA, "%.1fx", 1.0 + speed * 0.1),
                 style = MaterialTheme.typography.titleSmall,
                 color = MainPurple,
             )
@@ -905,10 +960,10 @@ fun PlaybackSpeedSection(playbackSpeed: MutableState<Double>) {
         }
 
         Slider(
-            value = speed,
-            onValueChange = { speed = it },
-            valueRange = 1.0f..2.0f,
-            steps = 10, // 소수점 단위로 조절 (0.1 단위로 1.0 ~ 2.0)
+            value = speed.toFloat(),
+            onValueChange = { speed = it.toInt() },
+            valueRange = 0f..10f,
+            steps = 9, // 10단계 → 중간 9개의 간격
         )
     }
 }

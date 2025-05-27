@@ -5,17 +5,16 @@ import com.capston.domain.response.plan.GetPlanLectureRoomResponse
 import com.capston.domain.repository.PlanRepository
 import com.capston.domain.request.PatchPlanDto
 import com.capston.domain.request.PostNewPlanDto
-import com.capston.domain.response.plan.DeleteOnePlanResponse
+import com.capston.domain.response.MessageResponse
 import com.capston.domain.response.plan.GetPlanDetailResponse
 import com.capston.domain.response.plan.LectureAliasResponse
-import com.capston.domain.response.plan.PostNewPlanResponse
 import com.capston.domain.response.plan.PostPlanRescheduleResponse
 import javax.inject.Inject
 
 class PlanRepositoryImpl @Inject constructor(
     private val planDataSource: PlanDataSource
 ) : PlanRepository {
-    override suspend fun postNewPlan(postNewPlanDto: PostNewPlanDto): PostNewPlanResponse =
+    override suspend fun postNewPlan(postNewPlanDto: PostNewPlanDto): MessageResponse =
         planDataSource.postNewPlan(postNewPlanDto)
 
     override suspend fun patchPlanName(
@@ -36,5 +35,5 @@ class PlanRepositoryImpl @Inject constructor(
 
     override suspend fun deleteOnePlan(
         planId: Int
-    ): DeleteOnePlanResponse = planDataSource.deleteOnePlan(planId)
+    ): MessageResponse = planDataSource.deleteOnePlan(planId)
 }
