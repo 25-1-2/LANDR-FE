@@ -6,7 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.capston.domain.manager.LoadingStateManager
 import com.capston.domain.response.plan.GetPlanLectureRoomResponse
 import com.capston.domain.response.CheckResponse
-import com.capston.domain.response.MessageResponse
+import com.capston.domain.response.plan.DeleteOnePlanResponse
 import com.capston.domain.response.plan.GetPlanDetailResponse
 import com.capston.domain.response.plan.PostPlanRescheduleResponse
 import com.capston.domain.usecase.home.PatchLessonSchedulesCheckToggleUseCase
@@ -110,9 +110,12 @@ class LectureRoomViewModel @Inject constructor(
 
     fun patchLessonSchedulesCheckToggle(lessonScheduleId: Int) {
         viewModelScope.launch {
+            loadingStateManager.show()
             try {
                 patchLessonSchedulesCheckToggleUseCase(lessonScheduleId).collect { response ->
                     _patchLessonSchedulesCheckToggle.value = response
+                    // 체크 토글 후 강의실 데이터 새로고침 (대신 getPlanLectureRoom 호출)
+                    getPlanLectureRoom()
 
                     Log.d("LectureRoomViewModel", "체크 토글 완료: $response")
 
