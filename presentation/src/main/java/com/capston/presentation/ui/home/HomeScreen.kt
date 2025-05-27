@@ -142,9 +142,19 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel, navCo
 
     val homeState by homeViewModel.getDistinctHome.collectAsState()
     val dDayState by homeViewModel.dDay.collectAsState()
-    // D-Day 관련 상태 관리 - 우선순위: dDayState -> homeState.dday
     // 현재 D-Day 데이터 안전하게 가져오기
-    val currentDDayData = dDayState ?: homeState.dday
+    val currentDDayData = remember(dDayState, homeState) {
+        try {
+            when {
+                dDayState != null -> dDayState
+                homeState != null && homeState.dday != null -> homeState.dday
+                else -> null
+            }
+        } catch (e: Exception) {
+            Log.e("HomeScreen", "Error accessing D-Day data: ${e.message}")
+            null
+        }
+    }
 
     // 나의 학습 현황
     val totalCompletedLessons = homeState.userProgress.totalCompletedLessons // 들은 강의 개수
@@ -190,33 +200,34 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel, navCo
         }
     }
 
-    fun calculateDDay(dateString: String): String {
-        if (dateString.isBlank()) return "D-Day"
-
-        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+    fun calculateDDay(dateString: String?): String {
         return try {
+            // isBlank() 대신 isNullOrBlank() 사용
+            if (dateString.isNullOrBlank()) return "D-Day"
+
+            val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
             val examDateTime = LocalDate.parse(dateString, formatter)
             val today = LocalDate.now()
             val daysDifference = ChronoUnit.DAYS.between(today, examDateTime).toInt()
 
             when {
-                daysDifference > 0 -> "D-$daysDifference" // Future date (countdown)
-                daysDifference < 0 -> "D+${-daysDifference}" // Past date (count up from event)
-                else -> "D-Day" // Today is the day
+                daysDifference > 0 -> "D-$daysDifference"
+                daysDifference < 0 -> "D+${-daysDifference}"
+                else -> "D-Day"
             }
         } catch (e: Exception) {
-            "D-Day" // Default in case of parsing error
+            Log.e("HomeScreen", "Error calculating D-Day: ${e.message}")
+            "D-Day"
         }
     }
 
     // D-Day 상태 업데이트 - 현재 D-Day 데이터가 변경될 때마다 실행
-    LaunchedEffect(dDayState) {
-        if (dDayState != null) {
-            examTitle = dDayState!!.title
-            examDate = dDayState!!.goalDate
-            dDay = calculateDDay(dDayState!!.goalDate)
+    LaunchedEffect(currentDDayData) {
+        if (currentDDayData != null) {
+            examTitle = currentDDayData.title ?: ""
+            examDate = currentDDayData.goalDate ?: ""
+            dDay = calculateDDay(currentDDayData.goalDate)
         } else {
-            // Reset to default values when there's no D-Day
             examTitle = ""
             examDate = ""
             dDay = "D-Day"
@@ -323,6 +334,13 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel, navCo
                     // Create new D-Day
                     homeViewModel.postDDay(UpdateDDayRequest(newTitle, newDate))
                 }
+
+                // 저장 후 데이터 새로고침
+                scope.launch {
+                    kotlinx.coroutines.delay(50) // 서버 처리 시간 대기
+                    homeViewModel.getDistinctHome() // distinct home 데이터 새로고침
+                }
+
             } catch (e: Exception) {
                 Log.e("HomeScreen", "Error saving D-Day: ${e.message}", e)
             }

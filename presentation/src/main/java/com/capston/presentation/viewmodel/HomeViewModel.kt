@@ -174,6 +174,7 @@ class HomeViewModel @Inject constructor(
                     dDay.value?.let { refreshInBackground(it.ddayId) }
                     Log.d("HomeViewModel", "HomeViewModel 업데이트됨: ${response}")
                 }
+            getDistinctHome()
             loadingStateManager.hide()
         }
     }
@@ -187,6 +188,7 @@ class HomeViewModel @Inject constructor(
             } catch (e: Exception) {
                 Log.e("HomeViewModel", "Error deleting D-Day: ${e.message}", e)
             }
+            getDistinctHome()
         }
     }
 
@@ -202,6 +204,7 @@ class HomeViewModel @Inject constructor(
                     refreshInBackground(dDayId)
                     Log.d("HomeViewModel", "HomeViewModel 업데이트됨: ${response}")
                 }
+            getDistinctHome()
             loadingStateManager.hide()
         }
     }
