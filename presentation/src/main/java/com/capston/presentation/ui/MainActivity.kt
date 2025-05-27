@@ -123,6 +123,9 @@ class MainActivity : ComponentActivity() {
 
         loginViewModel.checkAccessToken()
 
+        // ViewModel 간 동기화 설정
+        setupViewModelSynchronization()
+
         // 알림 권한 묻기
         askNotificationPermission()
 
@@ -148,6 +151,26 @@ class MainActivity : ComponentActivity() {
                     LoadingIndicator(loadingStateManager)
                 }
             }
+        }
+    }
+
+    // ViewModel 간 동기화 설정
+    private fun setupViewModelSynchronization() {
+        // LectureRoomViewModel에서 데이터가 변경되면 다른 ViewModel들도 새로고침
+        lectureRoomViewModel.onDataChanged = {
+            homeViewModel.forceRefresh()
+
+            // DailyScheduleViewModel도 현재 날짜로 새로고침
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                dailyScheduleViewModel.getDailySchedule(
+                    LocalDate.now().format(DateTimeFormatter.ISO_DATE)
+                )
+            }
+        }
+
+        // DailyScheduleViewModel에서 데이터가 변경되면 HomeViewModel도 새로고침
+        dailyScheduleViewModel.onDataChanged = {
+            homeViewModel.forceRefresh()
         }
     }
 

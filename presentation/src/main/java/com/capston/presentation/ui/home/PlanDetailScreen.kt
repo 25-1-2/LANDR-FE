@@ -457,9 +457,12 @@ fun TaskItem(
     planDetailLessonSchedule: PlanDetailLessonSchedule,
     lectureRoomViewModel: LectureRoomViewModel
 ) {
-    // 각 체크박스의 상태를 기억합니다.
-    var isChecked by remember { mutableStateOf(planDetailLessonSchedule.completed) }
+    // 각 체크박스의 상태를 remember로 관리하되, 초기값은 서버 데이터 사용
+    var isChecked by remember(planDetailLessonSchedule.id, planDetailLessonSchedule.completed) {
+        mutableStateOf(planDetailLessonSchedule.completed)
+    }
 
+    // 서버 데이터가 변경되면 로컬 상태도 동기화
     LaunchedEffect(planDetailLessonSchedule.completed) {
         isChecked = planDetailLessonSchedule.completed
     }
@@ -477,11 +480,14 @@ fun TaskItem(
                 .weight(1f)
                 .padding(end = 4.dp)
         ) {
-            CustomCheckBox (
+            CustomCheckBox(
                 isChecked = isChecked,
                 onCheckedChange = {
-                    lectureRoomViewModel.patchLessonSchedulesCheckToggle(planDetailLessonSchedule.id)
+                    // 즉시 UI 업데이트 (사용자 경험 향상)
                     isChecked = !isChecked
+
+                    // 서버 업데이트 (백그라운드에서 실행)
+                    lectureRoomViewModel.patchLessonSchedulesCheckToggle(planDetailLessonSchedule.id)
                 }
             )
             Text(
@@ -493,7 +499,6 @@ fun TaskItem(
             )
         }
 
-        // 칩을 커스텀한듯
         Text(
             text = "${planDetailLessonSchedule.adjustedDuration}분",
             style = MaterialTheme.typography.labelMedium,
@@ -507,7 +512,6 @@ fun TaskItem(
                 )
                 .padding(horizontal = 4.dp, vertical = 4.dp)
         )
-
     }
 }
 

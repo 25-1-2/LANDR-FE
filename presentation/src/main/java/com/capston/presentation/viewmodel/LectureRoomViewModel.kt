@@ -32,20 +32,23 @@ class LectureRoomViewModel @Inject constructor(
     private val loadingStateManager: LoadingStateManager
 ) : ViewModel() {
 
-    private val _getPlanLectureRoomResponse = MutableStateFlow(emptyList<GetPlanLectureRoomResponse>())  // 기본값 ""
+    private val _getPlanLectureRoomResponse = MutableStateFlow(emptyList<GetPlanLectureRoomResponse>())
     val getPlanLectureRoomResponse: StateFlow<List<GetPlanLectureRoomResponse>> = _getPlanLectureRoomResponse.asStateFlow()
 
-    private val _getPlanDetailResponse = MutableStateFlow(GetPlanDetailResponse())  // 기본값 ""
+    private val _getPlanDetailResponse = MutableStateFlow(GetPlanDetailResponse())
     val getPlanDetailResponse: StateFlow<GetPlanDetailResponse> = _getPlanDetailResponse.asStateFlow()
 
-    private val _postPlanRescheduleResponse = MutableStateFlow(PostPlanRescheduleResponse())  // 기본값 ""
+    private val _postPlanRescheduleResponse = MutableStateFlow(PostPlanRescheduleResponse())
     val postPlanRescheduleResponse: StateFlow<PostPlanRescheduleResponse> = _postPlanRescheduleResponse.asStateFlow()
 
-    private val _deleteOnePlanResponse = MutableStateFlow(DeleteOnePlanResponse())  // 기본값 ""
+    private val _deleteOnePlanResponse = MutableStateFlow(DeleteOnePlanResponse())
     val deleteOnePlanResponse: StateFlow<DeleteOnePlanResponse> = _deleteOnePlanResponse.asStateFlow()
 
     private val _patchLessonSchedulesCheckToggle = MutableStateFlow(CheckResponse())
     val patchLessonSchedulesCheckToggle = _patchLessonSchedulesCheckToggle
+
+    // HomeViewModel과의 동기화를 위한 콜백
+    var onDataChanged: (() -> Unit)? = null
 
     fun getPlanLectureRoom() {
         viewModelScope.launch {
@@ -54,8 +57,8 @@ class LectureRoomViewModel @Inject constructor(
                 .catch { e ->
                     Log.e("LectureRoomViewModel", "getPlanLectureRoom 에러: ${e.message}")
                 }
-                .collect { response ->  // 값 저장
-                    _getPlanLectureRoomResponse.value = response // 공백 제거 후 저장
+                .collect { response ->
+                    _getPlanLectureRoomResponse.value = response
                     Log.d("LectureRoomViewModel", "getPlanLectureRoom 업데이트됨: $response")
                 }
             loadingStateManager.hide()
@@ -68,8 +71,8 @@ class LectureRoomViewModel @Inject constructor(
                 .catch { e ->
                     Log.e("LectureRoomViewModel", "getPlanDetail 에러: ${e.message}")
                 }
-                .collect { response ->  // 값 저장
-                    _getPlanDetailResponse.value = response // 공백 제거 후 저장
+                .collect { response ->
+                    _getPlanDetailResponse.value = response
                     Log.d("LectureRoomViewModel", "getPlanDetail 업데이트됨: $response")
                 }
         }
@@ -80,8 +83,8 @@ class LectureRoomViewModel @Inject constructor(
             .catch { e ->
                 Log.e("LectureRoomViewModel", "postPlanReschedule 에러: ${e.message}")
             }
-            .collect { response ->  // 값 저장
-                _postPlanRescheduleResponse.value = response // 공백 제거 후 저장
+            .collect { response ->
+                _postPlanRescheduleResponse.value = response
                 Log.d("LectureRoomViewModel", "postPlanReschedule 업데이트됨: $response")
             }
     }
@@ -92,32 +95,41 @@ class LectureRoomViewModel @Inject constructor(
                 .catch { e ->
                     Log.e("LectureRoomViewModel", "deleteOnePlan 에러: ${e.message}")
                 }
-                .collect { response ->  // 값 저장
-                    _deleteOnePlanResponse.value = response // 공백 제거 후 저장
+                .collect { response ->
+                    _deleteOnePlanResponse.value = response
                     Log.d("LectureRoomViewModel", "deleteOnePlan 업데이트됨: $response")
+
+                    // 삭제 후 강의실 목록 새로고침
+                    getPlanLectureRoom()
+
+                    // HomeViewModel 동기화
+                    onDataChanged?.invoke()
                 }
         }
     }
 
     fun patchLessonSchedulesCheckToggle(lessonScheduleId: Int) {
         viewModelScope.launch {
-            loadingStateManager.show()
             try {
                 patchLessonSchedulesCheckToggleUseCase(lessonScheduleId).collect { response ->
                     _patchLessonSchedulesCheckToggle.value = response
-                    // 체크 토글 후 강의실 데이터 새로고침 (대신 getPlanLectureRoom 호출)
-                    getPlanLectureRoom()
 
-                    // 현재 보고 있는 계획 세부 정보도 새로고침
+                    Log.d("LectureRoomViewModel", "체크 토글 완료: $response")
+
+                    // 현재 보고 있는 계획 세부 정보 새로고침
                     val currentPlanId = _getPlanDetailResponse.value.planId
                     if (currentPlanId > 0) {
                         getPlanDetail(currentPlanId)
                     }
+
+                    // 강의실 목록도 새로고침
+                    getPlanLectureRoom()
+
+                    // HomeViewModel과 다른 ViewModel들과 동기화
+                    onDataChanged?.invoke()
                 }
             } catch (e: Exception) {
                 Log.e("LectureRoomViewModel", "체크 토글 오류: ${e.message}", e)
-            } finally {
-                loadingStateManager.hide()
             }
         }
     }

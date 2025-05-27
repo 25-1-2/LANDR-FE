@@ -944,18 +944,25 @@ fun ModifiedLessonList(
     homeViewModel: HomeViewModel,
     maxHeight: Int,
     todayLessonList: List<LessonScheduleResponse>,
-    isExpanded: Boolean = true // 확장 상태 여부를 매개변수로 받음
+    isExpanded: Boolean = true
 ) {
     Column(
         modifier = Modifier
             .padding(start = 10.dp)
             .fillMaxWidth()
-            .heightIn(max = maxHeight.dp) // Limit the height
+            .heightIn(max = maxHeight.dp)
             .verticalScroll(rememberScrollState())
     ) {
-        // Loop through items manually instead of using LazyColumn's items
         todayLessonList.forEach { lesson ->
-            var isChecked by remember { mutableStateOf(lesson.completed) }
+            // 각 체크박스의 상태를 remember로 관리하되, 초기값은 서버 데이터 사용
+            var isChecked by remember(lesson.id, lesson.completed) {
+                mutableStateOf(lesson.completed)
+            }
+
+            // 서버 데이터가 변경되면 로컬 상태도 동기화
+            LaunchedEffect(lesson.completed) {
+                isChecked = lesson.completed
+            }
 
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -969,20 +976,21 @@ fun ModifiedLessonList(
                         onClick = { /* 클릭만 허용 */ }
                     )
             ) {
-                // Existing content for each item
                 CustomCheckBox(
                     isChecked = isChecked,
                     onCheckedChange = {
-                        homeViewModel.patchLessonSchedulesCheckToggle(lesson.id)
+                        // 즉시 UI 업데이트 (사용자 경험 향상)
                         isChecked = !isChecked
+
+                        // 서버 업데이트 (백그라운드에서 실행)
+                        homeViewModel.patchLessonSchedulesCheckToggle(lesson.id)
                     }
                 )
 
-                // 텍스트 + 시간 박스를 수평으로 정렬
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween, // 왼쪽 텍스트, 오른쪽 박스 정렬
+                    horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     Column(
                         modifier = Modifier.weight(1f)
@@ -1002,7 +1010,6 @@ fun ModifiedLessonList(
                         )
                     }
 
-                    // 오른쪽 시간 박스
                     Box(
                         modifier = Modifier
                             .padding(end = 10.dp)
@@ -1022,7 +1029,6 @@ fun ModifiedLessonList(
                     }
                 }
             }
-
         }
     }
 }
