@@ -21,12 +21,16 @@ class DailyScheduleViewModel @Inject constructor(
     private val _getDailySchedule = MutableStateFlow(DailyScheduleResponse())
     val getDailySchedule: StateFlow<DailyScheduleResponse> = _getDailySchedule
 
+    // HomeViewModel과의 동기화를 위한 콜백
+    var onDataChanged: (() -> Unit)? = null
+
     fun getDailySchedule(date: String) {
         loadingStateManager.show()
         viewModelScope.launch {
             try {
                 getDailyScheduleUseCase(date).collect{ response ->
                     _getDailySchedule.value = response
+                    Log.d("DailyScheduleViewModel", "일정 데이터 업데이트: $response")
                 }
             } catch (e: Exception) {
                 Log.e("getDailySchedule", e.toString())
@@ -34,5 +38,10 @@ class DailyScheduleViewModel @Inject constructor(
                 loadingStateManager.hide()
             }
         }
+    }
+
+    // 강제 새로고침 함수 (현재 선택된 날짜로 다시 로드)
+    fun forceRefresh(currentDate: String) {
+        getDailySchedule(currentDate)
     }
 }
