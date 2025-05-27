@@ -1,5 +1,7 @@
 package com.capston.presentation.ui.home
 
+import android.content.Context
+import android.content.Intent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -32,14 +34,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.capston.domain.response.plan.GetPlanLectureRoomResponse
 import com.capston.presentation.R
 import com.capston.presentation.theme.LightGray2
 import com.capston.presentation.theme.MainPurple
 import com.capston.presentation.theme.Typography
 import com.capston.presentation.theme.textGray
+import com.capston.presentation.ui.search.SearchActivity
 import com.capston.presentation.viewmodel.LectureRoomViewModel
 
 @Composable
@@ -47,6 +54,7 @@ fun LectureRoomScreen(
     lectureRoomViewModel: LectureRoomViewModel,
     onPlanClick: ((GetPlanLectureRoomResponse) -> Unit)?
 ) {
+    val context = LocalContext.current
     val lectures by lectureRoomViewModel.getPlanLectureRoomResponse.collectAsState()
 
     // 화면이 처음 표시될 때 데이터를 로드
@@ -57,15 +65,27 @@ fun LectureRoomScreen(
     Scaffold(
         topBar = { LectureRoomTopBar(hasUnreadNotifications = true) }
     ) { innerPadding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(horizontal = 16.dp)
-        ) {
-            items(lectures) { lecture ->
-                LectureItem(lecture) { onPlanClick?.invoke(lecture) }
-                HorizontalDivider()
+        if (lectures.isEmpty()) {
+            // 빈 상태 화면
+            EmptyLectureRoomSection(
+                context = context,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .padding(horizontal = 16.dp)
+            )
+        } else {
+            // 강의 목록
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .padding(horizontal = 16.dp)
+            ) {
+                items(lectures) { lecture ->
+                    LectureItem(lecture) { onPlanClick?.invoke(lecture) }
+                    HorizontalDivider()
+                }
             }
         }
     }
@@ -126,6 +146,49 @@ fun LectureRoomTopBar(hasUnreadNotifications: Boolean) {
             }
         )
         HorizontalDivider(thickness = 1.dp, color = LightGray2)
+    }
+}
+
+@Composable
+fun EmptyLectureRoomSection(
+    context: Context,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        // 빈 상태 아이콘 (선택적으로 추가)
+        Image(
+            painter = painterResource(R.drawable.image_empty_lecture_room), // 적절한 아이콘으로 변경
+            contentDescription = "빈 상태",
+            modifier = Modifier
+                .size(128.dp)
+                .padding(bottom = 16.dp),
+//            tint = textGray
+        )
+
+        Text(
+            text = "아직 계획된 강의가 없어요.",
+            style = Typography.titleMedium,
+            color = textGray,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+
+        Text(
+            text = "계획 생성하러 가기",
+            textAlign = TextAlign.Center,
+            fontSize = 14.sp,
+            color = MainPurple,
+            textDecoration = TextDecoration.Underline,
+            modifier = Modifier
+                .clickable {
+                    val intent = Intent(context, SearchActivity::class.java)
+                    context.startActivity(intent)
+                }
+        )
     }
 }
 
