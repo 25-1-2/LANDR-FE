@@ -178,22 +178,22 @@ class LoginActivity : ComponentActivity() {
                         )
                         lifecycleScope.launchWhenStarted {
                             loginViewModel.isTokenSaved.collect { isSaved ->
-                                if (isSaved) {
-                                    // 첫 로그인인지 확인
-                                    if (onboardingPreferenceStorage.isFirstLogin()) {
-                                        // 첫 로그인이면 온보딩으로 이동
-                                        startActivity(Intent(this@LoginActivity, OnboardingActivity::class.java))
-                                    } else {
-                                        // 기존 사용자면 메인으로 이동
-                                        startActivity(Intent(this@LoginActivity, MainActivity::class.java))
-                                    }
-                                    finish()
-                                }
 //                                if (isSaved) {
-//                                    // 저장이 완료된 경우에만 다음 화면으로 이동
-//                                    startActivity(Intent(this@LoginActivity, MainActivity::class.java))
+//                                    // 첫 로그인인지 확인
+//                                    if (onboardingPreferenceStorage.isFirstLogin()) {
+//                                        // 첫 로그인이면 온보딩으로 이동
+//                                        startActivity(Intent(this@LoginActivity, OnboardingActivity::class.java))
+//                                    } else {
+//                                        // 기존 사용자면 메인으로 이동
+//                                        startActivity(Intent(this@LoginActivity, MainActivity::class.java))
+//                                    }
 //                                    finish()
 //                                }
+                                if (isSaved) {
+                                    // 저장이 완료된 경우에만 다음 화면으로 이동
+                                    startActivity(Intent(this@LoginActivity, OnboardingActivity::class.java))
+                                    finish()
+                                }
                             }
                         }
                     }

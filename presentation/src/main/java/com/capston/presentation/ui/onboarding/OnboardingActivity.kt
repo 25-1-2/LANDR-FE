@@ -1,13 +1,21 @@
 package com.capston.presentation.ui.onboarding
 
+import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.Composable
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import com.capston.domain.datasource.OnboardingPreferenceStorage
 import com.capston.presentation.theme.CapstonTheme
 import com.capston.presentation.ui.MainActivity
+import com.capston.presentation.ui.home.HomeScreen
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -22,17 +30,44 @@ class OnboardingActivity : ComponentActivity() {
 
         setContent {
             CapstonTheme {
-                OnboardingScreen(
-                    onCompleteOnboarding = {
-                        // 온보딩 완료 처리
-                        onboardingPreferenceStorage.setFirstLoginDone()
-
-                        // MainActivity로 이동
-                        startActivity(Intent(this@OnboardingActivity, MainActivity::class.java))
-                        finish()
-                    }
-                )
+                val navController = rememberNavController()
+                AppNavHost(navController = navController, this)
             }
+        }
+    }
+}
+
+@Composable
+fun AppNavHost(navController: NavHostController, context: Context) {
+    NavHost(navController = navController, startDestination = "onboarding") {
+        composable("onboarding") {
+            OnboardingScreen(onCompleteOnboarding = {
+                navController.navigate("user-grade")
+            })
+        }
+        composable("user-grade") {
+            UserGradeScreen(onSetupComplete = {
+                navController.navigate("user-score")
+            })
+        }
+
+        composable("user-score") {
+            UserScoreScreen(onSetupComplete = {
+                navController.navigate("onboarding-finish")
+            })
+        }
+
+        composable("onboarding-finish") {
+            OnboardingFinishScreen(onSetupComplete = {
+                navController.navigate("user-recommand-result")
+            })
+        }
+
+        composable("user-recommand-result") {
+            UserRecommandResultScreen(onSetupComplete = {
+                context.startActivity(Intent(context, MainActivity::class.java))
+                (context as? Activity)?.finish()
+            })
         }
     }
 }
