@@ -146,10 +146,14 @@ class LoginActivity : ComponentActivity() {
                                 token
                             )
                         )
-                        lifecycleScope.launch {
-                            delay(1000) // Wait for token to be saved and processed
-                            startActivity(Intent(this@LoginActivity, MainActivity::class.java))
-                            finish()
+                        lifecycleScope.launchWhenStarted {
+                            loginViewModel.isTokenSaved.collect { isSaved ->
+                                if (isSaved) {
+                                    // 저장이 완료된 경우에만 다음 화면으로 이동
+                                    startActivity(Intent(this@LoginActivity, MainActivity::class.java))
+                                    finish()
+                                }
+                            }
                         }
                     }
                 } else {
