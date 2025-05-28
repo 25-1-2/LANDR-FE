@@ -64,7 +64,7 @@
         </activity>
 
         <activity
-            android:name="com.capston.presentation.ui.OnboardingActivity"
+            android:name="com.capston.presentation.ui.onboarding.OnboardingActivity"
             android:windowSoftInputMode="adjustPan"
             android:launchMode="singleTop"
             android:exported="true">
