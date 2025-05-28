@@ -2,8 +2,10 @@
 package com.capston.data.di
 
 import android.content.Context
+import com.capston.data.local.storage.OnboardingPreferenceStorageImpl
 import com.capston.data.local.storage.TokenDataStore
 import com.capston.data.repository.TokenRepositoryImpl
+import com.capston.domain.datasource.OnboardingPreferenceStorage
 import com.capston.domain.repository.TokenRepository
 import dagger.Module
 import dagger.Provides
@@ -26,5 +28,13 @@ object StorageModule {
     @Singleton
     fun provideTokenRepository(tokenDataStore: TokenDataStore): TokenRepository {
         return TokenRepositoryImpl(tokenDataStore)
+    }
+
+    @Provides
+    @Singleton
+    fun provideOnboardingPreferenceStorage(
+        @ApplicationContext context: Context
+    ): OnboardingPreferenceStorage {
+        return OnboardingPreferenceStorageImpl(context)
     }
 }
