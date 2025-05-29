@@ -4,6 +4,7 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -59,6 +60,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import com.capston.presentation.R
 import com.capston.presentation.theme.CapstonTheme
+import com.capston.presentation.theme.LightGray4
 import com.capston.presentation.theme.MainPurple
 import com.capston.presentation.theme.textGray
 import kotlinx.coroutines.delay
@@ -110,29 +112,28 @@ fun SubjectGradeScreen(onSetupComplete: () -> Unit) {
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // 인사 메시지
                 Text(
                     text = "조은채님!\n맞춤형 인강 학습을 시작해볼까요?",
-                    style = MaterialTheme.typography.headlineSmall,
-                    textAlign = TextAlign.Center,
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Bold,
-                    lineHeight = 28.sp
+                    style = MaterialTheme.typography.titleLarge,
+                    textAlign = TextAlign.Start,
+                    fontSize = 24.sp
                 )
 
+                Spacer(modifier = Modifier.height(20.dp))
+
                 Text(
-                    text = "꼭 맞는 학습 계획을 LANDR가 제안해드릴게요 :)",
-                    style = MaterialTheme.typography.bodyMedium,
+                    text = "꼭 맞는 학습 계획을 LANDR가 제안해드릴게요:)",
+                    style = MaterialTheme.typography.bodyLarge,
                     textAlign = TextAlign.Center,
                     color = textGray,
                     fontSize = 14.sp
                 )
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
                 // 제목
                 Text(
-                    text = "2. 가장 자신없는 과목과 등급을 알려주세요",
+                    text = "2. 강의를 추천 받고 싶은 과목과 등급을 알려주세요",
                     style = MaterialTheme.typography.titleLarge,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.SemiBold,
@@ -243,12 +244,12 @@ fun SubjectGradeScreen(onSetupComplete: () -> Unit) {
                                         }
                                     }
                                     .background(
-                                        color = MainPurple.copy(alpha = 0.1f),
+                                        color = MainPurple.copy(alpha = 0.2f),
                                         shape = RoundedCornerShape(16.dp)
                                     )
                                     .border(
-                                        width = 2.dp,
-                                        color = MainPurple.copy(alpha = 0.3f),
+                                        width = 1.dp,
+                                        color = MainPurple,
                                         shape = RoundedCornerShape(16.dp)
                                     ),
                                 contentAlignment = Alignment.Center
@@ -271,7 +272,7 @@ fun SubjectGradeScreen(onSetupComplete: () -> Unit) {
             Button(
                 onClick = onSetupComplete,
                 enabled = subjectGrades.any { it.subject.isNotEmpty() && it.grade > 0 },
-                shape = RoundedCornerShape(25.dp),
+                shape = RoundedCornerShape(20.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MainPurple,
                     disabledContainerColor = Color.LightGray
@@ -281,7 +282,7 @@ fun SubjectGradeScreen(onSetupComplete: () -> Unit) {
                     .height(56.dp)
             ) {
                 Text(
-                    text = "시작하기",
+                    text = "다음",
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Medium,
                     color = Color.White
@@ -335,6 +336,10 @@ private fun SubjectGradeCard(
                 scaleX = scale
                 scaleY = scale
             }
+            .border(
+                border = BorderStroke(1.dp, LightGray4),
+                shape = RoundedCornerShape(12.dp)
+            )
             .let { modifier ->
                 if (borderAlpha > 0f) {
                     modifier.border(

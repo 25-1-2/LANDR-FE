@@ -29,13 +29,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.capston.presentation.R
-import com.capston.presentation.theme.CapstonTheme
 import com.capston.presentation.theme.MainPurple
-import com.capston.presentation.theme.MainPurple_20
 import com.capston.presentation.theme.textGray
 
 @Composable
@@ -159,7 +156,7 @@ private fun GradeSelectionCard(
                 shape = RoundedCornerShape(12.dp)
             )
             .background(
-                color = if (isSelected) MainPurple_20.copy(alpha = 0.1f) else Color.Transparent,
+                color = if (isSelected) MainPurple.copy(alpha = 0.2f) else Color.Transparent,
                 shape = RoundedCornerShape(12.dp)
             )
             .padding(horizontal = 20.dp, vertical = 16.dp)
