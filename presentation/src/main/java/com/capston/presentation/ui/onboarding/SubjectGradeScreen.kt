@@ -223,7 +223,7 @@ fun SubjectGradeScreen(onSetupComplete: () -> Unit) {
 
                                     listState.animateScrollToItem(
                                         index = targetIndex,
-                                        scrollOffset = -200
+                                        scrollOffset = 0  // -200에서 0으로 변경
                                     )
                                 } else {
                                     listState.animateScrollToItem(0)
@@ -253,24 +253,19 @@ fun SubjectGradeScreen(onSetupComplete: () -> Unit) {
                                         subjectGrades = subjectGrades + newSubject
                                         val newItemIndex = subjectGrades.size - 1
 
-                                        // 더 부드러운 애니메이션으로 개선
                                         coroutineScope.launch {
-                                            // 아이템 추가 후 약간의 지연
                                             delay(150)
 
-                                            // 부드러운 스크롤 애니메이션
                                             try {
                                                 listState.animateScrollToItem(
-                                                    index = newItemIndex,
-                                                    scrollOffset = -100 // 오프셋을 줄여서 더 자연스럽게
+                                                    index = newItemIndex, // 새로 추가된 아이템으로
+                                                    scrollOffset = 0 // 잘리지 않게 0으로 설정
                                                 )
                                             } catch (e: Exception) {
-                                                // 스크롤 실패 시 대체 처리
-                                                listState.scrollToItem(newItemIndex)
+                                                listState.scrollToItem(newItemIndex, 0)
                                             }
 
-                                            // 애니메이션이 완료된 후 충분한 시간을 두고 상태 변경
-                                            delay(800) // 더 긴 지연으로 애니메이션을 충분히 보여줌
+                                            delay(800)
 
                                             subjectGrades = subjectGrades.mapIndexed { index, item ->
                                                 if (index == newItemIndex) item.copy(isNew = false)
