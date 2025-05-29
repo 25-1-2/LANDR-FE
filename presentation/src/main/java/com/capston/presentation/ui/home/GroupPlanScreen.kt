@@ -294,26 +294,36 @@ fun GroupPlanTitleSection(
     isLoading: Boolean,
     onLoadingChange: (Boolean) -> Unit
 ) {
-    Row(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 24.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.Top
+            .padding(vertical = 20.dp)
+            .background(
+                color = Color(0xFFE8E4FF), // 연보라색 배경
+                shape = RoundedCornerShape(16.dp)
+            )
+            .padding(20.dp)
     ) {
-        Text(
-            text = "수분감의 아이들",//planDetailResponse.lectureTitle,
-            style = MaterialTheme.typography.headlineSmall,
+        Row(
             modifier = Modifier
-                .padding(end = 8.dp)
-                .weight(10f),
-        )
-        Column(
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .fillMaxWidth()
+                .padding(vertical = 24.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.Top
         ) {
-            // 재스케줄링 버튼
-            IconButton(
-                onClick = {
+            Text(
+                text = "수분감의 아이들",//planDetailResponse.lectureTitle,
+                style = MaterialTheme.typography.headlineSmall,
+                modifier = Modifier
+                    .padding(end = 8.dp)
+                    .weight(10f),
+            )
+            Column(
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // 재스케줄링 버튼
+                IconButton(
+                    onClick = {
 //                    coroutineScope.launch {
 //                        onLoadingChange(true)
 //                        try {
@@ -329,43 +339,45 @@ fun GroupPlanTitleSection(
 //                            onLoadingChange(false)
 //                        }
 //                    }
-                },
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .background(
-                        color = backgroundGray
-                    )
-            ) {
-                Icon(
-                    imageVector = ImageVector.vectorResource(R.drawable.icon_reschedule),
-                    contentDescription = "재스케줄링",
-                    tint = materialGray,
-                    modifier = Modifier.padding(8.dp)
-                )
-            }
-
-            // 그룹원 추가 버튼
-            IconButton(
-                onClick = {},
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .background(
-                        color = backgroundGray
-                    )
-            ) {
-                Icon(
-                    imageVector = ImageVector.vectorResource(R.drawable.icon_group),
-                    contentDescription = "그룹 추가",
-                    tint = materialGray,
+                    },
                     modifier = Modifier
-                        .padding(8.dp)
-                        .clickable { /*…*/ }
-                )
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(
+                            color = backgroundGray
+                        )
+                ) {
+                    Icon(
+                        imageVector = ImageVector.vectorResource(R.drawable.icon_reschedule),
+                        contentDescription = "재스케줄링",
+                        tint = materialGray,
+                        modifier = Modifier.padding(8.dp)
+                    )
+                }
+
+                // 그룹원 추가 버튼
+                IconButton(
+                    onClick = {},
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(
+                            color = backgroundGray
+                        )
+                ) {
+                    Icon(
+                        imageVector = ImageVector.vectorResource(R.drawable.icon_group),
+                        contentDescription = "그룹 추가",
+                        tint = materialGray,
+                        modifier = Modifier
+                            .padding(8.dp)
+                            .clickable { /*…*/ }
+                    )
+                }
             }
         }
     }
+
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
