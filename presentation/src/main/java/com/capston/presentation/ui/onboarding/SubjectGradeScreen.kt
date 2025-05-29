@@ -65,14 +65,6 @@ import com.capston.presentation.theme.MainPurple
 import com.capston.presentation.theme.textGray
 import kotlinx.coroutines.delay
 
-data class SubjectGrade(
-    val subject: String = "",
-    val grade: Int = 0,
-    val gradeType: String = "내신", // "내신" 또는 "모의고사"
-    val isNew: Boolean = false, // 새로 추가된 아이템인지 확인
-    val id: String = System.currentTimeMillis().toString() // 고유 ID 추가
-)
-
 @Composable
 fun SubjectGradeScreen(onSetupComplete: () -> Unit) {
     var subjectGrades by remember { mutableStateOf(listOf(SubjectGrade())) }
@@ -80,13 +72,50 @@ fun SubjectGradeScreen(onSetupComplete: () -> Unit) {
     val coroutineScope = rememberCoroutineScope()
     val focusedItemId by remember { mutableStateOf<String?>(null) }
 
-    val subjects = listOf(
-        "국어", "수학", "영어", "한국사",
-        "물리학Ⅰ", "물리학Ⅱ", "화학Ⅰ", "화학Ⅱ",
-        "생명과학Ⅰ", "생명과학Ⅱ", "지구과학Ⅰ", "지구과학Ⅱ",
-        "한국지리", "세계지리", "동아시아사", "세계사",
-        "생활과윤리", "윤리와사상", "정치와법", "경제", "사회·문화"
+    // 과목을 영역별로 정리
+    val subjectCategories = listOf(
+        SubjectCategory(
+            categoryName = "국어 영역",
+            subjects = listOf("국어", "언어와매체", "화법과작문")
+        ),
+        SubjectCategory(
+            categoryName = "수학 영역",
+            subjects = listOf("수학", "수학Ⅰ", "수학Ⅱ", "미적분", "확률과통계", "기하")
+        ),
+        SubjectCategory(
+            categoryName = "영어 영역",
+            subjects = listOf("영어", "영어Ⅰ", "영어Ⅱ", "영어독해와작문")
+        ),
+        SubjectCategory(
+            categoryName = "한국사",
+            subjects = listOf("한국사")
+        ),
+        SubjectCategory(
+            categoryName = "과학탐구 영역",
+            subjects = listOf(
+                "물리학Ⅰ", "물리학Ⅱ",
+                "화학Ⅰ", "화학Ⅱ",
+                "생명과학Ⅰ", "생명과학Ⅱ",
+                "지구과학Ⅰ", "지구과학Ⅱ"
+            )
+        ),
+        SubjectCategory(
+            categoryName = "사회탐구 영역",
+            subjects = listOf(
+                "한국지리", "세계지리",
+                "동아시아사", "세계사",
+                "생활과윤리", "윤리와사상",
+                "정치와법", "경제", "사회·문화"
+            )
+        ),
+        SubjectCategory(
+            categoryName = "직업탐구 영역",
+            subjects = listOf("농업이해", "농업기초기술", "공업일반", "기초제도", "상업경제", "회계원리", "해양의이해", "수산·해운산업기초", "인간발달", "생활서비스산업의이해")
+        )
     )
+
+    // 모든 과목을 하나의 리스트로 통합 (드롭다운용)
+    val allSubjects = subjectCategories.flatMap { it.subjects }
 
     Box(
         modifier = Modifier
@@ -150,13 +179,14 @@ fun SubjectGradeScreen(onSetupComplete: () -> Unit) {
                 state = listState,
                 modifier = Modifier
                     .weight(1f)
-                    .height(400.dp), // 높이 제한 추가 - 카드 하나 정도만 보이게
+                    .height(400.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 itemsIndexed(subjectGrades, key = { _, item -> item.id }) { index, subjectGrade ->
                     SubjectGradeCard(
                         subjectGrade = subjectGrade,
-                        subjects = subjects,
+                        subjectCategories = subjectCategories,
+                        allSubjects = allSubjects,
                         canDelete = subjectGrades.size > 1,
                         isFocused = focusedItemId == subjectGrade.id,
                         onSubjectChange = { newSubject ->
@@ -180,25 +210,21 @@ fun SubjectGradeScreen(onSetupComplete: () -> Unit) {
                                 removeAt(index)
                             }
 
-                            // 삭제 후 스크롤 애니메이션 - 위로 올라가기
                             coroutineScope.launch {
-                                delay(50) // 약간의 지연
+                                delay(50)
 
                                 if (subjectGrades.isNotEmpty()) {
-                                    // 삭제된 아이템이 마지막이었다면 이전 아이템으로, 아니면 같은 위치로
                                     val targetIndex = if (deletedIndex >= subjectGrades.size) {
-                                        maxOf(0, subjectGrades.size - 1) // 마지막 아이템으로
+                                        maxOf(0, subjectGrades.size - 1)
                                     } else {
-                                        maxOf(0, deletedIndex - 1) // 이전 아이템으로
+                                        maxOf(0, deletedIndex - 1)
                                     }
 
-                                    // 부드럽게 위로 스크롤
                                     listState.animateScrollToItem(
                                         index = targetIndex,
-                                        scrollOffset = -200 // 위쪽 여백
+                                        scrollOffset = -200
                                     )
                                 } else {
-                                    // 모든 아이템이 삭제되었다면 맨 위로
                                     listState.animateScrollToItem(0)
                                 }
                             }
@@ -212,7 +238,7 @@ fun SubjectGradeScreen(onSetupComplete: () -> Unit) {
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(300.dp), // + 버튼 영역도 충분한 높이 확보
+                                .height(300.dp),
                             contentAlignment = Alignment.TopCenter
                         ) {
                             Box(
@@ -226,17 +252,11 @@ fun SubjectGradeScreen(onSetupComplete: () -> Unit) {
                                         subjectGrades = subjectGrades + newSubject
                                         val newItemIndex = subjectGrades.size - 1
 
-                                        //focusedItemId = newSubject.id
-
                                         coroutineScope.launch {
                                             delay(50)
-
-                                            // 이제 높이가 제한되어 있으므로 새 아이템으로 스크롤하면
-                                            // 기존 아이템들이 자연스럽게 화면 밖으로 나감
                                             listState.animateScrollToItem(newItemIndex)
 
                                             delay(200)
-
                                             subjectGrades = subjectGrades.mapIndexed { index, item ->
                                                 if (index == newItemIndex) item.copy(isNew = false)
                                                 else item
@@ -295,7 +315,8 @@ fun SubjectGradeScreen(onSetupComplete: () -> Unit) {
 @Composable
 private fun SubjectGradeCard(
     subjectGrade: SubjectGrade,
-    subjects: List<String>,
+    subjectCategories: List<SubjectCategory>,
+    allSubjects: List<String>,
     canDelete: Boolean,
     isFocused: Boolean = false,
     onSubjectChange: (String) -> Unit,
@@ -402,7 +423,9 @@ private fun SubjectGradeCard(
                             shape = RoundedCornerShape(8.dp)
                         )
                         .background(
-                            color = if (subjectGrade.subject.isEmpty()) Color.Transparent else MainPurple.copy(alpha = 0.05f),
+                            color = if (subjectGrade.subject.isEmpty()) Color.Transparent else MainPurple.copy(
+                                alpha = 0.05f
+                            ),
                             shape = RoundedCornerShape(8.dp)
                         )
                         .padding(14.dp)
@@ -426,7 +449,7 @@ private fun SubjectGradeCard(
                     }
                 }
 
-                // 커스텀 드롭다운 메뉴
+                // 영역별 정리된 커스텀 드롭다운 메뉴
                 if (showSubjectDropdown) {
                     Card(
                         modifier = Modifier
@@ -439,25 +462,57 @@ private fun SubjectGradeCard(
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(180.dp) // 높이 줄임
+                                .height(250.dp) // 높이 늘림 (카테고리 표시 때문에)
                         ) {
-                            LazyColumn {
-                                itemsIndexed(subjects) { _, subject ->
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .clickable {
-                                                onSubjectChange(subject)
-                                                showSubjectDropdown = false
-                                            }
-                                            .padding(horizontal = 16.dp, vertical = 10.dp)
-                                    ) {
+                            LazyColumn(
+                                modifier = Modifier.padding(8.dp)
+                            ) {
+                                subjectCategories.forEach { category ->
+                                    item {
+                                        // 카테고리 헤더
                                         Text(
-                                            text = subject,
-                                            fontSize = 13.sp,
-                                            color = if (subject == subjectGrade.subject) MainPurple else Color.Black,
-                                            fontWeight = if (subject == subjectGrade.subject) FontWeight.SemiBold else FontWeight.Normal
+                                            text = category.categoryName,
+                                            fontSize = 14.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MainPurple,
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(horizontal = 8.dp, vertical = 8.dp)
                                         )
+                                    }
+
+                                    // 해당 카테고리의 과목들
+                                    items(category.subjects.size) { index ->
+                                        val subject = category.subjects[index]
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .clickable {
+                                                    onSubjectChange(subject)
+                                                    showSubjectDropdown = false
+                                                }
+                                                .padding(horizontal = 16.dp, vertical = 8.dp)
+                                        ) {
+                                            Text(
+                                                text = "  $subject", // 들여쓰기
+                                                fontSize = 13.sp,
+                                                color = if (subject == subjectGrade.subject) MainPurple else Color.Black,
+                                                fontWeight = if (subject == subjectGrade.subject) FontWeight.SemiBold else FontWeight.Normal
+                                            )
+                                        }
+                                    }
+
+                                    // 카테고리 구분선 (마지막 카테고리 제외)
+                                    if (category != subjectCategories.last()) {
+                                        item {
+                                            Spacer(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .height(1.dp)
+                                                    .background(Color.LightGray.copy(alpha = 0.3f))
+                                                    .padding(vertical = 4.dp)
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -503,7 +558,7 @@ private fun SubjectGradeCard(
                     }
                 }
 
-                // 등급 선택 - 원형 버튼으로 복원
+                // 등급 선택 - 원형 버튼
                 Text(
                     text = "등급",
                     fontSize = 15.sp,
@@ -518,7 +573,7 @@ private fun SubjectGradeCard(
                     (1..5).forEach { grade ->
                         Box(
                             modifier = Modifier
-                                .size(36.dp) // 크기 약간 줄임
+                                .size(36.dp)
                                 .clickable { onGradeChange(grade) }
                                 .background(
                                     color = if (subjectGrade.grade == grade) MainPurple else Color.Transparent,
@@ -548,7 +603,7 @@ private fun SubjectGradeCard(
                     (6..9).forEach { grade ->
                         Box(
                             modifier = Modifier
-                                .size(36.dp) // 크기 약간 줄임
+                                .size(36.dp)
                                 .clickable { onGradeChange(grade) }
                                 .background(
                                     color = if (subjectGrade.grade == grade) MainPurple else Color.Transparent,
