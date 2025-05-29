@@ -29,6 +29,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.Button
@@ -164,7 +165,7 @@ fun SubjectGradeScreen(onSetupComplete: () -> Unit) {
                 Text(
                     text = "2. 강의를 추천 받고 싶은 과목과 등급을 알려주세요",
                     style = MaterialTheme.typography.titleLarge,
-                    fontSize = 20.sp,
+                    fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = MainPurple,
                     modifier = Modifier.fillMaxWidth(),
@@ -211,7 +212,7 @@ fun SubjectGradeScreen(onSetupComplete: () -> Unit) {
                             }
 
                             coroutineScope.launch {
-                                delay(50)
+                                delay(100)
 
                                 if (subjectGrades.isNotEmpty()) {
                                     val targetIndex = if (deletedIndex >= subjectGrades.size) {
@@ -252,11 +253,25 @@ fun SubjectGradeScreen(onSetupComplete: () -> Unit) {
                                         subjectGrades = subjectGrades + newSubject
                                         val newItemIndex = subjectGrades.size - 1
 
+                                        // 더 부드러운 애니메이션으로 개선
                                         coroutineScope.launch {
-                                            delay(50)
-                                            listState.animateScrollToItem(newItemIndex)
+                                            // 아이템 추가 후 약간의 지연
+                                            delay(150)
 
-                                            delay(200)
+                                            // 부드러운 스크롤 애니메이션
+                                            try {
+                                                listState.animateScrollToItem(
+                                                    index = newItemIndex,
+                                                    scrollOffset = -100 // 오프셋을 줄여서 더 자연스럽게
+                                                )
+                                            } catch (e: Exception) {
+                                                // 스크롤 실패 시 대체 처리
+                                                listState.scrollToItem(newItemIndex)
+                                            }
+
+                                            // 애니메이션이 완료된 후 충분한 시간을 두고 상태 변경
+                                            delay(800) // 더 긴 지연으로 애니메이션을 충분히 보여줌
+
                                             subjectGrades = subjectGrades.mapIndexed { index, item ->
                                                 if (index == newItemIndex) item.copy(isNew = false)
                                                 else item
@@ -282,6 +297,12 @@ fun SubjectGradeScreen(onSetupComplete: () -> Unit) {
                                 )
                             }
                         }
+                    }
+                }
+                else {
+                    // 최대 개수 도달 메시지
+                    item {
+                        MaxSubjectCard()
                     }
                 }
             }
@@ -313,6 +334,45 @@ fun SubjectGradeScreen(onSetupComplete: () -> Unit) {
 }
 
 @Composable
+fun MaxSubjectCard() {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color(0xFFF8F9FF)
+        ),
+        border = BorderStroke(1.dp, MainPurple.copy(alpha = 0.3f)),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                imageVector = Icons.Default.Info,
+                contentDescription = "정보",
+                tint = MainPurple,
+                modifier = Modifier.size(20.dp)
+            )
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            Text(
+                text = "최대 5개 과목까지 추천받으실 수 있어요",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                color = MainPurple,
+                textAlign = TextAlign.Center
+            )
+        }
+    }
+}
+
+@Composable
 private fun SubjectGradeCard(
     subjectGrade: SubjectGrade,
     subjectCategories: List<SubjectCategory>,
@@ -326,28 +386,39 @@ private fun SubjectGradeCard(
 ) {
     var showSubjectDropdown by remember { mutableStateOf(false) }
 
-    // 토스 스타일의 부드러운 애니메이션 효과
+    // 더 부드러운 애니메이션 스펙으로 개선
     val scale by animateFloatAsState(
         targetValue = when {
-            subjectGrade.isNew -> 1.05f
-            isFocused -> 1.02f
+            subjectGrade.isNew -> 1.03f // 스케일을 줄여서 더 자연스럽게
+            isFocused -> 1.01f
             else -> 1f
         },
         animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessMedium
+            dampingRatio = Spring.DampingRatioLowBouncy, // 더 부드러운 스프링
+            stiffness = Spring.StiffnessLow // 더 느린 애니메이션
         ),
         label = "card_scale"
     )
 
     val borderAlpha by animateFloatAsState(
         targetValue = when {
-            subjectGrade.isNew -> 0.6f
-            isFocused -> 0.4f
+            subjectGrade.isNew -> 0.5f
+            isFocused -> 0.3f
             else -> 0f
         },
-        animationSpec = tween(durationMillis = 400),
+        animationSpec = tween(durationMillis = 600), // 더 긴 지속시간
         label = "border_alpha"
+    )
+
+    // 배경색 애니메이션도 추가
+    val backgroundAlpha by animateFloatAsState(
+        targetValue = when {
+            subjectGrade.isNew -> 0.08f
+            isFocused -> 0.04f
+            else -> 0f
+        },
+        animationSpec = tween(durationMillis = 500),
+        label = "background_alpha"
     )
 
     Card(
@@ -371,10 +442,10 @@ private fun SubjectGradeCard(
                 } else modifier
             },
         colors = CardDefaults.cardColors(
-            containerColor = when {
-                subjectGrade.isNew -> MainPurple.copy(alpha = 0.08f)
-                isFocused -> MainPurple.copy(alpha = 0.05f)
-                else -> Color.White
+            containerColor = if (backgroundAlpha > 0f) {
+                MainPurple.copy(alpha = backgroundAlpha)
+            } else {
+                Color.White
             }
         ),
         shape = RoundedCornerShape(12.dp)
@@ -454,18 +525,21 @@ private fun SubjectGradeCard(
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 8.dp)
                             .zIndex(1f),
                         colors = CardDefaults.cardColors(containerColor = Color.White),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+                        shape = RoundedCornerShape(8.dp) // 선택 박스와 같은 모양
                     ) {
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(250.dp) // 높이 늘림 (카테고리 표시 때문에)
+                                .height(250.dp)
+                                .background(Color.White) // 명시적으로 흰색 배경 설정
                         ) {
                             LazyColumn(
-                                modifier = Modifier.padding(8.dp)
+                                modifier = Modifier
+                                    .padding(8.dp)
+                                    .background(Color.White) // LazyColumn도 흰색 배경
                             ) {
                                 subjectCategories.forEach { category ->
                                     item {
