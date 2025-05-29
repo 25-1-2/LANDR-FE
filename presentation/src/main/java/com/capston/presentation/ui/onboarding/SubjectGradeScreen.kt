@@ -174,8 +174,32 @@ fun SubjectGradeScreen(onSetupComplete: () -> Unit) {
                             }
                         },
                         onDelete = {
+                            val deletedIndex = index
                             subjectGrades = subjectGrades.toMutableList().apply {
                                 removeAt(index)
+                            }
+
+                            // 삭제 후 스크롤 애니메이션 - 위로 올라가기
+                            coroutineScope.launch {
+                                delay(50) // 약간의 지연
+
+                                if (subjectGrades.isNotEmpty()) {
+                                    // 삭제된 아이템이 마지막이었다면 이전 아이템으로, 아니면 같은 위치로
+                                    val targetIndex = if (deletedIndex >= subjectGrades.size) {
+                                        maxOf(0, subjectGrades.size - 1) // 마지막 아이템으로
+                                    } else {
+                                        maxOf(0, deletedIndex - 1) // 이전 아이템으로
+                                    }
+
+                                    // 부드럽게 위로 스크롤
+                                    listState.animateScrollToItem(
+                                        index = targetIndex,
+                                        scrollOffset = -200 // 위쪽 여백
+                                    )
+                                } else {
+                                    // 모든 아이템이 삭제되었다면 맨 위로
+                                    listState.animateScrollToItem(0)
+                                }
                             }
                         }
                     )
