@@ -58,7 +58,7 @@ fun AppNavHost(navController: NavHostController, context: Context) {
         }
 
         composable("onboarding-finish") {
-            OnboardingFinishScreen(onSetupComplete = {
+            OnboardingFinishScreen(onCompleteOnboarding = {
                 navController.navigate("user-recommand-result")
             })
         }
