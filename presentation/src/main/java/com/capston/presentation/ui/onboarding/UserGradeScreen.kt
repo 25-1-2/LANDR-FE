@@ -173,11 +173,3 @@ private fun GradeSelectionCard(
         )
     }
 }
-
-@Preview(showBackground = true)
-@Composable
-fun UserGradeScreenPreview() {
-    CapstonTheme {
-        UserGradeScreen(onSetupComplete = {})
-    }
-}

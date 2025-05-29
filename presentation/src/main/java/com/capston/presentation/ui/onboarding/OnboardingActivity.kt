@@ -47,12 +47,12 @@ fun AppNavHost(navController: NavHostController, context: Context) {
         }
         composable("user-grade") {
             UserGradeScreen(onSetupComplete = {
-                navController.navigate("user-score")
+                navController.navigate("subject-grade")
             })
         }
 
-        composable("user-score") {
-            UserScoreScreen(onSetupComplete = {
+        composable("subject-grade") {
+            SubjectGradeScreen(onSetupComplete = {
                 navController.navigate("onboarding-finish")
             })
         }
