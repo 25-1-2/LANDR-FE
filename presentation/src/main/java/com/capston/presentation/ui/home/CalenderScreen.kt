@@ -102,19 +102,48 @@ fun CalenderScreen(homeViewModel: HomeViewModel, dailyScheduleViewModel: DailySc
     val nestedScrollConnection = remember {
         object : NestedScrollConnection {
             override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                // 현재 시간 체크
-                val currentTime = System.currentTimeMillis()
-
-                // 클릭 후 일정 시간 내의 드래그는 무시하지 않음
+                // 드래그 감지 시 (수직 스크롤)
                 if (source == NestedScrollSource.Drag && abs(available.y) > 3f) {
-                    // 드래그 감도 계수
-                    val delta = available.y * 0.007f  // 감도 약간 증가
+                    val delta = available.y * 0.02f // 감도 조절 가능
 
-                    // 드래그 양에 비례해서 달력 크기 조절 (0.2~1.0 범위)
-                    calendarExpandRatio = (calendarExpandRatio + delta).coerceIn(0.2f, 1f)
-                    return available // 드래그 이벤트 소비
+                    // 드래그 방향 확인
+                    val isDraggingUp = available.y < 0
+                    val isDraggingDown = available.y > 0
+
+                    // 달력 상태 확인
+                    val isCalendarAtMax = calendarExpandRatio >= 1f
+                    val isCalendarAtMin = calendarExpandRatio <= 0.2f
+
+                    // 우선순위 1: 달력이 최대/최소가 아닐 때는 항상 달력 조절 먼저
+                    if (!isCalendarAtMax && !isCalendarAtMin) {
+                        calendarExpandRatio = (calendarExpandRatio + delta).coerceIn(0.2f, 1f)
+                        return available // 이벤트 소비
+                    }
+
+                    // 우선순위 2: 달력이 최소 상태에서 아래로 드래그 (확장) 또는
+                    // 최대 상태에서 위로 드래그 (축소)하는 경우 달력 조절
+                    if ((isCalendarAtMin && isDraggingDown) || (isCalendarAtMax && isDraggingUp)) {
+                        calendarExpandRatio = (calendarExpandRatio + delta).coerceIn(0.2f, 1f)
+                        return available // 이벤트 소비
+                    }
+
+                    // 그 외 경우는 목록 스크롤을 위해 이벤트 통과시킴
+                    return Offset.Zero
                 }
-                return Offset.Zero // 다른 스크롤 이벤트는 무시
+                return Offset.Zero // 다른 스크롤 이벤트는 무시하지 않음
+            }
+
+            // 이 메서드는 자식 컴포넌트의 스크롤이 최대/최소에 도달했을 때 호출됨
+            override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset {
+                // 자식이 소비하지 않은 스크롤이 있고, 드래그 중일 때
+                if (source == NestedScrollSource.Drag && abs(available.y) > 3f) {
+                    val delta = available.y * 0.02f
+
+                    // 달력 조절 (목록 스크롤이 끝난 후 남은 스크롤 활용)
+                    calendarExpandRatio = (calendarExpandRatio + delta).coerceIn(0.2f, 1f)
+                    return available // 남은 스크롤 소비
+                }
+                return Offset.Zero
             }
         }
     }
@@ -758,23 +787,23 @@ fun DraggableLessonContainer(
                 isExpanded = isExpanded // 확장 상태 전달
             )
 
-            // 축소 상태일 때만 그라데이션 오버레이와 힌트 표시
-            if (!isExpanded && todayLessonList.size > 3) {
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .fillMaxWidth()
-                        .height(40.dp)
-                        .background(
-                            brush = Brush.verticalGradient(
-                                colors = listOf(
-                                    Color.Transparent,
-                                    Color.White.copy(alpha = 0.9f)
-                                )
-                            )
-                        )
-                )
-            }
+//            // 축소 상태일 때만 그라데이션 오버레이와 힌트 표시
+//            if (!isExpanded && todayLessonList.size > 3) {
+//                Box(
+//                    modifier = Modifier
+//                        .align(Alignment.BottomCenter)
+//                        .fillMaxWidth()
+//                        .height(40.dp)
+//                        .background(
+//                            brush = Brush.verticalGradient(
+//                                colors = listOf(
+//                                    Color.Transparent,
+//                                    Color.White.copy(alpha = 0.9f)
+//                                )
+//                            )
+//                        )
+//                )
+//            }
         }
     }
 }

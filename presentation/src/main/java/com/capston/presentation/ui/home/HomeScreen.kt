@@ -142,6 +142,19 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel, navCo
 
     val homeState by homeViewModel.getDistinctHome.collectAsState()
     val dDayState by homeViewModel.dDay.collectAsState()
+    // 현재 D-Day 데이터 안전하게 가져오기
+    val currentDDayData = remember(dDayState, homeState) {
+        try {
+            when {
+                dDayState != null -> dDayState
+                homeState != null && homeState.dday != null -> homeState.dday
+                else -> null
+            }
+        } catch (e: Exception) {
+            Log.e("HomeScreen", "Error accessing D-Day data: ${e.message}")
+            null
+        }
+    }
 
     // 나의 학습 현황
     val totalCompletedLessons = homeState.userProgress.totalCompletedLessons // 들은 강의 개수
@@ -163,60 +176,61 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel, navCo
     var isExamBottomSheetVisible by rememberSaveable { mutableStateOf(false) }
     val examModalBottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    // D-Day 관련 상태 관리
-    var examTitle by rememberSaveable {
-        mutableStateOf(dDayState?.title ?: "")
-    }
-    var examDate by rememberSaveable {
-        mutableStateOf(dDayState?.goalDate ?: "")
-    }
-    var dDay by rememberSaveable { mutableStateOf("D-Day") }
+    var examTitle by remember { mutableStateOf("") }
+    var examDate by remember { mutableStateOf("") }
+    var dDay by remember { mutableStateOf("D-Day") }
 
-    fun calculateDDay(dateString: String): String {
-        if (dateString.isBlank()) return "D-Day"
-
-        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+    // 안전한 D-Day ID 체크 함수
+    fun getSafeDDayId(): Int? {
         return try {
+            currentDDayData?.ddayId?.takeIf { it > 0 }
+        } catch (e: Exception) {
+            Log.e("HomeScreen", "Error getting D-Day ID: ${e.message}")
+            null
+        }
+    }
+
+    // 안전한 D-Day 존재 여부 체크 함수
+    fun hasSafeDDay(): Boolean {
+        return try {
+            getSafeDDayId() != null
+        } catch (e: Exception) {
+            Log.e("HomeScreen", "Error checking D-Day existence: ${e.message}")
+            false
+        }
+    }
+
+    fun calculateDDay(dateString: String?): String {
+        return try {
+            // isBlank() 대신 isNullOrBlank() 사용
+            if (dateString.isNullOrBlank()) return "D-Day"
+
+            val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
             val examDateTime = LocalDate.parse(dateString, formatter)
             val today = LocalDate.now()
             val daysDifference = ChronoUnit.DAYS.between(today, examDateTime).toInt()
 
             when {
-                daysDifference > 0 -> "D-$daysDifference" // Future date (countdown)
-                daysDifference < 0 -> "D+${-daysDifference}" // Past date (count up from event)
-                else -> "D-Day" // Today is the day
+                daysDifference > 0 -> "D-$daysDifference"
+                daysDifference < 0 -> "D+${-daysDifference}"
+                else -> "D-Day"
             }
         } catch (e: Exception) {
-            "D-Day" // Default in case of parsing error
+            Log.e("HomeScreen", "Error calculating D-Day: ${e.message}")
+            "D-Day"
         }
     }
 
-    // D-Day 상태 업데이트 - dDayState가 변경될 때마다 실행
-    LaunchedEffect(dDayState) {
-        if (dDayState != null) {
-            examTitle = dDayState!!.title
-            examDate = dDayState!!.goalDate
-            dDay = calculateDDay(dDayState!!.goalDate)
+    // D-Day 상태 업데이트 - 현재 D-Day 데이터가 변경될 때마다 실행
+    LaunchedEffect(currentDDayData) {
+        if (currentDDayData != null) {
+            examTitle = currentDDayData.title ?: ""
+            examDate = currentDDayData.goalDate ?: ""
+            dDay = calculateDDay(currentDDayData.goalDate)
         } else {
-            // Reset to default values when there's no D-Day
             examTitle = ""
             examDate = ""
             dDay = "D-Day"
-        }
-    }
-
-    // 앱 초기화 시 데이터 로드
-    LaunchedEffect(Unit) {
-        try {
-            val dday = homeState.dday
-            if (dday != null && dday.ddayId > 0) {
-                homeViewModel.patchDDay(
-                    dday.ddayId,
-                    UpdateDDayRequest(dday.title ?: "", dday.goalDate ?: "")
-                )
-            }
-        } catch (e: Exception) {
-            Log.e("HomeScreen", "Error patching D-Day: ${e.message}", e)
         }
     }
 
@@ -320,6 +334,13 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel, navCo
                     // Create new D-Day
                     homeViewModel.postDDay(UpdateDDayRequest(newTitle, newDate))
                 }
+
+                // 저장 후 데이터 새로고침
+                scope.launch {
+                    kotlinx.coroutines.delay(50) // 서버 처리 시간 대기
+                    homeViewModel.getDistinctHome() // distinct home 데이터 새로고침
+                }
+
             } catch (e: Exception) {
                 Log.e("HomeScreen", "Error saving D-Day: ${e.message}", e)
             }
@@ -327,17 +348,27 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel, navCo
         },
         onDeleteExam = {
             try {
-                val ddayId = dDayState?.ddayId
-                if (ddayId != null && ddayId > 0) {
+                val ddayId = getSafeDDayId()
+                Log.d("HomeScreen", "Deleting D-Day: ddayId=$ddayId")
+
+                if (ddayId != null) {
                     homeViewModel.deleteDDay(ddayId)
                     showDeleteCompleteDialog = true
+
+                    // 삭제 후 데이터 새로고침
+                    scope.launch {
+                        kotlinx.coroutines.delay(500) // 서버 처리 시간 대기
+                        homeViewModel.getDistinctHome()
+                    }
+                } else {
+                    Log.w("HomeScreen", "Cannot delete D-Day: no valid ID found")
                 }
             } catch (e: Exception) {
                 Log.e("HomeScreen", "Error deleting D-Day: ${e.message}", e)
             }
             isExamBottomSheetVisible = false
         },
-        hasDDay = dDayState?.ddayId != null && (dDayState!!.ddayId > 0)
+        hasDDay = hasSafeDDay() // 안전한 체크 함수 사용
     )
 
     // 바텀시트 외부에 삭제 완료 다이얼로그 표시
@@ -913,18 +944,25 @@ fun ModifiedLessonList(
     homeViewModel: HomeViewModel,
     maxHeight: Int,
     todayLessonList: List<LessonScheduleResponse>,
-    isExpanded: Boolean = true // 확장 상태 여부를 매개변수로 받음
+    isExpanded: Boolean = true
 ) {
     Column(
         modifier = Modifier
             .padding(start = 10.dp)
             .fillMaxWidth()
-            .heightIn(max = maxHeight.dp) // Limit the height
+            .heightIn(max = maxHeight.dp)
             .verticalScroll(rememberScrollState())
     ) {
-        // Loop through items manually instead of using LazyColumn's items
         todayLessonList.forEach { lesson ->
-            var isChecked by remember { mutableStateOf(lesson.completed) }
+            // 각 체크박스의 상태를 remember로 관리하되, 초기값은 서버 데이터 사용
+            var isChecked by remember(lesson.id, lesson.completed) {
+                mutableStateOf(lesson.completed)
+            }
+
+            // 서버 데이터가 변경되면 로컬 상태도 동기화
+            LaunchedEffect(lesson.completed) {
+                isChecked = lesson.completed
+            }
 
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -938,20 +976,21 @@ fun ModifiedLessonList(
                         onClick = { /* 클릭만 허용 */ }
                     )
             ) {
-                // Existing content for each item
                 CustomCheckBox(
                     isChecked = isChecked,
                     onCheckedChange = {
-                        homeViewModel.patchLessonSchedulesCheckToggle(lesson.id)
+                        // 즉시 UI 업데이트 (사용자 경험 향상)
                         isChecked = !isChecked
+
+                        // 서버 업데이트 (백그라운드에서 실행)
+                        homeViewModel.patchLessonSchedulesCheckToggle(lesson.id)
                     }
                 )
 
-                // 텍스트 + 시간 박스를 수평으로 정렬
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween, // 왼쪽 텍스트, 오른쪽 박스 정렬
+                    horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     Column(
                         modifier = Modifier.weight(1f)
@@ -971,7 +1010,6 @@ fun ModifiedLessonList(
                         )
                     }
 
-                    // 오른쪽 시간 박스
                     Box(
                         modifier = Modifier
                             .padding(end = 10.dp)
@@ -991,7 +1029,6 @@ fun ModifiedLessonList(
                     }
                 }
             }
-
         }
     }
 }

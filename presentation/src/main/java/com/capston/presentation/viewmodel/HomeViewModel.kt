@@ -9,7 +9,6 @@ import com.capston.domain.response.CheckResponse
 import com.capston.domain.response.home.DDayResponse
 import com.capston.domain.response.home.DistinctHomeIdResponse
 import com.capston.domain.response.home.TodayScheduleResponse
-import com.capston.domain.response.home.UserProgressResponse
 import com.capston.domain.usecase.home.DeleteDDayUseCase
 import com.capston.domain.usecase.home.GetDDayUseCase
 import com.capston.domain.usecase.home.GetDistinctHomeUseCase
@@ -48,14 +47,13 @@ class HomeViewModel @Inject constructor(
     private var lastLoadTime: Long = 0
     private val cacheValidDuration = 30_000 // 30초
 
-    fun getDistinctHome() {
+    fun getDistinctHome(forceRefresh: Boolean = false) {
         viewModelScope.launch {
-
             val currentTime = System.currentTimeMillis()
             val isCacheValid = currentTime - lastLoadTime < cacheValidDuration
 
-            if (isCacheValid) {
-                // 캐시된 데이터 사용, 로딩 인디케이터 표시 안 함
+            // forceRefresh가 true이면 캐시 무시
+            if (isCacheValid && !forceRefresh) {
                 return@launch
             }
 
@@ -63,9 +61,6 @@ class HomeViewModel @Inject constructor(
             try {
                 getDistinctHomeUseCase().catch { e ->
                     Log.e("getDistinctHome", "에러: ${e.message}", e)
-
-                    // 오류 발생 시에도 UI에 표시할 기본 상태 설정
-                    // 이전 상태의 userProgress는 유지하면서 todaySchedule만 기본값으로
                     val currentState = _getDistinctHome.value
                     _getDistinctHome.value = DistinctHomeIdResponse(
                         userProgress = currentState.userProgress,
@@ -74,9 +69,7 @@ class HomeViewModel @Inject constructor(
                 }.collect { response ->
                     Log.d("HomeViewModel", "수신된 응답: $response")
 
-                    // 수신된 응답이 완전한지 확인 후 상태 업데이트
                     if (response.todaySchedule == null) {
-                        // todaySchedule이 null이면 기본값으로 설정하되 userProgress는 유지
                         _getDistinctHome.value = DistinctHomeIdResponse(
                             userProgress = response.userProgress,
                             todaySchedule = TodayScheduleResponse()
@@ -84,11 +77,12 @@ class HomeViewModel @Inject constructor(
                     } else {
                         _getDistinctHome.value = response
                     }
+
+                    // 성공적으로 데이터를 받아온 경우만 lastLoadTime 업데이트
+                    lastLoadTime = currentTime
                 }
             } catch (e: Exception) {
                 Log.e("getDistinctHome", "전체 예외 처리: ${e.message}", e)
-
-                // 전체 예외 처리에서도 이전 상태의 userProgress 유지
                 val currentState = _getDistinctHome.value
                 _getDistinctHome.value = DistinctHomeIdResponse(
                     userProgress = currentState.userProgress,
@@ -100,30 +94,20 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    fun patchLessonSchedulesCheckToggle(
-        lessonScheduleId: Int
-    ) {
+    fun patchLessonSchedulesCheckToggle(lessonScheduleId: Int) {
         viewModelScope.launch {
-
-            val currentTime = System.currentTimeMillis()
-            val isCacheValid = currentTime - lastLoadTime < cacheValidDuration
-
-            if (isCacheValid) {
-                // 캐시된 데이터 사용, 로딩 인디케이터 표시 안 함
-                return@launch
-            }
-
-            loadingStateManager.show()
+            // 체크박스 토글 시에는 로딩 인디케이터 표시하지 않음 (빠른 반응성을 위해)
             try {
-                patchLessonSchedulesCheckToggleUseCase(lessonScheduleId).collect {
-                    _patchLessonSchedulesCheckToggle.value = it
-                    // 체크 토글 후 홈 데이터 새로고침
-                    getDistinctHome()
+                patchLessonSchedulesCheckToggleUseCase(lessonScheduleId).collect { response ->
+                    _patchLessonSchedulesCheckToggle.value = response
+
+                    // 체크 토글 후 강제로 홈 데이터 새로고침 (캐시 무시)
+                    // lastLoadTime을 리셋하여 캐시 무효화
+                    lastLoadTime = 0
+                    getDistinctHome(forceRefresh = true)
                 }
             } catch (e: Exception) {
                 Log.e("patch lesson schedule toggle 에러", e.message.toString())
-            } finally {
-                loadingStateManager.hide()
             }
         }
     }
@@ -131,12 +115,9 @@ class HomeViewModel @Inject constructor(
     // 백그라운드 갱신 (deeplink나 다른 화면에서 돌아왔을 때)
     fun refreshInBackground(dDayId: Int) {
         viewModelScope.launch {
-            // First operation - get home data
             getDistinctHomeUseCase().collect { response ->
                 _getDistinctHome.value = response
 
-                // Only after home data is updated, get the D-Day info
-                // Launch in a new coroutine to avoid blocking
                 viewModelScope.launch {
                     getDDayUseCase(dDayId).collect { ddayResponse ->
                         _dDay.value = ddayResponse
@@ -174,6 +155,7 @@ class HomeViewModel @Inject constructor(
                     dDay.value?.let { refreshInBackground(it.ddayId) }
                     Log.d("HomeViewModel", "HomeViewModel 업데이트됨: ${response}")
                 }
+            getDistinctHome(forceRefresh = true)
             loadingStateManager.hide()
         }
     }
@@ -187,6 +169,7 @@ class HomeViewModel @Inject constructor(
             } catch (e: Exception) {
                 Log.e("HomeViewModel", "Error deleting D-Day: ${e.message}", e)
             }
+            getDistinctHome(forceRefresh = true)
         }
     }
 
@@ -202,7 +185,14 @@ class HomeViewModel @Inject constructor(
                     refreshInBackground(dDayId)
                     Log.d("HomeViewModel", "HomeViewModel 업데이트됨: ${response}")
                 }
+            getDistinctHome(forceRefresh = true)
             loadingStateManager.hide()
         }
+    }
+
+    // 다른 ViewModel에서 호출할 수 있는 강제 새로고침 함수
+    fun forceRefresh() {
+        lastLoadTime = 0
+        getDistinctHome(forceRefresh = true)
     }
 }
