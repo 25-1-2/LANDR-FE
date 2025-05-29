@@ -76,7 +76,7 @@ fun OnboardingFinishScreen(
             Spacer(modifier = Modifier.height(100.dp))
 
             val composition by rememberLottieComposition(
-                LottieCompositionSpec.Asset("firework.json")
+                LottieCompositionSpec.Asset("finish.json")
             )
             val progress by animateLottieCompositionAsState(
                 composition,
