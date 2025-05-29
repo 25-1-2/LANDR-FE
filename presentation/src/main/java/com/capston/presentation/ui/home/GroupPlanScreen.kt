@@ -298,32 +298,45 @@ fun GroupPlanTitleSection(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 20.dp)
+            .border(
+                width = 1.dp,
+                color = Color(0xFFBBAAFF), // 연보라색 계열 stroke 예시
+                shape = RoundedCornerShape(16.dp)
+            )
             .background(
                 color = Color(0xFFE8E4FF), // 연보라색 배경
                 shape = RoundedCornerShape(16.dp)
             )
-            .padding(20.dp)
+            .padding(horizontal = 20.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(vertical = 24.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.Top
+//            horizontalArrangement = Arrangement.spacedBy(12.dp),
+//            verticalAlignment = Alignment.Top
         ) {
-            Text(
-                text = "수분감의 아이들",//planDetailResponse.lectureTitle,
-                style = MaterialTheme.typography.headlineSmall,
+            Column(
                 modifier = Modifier
                     .padding(end = 8.dp)
+                    .fillMaxWidth()
                     .weight(10f),
-            )
-            Column(
-                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // 재스케줄링 버튼
-                IconButton(
-                    onClick = {
+                Text(
+                    text = "수분감의 아이들",//planDetailResponse.lectureTitle,
+                    style = MaterialTheme.typography.headlineSmall,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                Text(
+                    text = "2026 현우진의 수분감 - 수학I (공통)",//planDetailResponse.lectureTitle,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = textGray
+                )
+            }
+
+            // 재스케줄링 버튼
+            IconButton(
+                onClick = {
 //                    coroutineScope.launch {
 //                        onLoadingChange(true)
 //                        try {
@@ -339,41 +352,20 @@ fun GroupPlanTitleSection(
 //                            onLoadingChange(false)
 //                        }
 //                    }
-                    },
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape)
-                        .background(
-                            color = backgroundGray
-                        )
-                ) {
-                    Icon(
-                        imageVector = ImageVector.vectorResource(R.drawable.icon_reschedule),
-                        contentDescription = "재스케줄링",
-                        tint = materialGray,
-                        modifier = Modifier.padding(8.dp)
+                },
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(
+                        color = backgroundGray
                     )
-                }
-
-                // 그룹원 추가 버튼
-                IconButton(
-                    onClick = {},
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape)
-                        .background(
-                            color = backgroundGray
-                        )
-                ) {
-                    Icon(
-                        imageVector = ImageVector.vectorResource(R.drawable.icon_group),
-                        contentDescription = "그룹 추가",
-                        tint = materialGray,
-                        modifier = Modifier
-                            .padding(8.dp)
-                            .clickable { /*…*/ }
-                    )
-                }
+            ) {
+                Icon(
+                    imageVector = ImageVector.vectorResource(R.drawable.icon_reschedule),
+                    contentDescription = "재스케줄링",
+                    tint = materialGray,
+                    modifier = Modifier.padding(8.dp)
+                )
             }
         }
     }
