@@ -93,10 +93,10 @@ fun OnboardingScreen(
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun LectureRoomPreview() {
-    CapstonTheme {
-        OnboardingScreen(onCompleteOnboarding = {})
-    }
-}
+//@Preview(showBackground = true)
+//@Composable
+//fun LectureRoomPreview() {
+//    CapstonTheme {
+//        OnboardingScreen(onCompleteOnboarding = {})
+//    }
+//}
