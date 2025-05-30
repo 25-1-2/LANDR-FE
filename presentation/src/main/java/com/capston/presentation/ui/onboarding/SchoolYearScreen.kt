@@ -36,7 +36,7 @@ import com.capston.presentation.theme.MainPurple
 import com.capston.presentation.theme.textGray
 
 @Composable
-fun UserGradeScreen(onSetupComplete: () -> Unit) {
+fun SchoolYearScreen(onSetupComplete: () -> Unit) {
     var selectedGrade by remember { mutableStateOf<String?>(null) }
 
     val gradeOptions = listOf(

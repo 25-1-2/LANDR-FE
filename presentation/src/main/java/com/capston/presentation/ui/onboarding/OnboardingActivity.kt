@@ -42,11 +42,11 @@ fun AppNavHost(navController: NavHostController, context: Context) {
     NavHost(navController = navController, startDestination = "onboarding") {
         composable("onboarding") {
             OnboardingScreen(onCompleteOnboarding = {
-                navController.navigate("user-grade")
+                navController.navigate("school-year")
             })
         }
-        composable("user-grade") {
-            UserGradeScreen(onSetupComplete = {
+        composable("school-year") {
+            SchoolYearScreen(onSetupComplete = {
                 navController.navigate("subject-grade")
             })
         }
