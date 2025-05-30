@@ -925,7 +925,12 @@ fun TodayLectureCard(
                 .padding(16.dp)
         ) {
             // 카드 헤더 (제목 + 정보)
-            TodayLectureHeader(todayTotalLesson, todayTotalDuration)
+            if (todayLessonList != null && todayLessonList.isNotEmpty()) {
+                TodayLectureHeader(todayTotalLesson, todayTotalDuration)
+            }
+            else {
+                RecommendedCoursesHeader()
+            }
 
             Spacer(modifier = Modifier.height(20.dp))
 
@@ -933,7 +938,10 @@ fun TodayLectureCard(
             if (todayLessonList != null && todayLessonList.isNotEmpty()) {
                 ModifiedLessonList(homeViewModel, 330, todayLessonList)
             } else {
-                EmptyLectureState(context)
+                RecommendedCoursesWithIndicator(
+                    homeViewModel = homeViewModel,
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
         }
     }
