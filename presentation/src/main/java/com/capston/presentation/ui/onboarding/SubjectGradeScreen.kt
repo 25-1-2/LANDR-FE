@@ -698,11 +698,3 @@ private fun SubjectGradeCard(
         }
     }
 }
-
-@Preview(showBackground = true)
-@Composable
-fun SubjectGradeScreenPreview() {
-    CapstonTheme {
-        SubjectGradeScreen(onSetupComplete = {})
-    }
-}

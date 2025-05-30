@@ -79,8 +79,7 @@ fun OnboardingFinishScreen(
                 LottieCompositionSpec.Asset("finish.json")
             )
             val progress by animateLottieCompositionAsState(
-                composition,
-                iterations = LottieConstants.IterateForever
+                composition
             )
             LottieAnimation(
                 composition = composition,

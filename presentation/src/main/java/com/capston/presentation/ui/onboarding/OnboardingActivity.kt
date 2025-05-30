@@ -59,12 +59,12 @@ fun AppNavHost(navController: NavHostController, context: Context) {
 
         composable("onboarding-finish") {
             OnboardingFinishScreen(onCompleteOnboarding = {
-                navController.navigate("user-recommand-result")
+                navController.navigate("study-plan-complete")
             })
         }
 
-        composable("user-recommand-result") {
-            UserRecommandResultScreen(onSetupComplete = {
+        composable("study-plan-complete") {
+            StudyPlanCompleteScreen(onStartLearning = {
                 context.startActivity(Intent(context, MainActivity::class.java))
                 (context as? Activity)?.finish()
             })
