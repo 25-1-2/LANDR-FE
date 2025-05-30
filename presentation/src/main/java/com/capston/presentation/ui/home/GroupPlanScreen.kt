@@ -6,11 +6,15 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.scrollable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -307,12 +311,12 @@ fun GroupPlanTitleSection(
                 color = Color(0xFFE8E4FF), // 연보라색 배경
                 shape = RoundedCornerShape(16.dp)
             )
-            .padding(horizontal = 20.dp)
+            .padding(horizontal = 20.dp, vertical = 24.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 24.dp),
+                .horizontalScroll(rememberScrollState()),//                .padding(vertical = 24.dp),
 //            horizontalArrangement = Arrangement.spacedBy(12.dp),
 //            verticalAlignment = Alignment.Top
         ) {
@@ -323,7 +327,7 @@ fun GroupPlanTitleSection(
                     .weight(10f),
             ) {
                 Text(
-                    text = "수분감의 아이들",//planDetailResponse.lectureTitle,
+                    text = "수분감의 아이들 안녕하세요 헬롱 (#0000)",//planDetailResponse.lectureTitle,
                     style = MaterialTheme.typography.headlineSmall,
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
@@ -368,8 +372,72 @@ fun GroupPlanTitleSection(
                 )
             }
         }
+
+        // 여기에 프로필 섹션 추가
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // 프로필 아이템들 (나, 👑전환휘, 조은채, 조익현)
+            ProfileItem(name = "나", isMe = true)
+            ProfileItem(name = "전환휘", isCrown = true)
+            ProfileItem(name = "조은채")
+            ProfileItem(name = "조익현")
+        }
     }
 
+}
+
+@Composable
+fun ProfileItem(
+    name: String,
+    isMe: Boolean = false,
+    isCrown: Boolean = false
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.width(60.dp)
+    ) {
+        // 프로필 이미지 컨테이너
+        Box(
+            modifier = Modifier
+                .size(60.dp)
+                .background(
+                    color = Color(0xFFE8F4FD), // 연한 파란색 배경
+                    shape = RoundedCornerShape(16.dp)
+                )
+                .border(
+                    width = 1.dp,
+                    color = Color(0xFFD1E7F5),
+                    shape = RoundedCornerShape(16.dp)
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            // 사람 아이콘
+            Icon(
+                imageVector = Icons.Default.Person,
+//                painter = painterResource(id = R.drawable.), // 사람 아이콘 리소스 필요
+                contentDescription = "프로필",
+                tint = Color(0xFF7BB3D9),
+                modifier = Modifier.size(32.dp)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // 이름 텍스트
+        Text(
+            text = if (isCrown) "👑$name" else name,
+            style = MaterialTheme.typography.bodySmall,
+            color = Color.Black,
+            fontWeight = if (isMe) FontWeight.Bold else FontWeight.Normal,
+            maxLines = 1,
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+        )
+    }
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
