@@ -263,18 +263,58 @@ fun GroupPlanTopBar(
                         }
                     )
 
-                    // 계획 삭제
+                    // 그룹원 관리
                     DropdownMenuItem(
                         text = {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(
-                                    painter = painterResource(id = R.drawable.icon_trash), // 삭제 아이콘 리소스 필요
-                                    contentDescription = "삭제",
+                                    painter = painterResource(id = R.drawable.icon_group),
+                                    contentDescription = "수정",
+                                    tint = Color.Black,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("수정하기", color = Color.Black)
+                            }
+                        },
+                        onClick = {
+                            onMenuDismiss()
+//                            onDeleteClick()
+                        }
+                    )
+
+                    // 그룹 삭제 (방장)
+                    DropdownMenuItem(
+                        text = {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.icon_user_xmark), // 삭제 아이콘 리소스 필요
+                                    contentDescription = "그룹 삭제",
                                     tint = Color.Red,
                                     modifier = Modifier.size(20.dp)
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Text("삭제하기", color = Color.Red)
+                                Text("그룹 삭제", color = Color.Red)
+                            }
+                        },
+                        onClick = {
+                            onMenuDismiss()
+                            onDeleteClick()
+                        }
+                    )
+
+                    // 그룹 나가기 (그룹원)
+                    DropdownMenuItem(
+                        text = {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.icon_user_xmark), // 삭제 아이콘 리소스 필요
+                                    contentDescription = "그룹 나가기",
+                                    tint = Color.Red,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("그룹 나가기", color = Color.Red)
                             }
                         },
                         onClick = {
