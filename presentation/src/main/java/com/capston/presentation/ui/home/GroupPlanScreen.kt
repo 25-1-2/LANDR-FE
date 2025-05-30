@@ -5,8 +5,6 @@ import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -356,7 +354,6 @@ fun GroupPlanTitleSection(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .horizontalScroll(rememberScrollState()),//                .padding(vertical = 24.dp),
 //            horizontalArrangement = Arrangement.spacedBy(12.dp),
 //            verticalAlignment = Alignment.Top
         ) {
@@ -378,9 +375,10 @@ fun GroupPlanTitleSection(
                 )
             }
 
-            // 재스케줄링 버튼
-            IconButton(
-                onClick = {
+            Column{
+                // 재스케줄링 버튼
+                IconButton(
+                    onClick = {
 //                    coroutineScope.launch {
 //                        onLoadingChange(true)
 //                        try {
@@ -396,28 +394,67 @@ fun GroupPlanTitleSection(
 //                            onLoadingChange(false)
 //                        }
 //                    }
-                },
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .background(
-                        color = backgroundGray
+                    },
+                    modifier = Modifier
+                        .padding(bottom = 16.dp)
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(
+                            color = backgroundGray
+                        )
+                ) {
+                    Icon(
+                        imageVector = ImageVector.vectorResource(R.drawable.icon_reschedule),
+                        contentDescription = "재스케줄링",
+                        tint = materialGray,
+                        modifier = Modifier.padding(8.dp)
                     )
-            ) {
-                Icon(
-                    imageVector = ImageVector.vectorResource(R.drawable.icon_reschedule),
-                    contentDescription = "재스케줄링",
-                    tint = materialGray,
-                    modifier = Modifier.padding(8.dp)
-                )
+                }
+
+                // 그룹 이름 편집 버튼
+                IconButton(
+                    onClick = {
+//                    coroutineScope.launch {
+//                        onLoadingChange(true)
+//                        try {
+//                            // 재스케줄링을 시작하고 완료될 때까지 기다립니다
+//                            val rescheduleJob = lectureRoomViewModel.postPlanReschedule(planId)
+//                            rescheduleJob.join()
+//
+//                            // 이제 업데이트된 데이터 가져오기
+//                            lectureRoomViewModel.getPlanDetail(planId)
+//
+//                            delay(1000)
+//                        } finally {
+//                            onLoadingChange(false)
+//                        }
+//                    }
+                    },
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(
+                            color = backgroundGray
+                        )
+                ) {
+                    Icon(
+                        imageVector = ImageVector.vectorResource(R.drawable.icon_edit_pencil),
+                        contentDescription = "이름 편집",
+                        tint = materialGray,
+                        modifier = Modifier.padding(8.dp)
+                    )
+                }
             }
+
+
         }
 
         // 여기에 프로필 섹션 추가
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 16.dp),
+                .padding(top = 16.dp)
+                .horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // 프로필 아이템들 (나, 👑전환휘, 조은채, 조익현)
