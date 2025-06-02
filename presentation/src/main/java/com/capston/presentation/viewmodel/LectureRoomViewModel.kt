@@ -32,13 +32,13 @@ class LectureRoomViewModel @Inject constructor(
     private val loadingStateManager: LoadingStateManager
 ) : ViewModel() {
 
-    private val _getPlanLectureRoomResponse = MutableStateFlow(emptyList<GetPlanLectureRoomResponse>())  // 기본값 ""
+    private val _getPlanLectureRoomResponse = MutableStateFlow(emptyList<GetPlanLectureRoomResponse>())
     val getPlanLectureRoomResponse: StateFlow<List<GetPlanLectureRoomResponse>> = _getPlanLectureRoomResponse.asStateFlow()
 
-    private val _getPlanDetailResponse = MutableStateFlow(GetPlanDetailResponse())  // 기본값 ""
+    private val _getPlanDetailResponse = MutableStateFlow(GetPlanDetailResponse())
     val getPlanDetailResponse: StateFlow<GetPlanDetailResponse> = _getPlanDetailResponse.asStateFlow()
 
-    private val _postPlanRescheduleResponse = MutableStateFlow(PostPlanRescheduleResponse())  // 기본값 ""
+    private val _postPlanRescheduleResponse = MutableStateFlow(PostPlanRescheduleResponse())
     val postPlanRescheduleResponse: StateFlow<PostPlanRescheduleResponse> = _postPlanRescheduleResponse.asStateFlow()
 
     private val _deleteOnePlanResponse = MutableStateFlow(MessageResponse())  // 기본값 ""
@@ -110,12 +110,9 @@ class LectureRoomViewModel @Inject constructor(
 
     fun patchLessonSchedulesCheckToggle(lessonScheduleId: Int) {
         viewModelScope.launch {
-            loadingStateManager.show()
             try {
                 patchLessonSchedulesCheckToggleUseCase(lessonScheduleId).collect { response ->
                     _patchLessonSchedulesCheckToggle.value = response
-                    // 체크 토글 후 강의실 데이터 새로고침 (대신 getPlanLectureRoom 호출)
-                    getPlanLectureRoom()
 
                     Log.d("LectureRoomViewModel", "체크 토글 완료: $response")
 
