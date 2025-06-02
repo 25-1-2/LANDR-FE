@@ -132,7 +132,7 @@ fun PlanDetailScreen(
                     iconContentColor = Color.Black,
                     titleContentColor = Color.Black,
                     textContentColor = Color.Black,
-                    tonalElevation = 0.dp,
+                    tonalElevation = 0.dp, // 그림자 효과 제거
                     onDismissRequest = { showDeleteConfirmDialog = false },
                     title = { Text("계획 삭제") },
                     text = { Text("이 계획을 삭제하시겠습니까?") },
@@ -343,7 +343,7 @@ fun SinglePlanTopBar(
                         text = {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(
-                                    painter = painterResource(id = R.drawable.icon_trash),
+                                    painter = painterResource(id = R.drawable.icon_trash), // 삭제 아이콘 리소스 필요
                                     contentDescription = "삭제",
                                     tint = Color.Red,
                                     modifier = Modifier.size(20.dp)
@@ -444,6 +444,8 @@ fun SinglePlanTitleSection(
                 )
             }
         }
+
+
     }
 }
 
