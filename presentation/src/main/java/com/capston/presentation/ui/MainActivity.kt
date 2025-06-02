@@ -1,6 +1,5 @@
 package com.capston.presentation.ui
 
-import NotificationScreen
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Intent
@@ -62,6 +61,7 @@ import com.capston.presentation.ui.common.Screen
 import com.capston.presentation.ui.home.CalenderScreen
 import com.capston.presentation.ui.home.HomeScreen
 import com.capston.presentation.ui.home.LectureRoomScreen
+import com.capston.presentation.ui.home.NotificationScreen
 import com.capston.presentation.ui.home.PlanDetailScreen
 import com.capston.presentation.ui.home.ProfileScreen
 import com.capston.presentation.ui.search.SearchActivity
