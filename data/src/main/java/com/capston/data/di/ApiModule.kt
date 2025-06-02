@@ -10,6 +10,7 @@ import com.capston.data.repository.remote.api.LectureApi
 import com.capston.data.repository.remote.api.LoginApi
 import com.capston.data.repository.remote.api.MyPageApi
 import com.capston.data.repository.remote.api.PlanApi
+import com.capston.data.repository.remote.api.StudyGroupApi
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -71,4 +72,10 @@ object ApiModule {
     fun provideMyPageServer(
         @MainRetrofit retrofit: Retrofit
     ) : MyPageApi = retrofit.create(MyPageApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideStudyGroupServer(
+        @MainRetrofit retrofit: Retrofit
+    ) : StudyGroupApi = retrofit.create(StudyGroupApi::class.java)
 }
