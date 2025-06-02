@@ -257,14 +257,42 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel, navCo
                 navController = navController
             )
 
-            // 오늘의 강의 카드
-            TodayLectureCard(
-                todayLessonList = todayLessonList,
-                todayTotalLesson = todayTotalLesson,
-                todayTotalDuration = todayTotalDuration,
-                homeViewModel = homeViewModel,
-                context = context
-            )
+            if (todayLessonList == null) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    shape = RoundedCornerShape(10.dp),
+                    colors = CardDefaults.cardColors(containerColor = White),
+                    border = BorderStroke(1.dp, color = LightGray60)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp)
+                    ) {
+                        // 추천 강의 헤더
+                        RecommendedCoursesHeader()
+
+                        Spacer(modifier = Modifier.height(20.dp))
+
+                        RecommendedCoursesWithIndicator(
+                            homeViewModel = homeViewModel,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
+            }
+            else {
+                // 오늘의 강의 카드
+                TodayLectureCard(
+                    todayLessonList = todayLessonList,
+                    todayTotalLesson = todayTotalLesson,
+                    todayTotalDuration = todayTotalDuration,
+                    homeViewModel = homeViewModel,
+                    context = context
+                )
+            }
 
             Spacer(modifier = Modifier.height(5.dp))
 
@@ -996,7 +1024,9 @@ fun ModifiedLessonList(
                 )
 
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 10.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
