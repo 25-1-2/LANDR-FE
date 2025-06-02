@@ -350,7 +350,7 @@ fun MainBottomBar(
                     .fillMaxSize()
                     .padding(
                         top = contentPadding.calculateTopPadding(),
-                        bottom = 40.dp // FAB를 고려한 적절한 하단 패딩 (80dp 바텀바 - 40dp FAB offset)
+                        bottom = 60.dp // FAB를 고려한 적절한 하단 패딩 (80dp 바텀바 - 40dp FAB offset)
                     )
             ) {
                 composable(Screen.Home.title) { HomeScreen(homeViewModel, planViewModel, navController) }
