@@ -11,19 +11,19 @@ import androidx.activity.viewModels
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Modifier
-import androidx.credentials.ClearCredentialStateRequest
 import androidx.credentials.Credential
 import androidx.credentials.CredentialManager
 import androidx.credentials.GetCredentialRequest
-import androidx.credentials.exceptions.ClearCredentialException
 import androidx.credentials.exceptions.GetCredentialException
 import androidx.lifecycle.lifecycleScope
+import com.capston.domain.datasource.OnboardingPreferenceStorage
 import com.capston.domain.manager.LoadingStateManager
 import com.capston.domain.request.LoginDto
 import com.capston.presentation.R
 import com.capston.presentation.theme.CapstonTheme
 import com.capston.presentation.ui.common.LoadingIndicator
 import com.capston.presentation.ui.MainActivity
+import com.capston.presentation.ui.onboarding.OnboardingActivity
 import com.capston.presentation.viewmodel.LoginViewModel
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
@@ -35,7 +35,6 @@ import com.google.firebase.messaging.FirebaseMessaging
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -43,6 +42,10 @@ import javax.inject.Inject
 class LoginActivity : ComponentActivity() {
     @Inject
     lateinit var loadingStateManager: LoadingStateManager
+
+    @Inject
+    lateinit var onboardingPreferenceStorage: OnboardingPreferenceStorage
+
     private lateinit var auth: FirebaseAuth
 
     val loginViewModel: LoginViewModel by viewModels()
@@ -88,13 +91,11 @@ class LoginActivity : ComponentActivity() {
         credentialManager: CredentialManager,
         activityContext: Activity,
     ) {
-        // 1) GoogleIdOption 설정
+        // 1) GoogleIdOption 설정 - 더 관대한 설정으로 변경
         val googleIdOption = GetGoogleIdOption.Builder()
-            // Your server's client ID, not your Android client ID.
             .setServerClientId(getString(R.string.google_client_id))
-            // true: Only show accounts previously used to sign in.
-            .setFilterByAuthorizedAccounts(false)
-            .setAutoSelectEnabled(false)
+            .setFilterByAuthorizedAccounts(false) // 이미 false로 되어 있음
+            .setAutoSelectEnabled(true) // true로 변경해서 자동 선택 활성화
             .build()
 
         // 2) CredentialRequest 생성
@@ -111,9 +112,38 @@ class LoginActivity : ComponentActivity() {
                 )
                 handleSignIn(result.credential)
             } catch (e: GetCredentialException) {
-                Log.e("LoginActivity", "googleLogin: $e")
-                // handleFailure(e)
+                Log.e("LoginActivity", "googleLogin error: ${e.javaClass.simpleName}: ${e.message}")
+                loadingStateManager.hide() // 로딩 숨기기
+
+                // 다른 방법으로 시도하거나 사용자에게 알림
+                handleCredentialError(e)
             }
+        }
+    }
+
+    private fun handleCredentialError(exception: GetCredentialException) {
+        when (exception) {
+            is androidx.credentials.exceptions.NoCredentialException -> {
+                Log.e("LoginActivity", "No Google accounts found on device")
+                // 사용자에게 Google 계정 추가를 안내
+                showErrorDialog("Google 계정이 필요합니다", "기기에 Google 계정을 추가해주세요.")
+            }
+            is androidx.credentials.exceptions.GetCredentialCancellationException -> {
+                Log.e("LoginActivity", "User cancelled the credential request")
+                // 사용자가 취소함
+            }
+            else -> {
+                Log.e("LoginActivity", "Credential error: ${exception.message}")
+                showErrorDialog("로그인 오류", "로그인 중 오류가 발생했습니다.")
+            }
+        }
+    }
+
+    private fun showErrorDialog(title: String, message: String) {
+        // AlertDialog로 사용자에게 알림
+        // 또는 Toast 메시지
+        runOnUiThread {
+            android.widget.Toast.makeText(this, "$title: $message", android.widget.Toast.LENGTH_LONG).show()
         }
     }
 
@@ -149,8 +179,18 @@ class LoginActivity : ComponentActivity() {
                         lifecycleScope.launchWhenStarted {
                             loginViewModel.isTokenSaved.collect { isSaved ->
                                 if (isSaved) {
-                                    // 저장이 완료된 경우에만 다음 화면으로 이동
-                                    startActivity(Intent(this@LoginActivity, MainActivity::class.java))
+                                    // 사용자 이메일 기준으로 온보딩 완료 여부 확인
+                                    val userEmail = auth.currentUser?.email
+                                    val hasCompletedOnboarding = onboardingPreferenceStorage
+                                        .hasCompletedOnboarding(userEmail)
+
+                                    if (!hasCompletedOnboarding) {
+                                        // 온보딩 미완료시 온보딩으로 이동
+                                        startActivity(Intent(this@LoginActivity, OnboardingActivity::class.java))
+                                    } else {
+                                        // 온보딩 완료시 메인으로 이동
+                                        startActivity(Intent(this@LoginActivity, MainActivity::class.java))
+                                    }
                                     finish()
                                 }
                             }
@@ -176,4 +216,3 @@ class LoginActivity : ComponentActivity() {
         }
     }
 }
-

@@ -17,6 +17,7 @@ val MutePurple = Color(0xFF5A3BEA)
 val LightPurple = Color(0xFFd2ccf3)
 val SoftPink = Color(0xFFF5D0EC)
 val LavenderGray = Color(0xFFC3BFD9)
+
 val WarmPurple = Color(0xFFB0AEFF)
 val WarmPurple_20 = Color(0x20B0AEFF)
 val DustyRose = Color(0xFFE2A9C2)
