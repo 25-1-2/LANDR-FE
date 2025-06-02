@@ -24,6 +24,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -31,6 +33,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -48,6 +51,7 @@ import com.capston.presentation.theme.Typography
 import com.capston.presentation.theme.textGray
 import com.capston.presentation.ui.search.SearchActivity
 import com.capston.presentation.viewmodel.LectureRoomViewModel
+import kotlinx.coroutines.launch
 
 @Composable
 fun LectureRoomScreen(
@@ -56,6 +60,9 @@ fun LectureRoomScreen(
     onNotificationClick: () -> Unit
 ) {
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+
     val lectures by lectureRoomViewModel.getPlanLectureRoomResponse.collectAsState()
 
     // 화면이 처음 표시될 때 데이터를 로드
@@ -63,7 +70,17 @@ fun LectureRoomScreen(
         lectureRoomViewModel.getPlanLectureRoom()
     }
 
+    // ViewModel에 스낵바 콜백 설정
+    LaunchedEffect(lectureRoomViewModel) {
+        lectureRoomViewModel.onShowSnackbar = { message ->
+            coroutineScope.launch {
+                snackbarHostState.showSnackbar(message)
+            }
+        }
+    }
+
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             LectureRoomTopBar(
                 hasUnreadNotifications = true,
