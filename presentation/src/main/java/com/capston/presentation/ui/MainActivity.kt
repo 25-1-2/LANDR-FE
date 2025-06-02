@@ -348,9 +348,11 @@ fun MainBottomBar(
                 startDestination = Screen.Home.title,
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(contentPadding)
+                    .padding(
+                        top = contentPadding.calculateTopPadding(),
+                        bottom = 40.dp // FAB를 고려한 적절한 하단 패딩 (80dp 바텀바 - 40dp FAB offset)
+                    )
             ) {
-                // 기존 composable들...
                 composable(Screen.Home.title) { HomeScreen(homeViewModel, planViewModel, navController) }
                 composable(Screen.Calender.title) { CalenderScreen(homeViewModel, dailyScheduleViewModel) }
                 composable(Screen.LectureRoom.title) {
