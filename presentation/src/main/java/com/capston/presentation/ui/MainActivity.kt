@@ -61,6 +61,7 @@ import com.capston.presentation.ui.common.Screen
 import com.capston.presentation.ui.home.CalenderScreen
 import com.capston.presentation.ui.home.HomeScreen
 import com.capston.presentation.ui.home.LectureRoomScreen
+import com.capston.presentation.ui.home.NotificationScreen
 import com.capston.presentation.ui.home.PlanDetailScreen
 import com.capston.presentation.ui.home.ProfileScreen
 import com.capston.presentation.ui.search.SearchActivity
@@ -372,7 +373,8 @@ fun MainBottomBar(
                         lectureRoomViewModel = lectureRoomViewModel,
                         onPlanClick = { plan ->
                             navController.navigate("${Screen.PlanDetail.title}/${plan.planId}")
-                        }
+                        },
+                        onNotificationClick = { navController.navigate("notification") }
                     )
                 }
                 composable(
@@ -388,6 +390,7 @@ fun MainBottomBar(
                     )
                 }
                 composable(Screen.Profile.title) { ProfileScreen(loginViewModel = loginViewModel, myPageViewModel = myPageViewModel) }
+                composable(Screen.Notification.title) { NotificationScreen() }
             }
         }
     }
