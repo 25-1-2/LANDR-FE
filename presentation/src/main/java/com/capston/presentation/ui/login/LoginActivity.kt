@@ -179,21 +179,20 @@ class LoginActivity : ComponentActivity() {
                         lifecycleScope.launchWhenStarted {
                             loginViewModel.isTokenSaved.collect { isSaved ->
                                 if (isSaved) {
-                                    // 첫 로그인인지 확인
-                                    if (onboardingPreferenceStorage.isFirstLogin()) {
-                                        // 첫 로그인이면 온보딩으로 이동
+                                    // 사용자 이메일 기준으로 온보딩 완료 여부 확인
+                                    val userEmail = auth.currentUser?.email
+                                    val hasCompletedOnboarding = onboardingPreferenceStorage
+                                        .hasCompletedOnboarding(userEmail)
+
+                                    if (!hasCompletedOnboarding) {
+                                        // 온보딩 미완료시 온보딩으로 이동
                                         startActivity(Intent(this@LoginActivity, OnboardingActivity::class.java))
                                     } else {
-                                        // 기존 사용자면 메인으로 이동
+                                        // 온보딩 완료시 메인으로 이동
                                         startActivity(Intent(this@LoginActivity, MainActivity::class.java))
                                     }
                                     finish()
                                 }
-//                                if (isSaved) {
-//                                    // 저장이 완료된 경우에만 다음 화면으로 이동
-//                                    startActivity(Intent(this@LoginActivity, OnboardingActivity::class.java))
-//                                    finish()
-//                                }
                             }
                         }
                     }

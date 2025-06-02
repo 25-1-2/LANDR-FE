@@ -16,6 +16,8 @@ import com.capston.domain.datasource.OnboardingPreferenceStorage
 import com.capston.presentation.theme.CapstonTheme
 import com.capston.presentation.ui.MainActivity
 import com.capston.presentation.ui.home.HomeScreen
+import com.google.firebase.Firebase
+import com.google.firebase.auth.auth
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -31,14 +33,14 @@ class OnboardingActivity : ComponentActivity() {
         setContent {
             CapstonTheme {
                 val navController = rememberNavController()
-                AppNavHost(navController = navController, this)
+                AppNavHost(navController = navController, this, onboardingPreferenceStorage)
             }
         }
     }
 }
 
 @Composable
-fun AppNavHost(navController: NavHostController, context: Context) {
+fun AppNavHost(navController: NavHostController, context: Context, onboardingPreferenceStorage: OnboardingPreferenceStorage) {
     NavHost(navController = navController, startDestination = "onboarding") {
         composable("onboarding") {
             OnboardingScreen(onCompleteOnboarding = {
@@ -65,6 +67,8 @@ fun AppNavHost(navController: NavHostController, context: Context) {
 
         composable("study-plan-complete") {
             StudyPlanCompleteScreen(onStartLearning = {
+                val userEmail = Firebase.auth.currentUser?.email
+                onboardingPreferenceStorage.setOnboardingCompleted(userEmail)
                 context.startActivity(Intent(context, MainActivity::class.java))
                 (context as? Activity)?.finish()
             })
