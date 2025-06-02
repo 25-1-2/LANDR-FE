@@ -50,4 +50,11 @@ sealed class Screen(
         selectedIcon = R.drawable.activity_main_profile_iv_on,
         unselectedIcon = R.drawable.activity_main_profile_iv
     )
+
+    data object Notification: Screen(
+        title = "notification",
+        selectedIcon = R.drawable.icon_notification_on,
+        unselectedIcon = R.drawable.home_screen_notification_iv,
+    )
+
 }

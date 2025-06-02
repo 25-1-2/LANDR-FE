@@ -52,7 +52,8 @@ import com.capston.presentation.viewmodel.LectureRoomViewModel
 @Composable
 fun LectureRoomScreen(
     lectureRoomViewModel: LectureRoomViewModel,
-    onPlanClick: ((GetPlanLectureRoomResponse) -> Unit)?
+    onPlanClick: ((GetPlanLectureRoomResponse) -> Unit)?,
+    onNotificationClick: () -> Unit
 ) {
     val context = LocalContext.current
     val lectures by lectureRoomViewModel.getPlanLectureRoomResponse.collectAsState()
@@ -63,7 +64,12 @@ fun LectureRoomScreen(
     }
 
     Scaffold(
-        topBar = { LectureRoomTopBar(hasUnreadNotifications = true) }
+        topBar = {
+            LectureRoomTopBar(
+                hasUnreadNotifications = true,
+                onNotificationClick = onNotificationClick
+            )
+        }
     ) { innerPadding ->
         if (lectures.isEmpty()) {
             // 빈 상태 화면
@@ -93,7 +99,10 @@ fun LectureRoomScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LectureRoomTopBar(hasUnreadNotifications: Boolean) {
+fun LectureRoomTopBar(
+    hasUnreadNotifications: Boolean,
+    onNotificationClick: () -> Unit
+) {
     Column {
         TopAppBar(
             modifier = Modifier
@@ -127,7 +136,7 @@ fun LectureRoomTopBar(hasUnreadNotifications: Boolean) {
             actions = {
                 // 읽지 않은 알람이 있을 경우 빨간색 배지 표시
                 if (hasUnreadNotifications) {
-                    IconButton(onClick = { /* 알람 클릭 */ }) {
+                    IconButton(onClick = onNotificationClick) {
                         Image(
                             painter = painterResource(R.drawable.icon_notification_on),
                             contentDescription = "alarm icon",
@@ -136,7 +145,7 @@ fun LectureRoomTopBar(hasUnreadNotifications: Boolean) {
                 }
 
                 else {
-                    IconButton(onClick = { /* 알람 클릭 */ }) {
+                    IconButton(onClick = onNotificationClick) {
                         Image(
                             painter = painterResource(R.drawable.home_screen_notification_iv),
                             contentDescription = "alarm icon",

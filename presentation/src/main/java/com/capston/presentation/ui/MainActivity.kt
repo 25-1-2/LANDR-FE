@@ -1,5 +1,6 @@
 package com.capston.presentation.ui
 
+import NotificationScreen
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Intent
@@ -372,7 +373,8 @@ fun MainBottomBar(
                         lectureRoomViewModel = lectureRoomViewModel,
                         onPlanClick = { plan ->
                             navController.navigate("${Screen.PlanDetail.title}/${plan.planId}")
-                        }
+                        },
+                        onNotificationClick = { navController.navigate("notification") }
                     )
                 }
                 composable(
@@ -388,6 +390,7 @@ fun MainBottomBar(
                     )
                 }
                 composable(Screen.Profile.title) { ProfileScreen(loginViewModel = loginViewModel, myPageViewModel = myPageViewModel) }
+                composable(Screen.Notification.title) { NotificationScreen() }
             }
         }
     }
