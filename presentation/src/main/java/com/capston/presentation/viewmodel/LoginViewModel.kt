@@ -96,7 +96,7 @@ class LoginViewModel @Inject constructor(
             // Firebase 로그아웃 처리 추가
             Firebase.auth.signOut()
 
-            clearTokensUseCase()
+            // clearTokensUseCase()
 
             Log.d("LoginViewModel", "Tokens and saved name cleared")
             loadingStateManager.hide()
