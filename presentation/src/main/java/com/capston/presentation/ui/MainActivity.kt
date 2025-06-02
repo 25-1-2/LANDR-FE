@@ -347,7 +347,8 @@ fun MainBottomBar(
                 navController = navController,
                 startDestination = Screen.Home.title,
                 modifier = Modifier
-                    .fillMaxWidth()
+                    .fillMaxSize()
+                    .padding(contentPadding)
             ) {
                 // 기존 composable들...
                 composable(Screen.Home.title) { HomeScreen(homeViewModel, planViewModel, navController) }
@@ -384,7 +385,7 @@ fun MainBottomBar(
             modifier = Modifier
                 .size(60.dp)
                 .align(Alignment.BottomCenter)
-                .offset(y = (-30).dp),
+                .offset(y = (-20).dp),
             shape = RoundedCornerShape(50)
         ) {
             Icon(
