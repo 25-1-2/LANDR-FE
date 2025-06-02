@@ -326,15 +326,16 @@ fun SinglePlanTitleSection(
                 },
                 modifier = Modifier
                     .size(40.dp)
-                    .clip(CircleShape)
-                    .background(
-                        color = backgroundGray
+                    .border(
+                        width = 1.dp,
+                        color = MainPurple,
+                        shape = CircleShape
                     )
             ) {
                 Icon(
                     imageVector = ImageVector.vectorResource(R.drawable.icon_reschedule),
                     contentDescription = "재스케줄링",
-                    tint = materialGray,
+                    tint = MainPurple,
                     modifier = Modifier.padding(8.dp)
                 )
             }
@@ -344,15 +345,16 @@ fun SinglePlanTitleSection(
                 onClick = {},
                 modifier = Modifier
                     .size(40.dp)
-                    .clip(CircleShape)
-                    .background(
-                        color = backgroundGray
+                    .border(
+                        width = 1.dp,
+                        color = MainPurple,
+                        shape = CircleShape
                     )
             ) {
                 Icon(
                     imageVector = ImageVector.vectorResource(R.drawable.icon_group),
                     contentDescription = "그룹 추가",
-                    tint = materialGray,
+                    tint = MainPurple,
                     modifier = Modifier
                         .padding(8.dp)
                         .clickable { /*…*/ }
