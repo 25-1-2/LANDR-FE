@@ -678,7 +678,6 @@ fun LearningStatusCard(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 10.dp)
         ) {
             Column(
                 modifier = Modifier.padding(horizontal = 10.dp)
@@ -942,7 +941,7 @@ fun TodayLectureCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp),
+            .padding(start = 16.dp, end = 16.dp, bottom = 10.dp),
         shape = RoundedCornerShape(10.dp),
         colors = CardDefaults.cardColors(containerColor = White),
         border = BorderStroke(1.dp, color = LightGray60)
