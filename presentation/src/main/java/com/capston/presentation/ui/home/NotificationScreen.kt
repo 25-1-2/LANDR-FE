@@ -1,12 +1,14 @@
+package com.capston.presentation.ui.home
+
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -16,11 +18,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import com.capston.presentation.R
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -47,7 +50,7 @@ enum class NotificationType(val icon: ImageVector, val color: Color) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NotificationScreen() {
-    // 샘플 알림 데이터
+    // 샘플 알림 데이터 (기존과 동일)
     var notifications by remember {
         mutableStateOf(
             listOf(
@@ -100,79 +103,90 @@ fun NotificationScreen() {
         )
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-    ) {
-        // 상단 앱바
-        TopAppBar(
-            title = {
-                Text(
-                    text = "알림",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold
-                )
-            },
-            actions = {
-                // 모두 읽음 처리 버튼
-                TextButton(
-                    onClick = {
-                        notifications = notifications.map { it.copy(isRead = true) }
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(text = "알림")
+                },
+                navigationIcon = {
+                    IconButton(onClick = {
+//                        navController.popBackStack()
+                    }) {
+                        Image(
+                            painter = painterResource(id = R.drawable.icon_arrow_back),
+                            contentDescription = "뒤로 가기"
+                        )
                     }
-                ) {
-                    Text("모두 읽음")
-                }
-            },
-            colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = MaterialTheme.colorScheme.surface
+                },
+                actions = {
+                    // 모두 읽음 처리 버튼
+                    TextButton(
+                        onClick = {
+                            notifications = notifications.map { it.copy(isRead = true) }
+                        }
+                    ) {
+                        Text("모두 읽음")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
             )
-        )
-
-        // 읽지 않은 알림 개수 표시
-        val unreadCount = notifications.count { !it.isRead }
-        if (unreadCount > 0) {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer
-                )
-            ) {
-                Text(
-                    text = "읽지 않은 알림 ${unreadCount}개",
-                    modifier = Modifier.padding(16.dp),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            }
         }
-
-        // 알림 목록
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .background(MaterialTheme.colorScheme.background)
         ) {
-            items(notifications) { notification ->
-                NotificationItemCard(
-                    notification = notification,
-                    onMarkAsRead = { notificationId ->
-                        notifications = notifications.map { item ->
-                            if (item.id == notificationId) {
-                                item.copy(isRead = true)
-                            } else {
-                                item
+            // 읽지 않은 알림 개수 표시
+            val unreadCount = notifications.count { !it.isRead }
+            if (unreadCount > 0) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                    )
+                ) {
+                    Text(
+                        text = "읽지 않은 알림 ${unreadCount}개",
+                        modifier = Modifier.padding(16.dp),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+            }
+
+            // 알림 목록
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(notifications) { notification ->
+                    NotificationItemCard(
+                        notification = notification,
+                        onMarkAsRead = { notificationId ->
+                            notifications = notifications.map { item ->
+                                if (item.id == notificationId) {
+                                    item.copy(isRead = true)
+                                } else {
+                                    item
+                                }
                             }
                         }
-                    }
-                )
+                    )
+                }
             }
         }
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun NotificationItemCard(
     notification: NotificationItem,
