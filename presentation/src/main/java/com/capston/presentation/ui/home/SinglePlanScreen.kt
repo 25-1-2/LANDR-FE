@@ -63,7 +63,7 @@ import kotlinx.coroutines.launch
 fun PlanDetailScreen(
     planId: Int,
     lectureRoomViewModel: LectureRoomViewModel,
-    navController: NavController  // loadingStateManager 파라미터 제거
+    navController: NavController
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -107,7 +107,6 @@ fun PlanDetailScreen(
                     lectureRoomViewModel = lectureRoomViewModel,
                     planDetailResponse = planDetailResponse,
                     coroutineScope = coroutineScope,
-                    isLoading = isLoading,
                     onLoadingChange = { isLoading = it }
                 )
 
@@ -285,7 +284,6 @@ fun SinglePlanTitleSection(
     lectureRoomViewModel: LectureRoomViewModel,
     planDetailResponse: GetPlanDetailResponse,
     coroutineScope: CoroutineScope,
-    isLoading: Boolean,
     onLoadingChange: (Boolean) -> Unit
 ) {
     Row(
