@@ -107,12 +107,18 @@ fun LectureRoomScreen(
                     .padding(innerPadding)
                     .padding(horizontal = 16.dp)
             ) {
-                items(lectures) { lecture ->
-                    if (lecture.studyGroup) {
-                        onGroupPlanClick?.invoke(lecture)
-                    } else {
-                        onSinglePlanClick?.invoke(lecture)
+                items(
+                    items = lectures,
+                    key = { lecture -> lecture.planId } // 성능 최적화를 위한 key 추가
+                ) { lecture ->
+                    LectureItem(lecture) {
+                        if (lecture.studyGroup) {
+                            onGroupPlanClick?.invoke(lecture)
+                        } else {
+                            onSinglePlanClick?.invoke(lecture)
+                        }
                     }
+                    HorizontalDivider()
                 }
             }
         }
