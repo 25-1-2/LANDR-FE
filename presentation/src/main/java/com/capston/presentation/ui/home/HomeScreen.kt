@@ -796,7 +796,7 @@ fun LearningProgressGraphs(
                     total = item.totalLessons,
                     onPlanClick = { planId ->
                         // planId만 사용하여 바로 이동
-                        navController.navigate("${Screen.PlanDetail.title}/$planId")
+                        navController.navigate("${Screen.SinglePlan.title}/$planId")
                     },
                     lectureProgressList = lectureProgressList
                 )

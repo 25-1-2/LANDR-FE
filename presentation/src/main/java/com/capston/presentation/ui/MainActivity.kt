@@ -60,6 +60,7 @@ import com.capston.presentation.theme.MainPurple
 import com.capston.presentation.ui.common.LoadingIndicator
 import com.capston.presentation.ui.common.Screen
 import com.capston.presentation.ui.home.CalenderScreen
+import com.capston.presentation.ui.home.GroupPlanScreen
 import com.capston.presentation.ui.home.HomeScreen
 import com.capston.presentation.ui.home.LectureRoomScreen
 import com.capston.presentation.ui.home.NotificationScreen
@@ -358,14 +359,17 @@ fun MainBottomBar(
                 composable(Screen.LectureRoom.title) {
                     LectureRoomScreen(
                         lectureRoomViewModel = lectureRoomViewModel,
-                        onPlanClick = { plan ->
-                            navController.navigate("${Screen.PlanDetail.title}/${plan.planId}")
+                        onSinglePlanClick = { plan ->
+                            navController.navigate("${Screen.SinglePlan.title}/${plan.planId}")
+                        },
+                        onGroupPlanClick = { plan ->
+                            navController.navigate("${Screen.GroupPlan.title}/${plan.planId}")
                         },
                         onNotificationClick = { navController.navigate("notification") }
                     )
                 }
                 composable(
-                    route = "${Screen.PlanDetail.title}/{planId}",
+                    route = "${Screen.SinglePlan.title}/{planId}",
                     arguments = listOf(navArgument("planId") { type = NavType.IntType })
                 ) { backStackEntry ->
                     val planId = backStackEntry.arguments?.getInt("planId") ?: 0
@@ -374,6 +378,18 @@ fun MainBottomBar(
                         planId = planId,
                         lectureRoomViewModel = lectureRoomViewModel,
                         navController = navController,
+                    )
+                }
+                composable(
+                    route = "${Screen.GroupPlan.title}/{planId}",
+                    arguments = listOf(navArgument("planId") { type = NavType.IntType })
+                ) { backStackEntry ->
+                    val planId = backStackEntry.arguments?.getInt("planId") ?: 0
+                    val planDetailResponse = GetPlanDetailResponse()
+                    GroupPlanScreen(
+//                        planId = planId,
+//                        lectureRoomViewModel = lectureRoomViewModel,
+//                        navController = navController,
                     )
                 }
                 composable(Screen.Profile.title) { ProfileScreen(loginViewModel = loginViewModel, myPageViewModel = myPageViewModel) }
