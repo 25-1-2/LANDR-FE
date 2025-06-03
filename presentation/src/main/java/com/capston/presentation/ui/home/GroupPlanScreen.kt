@@ -51,6 +51,7 @@ import com.capston.domain.response.plan.PlanDetailLessonSchedule
 import com.capston.presentation.theme.CapstonTheme
 import com.capston.presentation.theme.LightGray2
 import com.capston.presentation.theme.MainPurple
+import com.capston.presentation.theme.WarmPurple_20
 import com.capston.presentation.theme.backgroundGray
 import com.capston.presentation.theme.dividerGray
 import com.capston.presentation.theme.materialGray
@@ -104,7 +105,6 @@ fun GroupPlanScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
-                    .padding(horizontal = 20.dp)
                     .verticalScroll(rememberScrollState())
             ) {
                 GroupPlanTitleSection(
@@ -125,8 +125,17 @@ fun GroupPlanScreen(
 //                    )
 //                }
 
-                GroupOneDaySection()
-                GroupOneDaySection()
+                HorizontalDivider()
+                Spacer(modifier = Modifier.height(16.dp)) // 간격 추가
+
+                Column(
+                    modifier = Modifier
+                        .padding(horizontal = 20.dp)
+                ) {
+                    GroupOneDaySection()
+                    GroupOneDaySection()
+                }
+
             }
 
             // 삭제 확인 다이얼로그
@@ -339,23 +348,15 @@ fun GroupPlanTitleSection(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 20.dp)
-            .border(
-                width = 1.dp,
-                color = Color(0xFFBBAAFF), // 연보라색 계열 stroke 예시
-                shape = RoundedCornerShape(16.dp)
-            )
-            .background(
-                color = Color(0xFFE8E4FF), // 연보라색 배경
-                shape = RoundedCornerShape(16.dp)
-            )
+            .background(color = WarmPurple_20)
             .padding(horizontal = 20.dp, vertical = 24.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
+                .padding(bottom = 16.dp),
 //            horizontalArrangement = Arrangement.spacedBy(12.dp),
-//            verticalAlignment = Alignment.Top
+            verticalAlignment = Alignment.Top
         ) {
             Column(
                 modifier = Modifier
@@ -375,6 +376,7 @@ fun GroupPlanTitleSection(
                 )
             }
 
+            // 버튼들
             Column{
                 // 재스케줄링 버튼
                 IconButton(
@@ -399,14 +401,17 @@ fun GroupPlanTitleSection(
                         .padding(bottom = 16.dp)
                         .size(40.dp)
                         .clip(CircleShape)
-                        .background(
-                            color = backgroundGray
+                        .border(
+                            width = 1.dp,
+                            color = MainPurple,
+                            shape = CircleShape
                         )
+                        .background(Color.White)
                 ) {
                     Icon(
                         imageVector = ImageVector.vectorResource(R.drawable.icon_reschedule),
                         contentDescription = "재스케줄링",
-                        tint = materialGray,
+                        tint = MainPurple,
                         modifier = Modifier.padding(8.dp)
                     )
                 }
@@ -433,27 +438,27 @@ fun GroupPlanTitleSection(
                     modifier = Modifier
                         .size(40.dp)
                         .clip(CircleShape)
-                        .background(
-                            color = backgroundGray
+                        .border(
+                            width = 1.dp,
+                            color = MainPurple,
+                            shape = CircleShape
                         )
+                        .background(Color.White)
                 ) {
                     Icon(
                         imageVector = ImageVector.vectorResource(R.drawable.icon_edit_pencil),
                         contentDescription = "이름 편집",
-                        tint = materialGray,
+                        tint = MainPurple,
                         modifier = Modifier.padding(8.dp)
                     )
                 }
             }
-
-
         }
 
         // 여기에 프로필 섹션 추가
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 16.dp)
                 .horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
