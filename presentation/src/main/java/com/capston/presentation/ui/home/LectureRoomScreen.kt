@@ -266,19 +266,22 @@ fun LectureItem(lecture: GetPlanLectureRoomResponse, onClick: () -> Unit) {
                 )
             }
 
-            Text(
-                text = "그룹",
-                style = MaterialTheme.typography.labelMedium,
-                color = MainPurple,
-                modifier = Modifier
-                    .padding(bottom = 6.dp)
-                    .border(
-                        width = 1.dp,
-                        color = MainPurple,
-                        shape = RoundedCornerShape(8.dp)
-                    )
-                    .padding(horizontal = 4.dp, vertical = 4.dp)
-            )
+            // 수정된 코드 (조건부 표시)
+            if (lecture.studyGroup) {
+                Text(
+                    text = "그룹",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MainPurple,
+                    modifier = Modifier
+                        .padding(bottom = 6.dp)
+                        .border(
+                            width = 1.dp,
+                            color = MainPurple,
+                            shape = RoundedCornerShape(8.dp)
+                        )
+                        .padding(horizontal = 4.dp, vertical = 4.dp)
+                )
+            }
         }
 
         Row(
