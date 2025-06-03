@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -229,12 +230,56 @@ fun LectureItem(lecture: GetPlanLectureRoomResponse, onClick: () -> Unit) {
             ) { onClick() }
             .padding(vertical = 16.dp)
     ) {
-        Text(
-            text = "${lecture.platform.label} · ${lecture.teacher}",
-            style = Typography.labelMedium,
-            color = MainPurple,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
+        Row(
+            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Text(
+                    text = lecture.platform.label,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MainPurple,
+                    modifier = Modifier
+                        .padding(bottom = 6.dp)
+                        .border(
+                            width = 1.dp,
+                            color = MainPurple,
+                            shape = RoundedCornerShape(8.dp)
+                        )
+                        .padding(horizontal = 4.dp, vertical = 4.dp)
+                )
+
+                Text(
+                    text = lecture.teacher,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MainPurple,
+                    modifier = Modifier
+                        .padding(bottom = 6.dp)
+                        .border(
+                            width = 1.dp,
+                            color = MainPurple,
+                            shape = RoundedCornerShape(8.dp)
+                        )
+                        .padding(horizontal = 4.dp, vertical = 4.dp)
+                )
+            }
+
+            Text(
+                text = "그룹",
+                style = MaterialTheme.typography.labelMedium,
+                color = MainPurple,
+                modifier = Modifier
+                    .padding(bottom = 6.dp)
+                    .border(
+                        width = 1.dp,
+                        color = MainPurple,
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                    .padding(horizontal = 4.dp, vertical = 4.dp)
+            )
+        }
 
         Row(
             verticalAlignment = Alignment.Bottom,
