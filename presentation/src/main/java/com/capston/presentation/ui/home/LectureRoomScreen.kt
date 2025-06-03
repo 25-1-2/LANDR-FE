@@ -57,7 +57,8 @@ import kotlinx.coroutines.launch
 @Composable
 fun LectureRoomScreen(
     lectureRoomViewModel: LectureRoomViewModel,
-    onPlanClick: ((GetPlanLectureRoomResponse) -> Unit)?,
+    onSinglePlanClick: ((GetPlanLectureRoomResponse) -> Unit)?,
+    onGroupPlanClick: ((GetPlanLectureRoomResponse) -> Unit)?,
     onNotificationClick: () -> Unit
 ) {
     val context = LocalContext.current
@@ -107,8 +108,11 @@ fun LectureRoomScreen(
                     .padding(horizontal = 16.dp)
             ) {
                 items(lectures) { lecture ->
-                    LectureItem(lecture) { onPlanClick?.invoke(lecture) }
-                    HorizontalDivider()
+                    if (lecture.studyGroup) {
+                        onGroupPlanClick?.invoke(lecture)
+                    } else {
+                        onSinglePlanClick?.invoke(lecture)
+                    }
                 }
             }
         }
