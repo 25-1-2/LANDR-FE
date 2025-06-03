@@ -402,10 +402,15 @@ fun MainBottomBar(
                     GroupPlanScreen(
 //                        planId = planId,
 //                        lectureRoomViewModel = lectureRoomViewModel,
-//                        navController = navController,
+                        navController = navController,
                     )
                 }
-                composable(Screen.Profile.title) { ProfileScreen(loginViewModel = loginViewModel, myPageViewModel = myPageViewModel) }
+                composable(Screen.Profile.title) {
+                    ProfileScreen(
+                        loginViewModel = loginViewModel,
+                        myPageViewModel = myPageViewModel
+                    )
+                }
                 composable(Screen.Notification.title) { NotificationScreen() }
             }
         }

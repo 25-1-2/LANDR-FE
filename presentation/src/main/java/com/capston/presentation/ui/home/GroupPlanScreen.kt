@@ -68,7 +68,7 @@ import kotlinx.coroutines.launch
 fun GroupPlanScreen(
 //    planId: Int,
 //    lectureRoomViewModel: LectureRoomViewModel,
-//    navController: NavController  // loadingStateManager 파라미터 제거
+    navController: NavController
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -92,7 +92,7 @@ fun GroupPlanScreen(
                 ),
             topBar = {
                 GroupPlanTopBar(
-//                    navController = navController,
+                    navController = navController,
                     showMenu = showDeleteDropdown,
                     onMenuClick = { showDeleteDropdown = !showDeleteDropdown },
                     onMenuDismiss = { showDeleteDropdown = false },
@@ -207,7 +207,7 @@ fun GroupPlanScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GroupPlanTopBar(
-//    navController: NavController,
+    navController: NavController,
     showMenu: Boolean,
     onMenuClick: () -> Unit,
     onMenuDismiss: () -> Unit,
@@ -218,7 +218,7 @@ fun GroupPlanTopBar(
             title = {},
             navigationIcon = {
                 IconButton(onClick = {
-//                    navController.popBackStack()
+                    navController.popBackStack()
                 }) {
                     Image(
                         painter = painterResource(id = R.drawable.icon_arrow_back),
@@ -647,11 +647,11 @@ fun GroupTaskItem() {
     }
 }
 
-@RequiresApi(Build.VERSION_CODES.O)
-@Preview(showBackground = true)
-@Composable
-fun DetailScreenPreview() {
-    CapstonTheme {
-        GroupPlanScreen()
-    }
-}
+//@RequiresApi(Build.VERSION_CODES.O)
+//@Preview(showBackground = true)
+//@Composable
+//fun DetailScreenPreview() {
+//    CapstonTheme {
+//        GroupPlanScreen()
+//    }
+//}
