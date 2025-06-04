@@ -51,15 +51,8 @@ class SearchActivity : ComponentActivity() {
 
             CapstonTheme {
                 LaunchedEffect(lectureId) {
-                    if (lectureId != 0) {
-                        Log.d("PlanScreen", "Loading data for lectureId: $lectureId")
-                        Log.d("PlanScreen", "Loading data for lectureTag: $lectureTag")
-                        Log.d("PlanScreen", "Loading data for lectureTotalLessons: $lectureTotalLessons")
-
-                        // 1. 레슨 정보 로드
-                        lectureViewModel.getLessonsByLectureId(lectureId)
-
-                        // 2. 받은 강의 정보로 LectureItemDto 생성하고 선택
+                    if (lectureId != -1 && fromRecommendation) {
+                        // 추천에서 넘어온 경우에만 바로 Plan으로 이동
                         val lectureItem = LectureItemDto(
                             id = lectureId,
                             title = lectureTitle,
@@ -72,7 +65,7 @@ class SearchActivity : ComponentActivity() {
                         )
 
                         lectureViewModel.selectLecture(lectureItem)
-                        Log.d("PlanScreen", "Selected lecture from recommendation: $lectureTitle")
+                        lectureViewModel.getLessonsByLectureId(lectureId)
 
                         navController.navigate("${Screen.Plan.title}/$lectureId") {
                             popUpTo("search") { inclusive = true }
@@ -80,9 +73,8 @@ class SearchActivity : ComponentActivity() {
                     }
                 }
 
+                // 기본은 Search 화면부터 시작
                 SearchNavHost(navController, planViewModel, lectureViewModel, loadingStateManager)
-
-                // 전역 로딩 인디케이터
                 LoadingIndicator(loadingStateManager)
             }
         }
