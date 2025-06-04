@@ -51,7 +51,6 @@ import com.capston.domain.repository.MyPageRepository
 import com.capston.domain.repository.PlanRepository
 import com.capston.domain.repository.RecommendRepository
 import com.capston.domain.repository.StudyGroupRepository
-import com.capston.domain.repository.RecommendRepository
 import com.capston.domain.repository.RecommendationRepository
 import dagger.Module
 import dagger.Provides
@@ -188,6 +187,7 @@ object RepositoryModule {
     fun provideRecommendRepository(recommendDataSource: RecommendDataSource): RecommendRepository =
         RecommendRepositoryImpl(recommendDataSource)
 
+    // 스터디그룹
     @Provides
     @Singleton
     fun provideRecommendationRepository(
