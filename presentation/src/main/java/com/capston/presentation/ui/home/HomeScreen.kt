@@ -281,7 +281,7 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel, recom
                 navController = navController
             )
 
-            if (todayLessonList != null) {
+            if (todayLessonList == null) {
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -312,43 +312,15 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel, recom
                     }
                 }
             }
-
-//            if (todayLessonList == null) {
-//                Card(
-//                    modifier = Modifier
-//                        .fillMaxWidth()
-//                        .padding(16.dp),
-//                    shape = RoundedCornerShape(10.dp),
-//                    colors = CardDefaults.cardColors(containerColor = White),
-//                    border = BorderStroke(1.dp, color = LightGray60)
-//                ) {
-//                    Column(
-//                        modifier = Modifier
-//                            .fillMaxWidth()
-//                            .padding(16.dp)
-//                    ) {
-//                        // 추천 강의 헤더
-//                        RecommendedCoursesHeader()
-//
-//                        Spacer(modifier = Modifier.height(20.dp))
-//
-//                        RecommendedCoursesWithIndicator(
-//                            homeViewModel = homeViewModel,
-//                            modifier = Modifier.fillMaxWidth()
-//                        )
-//                    }
-//                }
-//            }
-//            else {
-//                // 오늘의 강의 카드
-//                TodayLectureCard(
-//                    todayLessonList = todayLessonList,
-//                    todayTotalLesson = todayTotalLesson,
-//                    todayTotalDuration = todayTotalDuration,
-//                    homeViewModel = homeViewModel,
-//                    context = context
-//                )
-//            }
+            else {
+                TodayLectureCard(
+                    todayLessonList = todayLessonList,
+                    todayTotalLesson = todayTotalLesson,
+                    todayTotalDuration = todayTotalDuration,
+                    homeViewModel = homeViewModel,
+                    context = context
+                )
+            }
 
             Spacer(modifier = Modifier.height(5.dp))
 
@@ -462,6 +434,50 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel, recom
             showDeleteCompleteDialog = false
         }
     )
+}
+
+@Composable
+fun TodayLectureCard(
+    todayLessonList: List<LessonScheduleResponse>?,
+    todayTotalLesson: Int,
+    todayTotalDuration: Int,
+    homeViewModel: HomeViewModel,
+    context: Context
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 16.dp, end = 16.dp, bottom = 10.dp),
+        shape = RoundedCornerShape(10.dp),
+        colors = CardDefaults.cardColors(containerColor = White),
+        border = BorderStroke(1.dp, color = LightGray60)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            // 카드 헤더 (제목 + 정보)
+            if (todayLessonList != null && todayLessonList.isNotEmpty()) {
+                TodayLectureHeader(todayTotalLesson, todayTotalDuration)
+            }
+            else {
+                RecommendedCoursesHeader()
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // 강의 목록 또는 빈 상태
+            if (todayLessonList != null && todayLessonList.isNotEmpty()) {
+                ModifiedLessonList(homeViewModel, 330, todayLessonList)
+            } else {
+                RecommendedCoursesWithIndicator(
+                    homeViewModel = homeViewModel,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        }
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -2165,30 +2181,44 @@ fun SingleRecommendationCard(
 
                         Spacer(modifier = Modifier.width(8.dp))
 
-                        Text(
-                            text = recommendation.subject.label,
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = textGray
-                        )
+                        // 플랫폼 정보
+                        Box(
+                            modifier = Modifier
+                                .background(
+                                    color = White,
+                                    shape = RoundedCornerShape(12.dp)
+                                )
+                                .padding(horizontal = 16.dp, vertical = 8.dp)
+                        ) {
+                            Text(
+                                text = recommendation.platform.label,
+                                fontSize = 14.sp,
+                                color = MainPurple,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.padding(5.dp))
+
+                        // 플랫폼 정보
+                        Box(
+                            modifier = Modifier
+                                .background(
+                                    color = recommendation.subject.bgColor,
+                                    shape = RoundedCornerShape(12.dp)
+                                )
+                                .padding(horizontal = 16.dp, vertical = 8.dp)
+                        ) {
+                            Text(
+                                text = recommendation.subject.label,
+                                fontSize = 14.sp,
+                                color = recommendation.subject.borderColor,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
 
-                    // 적합도 배지
-                    Box(
-                        modifier = Modifier
-                            .background(
-                                color = MainPurple,
-                                shape = RoundedCornerShape(20.dp)
-                            )
-                            .padding(horizontal = 12.dp, vertical = 6.dp)
-                    ) {
-                        Text(
-                            text = "${recommendation.recommendScore}% 적합",
-                            fontSize = 12.sp,
-                            color = Color.White,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
+
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -2228,19 +2258,20 @@ fun SingleRecommendationCard(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // 플랫폼 정보
+
+                    // 적합도 배지
                     Box(
                         modifier = Modifier
                             .background(
-                                color = recommendation.subject.bgColor,
-                                shape = RoundedCornerShape(12.dp)
+                                color = MainPurple,
+                                shape = RoundedCornerShape(20.dp)
                             )
-                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                            .padding(horizontal = 12.dp, vertical = 6.dp)
                     ) {
                         Text(
-                            text = recommendation.platform.label,
-                            fontSize = 14.sp,
-                            color = recommendation.subject.borderColor,
+                            text = "${recommendation.recommendScore}% 적합",
+                            fontSize = 12.sp,
+                            color = Color.White,
                             fontWeight = FontWeight.Bold
                         )
                     }
