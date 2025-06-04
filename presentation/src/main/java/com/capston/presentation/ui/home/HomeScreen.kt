@@ -18,12 +18,14 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -38,7 +40,10 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.AlertDialog
@@ -2026,33 +2031,249 @@ fun RecommendedCoursesHeader() {
     }
 }
 
+// RecommendedCoursesList 함수를 다음과 같이 완전히 수정하세요:
+
 @Composable
 fun RecommendedCoursesList(
     recommendResponses: List<RecommendResponse>,
     modifier: Modifier = Modifier
 ) {
-    // 과목별로 그룹화하고 점수 순으로 정렬
-    val groupedRecommendations = recommendResponses
-        .groupBy { it.subject }
-        .mapValues { entry ->
-            entry.value.sortedByDescending { it.recommendScore }.take(2) // 각 과목당 최대 2개
-        }
-        .toList()
-        .take(3) // 최대 3개 과목만 표시
+    if (recommendResponses.isEmpty()) {
+        EmptyRecommendationsState()
+        return
+    }
 
-    LazyColumn(
-        modifier = modifier.heightIn(max = 400.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+    var currentPage by remember { mutableStateOf(0) }
+    val lazyListState = rememberLazyListState()
+
+    // 현재 페이지 추적
+    LaunchedEffect(lazyListState.firstVisibleItemIndex) {
+        currentPage = lazyListState.firstVisibleItemIndex
+    }
+
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        groupedRecommendations.forEach { (subject, recommendations) ->
-            item {
-                SubjectRecommendationCard(
-                    subject = subject,
-                    recommendations = recommendations
+        // 좌우 스와이프 가능한 추천 강의 리스트
+        LazyRow(
+            state = lazyListState,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(250.dp), // 고정 높이
+            flingBehavior = rememberSnapFlingBehavior(lazyListState = lazyListState),
+            horizontalArrangement = Arrangement.spacedBy(0.dp)
+        ) {
+            itemsIndexed(recommendResponses) { index, recommendation ->
+                SingleRecommendationCard(
+                    recommendation = recommendation,
+                    modifier = Modifier
+                        .fillParentMaxWidth() // 전체 너비 사용
+                        .fillMaxHeight()
+                        .padding(horizontal = 16.dp)
                 )
             }
         }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // 원형 페이지 인디케이터
+        if (recommendResponses.size > 1) {
+            PageIndicator(
+                pageCount = recommendResponses.size,
+                currentPage = currentPage,
+                onPageSelected = { selectedPage ->
+                    currentPage = selectedPage
+                }
+            )
+        }
     }
+}
+
+// 단일 추천강의 카드 컴포넌트:
+@Composable
+fun SingleRecommendationCard(
+    recommendation: RecommendResponse,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        border = BorderStroke(1.dp, color = LightGray60.copy(alpha = 0.3f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(24.dp),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            // 상단: 과목 정보
+            Column {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // 과목 아이콘과 이름
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = when (recommendation.subject.label) {
+                                "국어" -> "📖"
+                                "영어" -> "🔤"
+                                "수학" -> "📊"
+                                "사탐" -> "🌍"
+                                "과탐" -> "🔬"
+                                "한국사" -> "📜"
+                                else -> "📚"
+                            },
+                            fontSize = 24.sp
+                        )
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        Text(
+                            text = recommendation.subject.label,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = textGray
+                        )
+                    }
+
+                    // 적합도 배지
+                    Box(
+                        modifier = Modifier
+                            .background(
+                                color = MainPurple,
+                                shape = RoundedCornerShape(20.dp)
+                            )
+                            .padding(horizontal = 12.dp, vertical = 6.dp)
+                    ) {
+                        Text(
+                            text = "${recommendation.recommendScore}% 적합",
+                            fontSize = 12.sp,
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // 강의 제목
+                Text(
+                    text = recommendation.title.take(30),
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black,
+                    lineHeight = 28.sp,
+                    maxLines = 3
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // 선생님 이름
+                Text(
+                    text = recommendation.teacher,
+                    fontSize = 16.sp,
+                    color = textGray,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+
+            // 하단: 플랫폼 정보
+            Column {
+                Spacer(modifier = Modifier.height(20.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // 플랫폼 정보
+                    Box(
+                        modifier = Modifier
+                            .background(
+                                color = recommendation.subject.bgColor,
+                                shape = RoundedCornerShape(12.dp)
+                            )
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                    ) {
+                        Text(
+                            text = recommendation.platform.label,
+                            fontSize = 14.sp,
+                            color = recommendation.subject.borderColor,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    // 더보기 아이콘
+                    Icon(
+                        painter = painterResource(id = R.drawable.screen_profile_see_more_iv),
+                        contentDescription = "자세히 보기",
+                        modifier = Modifier
+                            .size(20.dp)
+                            .clickable { /* 추후 상세 페이지 이동 */ },
+                        tint = MainPurple
+                    )
+                }
+            }
+        }
+    }
+}
+
+// 페이지 인디케이터 컴포넌트:
+@Composable
+fun PageIndicator(
+    pageCount: Int,
+    currentPage: Int,
+    onPageSelected: (Int) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        repeat(pageCount) { index ->
+            IndicatorDot(
+                isSelected = index == currentPage,
+                onClick = {
+                    // 클릭 시 해당 페이지로 스크롤하는 기능은 제거
+                    // 스와이프로만 이동하도록 함
+                }
+            )
+        }
+    }
+}
+
+@Composable
+fun IndicatorDot(
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val animatedSize by animateFloatAsState(
+        targetValue = if (isSelected) 10f else 6f,
+        animationSpec = tween(300),
+        label = "dot_size_animation"
+    )
+
+    val animatedAlpha by animateFloatAsState(
+        targetValue = if (isSelected) 1f else 0.4f,
+        animationSpec = tween(300),
+        label = "dot_alpha_animation"
+    )
+
+    Box(
+        modifier = modifier
+            .size(animatedSize.dp)
+            .background(
+                color = MainPurple.copy(alpha = animatedAlpha),
+                shape = CircleShape
+            )
+    )
 }
 
 @Composable
