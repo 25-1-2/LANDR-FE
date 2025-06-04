@@ -9,5 +9,6 @@ data class GetPlanLectureRoomResponse(
     val teacher: String = "",
     val completedLessons: Int = 0,
     val totalLessons: Int = 0,
+    val studyGroupId: Int = 0,
     val studyGroup: Boolean = false,
 )
