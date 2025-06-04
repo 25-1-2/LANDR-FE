@@ -457,20 +457,42 @@ fun GroupPlanTitleSection(
             }
         }
 
-        // 여기에 프로필 섹션 추가
+        // 프로필 목록
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            getOneStudyGroupResponse.members.forEach { member ->
+            // 먼저 나를 표시
+            val myMember = getOneStudyGroupResponse.members.find { it.planId == planId }
+            myMember?.let { member ->
                 ProfileItem(
-                    name = if (member.planId == planId) "나" else member.userName,
-                    isMe = member.planId == planId,
+                    name = "나",
+                    isMe = true,
                     isCrown = member.userId == getOneStudyGroupResponse.leaderId
                 )
             }
+
+            // 세로 구분선
+            Box(
+                modifier = Modifier
+                    .width(1.dp)
+                    .height(68.dp)
+                    .background(dividerGray)
+            )
+
+            // 나머지 멤버들 표시
+            getOneStudyGroupResponse.members
+                .filter { it.planId != planId }
+                .forEach { member ->
+                    ProfileItem(
+                        name = member.userName,
+                        isMe = false,
+                        isCrown = member.userId == getOneStudyGroupResponse.leaderId
+                    )
+                }
         }
     }
 
