@@ -2,6 +2,7 @@ package com.capston.data.repository.remote.datasourcelmpl
 
 import com.capston.data.repository.remote.api.StudyGroupApi
 import com.capston.domain.datasource.StudyGroupDataSource
+import com.capston.domain.request.JoinStudyGroupDto
 import com.capston.domain.response.MessageResponse
 import com.capston.domain.response.study_group.NewStudyGroupResponse
 import com.capston.domain.response.study_group.OneStudyGroupResponse
@@ -18,7 +19,7 @@ class StudyGroupDataSourceImpl @Inject constructor(
         return studyGroupApi.getOneStudyGroup(studyGroupId)
     }
 
-    override suspend fun postJoinStudyGroup(inviteCode: String): MessageResponse {
-        return studyGroupApi.postJoinStudyGroup(inviteCode)
+    override suspend fun postJoinStudyGroup(joinStudyGroupDto: JoinStudyGroupDto): MessageResponse {
+        return studyGroupApi.postJoinStudyGroup(joinStudyGroupDto)
     }
 }
