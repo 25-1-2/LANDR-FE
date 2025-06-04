@@ -137,7 +137,8 @@ fun GroupPlanScreen(
                         OneDaySection(
                             date = schedule.date,
                             planDetailLessonSchedules = schedule.lessonSchedules,
-                            lectureRoomViewModel = lectureRoomViewModel
+                            lectureRoomViewModel = lectureRoomViewModel,
+                            isReadOnly = selectedPlanId != planId  // 추가: 내 계획이 아니면 읽기 전용
                         )
                     }
                 }

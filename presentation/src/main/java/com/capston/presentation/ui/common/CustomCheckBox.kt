@@ -11,15 +11,23 @@ import androidx.compose.ui.unit.dp
 import com.capston.presentation.R
 
 @Composable
-fun CustomCheckBox(isChecked: Boolean, onCheckedChange: () -> Unit) {
+fun CustomCheckBox(
+    isChecked: Boolean,
+    onCheckedChange: () -> Unit,
+    isReadOnly: Boolean = false  // 추가: 다른 사람 계획 여부
+) {
     IconButton(
-        onClick = onCheckedChange,
+        onClick = if (isReadOnly) { {} } else onCheckedChange,  // 읽기 전용일 때 클릭 비활성화
         modifier = Modifier
-            .size(40.dp) // 이미지 버튼 크기 설정
-            .padding(end = 16.dp) // 이미지와 텍스트 간의 간격 설정
+            .size(40.dp)
+            .padding(end = 16.dp)
     ) {
-        val imageRes = if (isChecked) R.drawable.home_screen_check_on
-        else R.drawable.home_screen_check_off
+        val imageRes = when {
+            isReadOnly && isChecked -> R.drawable.home_screen_check_on_gray  // 회색 체크 이미지
+            isReadOnly && !isChecked -> R.drawable.home_screen_check_off   // 회색 미체크 (또는 다른 회색 이미지)
+            isChecked -> R.drawable.home_screen_check_on
+            else -> R.drawable.home_screen_check_off
+        }
 
         Image(
             painter = painterResource(id = imageRes),
