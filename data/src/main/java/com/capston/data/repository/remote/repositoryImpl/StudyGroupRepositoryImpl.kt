@@ -14,6 +14,6 @@ class StudyGroupRepositoryImpl @Inject constructor(
     ): NewStudyGroupResponse = studyGroupDataSource.postNewStudyGroup(planId)
 
     override suspend fun getOneStudyGroup(
-        groupId: Int
-    ): OneStudyGroupResponse = studyGroupDataSource.getOneStudyGroup(groupId)
+        studyGroupId: Int
+    ): OneStudyGroupResponse = studyGroupDataSource.getOneStudyGroup(studyGroupId)
 }

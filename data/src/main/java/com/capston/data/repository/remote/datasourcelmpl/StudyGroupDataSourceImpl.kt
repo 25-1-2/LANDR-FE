@@ -13,7 +13,7 @@ class StudyGroupDataSourceImpl @Inject constructor(
         return studyGroupApi.postNewStudyGroup(planId)
     }
 
-    override suspend fun getOneStudyGroup(groupId: Int): OneStudyGroupResponse {
-        return studyGroupApi.getOneStudyGroup(groupId)
+    override suspend fun getOneStudyGroup(studyGroupId: Int): OneStudyGroupResponse {
+        return studyGroupApi.getOneStudyGroup(studyGroupId)
     }
 }

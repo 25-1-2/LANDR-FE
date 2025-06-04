@@ -16,8 +16,8 @@ import com.capston.domain.usecase.plan.DeleteOnePlanUseCase
 import com.capston.domain.usecase.plan.GetPlanDetailUseCase
 import com.capston.domain.usecase.plan.GetPlanLectureRoomUseCase
 import com.capston.domain.usecase.plan.PostPlanRescheduleUseCase
+import com.capston.domain.usecase.study_group.GetOneStudyGroupUseCase
 import com.capston.domain.usecase.study_group.PostNewStudyGroupUseCase
-import com.capston.domain.usecase.study_group.getOneStudyGroupUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -34,7 +34,7 @@ class LectureRoomViewModel @Inject constructor(
     private val deleteOnePlanUseCase: DeleteOnePlanUseCase,
     private val patchLessonSchedulesCheckToggleUseCase: PatchLessonSchedulesCheckToggleUseCase,
     private val postNewStudyGroupUseCase: PostNewStudyGroupUseCase,
-    private val getOneStudyGroupUseCase: getOneStudyGroupUseCase,
+    private val getOneStudyGroupUseCase: GetOneStudyGroupUseCase,
     private val loadingStateManager: LoadingStateManager
 ) : ViewModel() {
 

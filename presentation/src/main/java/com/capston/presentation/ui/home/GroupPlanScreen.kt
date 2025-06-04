@@ -46,29 +46,22 @@ import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.rememberLottieComposition
-import com.capston.domain.response.plan.GetPlanDetailResponse
-import com.capston.domain.response.plan.PlanDetailLessonSchedule
-import com.capston.presentation.theme.CapstonTheme
+import com.capston.domain.response.study_group.OneStudyGroupResponse
 import com.capston.presentation.theme.LightGray2
 import com.capston.presentation.theme.MainPurple
 import com.capston.presentation.theme.WarmPurple_20
-import com.capston.presentation.theme.backgroundGray
 import com.capston.presentation.theme.dividerGray
 import com.capston.presentation.theme.materialGray
 import com.capston.presentation.theme.textGray
 import com.capston.presentation.ui.common.CustomCheckBox
-import com.capston.presentation.ui.common.LandrUtil.Companion.formatDateYMDE
 import com.capston.presentation.viewmodel.LectureRoomViewModel
-import com.capston.presentation.viewmodel.PlanViewModel
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun GroupPlanScreen(
     planId: Int,
-    groupId: Int,
+    studyGroupId: Int,
     lectureRoomViewModel: LectureRoomViewModel,
     navController: NavController
 ) {
@@ -78,6 +71,12 @@ fun GroupPlanScreen(
     var showDeleteDropdown by remember { mutableStateOf(false) }
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
+
+    val getOneStudyGroupResponse by lectureRoomViewModel.getOneStudyGroupResponse.collectAsState()
+
+    LaunchedEffect(studyGroupId) {
+        lectureRoomViewModel.getOneStudyGroup(studyGroupId)
+    }
 
 //    val planDetailResponse by lectureRoomViewModel.getPlanDetailResponse.collectAsState()
 //
@@ -109,9 +108,10 @@ fun GroupPlanScreen(
                     .verticalScroll(rememberScrollState())
             ) {
                 GroupPlanTitleSection(
-//                    planId = planId,
-//                    lectureRoomViewModel = lectureRoomViewModel,
-//                    planDetailResponse = planDetailResponse,
+                    planId = planId,
+                    studyGroupId = studyGroupId,
+                    lectureRoomViewModel = lectureRoomViewModel,
+                    getOneStudyGroupResponse = getOneStudyGroupResponse,
                     coroutineScope = coroutineScope,
                     isLoading = isLoading,
                     onLoadingChange = { isLoading = it }
@@ -339,9 +339,10 @@ fun GroupPlanTopBar(
 
 @Composable
 fun GroupPlanTitleSection(
-//    planId: Int,
-//    lectureRoomViewModel: LectureRoomViewModel,
-//    planDetailResponse: GetPlanDetailResponse,
+    planId: Int,
+    studyGroupId: Int,
+    lectureRoomViewModel: LectureRoomViewModel,
+    getOneStudyGroupResponse: OneStudyGroupResponse,
     coroutineScope: CoroutineScope,
     isLoading: Boolean,
     onLoadingChange: (Boolean) -> Unit
@@ -366,12 +367,12 @@ fun GroupPlanTitleSection(
                     .weight(10f),
             ) {
                 Text(
-                    text = "수분감의 아이들 안녕하세요 헬롱 (#0000)",//planDetailResponse.lectureTitle,
+                    text = "${getOneStudyGroupResponse.name} (#${getOneStudyGroupResponse.inviteCode})",
                     style = MaterialTheme.typography.headlineSmall,
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
                 Text(
-                    text = "2026 현우진의 수분감 - 수학I (공통)",//planDetailResponse.lectureTitle,
+                    text = getOneStudyGroupResponse.lectureName,
                     style = MaterialTheme.typography.bodyMedium,
                     color = textGray
                 )
@@ -463,11 +464,13 @@ fun GroupPlanTitleSection(
                 .horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // 프로필 아이템들 (나, 👑전환휘, 조은채, 조익현)
-            ProfileItem(name = "나", isMe = true)
-            ProfileItem(name = "전환휘", isCrown = true)
-            ProfileItem(name = "조은채")
-            ProfileItem(name = "조익현")
+            getOneStudyGroupResponse.members.forEach { member ->
+                ProfileItem(
+                    name = if (member.planId == planId) "나" else member.userName,
+                    isMe = member.planId == planId,
+                    isCrown = member.userId == getOneStudyGroupResponse.leaderId
+                )
+            }
         }
     }
 

@@ -11,6 +11,6 @@ interface StudyGroupDataSource {
 
     // 스터디그룹 조회
     suspend fun getOneStudyGroup(
-        groupId: Int,
+        studyGroupId: Int,
     ): OneStudyGroupResponse
 }
