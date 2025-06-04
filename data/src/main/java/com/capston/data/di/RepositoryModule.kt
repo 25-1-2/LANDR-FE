@@ -195,4 +195,22 @@ object RepositoryModule {
     ): RecommendationRepository {
         return RecommendationRepositoryImpl(recommendationStorage)
     }
+    fun provideStudyGroupDataSource(
+        studyGroupApi: StudyGroupApi
+    ): StudyGroupDataSource {
+        return StudyGroupDataSourceImpl(studyGroupApi)
+    }
+
+    @Provides
+    @Singleton
+    fun provideStudyGroupRepository(studyGroupDataSource: StudyGroupDataSource): StudyGroupRepository =
+        StudyGroupRepositoryImpl(studyGroupDataSource)
+
+    @Provides
+    @Singleton
+    fun provideRecommendationRepository(
+        recommendationStorage: RecommendationStorage
+    ): RecommendationRepository {
+        return RecommendationRepositoryImpl(recommendationStorage)
+    }
 }
