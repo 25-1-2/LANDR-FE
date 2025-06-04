@@ -44,6 +44,8 @@ import com.capston.domain.response.recommend.RecommendResponse
 import com.capston.presentation.R
 import com.capston.presentation.theme.MainPurple
 import com.capston.presentation.theme.textGray
+import com.capston.presentation.ui.search.bgColor
+import com.capston.presentation.ui.search.borderColor
 
 @Composable
 fun StudyPlanCompleteScreen(
@@ -176,7 +178,7 @@ fun StudyPlanCompleteScreen(
             shape = RoundedCornerShape(20.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = if (isAllRecommendationsComplete && recommendResponses.isNotEmpty())
-                    MainPurple else MainPurple.copy(alpha = 0.5f),
+                    MainPurple else Color.LightGray,
                 disabledContainerColor = MainPurple.copy(alpha = 0.5f)
             ),
             modifier = Modifier
@@ -186,7 +188,7 @@ fun StudyPlanCompleteScreen(
         ) {
             Text(
                 text = if (isAllRecommendationsComplete && recommendResponses.isNotEmpty())
-                    "시작하기" else "분석 중...",
+                    "시작하기" else "강의를 분석하고 있어요",
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Medium,
                 color = Color.White
@@ -285,7 +287,7 @@ private fun SubjectHeader(
         Box(
             modifier = Modifier
                 .background(
-                    color = MainPurple.copy(alpha = 0.1f),
+                    color = subject.bgColor,
                     shape = RoundedCornerShape(12.dp)
                 )
                 .padding(horizontal = 12.dp, vertical = 6.dp)
@@ -294,7 +296,7 @@ private fun SubjectHeader(
                 text = subject.label,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = MainPurple
+                color = subject.borderColor
             )
         }
     }
@@ -315,7 +317,7 @@ private fun RecommendedCourseItem(
                 modifier = Modifier
                     .size(70.dp)
                     .background(
-                        color = MainPurple.copy(alpha = 0.1f),
+                        color = recommendResponse.subject.bgColor,
                         shape = RoundedCornerShape(12.dp)
                     ),
                 contentAlignment = Alignment.Center
