@@ -2,6 +2,7 @@ package com.capston.data.repository.remote.api
 
 import com.capston.domain.response.study_group.NewStudyGroupResponse
 import com.capston.domain.response.study_group.OneStudyGroupResponse
+import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Path
 
@@ -13,7 +14,7 @@ interface StudyGroupApi {
     ): NewStudyGroupResponse
 
     // 스터디그룹 조회
-    @POST("/v1/study-groups/{studyGroupId}")
+    @GET("/v1/study-groups/{studyGroupId}")
     suspend fun getOneStudyGroup(
         @Path("studyGroupId") studyGroupId: Int,
     ): OneStudyGroupResponse
