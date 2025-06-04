@@ -78,12 +78,6 @@ object ApiModule {
 
     @Provides
     @Singleton
-    fun provideRecommendServer(
-        @MainRetrofit retrofit: Retrofit
-    ) : RecommendApi = retrofit.create(RecommendApi::class.java)
-
-    @Provides
-    @Singleton
     fun provideStudyGroupServer(
         @MainRetrofit retrofit: Retrofit
     ) : StudyGroupApi = retrofit.create(StudyGroupApi::class.java)

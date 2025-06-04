@@ -90,6 +90,7 @@ fun AppNavHost(
             SubjectGradeScreen(
                 onSetupComplete = { subjectGrades ->
                     onboardingDataViewModel.updateSubjectGrades(subjectGrades)
+                    // LearningPreferenceScreen을 건너뛰고 바로 완료 화면으로 이동
                     navController.navigate("onboarding-finish")
                 }
             )
