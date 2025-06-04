@@ -302,9 +302,11 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel, recom
                     // 추천 강의 카드 (수정된 부분)
                     RecommendedCoursesCard(
                         recommendResponses = recommendResponses,
+                        navController = navController,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(16.dp)
+                            .padding(16.dp),
+                        context = context
                     )
                 }
             }
@@ -1991,7 +1993,9 @@ fun DeleteCompleteDialog(
 @Composable
 fun RecommendedCoursesCard(
     recommendResponses: List<RecommendResponse>,
-    modifier: Modifier = Modifier
+    navController: NavController,
+    modifier: Modifier = Modifier,
+    context: Context
 ) {
     Column(
         modifier = Modifier
@@ -2007,7 +2011,9 @@ fun RecommendedCoursesCard(
             // 추천 강의가 있는 경우
             RecommendedCoursesList(
                 recommendResponses = recommendResponses,
-                modifier = Modifier.fillMaxWidth()
+                navController = navController,
+                modifier = Modifier.fillMaxWidth(),
+                context = context
             )
         } else {
             // 추천 강의가 없는 경우
@@ -2031,12 +2037,12 @@ fun RecommendedCoursesHeader() {
     }
 }
 
-// RecommendedCoursesList 함수를 다음과 같이 완전히 수정하세요:
-
 @Composable
 fun RecommendedCoursesList(
     recommendResponses: List<RecommendResponse>,
-    modifier: Modifier = Modifier
+    navController: NavController,
+    modifier: Modifier = Modifier,
+    context: Context
 ) {
     if (recommendResponses.isEmpty()) {
         EmptyRecommendationsState()
@@ -2067,10 +2073,12 @@ fun RecommendedCoursesList(
             itemsIndexed(recommendResponses) { index, recommendation ->
                 SingleRecommendationCard(
                     recommendation = recommendation,
+                    navController = navController,
                     modifier = Modifier
                         .fillParentMaxWidth() // 전체 너비 사용
                         .fillMaxHeight()
-                        .padding(horizontal = 16.dp)
+                        .padding(horizontal = 16.dp),
+                    context = context
                 )
             }
         }
@@ -2094,10 +2102,25 @@ fun RecommendedCoursesList(
 @Composable
 fun SingleRecommendationCard(
     recommendation: RecommendResponse,
-    modifier: Modifier = Modifier
+    navController: NavController,
+    modifier: Modifier = Modifier,
+    context: Context
 ) {
     Card(
-        modifier = modifier,
+        modifier = modifier
+            .clickable {
+                // SearchActivity로 이동하면서 lectureId 전달
+                val intent = Intent(context, SearchActivity::class.java).apply {
+                    putExtra("LECTURE_ID", recommendation.id)
+                    putExtra("FROM_RECOMMENDATION", true)
+                    putExtra("LECTURE_TITLE", recommendation.title)
+                    putExtra("LECTURE_TEACHER", recommendation.teacher)
+                    putExtra("LECTURE_PLATFORM", recommendation.platform.label)
+                    putExtra("LECTURE_SUBJECT", recommendation.subject.label)
+                    //putExtra("LECTURE_TOTAL_LESSONS", recommendation. ?: 0)
+                }
+                context.startActivity(intent)
+            },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         border = BorderStroke(1.dp, color = LightGray60.copy(alpha = 0.3f)),
