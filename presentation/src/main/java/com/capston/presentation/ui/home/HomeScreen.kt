@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -1359,9 +1360,10 @@ fun OnlineLectureSiteList(context: Context) {
     // 인강 사이트 패키지명
     val etoosPackageName = stringResource(R.string.package_etoos)
     val megaPackageName = stringResource(R.string.package_megastudy)
-    val mimacPackageName = stringResource(R.string.package_mimac)
+    val daesungPackageName = stringResource(R.string.package_mimac)
+    val ebsiPackageName = stringResource(R.string.package_ebsi)
 
-    // 사이트 목록
+    // 사이트 목록을 2x2 그리드로 배치
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -1369,36 +1371,74 @@ fun OnlineLectureSiteList(context: Context) {
         verticalArrangement = Arrangement.spacedBy(8.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // 각 사이트 카드
-        OnlineLectureSiteItem(stringResource(R.string.etoos), etoosPackageName, context)
-        OnlineLectureSiteItem(stringResource(R.string.megastudy), megaPackageName, context)
-        OnlineLectureSiteItem(stringResource(R.string.mimac), mimacPackageName, context)
+        // 첫 번째 행: 이투스, 메가
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            OnlineLectureSiteItem(
+                name = stringResource(R.string.etoos),
+                packageName = etoosPackageName,
+                context = context,
+                modifier = Modifier.weight(1f)
+            )
+            OnlineLectureSiteItem(
+                name = stringResource(R.string.megastudy),
+                packageName = megaPackageName,
+                context = context,
+                modifier = Modifier.weight(1f)
+            )
+        }
+
+        // 두 번째 행: 대성, ebsi
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            OnlineLectureSiteItem(
+                name = stringResource(R.string.mimac),
+                packageName = daesungPackageName,
+                context = context,
+                modifier = Modifier.weight(1f)
+            )
+            OnlineLectureSiteItem(
+                name = stringResource(R.string.ebsi),
+                packageName = ebsiPackageName,
+                context = context,
+                modifier = Modifier.weight(1f)
+            )
+        }
     }
 }
 
 @Composable
-fun OnlineLectureSiteItem(name: String, packageName: String, context: Context) {
+fun OnlineLectureSiteItem(
+    name: String,
+    packageName: String,
+    context: Context,
+    modifier: Modifier = Modifier
+) {
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
+        modifier = modifier
+            .height(48.dp) // 정사각형으로 만들기
             .clickable { openAppOrPlayStore(context, packageName) },
         colors = CardDefaults.cardColors(containerColor = WarmPurple_20.copy(alpha = 0.2f)),
         border = BorderStroke(1.dp, WarmPurple),
         shape = RoundedCornerShape(8.dp),
     ) {
-        Row(
+        Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
+                .fillMaxSize()
+                .padding(12.dp),
+            contentAlignment = Alignment.Center
         ) {
             Text(
                 text = name,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Medium,
                 style = MaterialTheme.typography.headlineMedium,
-                color = MainPurple
+                color = MainPurple,
+                textAlign = TextAlign.Center
             )
         }
     }
