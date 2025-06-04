@@ -1,5 +1,6 @@
 package com.capston.domain.datasource
 
+import com.capston.domain.request.JoinStudyGroupDto
 import com.capston.domain.response.MessageResponse
 import com.capston.domain.response.study_group.NewStudyGroupResponse
 import com.capston.domain.response.study_group.OneStudyGroupResponse
@@ -17,6 +18,6 @@ interface StudyGroupDataSource {
 
     // 스터디그룹 가입
     suspend fun postJoinStudyGroup(
-        inviteCode: String,
+        joinStudyGroupDto: JoinStudyGroupDto
     ): MessageResponse
 }

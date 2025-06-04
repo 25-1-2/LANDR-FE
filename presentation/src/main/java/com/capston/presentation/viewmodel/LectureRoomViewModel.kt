@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.capston.domain.manager.LoadingStateManager
+import com.capston.domain.request.JoinStudyGroupDto
 import com.capston.domain.response.plan.GetPlanLectureRoomResponse
 import com.capston.domain.response.CheckResponse
 import com.capston.domain.response.MessageResponse
@@ -66,9 +67,6 @@ class LectureRoomViewModel @Inject constructor(
 
     // HomeViewModel과의 동기화를 위한 콜백
     var onDataChanged: (() -> Unit)? = null
-
-    // 스낵바 표시용 콜백 - UI에서 설정할 함수
-    var onShowSnackbar: ((String) -> Unit)? = null
 
     fun getPlanLectureRoom() {
         viewModelScope.launch {
@@ -180,10 +178,10 @@ class LectureRoomViewModel @Inject constructor(
         }
     }
 
-    fun postJoinStudyGroup(inviteCode: String) {
+    fun postJoinStudyGroup(joinStudyGroupDto: JoinStudyGroupDto) {
         viewModelScope.launch {
             try {
-                postJoinStudyGroupUseCase(inviteCode).collect { response ->
+                postJoinStudyGroupUseCase(joinStudyGroupDto).collect { response ->
                     _postJoinStudyGroupResponse.value = response
                     Log.d("LectureRoomViewModel", "스터디그룹 가입 완료: $response")
                 }

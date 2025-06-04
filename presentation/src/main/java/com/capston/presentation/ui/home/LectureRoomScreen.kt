@@ -19,20 +19,28 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -44,6 +52,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.capston.domain.request.JoinStudyGroupDto
 import com.capston.domain.response.plan.GetPlanLectureRoomResponse
 import com.capston.presentation.R
 import com.capston.presentation.theme.LightGray2
@@ -63,31 +72,45 @@ fun LectureRoomScreen(
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
-    val snackbarHostState = remember { SnackbarHostState() }
+    var showInviteDialog by remember { mutableStateOf(false) }
+    var inviteCode by remember { mutableStateOf("") }
 
     val lectures by lectureRoomViewModel.getPlanLectureRoomResponse.collectAsState()
+    val joinResponse by lectureRoomViewModel.postJoinStudyGroupResponse.collectAsState()
 
     // 화면이 처음 표시될 때 데이터를 로드
     LaunchedEffect(Unit) {
         lectureRoomViewModel.getPlanLectureRoom()
     }
 
-    // ViewModel에 스낵바 콜백 설정
-    LaunchedEffect(lectureRoomViewModel) {
-        lectureRoomViewModel.onShowSnackbar = { message ->
-            coroutineScope.launch {
-                snackbarHostState.showSnackbar(message)
-            }
+    // 스터디그룹 가입 성공 감지
+    LaunchedEffect(joinResponse) {
+        if (joinResponse.message.isNotEmpty()) {
+            lectureRoomViewModel.getPlanLectureRoom() // 목록 새로고침
+            showInviteDialog = false
+            inviteCode = ""
         }
     }
 
+
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             LectureRoomTopBar(
                 hasUnreadNotifications = true,
                 onNotificationClick = onNotificationClick
             )
+        },
+        floatingActionButton = {  // 이 부분 추가
+            FloatingActionButton(
+                onClick = { showInviteDialog = true },
+                containerColor = MainPurple,
+                contentColor = Color.White
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "스터디그룹 가입"
+                )
+            }
         }
     ) { innerPadding ->
         if (lectures.isEmpty()) {
@@ -122,6 +145,26 @@ fun LectureRoomScreen(
                 }
             }
         }
+
+        if (showInviteDialog) {
+            InviteCodeDialog(
+                inviteCode = inviteCode,
+                onInviteCodeChange = { inviteCode = it },
+                onConfirm = {
+                    if (inviteCode.isNotEmpty()) {
+                        // 초대코드를 DTO에 담아서 전달
+                        lectureRoomViewModel.postJoinStudyGroup(
+                            JoinStudyGroupDto(inviteCode = inviteCode)
+                        )
+                    }
+                },
+                onDismiss = {
+                    showInviteDialog = false
+                    inviteCode = ""
+                }
+            )
+        }
+
     }
 }
 
@@ -353,6 +396,54 @@ fun StatusChip(status: String, isCompleted: Boolean) {
     ) {
         Text(text = status, color = textColor, style = MaterialTheme.typography.labelSmall)
     }
+}
+
+@Composable
+fun InviteCodeDialog(
+    inviteCode: String,
+    onInviteCodeChange: (String) -> Unit,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = "스터디그룹 가입",
+                style = Typography.titleMedium
+            )
+        },
+        text = {
+            Column {
+                Text(
+                    text = "초대코드를 입력해주세요",
+                    style = Typography.bodyMedium,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+                OutlinedTextField(
+                    value = inviteCode,
+                    onValueChange = onInviteCodeChange,
+                    label = { Text("초대코드") },
+                    placeholder = { Text("초대코드를 입력하세요") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = onConfirm,
+                enabled = inviteCode.isNotEmpty()
+            ) {
+                Text("확인", color = MainPurple)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("취소", color = textGray)
+            }
+        }
+    )
 }
 
 //@Preview(showBackground = true)

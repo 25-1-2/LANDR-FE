@@ -232,8 +232,6 @@ fun PlanDetailScreen(
                         TextButton(
                             onClick = {
                                 showGroupCodeDialog = false
-                                // 이전 화면으로 돌아가면서 스낵바 표시
-                                lectureRoomViewModel.onShowSnackbar?.invoke("그룹 생성이 완료되었습니다")
                                 navController.popBackStack()
                             }
                         ) {
