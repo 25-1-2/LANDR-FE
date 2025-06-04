@@ -36,7 +36,7 @@ import com.capston.presentation.theme.MainPurple
 import com.capston.presentation.theme.textGray
 
 @Composable
-fun SchoolYearScreen(onSetupComplete: () -> Unit) {
+fun SchoolYearScreen(onSetupComplete: (String) -> Unit) {
     var selectedGrade by remember { mutableStateOf<String?>(null) }
 
     val gradeOptions = listOf(
@@ -116,9 +116,13 @@ fun SchoolYearScreen(onSetupComplete: () -> Unit) {
             }
         }
 
-        // 하단 다음 버튼
+        // 하단 다음 버튼 부분 수정:
         Button(
-            onClick = onSetupComplete,
+            onClick = {
+                selectedGrade?.let { grade ->
+                    onSetupComplete(grade) // 선택된 학년을 콜백으로 전달
+                }
+            },
             enabled = selectedGrade != null,
             shape = RoundedCornerShape(20.dp),
             colors = ButtonDefaults.buttonColors(

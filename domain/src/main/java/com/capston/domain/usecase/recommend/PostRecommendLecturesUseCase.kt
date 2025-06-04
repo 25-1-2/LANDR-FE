@@ -12,7 +12,7 @@ import javax.inject.Inject
 class PostRecommendLecturesUseCase @Inject constructor(
     private val recommendRepository: RecommendRepository
 ) {
-    operator fun invoke(recommendDto: RecommendDto): Flow<RecommendResponse> = flow {
+    operator fun invoke(recommendDto: RecommendDto): Flow<List<RecommendResponse>> = flow {
         val response = recommendRepository.postRecommendLectures(recommendDto)
         emit(response)
     }

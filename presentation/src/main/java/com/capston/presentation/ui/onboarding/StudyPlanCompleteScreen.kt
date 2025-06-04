@@ -16,9 +16,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,29 +33,18 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.capston.domain.response.recommend.RecommendResponse
 import com.capston.presentation.R
-import com.capston.presentation.theme.CapstonTheme
 import com.capston.presentation.theme.MainPurple
 import com.capston.presentation.theme.textGray
 
-data class RecommendedCourse(
-    val title: String,
-    val instructor: String,
-    val duration: String,
-    val level: String
-)
-
 @Composable
-fun StudyPlanCompleteScreen(onStartLearning: () -> Unit) {
-    val recommendedCourses = listOf(
-        RecommendedCourse("수학 미적분 집중강의", "김수학 선생님", "3개월", "고3"),
-        RecommendedCourse("영어 문법 완전정복", "박영어 선생님", "2개월", "고2-3"),
-        RecommendedCourse("한국사 필수개념 정리", "이역사 선생님", "1개월", "고등")
-    )
-
+fun StudyPlanCompleteScreen(
+    recommendResponses: List<RecommendResponse>, // 단일 객체 -> 리스트로 변경
+    onStartLearning: () -> Unit
+) {
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -86,7 +80,7 @@ fun StudyPlanCompleteScreen(onStartLearning: () -> Unit) {
             Spacer(modifier = Modifier.height(12.dp))
 
             Text(
-                text = "목표 도달까지 5달 걸릴 것으로 예상돼요",
+                text = "맞춤형 강의 추천을 확인해보세요",
                 style = MaterialTheme.typography.bodyLarge,
                 textAlign = TextAlign.Center,
                 color = textGray,
@@ -95,45 +89,48 @@ fun StudyPlanCompleteScreen(onStartLearning: () -> Unit) {
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // 목표 달성 날짜
-            Text(
-                text = "6월 9일이면 목표 등급을 달성할거예요",
-                style = MaterialTheme.typography.titleMedium,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = MainPurple
-            )
+            // 추천 강의가 있는 경우
+            if (recommendResponses.isNotEmpty()) {
+                // 추천 강의 개수 표시
+                Text(
+                    text = "${recommendResponses.size}개의 맞춤형 강의를 찾았어요!",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MainPurple
+                )
 
-            Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
-            // 진행률 그래프
-            ProgressGraph(
-                progress = 0.2f, // 20% 진행
-                modifier = Modifier.fillMaxWidth()
-            )
+                // 추천 강의 목록 (스크롤 가능)
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    items(recommendResponses) { recommend ->
+                        RecommendedCourseCard(recommendResponse = recommend)
+                    }
+                }
+            } else {
+                // 로딩 상태 또는 추천 강의가 없는 경우
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(48.dp),
+                        color = MainPurple
+                    )
 
-            Spacer(modifier = Modifier.height(32.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
 
-            // 강의 추천 섹션
-            Text(
-                text = "나에게 맞는 강의를 추천해드려요",
-                style = MaterialTheme.typography.titleMedium,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = MainPurple,
-                modifier = Modifier.fillMaxWidth(),
-                textAlign = TextAlign.Start
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // 추천 강의 카드들
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                items(recommendedCourses) { course ->
-                    CourseRecommendationCard(course = course)
+                    Text(
+                        text = "맞춤형 강의를 찾고 있어요...",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = textGray
+                    )
                 }
             }
         }
@@ -161,217 +158,170 @@ fun StudyPlanCompleteScreen(onStartLearning: () -> Unit) {
 }
 
 @Composable
-private fun ProgressGraph(
-    progress: Float,
-    modifier: Modifier = Modifier
-) {
-    Box(
-        modifier = modifier
-            .background(
-                color = Color.LightGray.copy(alpha = 0.1f),
-                shape = RoundedCornerShape(12.dp)
-            )
-            .padding(20.dp)
+private fun RecommendedCourseCard(recommendResponse: RecommendResponse) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White
+        ),
+        border = androidx.compose.foundation.BorderStroke(
+            width = 1.dp,
+            color = Color.LightGray
+        )
     ) {
-        Column {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(60.dp)
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.Top
             ) {
-                // 진행률 바
+                // 강의 이미지 플레이스홀더
                 Box(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .height(6.dp)
+                        .size(80.dp)
                         .background(
-                            color = Color.LightGray.copy(alpha = 0.3f),
-                            shape = RoundedCornerShape(3.dp)
-                        )
-                        .align(Alignment.Center)
+                            color = MainPurple.copy(alpha = 0.1f),
+                            shape = RoundedCornerShape(8.dp)
+                        ),
+                    contentAlignment = Alignment.Center
                 ) {
-                    // 진행된 부분
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth(progress)
-                            .height(6.dp)
-                            .background(
-                                color = MainPurple,
-                                shape = RoundedCornerShape(3.dp)
-                            )
+                    Text(
+                        text = when (recommendResponse.subject.label) {
+                            "국어" -> "📖"
+                            "영어" -> "🔤"
+                            "수학" -> "📊"
+                            "사탐" -> "🌍"
+                            "과탐" -> "🔬"
+                            "한국사" -> "📜"
+                            else -> "📚"
+                        },
+                        fontSize = 32.sp
                     )
                 }
 
-                // 역삼각형과 세로 점선
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(60.dp)
+                Spacer(modifier = Modifier.width(16.dp))
+
+                // 강의 정보
+                Column(
+                    modifier = Modifier.weight(1f)
                 ) {
-                    val progressOffset = progress - 0.02f
+                    Text(
+                        text = recommendResponse.title,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black
+                    )
 
-                    // 역삼각형
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .align(Alignment.TopCenter)
-                    ) {
-                        Spacer(modifier = Modifier.fillMaxWidth(progressOffset))
-                        Text(
-                            text = "▼",
-                            color = MainPurple,
-                            fontSize = 16.sp,
-                            modifier = Modifier.padding(top = 8.dp)
-                        )
-                    }
+                    Spacer(modifier = Modifier.height(6.dp))
 
-                    // 세로 점선
+                    Text(
+                        text = recommendResponse.teacher,
+                        fontSize = 14.sp,
+                        color = textGray
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // 추천 점수와 플랫폼 정보
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .align(Alignment.TopCenter)
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Spacer(modifier = Modifier.fillMaxWidth(progress - 0.005f))
-                        Column(
-                            verticalArrangement = Arrangement.spacedBy(2.dp),
-                            modifier = Modifier.padding(top = 30.dp)
-                        ) {
-                            repeat(8) {
-                                Box(
-                                    modifier = Modifier
-                                        .width(2.dp)
-                                        .height(2.dp)
-                                        .background(
-                                            color = MainPurple.copy(alpha = 0.6f),
-                                            shape = RoundedCornerShape(1.dp)
-                                        )
+                        // 추천 점수
+                        Box(
+                            modifier = Modifier
+                                .background(
+                                    color = MainPurple,
+                                    shape = RoundedCornerShape(12.dp)
                                 )
-                            }
+                                .padding(horizontal = 8.dp, vertical = 4.dp)
+                        ) {
+                            Text(
+                                text = "${recommendResponse.recommendScore.toInt()}점",
+                                fontSize = 12.sp,
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        // 플랫폼
+                        Box(
+                            modifier = Modifier
+                                .background(
+                                    color = MainPurple.copy(alpha = 0.1f),
+                                    shape = RoundedCornerShape(12.dp)
+                                )
+                                .padding(horizontal = 8.dp, vertical = 4.dp)
+                        ) {
+                            Text(
+                                text = recommendResponse.platform.label,
+                                fontSize = 12.sp,
+                                color = MainPurple,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        // 난이도
+                        Box(
+                            modifier = Modifier
+                                .border(
+                                    width = 1.dp,
+                                    color = Color.LightGray,
+                                    shape = RoundedCornerShape(12.dp)
+                                )
+                                .padding(horizontal = 8.dp, vertical = 4.dp)
+                        ) {
+                            Text(
+                                text = recommendResponse.difficulty,
+                                fontSize = 12.sp,
+                                color = textGray
+                            )
                         }
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            // 추천 이유
+            if (recommendResponse.recommendReason.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(12.dp))
 
-            // 진행률 텍스트
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = "현재 등급",
-                    fontSize = 12.sp,
-                    color = textGray,
-                    fontWeight = FontWeight.Medium
-                )
-                Text(
-                    text = "목표 등급",
-                    fontSize = 12.sp,
-                    color = textGray,
-                    fontWeight = FontWeight.Medium
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun CourseRecommendationCard(course: RecommendedCourse) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(
-                color = Color.White,
-                shape = RoundedCornerShape(12.dp)
-            )
-            .border(
-                width = 1.dp,
-                color = Color.LightGray,
-                shape = RoundedCornerShape(12.dp)
-            )
-            .padding(16.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // 강의 이미지 플레이스홀더
-            Box(
-                modifier = Modifier
-                    .size(60.dp)
-                    .background(
-                        color = MainPurple.copy(alpha = 0.1f),
-                        shape = RoundedCornerShape(8.dp)
-                    )
-            ) {
-                Text(
-                    text = "📚",
-                    fontSize = 24.sp,
-                    modifier = Modifier.align(Alignment.Center)
-                )
-            }
-
-            Spacer(modifier = Modifier.width(16.dp))
-
-            // 강의 정보
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
-                Text(
-                    text = course.title,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Color.Black
-                )
-
-                Spacer(modifier = Modifier.height(4.dp))
-
-                Text(
-                    text = course.instructor,
-                    fontSize = 14.sp,
-                    color = textGray
-                )
-
-                Spacer(modifier = Modifier.height(4.dp))
-
-                Row {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Text(
-                        text = course.duration,
-                        fontSize = 12.sp,
-                        color = MainPurple,
-                        modifier = Modifier
-                            .background(
-                                color = MainPurple.copy(alpha = 0.1f),
-                                shape = RoundedCornerShape(4.dp)
-                            )
-                            .padding(horizontal = 8.dp, vertical = 2.dp)
+                        text = "💡",
+                        fontSize = 16.sp
                     )
 
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
 
                     Text(
-                        text = course.level,
-                        fontSize = 12.sp,
-                        color = textGray,
-                        modifier = Modifier
-                            .border(
-                                width = 1.dp,
-                                color = Color.LightGray,
-                                shape = RoundedCornerShape(4.dp)
-                            )
-                            .padding(horizontal = 8.dp, vertical = 2.dp)
+                        text = recommendResponse.recommendReason,
+                        fontSize = 13.sp,
+                        color = Color.Gray,
+                        lineHeight = 18.sp
                     )
                 }
             }
-        }
-    }
-}
 
-@Preview(showBackground = true)
-@Composable
-fun StudyPlanCompleteScreenPreview() {
-    CapstonTheme {
-        StudyPlanCompleteScreen(onStartLearning = {})
+            // 강의 설명
+            if (recommendResponse.description.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    text = recommendResponse.description,
+                    fontSize = 13.sp,
+                    color = Color.Gray,
+                    lineHeight = 18.sp
+                )
+            }
+        }
     }
 }

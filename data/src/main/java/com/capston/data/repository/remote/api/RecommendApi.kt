@@ -10,5 +10,5 @@ interface RecommendApi {
     @POST("/v1/lectures/recommend")
     suspend fun postRecommendLectures(
         @Body recommendDto: RecommendDto
-    ): RecommendResponse
+    ): List<RecommendResponse>
 }

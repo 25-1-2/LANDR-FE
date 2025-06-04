@@ -4,5 +4,5 @@ import com.capston.domain.request.RecommendDto
 import com.capston.domain.response.recommend.RecommendResponse
 
 interface RecommendRepository {
-    suspend fun postRecommendLectures(recommendDto: RecommendDto): RecommendResponse
+    suspend fun postRecommendLectures(recommendDto: RecommendDto): List<RecommendResponse>
 }

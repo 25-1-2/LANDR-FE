@@ -6,5 +6,5 @@ import com.capston.domain.response.recommend.RecommendResponse
 interface RecommendDataSource {
     suspend fun postRecommendLectures(
         recommendDto: RecommendDto
-    ): RecommendResponse
+    ): List<RecommendResponse>
 }

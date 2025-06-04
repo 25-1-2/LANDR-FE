@@ -24,8 +24,8 @@ class RecommendViewModel @Inject constructor(
     private val postRecommendLecturesUseCase: PostRecommendLecturesUseCase,
     private val loadingStateManager: LoadingStateManager
 ) : ViewModel() {
-    private val _postRecommendLectures = MutableStateFlow(RecommendResponse())
-    val postRecommendLectures: StateFlow<RecommendResponse> = _postRecommendLectures.asStateFlow()
+    private val _postRecommendLectures = MutableStateFlow<List<RecommendResponse>>(emptyList())
+    val postRecommendLectures: StateFlow<List<RecommendResponse>> = _postRecommendLectures.asStateFlow()
 
     fun postRecommendLectures(recommendDto: RecommendDto) {
         viewModelScope.launch {

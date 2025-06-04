@@ -9,7 +9,7 @@ import javax.inject.Inject
 class RecommendDataSourceImpl @Inject constructor(
     private val recommendApi: RecommendApi
 ): RecommendDataSource {
-    override suspend fun postRecommendLectures(recommendDto: RecommendDto): RecommendResponse {
+    override suspend fun postRecommendLectures(recommendDto: RecommendDto): List<RecommendResponse> {
         return recommendApi.postRecommendLectures(recommendDto)
     }
 }
