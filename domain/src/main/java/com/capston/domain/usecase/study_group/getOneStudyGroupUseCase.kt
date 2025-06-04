@@ -6,11 +6,11 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 
-class getOneStudyGroupUseCase @Inject constructor(
+class GetOneStudyGroupUseCase @Inject constructor(
     private val repository: StudyGroupRepository
 ) {
-    operator fun invoke(groupId: Int): Flow<OneStudyGroupResponse> = flow {
-        val response = repository.getOneStudyGroup(groupId)
+    operator fun invoke(studyGroupId: Int): Flow<OneStudyGroupResponse> = flow {
+        val response = repository.getOneStudyGroup(studyGroupId)
         emit(response)
     }
 }

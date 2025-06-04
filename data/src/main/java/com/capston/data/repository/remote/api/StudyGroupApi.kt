@@ -13,8 +13,8 @@ interface StudyGroupApi {
     ): NewStudyGroupResponse
 
     // 스터디그룹 조회
-    @POST("/v1/study-groups/plans/{planId}")
+    @POST("/v1/study-groups/{studyGroupId}")
     suspend fun getOneStudyGroup(
-        @Path("groupId") groupId: Int,
+        @Path("studyGroupId") studyGroupId: Int,
     ): OneStudyGroupResponse
 }

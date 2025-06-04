@@ -381,17 +381,17 @@ fun MainBottomBar(
                     )
                 }
                 composable(
-                    route = "${Screen.GroupPlan.title}/{groupId}/{planId}",
+                    route = "${Screen.GroupPlan.title}/{studyGroupId}/{planId}",
                     arguments = listOf(
                         navArgument("planId") { type = NavType.IntType },
-                        navArgument("groupId") { type = NavType.IntType }
+                        navArgument("studyGroupId") { type = NavType.IntType }
                     )
                 ) { backStackEntry ->
                     val planId = backStackEntry.arguments?.getInt("planId") ?: 0
-                    val groupId = backStackEntry.arguments?.getInt("groupId") ?: 0
+                    val studyGroupId = backStackEntry.arguments?.getInt("studyGroupId") ?: 0
                     GroupPlanScreen(
                         planId = planId,
-                        groupId = groupId,
+                        studyGroupId = studyGroupId,
                         lectureRoomViewModel = lectureRoomViewModel,
                         navController = navController,
                     )
