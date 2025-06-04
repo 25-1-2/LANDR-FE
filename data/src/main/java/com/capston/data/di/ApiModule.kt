@@ -9,6 +9,7 @@ import com.capston.data.repository.remote.api.LectureApi
 import com.capston.data.repository.remote.api.LoginApi
 import com.capston.data.repository.remote.api.MyPageApi
 import com.capston.data.repository.remote.api.PlanApi
+import com.capston.data.repository.remote.api.RecommendApi
 import com.capston.data.repository.remote.api.StudyGroupApi
 import com.capston.data.repository.remote.api.RecommendApi
 import com.capston.data.repository.remote.api.StudyGroupApi
@@ -73,6 +74,12 @@ object ApiModule {
     fun provideMyPageServer(
         @MainRetrofit retrofit: Retrofit
     ) : MyPageApi = retrofit.create(MyPageApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideRecommendServer(
+        @MainRetrofit retrofit: Retrofit
+    ) : RecommendApi = retrofit.create(RecommendApi::class.java)
 
     @Provides
     @Singleton
