@@ -9,8 +9,12 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -62,6 +66,10 @@ fun AppNavHost(
     val onboardingData by onboardingDataViewModel.onboardingData.collectAsState()
     val recommendResponses by recommendViewModel.postRecommendLectures.collectAsState()
 
+    // 완료 상태 관리
+    var isAllComplete by remember { mutableStateOf(false) }
+    var expectedSubjectCount by remember { mutableStateOf(0) }
+
     NavHost(navController = navController, startDestination = "onboarding") {
         composable("onboarding") {
             OnboardingScreen(onCompleteOnboarding = {
@@ -82,37 +90,25 @@ fun AppNavHost(
             SubjectGradeScreen(
                 onSetupComplete = { subjectGrades ->
                     onboardingDataViewModel.updateSubjectGrades(subjectGrades)
-                    // LearningPreferenceScreen을 건너뛰고 바로 완료 화면으로 이동
                     navController.navigate("onboarding-finish")
                 }
             )
         }
-
-        // LearningPreferenceScreen은 제거됨 - 각 과목별로 설정하므로 불필요
 
         composable("onboarding-finish") {
             OnboardingFinishScreen(
                 onCompleteOnboarding = {
                     // 모든 과목에 대한 추천 API 호출
                     val recommendRequests = onboardingDataViewModel.createRecommendRequests()
-
-                    android.util.Log.d("OnboardingActivity", "=== 추천 요청 시작 ===")
-                    android.util.Log.d("OnboardingActivity", "생성된 추천 요청 수: ${recommendRequests.size}")
-
-                    recommendRequests.forEachIndexed { index, request ->
-                        android.util.Log.d("OnboardingActivity", "요청 ${index + 1}: ${request.subject.label}")
-                        android.util.Log.d("OnboardingActivity", "  - 학습방향: ${request.focus}")
-                        android.util.Log.d("OnboardingActivity", "  - 학습목표: ${request.goal}")
-                        android.util.Log.d("OnboardingActivity", "  - 학습스타일: ${request.styles}")
-                    }
-
                     if (recommendRequests.isNotEmpty()) {
+                        // 예상되는 과목 수 저장
+                        expectedSubjectCount = recommendRequests.size
+                        // 완료 상태 초기화
+                        isAllComplete = false
                         // 이전 추천 결과 초기화
                         recommendViewModel.clearRecommendations()
                         // 모든 과목에 대해 각각의 설정으로 추천 요청
                         recommendViewModel.postMultipleRecommendLectures(recommendRequests)
-                    } else {
-                        android.util.Log.w("OnboardingActivity", "유효한 추천 요청이 없습니다!")
                     }
                     navController.navigate("study-plan-complete")
                 }
@@ -120,8 +116,18 @@ fun AppNavHost(
         }
 
         composable("study-plan-complete") {
+            // 추천 응답이 변경될 때마다 완료 여부 확인
+            LaunchedEffect(recommendResponses) {
+                if (recommendResponses.isNotEmpty() && expectedSubjectCount > 0) {
+                    // 응답받은 과목 수로 판단
+                    val receivedSubjectCount = recommendResponses.groupBy { it.subject }.size
+                    isAllComplete = receivedSubjectCount >= expectedSubjectCount
+                }
+            }
+
             StudyPlanCompleteScreen(
                 recommendResponses = recommendResponses,
+                isAllRecommendationsComplete = isAllComplete,
                 onStartLearning = {
                     val userEmail = Firebase.auth.currentUser?.email
                     onboardingPreferenceStorage.setOnboardingCompleted(userEmail)

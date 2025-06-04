@@ -69,6 +69,45 @@ import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
+fun IncompleteWarningCard(incompleteCount: Int) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color(0xFFFFEBEE)
+        ),
+        border = BorderStroke(1.dp, Color(0xFFE57373)),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                imageVector = Icons.Default.Info,
+                contentDescription = "경고",
+                tint = Color(0xFFD32F2F),
+                modifier = Modifier.size(20.dp)
+            )
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            Text(
+                text = "${incompleteCount}개 과목의 모든 항목을 완성해주세요",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                color = Color(0xFFD32F2F),
+                textAlign = TextAlign.Center
+            )
+        }
+    }
+}
+
+@Composable
 fun SubjectGradeScreen(onSetupComplete: (List<SubjectGrade>) -> Unit) {
     var subjectGrades by remember { mutableStateOf(listOf(SubjectGrade())) }
     val listState = rememberLazyListState()
@@ -232,13 +271,29 @@ fun SubjectGradeScreen(onSetupComplete: (List<SubjectGrade>) -> Unit) {
                     )
                 }
 
-                // + 버튼
+                // 미완성 과목이 있는 경우 경고 메시지 또는 + 버튼
+                val incompleteSubjects = subjectGrades.filter { subjectGrade ->
+                    !(subjectGrade.subject.isNotEmpty() &&
+                            subjectGrade.schoolGrade > 0 &&
+                            subjectGrade.mockGrade > 0 &&
+                            subjectGrade.focus.isNotEmpty() &&
+                            subjectGrade.goal.isNotEmpty() &&
+                            subjectGrade.styles.isNotEmpty())
+                }
+
+                if (incompleteSubjects.isNotEmpty()) {
+                    item {
+                        IncompleteWarningCard(incompleteCount = incompleteSubjects.size)
+                    }
+                }
+
+                // + 버튼 (최대 개수 미달성 시)
                 if (subjectGrades.size < 5) {
                     item {
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(300.dp),
+                                .height(100.dp),
                             contentAlignment = Alignment.TopCenter
                         ) {
                             Box(
@@ -266,10 +321,11 @@ fun SubjectGradeScreen(onSetupComplete: (List<SubjectGrade>) -> Unit) {
 
                                             delay(800)
 
-                                            subjectGrades = subjectGrades.mapIndexed { index, item ->
-                                                if (index == newItemIndex) item.copy(isNew = false)
-                                                else item
-                                            }
+                                            subjectGrades =
+                                                subjectGrades.mapIndexed { index, item ->
+                                                    if (index == newItemIndex) item.copy(isNew = false)
+                                                    else item
+                                                }
                                         }
                                     }
                                     .background(
@@ -292,8 +348,7 @@ fun SubjectGradeScreen(onSetupComplete: (List<SubjectGrade>) -> Unit) {
                             }
                         }
                     }
-                }
-                else {
+                } else {
                     // 최대 개수 도달 메시지
                     item {
                         MaxSubjectCard()
@@ -355,7 +410,7 @@ fun SubjectGradeScreen(onSetupComplete: (List<SubjectGrade>) -> Unit) {
                 }
 
                 Text(
-                    text = if (validCount > 0) "다음 ($validCount 개의 과목)" else "다음",
+                    text = if (validCount > 0) "다음 (${validCount}개 과목)" else "다음",
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Medium,
                     color = Color.White
@@ -617,17 +672,7 @@ private fun SubjectGradeCard(
                                             modifier = Modifier
                                                 .fillMaxWidth()
                                                 .clickable {
-                                                    val updatedSubjectGrade = subjectGrade.copy(subject = subject)
-                                                    // 과목이 선택되면 기본값도 함께 설정
-                                                    val subjectGradeWithDefaults = if (subjectGrade.focus.isEmpty() && subjectGrade.goal.isEmpty()) {
-                                                        updatedSubjectGrade.copy(
-                                                            focus = focusOptions.first(),
-                                                            goal = goalOptions.first()
-                                                        )
-                                                    } else {
-                                                        updatedSubjectGrade
-                                                    }
-                                                    onSubjectGradeChange(subjectGradeWithDefaults)
+                                                    onSubjectGradeChange(subjectGrade.copy(subject = subject))
                                                     showSubjectDropdown = false
                                                 }
                                                 .padding(horizontal = 16.dp, vertical = 8.dp)
@@ -888,6 +933,7 @@ private fun SubjectGradeCard(
 private fun SelectionCard(
     text: String,
     isSelected: Boolean,
+    isIncomplete: Boolean = false,
     onSelect: () -> Unit
 ) {
     Card(
@@ -896,18 +942,30 @@ private fun SelectionCard(
             .clickable { onSelect() },
         shape = RoundedCornerShape(8.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (isSelected) MainPurple.copy(alpha = 0.1f) else Color.Transparent
+            containerColor = when {
+                isSelected -> MainPurple.copy(alpha = 0.1f)
+                isIncomplete -> Color(0xFFFFEBEE)
+                else -> Color.Transparent
+            }
         ),
         border = BorderStroke(
-            width = if (isSelected) 2.dp else 1.dp,
-            color = if (isSelected) MainPurple else Color.LightGray
+            width = if (isIncomplete) 2.dp else if (isSelected) 2.dp else 1.dp,
+            color = when {
+                isIncomplete -> Color(0xFFD32F2F)
+                isSelected -> MainPurple
+                else -> Color.LightGray
+            }
         )
     ) {
         Text(
             text = text,
             fontSize = 12.sp,
             fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-            color = if (isSelected) MainPurple else Color.Black,
+            color = when {
+                isIncomplete -> Color(0xFFD32F2F)
+                isSelected -> MainPurple
+                else -> Color.Black
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 12.dp, vertical = 8.dp)
@@ -919,18 +977,27 @@ private fun SelectionCard(
 private fun MultiSelectCard(
     text: String,
     isSelected: Boolean,
+    isIncomplete: Boolean = false,
     onSelect: () -> Unit
 ) {
     Box(
         modifier = Modifier
             .clickable { onSelect() }
             .background(
-                color = if (isSelected) MainPurple.copy(alpha = 0.1f) else Color.Transparent,
+                color = when {
+                    isSelected -> MainPurple.copy(alpha = 0.1f)
+                    isIncomplete -> Color(0xFFFFEBEE)
+                    else -> Color.Transparent
+                },
                 shape = RoundedCornerShape(16.dp)
             )
             .border(
-                width = if (isSelected) 2.dp else 1.dp,
-                color = if (isSelected) MainPurple else Color.LightGray,
+                width = if (isIncomplete) 2.dp else if (isSelected) 2.dp else 1.dp,
+                color = when {
+                    isIncomplete -> Color(0xFFD32F2F)
+                    isSelected -> MainPurple
+                    else -> Color.LightGray
+                },
                 shape = RoundedCornerShape(16.dp)
             )
             .padding(horizontal = 12.dp, vertical = 6.dp)
@@ -939,7 +1006,11 @@ private fun MultiSelectCard(
             text = text,
             fontSize = 11.sp,
             fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-            color = if (isSelected) MainPurple else Color.Gray
+            color = when {
+                isIncomplete -> Color(0xFFD32F2F)
+                isSelected -> MainPurple
+                else -> Color.Gray
+            }
         )
     }
 }

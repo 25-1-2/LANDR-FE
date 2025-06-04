@@ -48,6 +48,7 @@ import com.capston.presentation.theme.textGray
 @Composable
 fun StudyPlanCompleteScreen(
     recommendResponses: List<RecommendResponse>,
+    isAllRecommendationsComplete: Boolean, // 모든 추천이 완료되었는지 확인하는 플래그
     onStartLearning: () -> Unit
 ) {
     Box(
@@ -84,8 +85,8 @@ fun StudyPlanCompleteScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // 추천 강의가 있는 경우
-            if (recommendResponses.isNotEmpty()) {
+            // 모든 추천이 완료된 경우에만 결과 표시
+            if (isAllRecommendationsComplete && recommendResponses.isNotEmpty()) {
                 // 과목별로 그룹화
                 val subjectGroups = recommendResponses
                     .groupBy { it.subject }
@@ -121,25 +122,7 @@ fun StudyPlanCompleteScreen(
                     }
                 }
             } else {
-//                // 로딩 상태
-//                Column(
-//                    horizontalAlignment = Alignment.CenterHorizontally,
-//                    modifier = Modifier.weight(1f)
-//                ) {
-//                    CircularProgressIndicator(
-//                        modifier = Modifier.size(48.dp),
-//                        color = MainPurple
-//                    )
-//
-//                    Spacer(modifier = Modifier.height(16.dp))
-//
-//                    Text(
-//                        text = "모든 과목의 맞춤형 강의를 찾고 있어요...",
-//                        style = MaterialTheme.typography.bodyMedium,
-//                        color = textGray,
-//                        textAlign = TextAlign.Center
-//                    )
-//                }
+                // 로딩 상태 - 모든 추천이 완료될 때까지 표시
                 val composition by rememberLottieComposition(
                     LottieCompositionSpec.Asset("loading_dot.json") // assets 폴더 내 Lottie JSON 파일
                 )
@@ -148,16 +131,15 @@ fun StudyPlanCompleteScreen(
                     iterations = LottieConstants.IterateForever
                 )
 
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color.Transparent),
-                    contentAlignment = Alignment.Center
+                Column(
+                    modifier = Modifier.weight(1f),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
                 ) {
                     LottieAnimation(
                         composition = composition,
                         progress = { progress },
-                        modifier = Modifier.size(50.dp)
+                        modifier = Modifier.size(80.dp)
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))
@@ -166,18 +148,36 @@ fun StudyPlanCompleteScreen(
                         text = "모든 과목의 맞춤형 강의를 찾고 있어요...",
                         style = MaterialTheme.typography.bodyMedium,
                         color = textGray,
-                        textAlign = TextAlign.Center
+                        textAlign = TextAlign.Center,
+                        fontSize = 16.sp
                     )
+
+                    // 현재까지 찾은 과목 수 표시 (선택사항)
+                    if (recommendResponses.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        val currentSubjectCount = recommendResponses.groupBy { it.subject }.size
+                        Text(
+                            text = "현재 ${currentSubjectCount}개 과목 분석 중...",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = textGray.copy(alpha = 0.7f),
+                            textAlign = TextAlign.Center,
+                            fontSize = 14.sp
+                        )
+                    }
                 }
             }
         }
 
-        // 하단 시작하기 버튼
+        // 하단 시작하기 버튼 - 모든 추천이 완료된 경우에만 활성화
         Button(
             onClick = onStartLearning,
+            enabled = isAllRecommendationsComplete && recommendResponses.isNotEmpty(),
             shape = RoundedCornerShape(20.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = MainPurple
+                containerColor = if (isAllRecommendationsComplete && recommendResponses.isNotEmpty())
+                    MainPurple else MainPurple.copy(alpha = 0.5f),
+                disabledContainerColor = MainPurple.copy(alpha = 0.5f)
             ),
             modifier = Modifier
                 .fillMaxWidth()
@@ -185,7 +185,8 @@ fun StudyPlanCompleteScreen(
                 .align(Alignment.BottomCenter)
         ) {
             Text(
-                text = "시작하기",
+                text = if (isAllRecommendationsComplete && recommendResponses.isNotEmpty())
+                    "시작하기" else "분석 중...",
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Medium,
                 color = Color.White
