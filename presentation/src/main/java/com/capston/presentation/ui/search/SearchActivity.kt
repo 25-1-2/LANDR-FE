@@ -53,6 +53,8 @@ class SearchActivity : ComponentActivity() {
                 LaunchedEffect(lectureId) {
                     if (lectureId != 0) {
                         Log.d("PlanScreen", "Loading data for lectureId: $lectureId")
+                        Log.d("PlanScreen", "Loading data for lectureTag: $lectureTag")
+                        Log.d("PlanScreen", "Loading data for lectureTotalLessons: $lectureTotalLessons")
 
                         // 1. 레슨 정보 로드
                         lectureViewModel.getLessonsByLectureId(lectureId)

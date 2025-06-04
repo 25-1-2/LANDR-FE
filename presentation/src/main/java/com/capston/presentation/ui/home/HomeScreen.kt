@@ -281,33 +281,35 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel, recom
                 navController = navController
             )
 
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                shape = RoundedCornerShape(10.dp),
-                colors = CardDefaults.cardColors(containerColor = White),
-                border = BorderStroke(1.dp, color = LightGray60)
-            ) {
-                Column(
+            if (todayLessonList != null) {
+                Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp)
+                        .padding(16.dp),
+                    shape = RoundedCornerShape(10.dp),
+                    colors = CardDefaults.cardColors(containerColor = White),
+                    border = BorderStroke(1.dp, color = LightGray60)
                 ) {
-                    // 추천 강의 헤더
-                    RecommendedCoursesHeader()
-
-                    Spacer(modifier = Modifier.height(20.dp))
-
-                    // 추천 강의 카드 (수정된 부분)
-                    RecommendedCoursesCard(
-                        recommendResponses = recommendResponses,
-                        navController = navController,
+                    Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(16.dp),
-                        context = context
-                    )
+                            .padding(16.dp)
+                    ) {
+                        // 추천 강의 헤더
+                        RecommendedCoursesHeader()
+
+                        Spacer(modifier = Modifier.height(20.dp))
+
+                        // 추천 강의 카드 (수정된 부분)
+                        RecommendedCoursesCard(
+                            recommendResponses = recommendResponses,
+                            navController = navController,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            context = context
+                        )
+                    }
                 }
             }
 
@@ -2109,6 +2111,12 @@ fun SingleRecommendationCard(
     Card(
         modifier = modifier
             .clickable {
+                // 디버깅용 로그 추가
+                Log.d("RecommendationCard", "recommendation.id: ${recommendation.id}")
+                Log.d("RecommendationCard", "recommendation.lectureId: ${recommendation.id}")
+                Log.d("RecommendationCard", "recommendation.tag: ${recommendation.tag}")
+                Log.d("RecommendationCard", "recommendation.totalLessons: ${recommendation.totalLessons}")
+
                 // SearchActivity로 이동하면서 lectureId 전달
                 val intent = Intent(context, SearchActivity::class.java).apply {
                     putExtra("LECTURE_ID", recommendation.id)
@@ -2117,7 +2125,8 @@ fun SingleRecommendationCard(
                     putExtra("LECTURE_TEACHER", recommendation.teacher)
                     putExtra("LECTURE_PLATFORM", recommendation.platform.label)
                     putExtra("LECTURE_SUBJECT", recommendation.subject.label)
-                    //putExtra("LECTURE_TOTAL_LESSONS", recommendation. ?: 0)
+                    putExtra("LECTURE_TAG", recommendation.tag)
+                    putExtra("LECTURE_TOTAL_LESSONS", recommendation.totalLessons)
                 }
                 context.startActivity(intent)
             },
@@ -2297,149 +2306,6 @@ fun IndicatorDot(
                 shape = CircleShape
             )
     )
-}
-
-@Composable
-fun SubjectRecommendationCard(
-    subject: com.capston.domain.response.enum_class.Subject,
-    recommendations: List<RecommendResponse>
-) {
-    Column {
-        // 과목 헤더
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = when (subject.label) {
-                        "국어" -> "📖"
-                        "영어" -> "🔤"
-                        "수학" -> "📊"
-                        "사탐" -> "🌍"
-                        "과탐" -> "🔬"
-                        "한국사" -> "📜"
-                        else -> "📚"
-                    },
-                    fontSize = 18.sp
-                )
-
-                Spacer(modifier = Modifier.width(8.dp))
-
-                Text(
-                    text = "${subject.label} 추천",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Black
-                )
-            }
-
-            // 과목별 배지
-            Box(
-                modifier = Modifier
-                    .background(
-                        color = subject.bgColor,
-                        shape = RoundedCornerShape(8.dp)
-                    )
-                    .padding(horizontal = 8.dp, vertical = 4.dp)
-            ) {
-                Text(
-                    text = subject.label,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = subject.borderColor
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        // 추천 강의 목록
-        recommendations.forEach { recommendation ->
-            RecommendedCourseItem(recommendation = recommendation)
-            Spacer(modifier = Modifier.height(8.dp))
-        }
-    }
-}
-
-@Composable
-fun RecommendedCourseItem(
-    recommendation: RecommendResponse
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(
-                color = Color.Gray.copy(alpha = 0.05f),
-                shape = RoundedCornerShape(8.dp)
-            )
-            .padding(12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        // 강의 정보
-        Column(
-            modifier = Modifier.weight(1f)
-        ) {
-            Text(
-                text = recommendation.title,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.Black,
-                maxLines = 2
-            )
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            Text(
-                text = recommendation.teacher,
-                fontSize = 12.sp,
-                color = textGray
-            )
-
-            Spacer(modifier = Modifier.height(6.dp))
-
-            // 태그들
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // 적합도
-                Box(
-                    modifier = Modifier
-                        .background(
-                            color = MainPurple,
-                            shape = RoundedCornerShape(10.dp)
-                        )
-                        .padding(horizontal = 8.dp, vertical = 2.dp)
-                ) {
-                    Text(
-                        text = "${recommendation.recommendScore}%",
-                        fontSize = 10.sp,
-                        color = Color.White,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-
-                // 플랫폼
-                Box(
-                    modifier = Modifier
-                        .background(
-                            color = MainPurple.copy(alpha = 0.1f),
-                            shape = RoundedCornerShape(10.dp)
-                        )
-                        .padding(horizontal = 8.dp, vertical = 2.dp)
-                ) {
-                    Text(
-                        text = recommendation.platform.label,
-                        fontSize = 10.sp,
-                        color = MainPurple,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
-            }
-        }
-    }
 }
 
 @Composable

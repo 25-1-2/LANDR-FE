@@ -10,6 +10,8 @@ data class RecommendResponse(
     val teacher: String = "",
     val url: String = "",
     val description: String = "",
+    val tag: String = "",
+    val totalLessons: Int = 0,
     val recommendScore: Int = 0,
     val recommendReason: String = "",
     val difficulty: String = "",
