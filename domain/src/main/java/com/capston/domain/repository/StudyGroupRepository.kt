@@ -1,5 +1,7 @@
 package com.capston.domain.repository
 
+import com.capston.domain.request.JoinStudyGroupDto
+import com.capston.domain.response.MessageResponse
 import com.capston.domain.response.study_group.NewStudyGroupResponse
 import com.capston.domain.response.study_group.OneStudyGroupResponse
 
@@ -13,4 +15,9 @@ interface StudyGroupRepository {
     suspend fun getOneStudyGroup(
         studyGroupId: Int
     ): OneStudyGroupResponse
+
+    // 스터디그룹 가입
+    suspend fun postJoinStudyGroup(
+        joinStudyGroupDto: JoinStudyGroupDto
+    ): MessageResponse
 }
