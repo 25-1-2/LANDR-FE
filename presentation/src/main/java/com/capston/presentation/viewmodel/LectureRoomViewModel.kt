@@ -9,11 +9,15 @@ import com.capston.domain.response.CheckResponse
 import com.capston.domain.response.MessageResponse
 import com.capston.domain.response.plan.GetPlanDetailResponse
 import com.capston.domain.response.plan.PostPlanRescheduleResponse
+import com.capston.domain.response.study_group.NewStudyGroupResponse
+import com.capston.domain.response.study_group.OneStudyGroupResponse
 import com.capston.domain.usecase.home.PatchLessonSchedulesCheckToggleUseCase
 import com.capston.domain.usecase.plan.DeleteOnePlanUseCase
 import com.capston.domain.usecase.plan.GetPlanDetailUseCase
 import com.capston.domain.usecase.plan.GetPlanLectureRoomUseCase
 import com.capston.domain.usecase.plan.PostPlanRescheduleUseCase
+import com.capston.domain.usecase.study_group.GetOneStudyGroupUseCase
+import com.capston.domain.usecase.study_group.PostNewStudyGroupUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -29,6 +33,8 @@ class LectureRoomViewModel @Inject constructor(
     private val postPlanRescheduleUseCase: PostPlanRescheduleUseCase,
     private val deleteOnePlanUseCase: DeleteOnePlanUseCase,
     private val patchLessonSchedulesCheckToggleUseCase: PatchLessonSchedulesCheckToggleUseCase,
+    private val postNewStudyGroupUseCase: PostNewStudyGroupUseCase,
+    private val getOneStudyGroupUseCase: GetOneStudyGroupUseCase,
     private val loadingStateManager: LoadingStateManager
 ) : ViewModel() {
 
@@ -41,14 +47,23 @@ class LectureRoomViewModel @Inject constructor(
     private val _postPlanRescheduleResponse = MutableStateFlow(PostPlanRescheduleResponse())
     val postPlanRescheduleResponse: StateFlow<PostPlanRescheduleResponse> = _postPlanRescheduleResponse.asStateFlow()
 
-    private val _deleteOnePlanResponse = MutableStateFlow(MessageResponse())  // 기본값 ""
+    private val _deleteOnePlanResponse = MutableStateFlow(MessageResponse())
     val deleteOnePlanResponse: StateFlow<MessageResponse> = _deleteOnePlanResponse.asStateFlow()
 
     private val _patchLessonSchedulesCheckToggle = MutableStateFlow(CheckResponse())
     val patchLessonSchedulesCheckToggle = _patchLessonSchedulesCheckToggle
 
+    private val _postNewStudyGroupResponse = MutableStateFlow(NewStudyGroupResponse())
+    val postNewStudyGroupResponse: StateFlow<NewStudyGroupResponse> = _postNewStudyGroupResponse.asStateFlow()
+
+    private val _getOneStudyGroupResponse = MutableStateFlow(OneStudyGroupResponse())
+    val getOneStudyGroupResponse: StateFlow<OneStudyGroupResponse> = _getOneStudyGroupResponse.asStateFlow()
+
     // HomeViewModel과의 동기화를 위한 콜백
     var onDataChanged: (() -> Unit)? = null
+
+    // 스낵바 표시용 콜백 - UI에서 설정할 함수
+    var onShowSnackbar: ((String) -> Unit)? = null
 
     fun getPlanLectureRoom() {
         viewModelScope.launch {
@@ -130,6 +145,32 @@ class LectureRoomViewModel @Inject constructor(
                 }
             } catch (e: Exception) {
                 Log.e("LectureRoomViewModel", "체크 토글 오류: ${e.message}", e)
+            }
+        }
+    }
+
+    fun postNewStudyGroup(planId: Int) {
+        viewModelScope.launch {
+            try {
+                postNewStudyGroupUseCase(planId).collect { response ->
+                    _postNewStudyGroupResponse.value = response
+                    Log.d("LectureRoomViewModel", "스터디그룹 생성 완료: $response")
+                }
+            } catch (e: Exception) {
+                Log.e("LectureRoomViewModel", "스터디그룹 생성 오류: ${e.message}", e)
+            }
+        }
+    }
+
+    fun getOneStudyGroup(groupId: Int) {
+        viewModelScope.launch {
+            try {
+                getOneStudyGroupUseCase(groupId).collect { response ->
+                    _getOneStudyGroupResponse.value = response
+                    Log.d("LectureRoomViewModel", "스터디그룹 불러오기 완료: $response")
+                }
+            } catch (e: Exception) {
+                Log.e("LectureRoomViewModel", "스터디그룹 불러오기 오류: ${e.message}", e)
             }
         }
     }

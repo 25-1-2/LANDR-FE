@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -24,6 +25,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -31,6 +34,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -48,14 +52,19 @@ import com.capston.presentation.theme.Typography
 import com.capston.presentation.theme.textGray
 import com.capston.presentation.ui.search.SearchActivity
 import com.capston.presentation.viewmodel.LectureRoomViewModel
+import kotlinx.coroutines.launch
 
 @Composable
 fun LectureRoomScreen(
     lectureRoomViewModel: LectureRoomViewModel,
-    onPlanClick: ((GetPlanLectureRoomResponse) -> Unit)?,
+    onSinglePlanClick: ((GetPlanLectureRoomResponse) -> Unit)?,
+    onGroupPlanClick: ((GetPlanLectureRoomResponse) -> Unit)?,
     onNotificationClick: () -> Unit
 ) {
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+
     val lectures by lectureRoomViewModel.getPlanLectureRoomResponse.collectAsState()
 
     // 화면이 처음 표시될 때 데이터를 로드
@@ -63,7 +72,17 @@ fun LectureRoomScreen(
         lectureRoomViewModel.getPlanLectureRoom()
     }
 
+    // ViewModel에 스낵바 콜백 설정
+    LaunchedEffect(lectureRoomViewModel) {
+        lectureRoomViewModel.onShowSnackbar = { message ->
+            coroutineScope.launch {
+                snackbarHostState.showSnackbar(message)
+            }
+        }
+    }
+
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             LectureRoomTopBar(
                 hasUnreadNotifications = true,
@@ -88,8 +107,17 @@ fun LectureRoomScreen(
                     .padding(innerPadding)
                     .padding(horizontal = 16.dp)
             ) {
-                items(lectures) { lecture ->
-                    LectureItem(lecture) { onPlanClick?.invoke(lecture) }
+                items(
+                    items = lectures,
+                    key = { lecture -> lecture.planId } // 성능 최적화를 위한 key 추가
+                ) { lecture ->
+                    LectureItem(lecture) {
+                        if (lecture.studyGroup) {
+                            onGroupPlanClick?.invoke(lecture)
+                        } else {
+                            onSinglePlanClick?.invoke(lecture)
+                        }
+                    }
                     HorizontalDivider()
                 }
             }
@@ -212,12 +240,78 @@ fun LectureItem(lecture: GetPlanLectureRoomResponse, onClick: () -> Unit) {
             ) { onClick() }
             .padding(vertical = 16.dp)
     ) {
-        Text(
-            text = "${lecture.platform.label} · ${lecture.teacher}",
-            style = Typography.labelMedium,
-            color = MainPurple,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
+        Row(
+            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Text(
+                    text = lecture.platform.label,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MainPurple,
+                    modifier = Modifier
+                        .padding(bottom = 6.dp)
+                        .border(
+                            width = 1.dp,
+                            color = MainPurple,
+                            shape = RoundedCornerShape(8.dp)
+                        )
+                        .padding(horizontal = 4.dp, vertical = 4.dp)
+                )
+
+                Text(
+                    text = lecture.teacher,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MainPurple,
+                    modifier = Modifier
+                        .padding(bottom = 6.dp)
+                        .border(
+                            width = 1.dp,
+                            color = MainPurple,
+                            shape = RoundedCornerShape(8.dp)
+                        )
+                        .padding(horizontal = 4.dp, vertical = 4.dp)
+                )
+
+                // 과목 칩
+//                Text(
+//                    text = lecture.subject.label, // Subject enum에 label 프로퍼티가 있다고 가정
+//                    style = MaterialTheme.typography.labelMedium,
+//                    color = lecture.subject.borderColor,
+//                    modifier = Modifier
+//                        .padding(bottom = 6.dp)
+//                        .background(
+//                            color = lecture.subject.bgColor,
+//                            shape = RoundedCornerShape(8.dp)
+//                        )
+//                        .border(
+//                            width = 1.dp,
+//                            color = lecture.subject.borderColor,
+//                            shape = RoundedCornerShape(8.dp)
+//                        )
+//                        .padding(horizontal = 4.dp, vertical = 4.dp)
+//                )
+            }
+
+            // 수정된 코드 (조건부 표시)
+            if (lecture.studyGroup) {
+                Text(
+                    text = "그룹",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MainPurple,
+                    modifier = Modifier
+                        .padding(bottom = 6.dp)
+                        .border(
+                            width = 1.dp,
+                            color = MainPurple,
+                            shape = RoundedCornerShape(8.dp)
+                        )
+                        .padding(horizontal = 4.dp, vertical = 4.dp)
+                )
+            }
+        }
 
         Row(
             verticalAlignment = Alignment.Bottom,

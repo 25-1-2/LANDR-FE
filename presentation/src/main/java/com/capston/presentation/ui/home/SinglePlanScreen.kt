@@ -30,6 +30,7 @@ import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.capston.presentation.R
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -63,16 +64,19 @@ import kotlinx.coroutines.launch
 fun PlanDetailScreen(
     planId: Int,
     lectureRoomViewModel: LectureRoomViewModel,
-    navController: NavController  // loadingStateManager 파라미터 제거
+    navController: NavController
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
     var showDeleteDropdown by remember { mutableStateOf(false) }
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
+    var showGroupConfirmDialog by remember { mutableStateOf(false) }
+    var showGroupCodeDialog by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
 
     val planDetailResponse by lectureRoomViewModel.getPlanDetailResponse.collectAsState()
+    val studyGroupResponse by lectureRoomViewModel.postNewStudyGroupResponse.collectAsState()
 
     LaunchedEffect(planId) {
         lectureRoomViewModel.getPlanDetail(planId)
@@ -107,8 +111,8 @@ fun PlanDetailScreen(
                     lectureRoomViewModel = lectureRoomViewModel,
                     planDetailResponse = planDetailResponse,
                     coroutineScope = coroutineScope,
-                    isLoading = isLoading,
-                    onLoadingChange = { isLoading = it }
+                    onLoadingChange = { isLoading = it },
+                    onGroupClick = { showGroupConfirmDialog = true }
                 )
 
                 // 날짜별 섹션
@@ -128,7 +132,7 @@ fun PlanDetailScreen(
                     iconContentColor = Color.Black,
                     titleContentColor = Color.Black,
                     textContentColor = Color.Black,
-                    tonalElevation = 0.dp, // 그림자 효과 제거
+                    tonalElevation = 0.dp,
                     onDismissRequest = { showDeleteConfirmDialog = false },
                     title = { Text("계획 삭제") },
                     text = { Text("이 계획을 삭제하시겠습니까?") },
@@ -137,7 +141,7 @@ fun PlanDetailScreen(
                             onClick = {
                                 // 삭제 로직 실행
                                 lectureRoomViewModel.deleteOnePlan(planId)
-                                navController.popBackStack() // 이전 화면으로 돌아가기
+                                navController.popBackStack()
                                 showDeleteConfirmDialog = false
                             }
                         ) {
@@ -147,6 +151,93 @@ fun PlanDetailScreen(
                     dismissButton = {
                         TextButton(onClick = { showDeleteConfirmDialog = false }) {
                             Text("취소")
+                        }
+                    }
+                )
+            }
+
+            // 그룹 전환 확인 다이얼로그
+            if (showGroupConfirmDialog) {
+                AlertDialog(
+                    containerColor = Color.White,
+                    iconContentColor = Color.Black,
+                    titleContentColor = Color.Black,
+                    textContentColor = Color.Black,
+                    tonalElevation = 0.dp,
+                    onDismissRequest = { showGroupConfirmDialog = false },
+                    title = { Text("스터디 그룹 생성") },
+                    text = {
+                        Text("이 계획을 스터디 그룹으로 전환하시겠습니까?\n다른 사람들과 함께 공부할 수 있습니다.")
+                    },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                showGroupConfirmDialog = false
+                                lectureRoomViewModel.postNewStudyGroup(planId)
+                                showGroupCodeDialog = true
+                            }
+                        ) {
+                            Text("확인", color = MainPurple)
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showGroupConfirmDialog = false }) {
+                            Text("취소")
+                        }
+                    }
+                )
+            }
+
+            // 그룹 코드 표시 다이얼로그
+            if (showGroupCodeDialog) {
+                AlertDialog(
+                    containerColor = Color.White,
+                    iconContentColor = Color.Black,
+                    titleContentColor = Color.Black,
+                    textContentColor = Color.Black,
+                    tonalElevation = 0.dp,
+                    onDismissRequest = { },
+                    title = {
+                        Text(
+                            "스터디 그룹이 생성되었습니다!",
+                            textAlign = TextAlign.Center
+                        )
+                    },
+                    text = {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                "아래 코드를 친구들에게 공유하세요",
+                                style = MaterialTheme.typography.bodyMedium,
+                                textAlign = TextAlign.Center
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                text = studyGroupResponse.inviteCode,
+                                style = MaterialTheme.typography.headlineMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MainPurple,
+                                modifier = Modifier
+                                    .background(
+                                        Color.Gray.copy(alpha = 0.1f),
+                                        RoundedCornerShape(8.dp)
+                                    )
+                                    .padding(16.dp),
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                showGroupCodeDialog = false
+                                // 이전 화면으로 돌아가면서 스낵바 표시
+                                lectureRoomViewModel.onShowSnackbar?.invoke("그룹 생성이 완료되었습니다")
+                                navController.popBackStack()
+                            }
+                        ) {
+                            Text("확인", color = MainPurple)
                         }
                     }
                 )
@@ -167,12 +258,6 @@ fun PlanDetailScreen(
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center,
-//                    modifier = Modifier
-//                        .background(
-//                            Color.White.copy(alpha = 0.95f),
-//                            shape = RoundedCornerShape(16.dp)
-//                        )
-//                        .padding(32.dp)
                 ) {
                     Image(
                         painter = painterResource(id = R.drawable.screen_home_todaylesson_empty_iv),
@@ -258,7 +343,7 @@ fun SinglePlanTopBar(
                         text = {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(
-                                    painter = painterResource(id = R.drawable.icon_trash), // 삭제 아이콘 리소스 필요
+                                    painter = painterResource(id = R.drawable.icon_trash),
                                     contentDescription = "삭제",
                                     tint = Color.Red,
                                     modifier = Modifier.size(20.dp)
@@ -285,8 +370,8 @@ fun SinglePlanTitleSection(
     lectureRoomViewModel: LectureRoomViewModel,
     planDetailResponse: GetPlanDetailResponse,
     coroutineScope: CoroutineScope,
-    isLoading: Boolean,
-    onLoadingChange: (Boolean) -> Unit
+    onLoadingChange: (Boolean) -> Unit,
+    onGroupClick: () -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -326,41 +411,39 @@ fun SinglePlanTitleSection(
                 },
                 modifier = Modifier
                     .size(40.dp)
-                    .clip(CircleShape)
-                    .background(
-                        color = backgroundGray
+                    .border(
+                        width = 1.dp,
+                        color = MainPurple,
+                        shape = CircleShape
                     )
             ) {
                 Icon(
                     imageVector = ImageVector.vectorResource(R.drawable.icon_reschedule),
                     contentDescription = "재스케줄링",
-                    tint = materialGray,
+                    tint = MainPurple,
                     modifier = Modifier.padding(8.dp)
                 )
             }
 
             // 그룹원 추가 버튼
             IconButton(
-                onClick = {},
+                onClick = onGroupClick,
                 modifier = Modifier
                     .size(40.dp)
-                    .clip(CircleShape)
-                    .background(
-                        color = backgroundGray
+                    .border(
+                        width = 1.dp,
+                        color = MainPurple,
+                        shape = CircleShape
                     )
             ) {
                 Icon(
                     imageVector = ImageVector.vectorResource(R.drawable.icon_group),
                     contentDescription = "그룹 추가",
-                    tint = materialGray,
-                    modifier = Modifier
-                        .padding(8.dp)
-                        .clickable { /*…*/ }
+                    tint = MainPurple,
+                    modifier = Modifier.padding(8.dp)
                 )
             }
         }
-
-
     }
 }
 
@@ -369,7 +452,8 @@ fun SinglePlanTitleSection(
 fun OneDaySection(
     date: String,
     planDetailLessonSchedules: List<PlanDetailLessonSchedule>,
-    lectureRoomViewModel: LectureRoomViewModel
+    lectureRoomViewModel: LectureRoomViewModel,
+    isReadOnly: Boolean = false
 ) {
     val totalMinutes = planDetailLessonSchedules.sumOf { it.adjustedDuration }
 
@@ -389,7 +473,6 @@ fun OneDaySection(
                     color = dividerGray,
                     shape = RoundedCornerShape(12.dp)
                 )
-                // border 내부 패딩
                 .padding(24.dp)
         ) {
             Row(
@@ -425,25 +508,24 @@ fun OneDaySection(
                 }
             }
 
-            HorizontalDivider(
-//                modifier = Modifier.padding(bottom = 8.dp)
-            )
+            HorizontalDivider()
 
             planDetailLessonSchedules.forEach { lessonSchedule ->
                 TaskItem(
                     planDetailLessonSchedule = lessonSchedule,
-                    lectureRoomViewModel = lectureRoomViewModel
+                    lectureRoomViewModel = lectureRoomViewModel,
+                    isReadOnly = isReadOnly
                 )
             }
         }
-
     }
 }
 
 @Composable
 fun TaskItem(
     planDetailLessonSchedule: PlanDetailLessonSchedule,
-    lectureRoomViewModel: LectureRoomViewModel
+    lectureRoomViewModel: LectureRoomViewModel,
+    isReadOnly: Boolean = false
 ) {
     // 각 체크박스의 상태를 remember로 관리하되, 초기값은 서버 데이터 사용
     var isChecked by remember(planDetailLessonSchedule.id, planDetailLessonSchedule.completed) {
@@ -474,9 +556,12 @@ fun TaskItem(
                     // 즉시 UI 업데이트 (사용자 경험 향상)
                     isChecked = !isChecked
 
-                    // 서버 업데이트 (백그라운드에서 실행)
-                    lectureRoomViewModel.patchLessonSchedulesCheckToggle(planDetailLessonSchedule.id)
-                }
+                    if (!isReadOnly) {
+                        // 체크박스 상태 변경 로직 (서버 업데이트, 백그라운드에서 실행)
+                        lectureRoomViewModel.patchLessonSchedulesCheckToggle(planDetailLessonSchedule.id)
+                    }
+                },
+                isReadOnly = isReadOnly
             )
             Text(
                 text = planDetailLessonSchedule.lessonTitle,
@@ -502,11 +587,3 @@ fun TaskItem(
         )
     }
 }
-
-//@Preview(showBackground = true)
-//@Composable
-//fun DetailScreenPreview() {
-//    CapstonTheme {
-//        PlanDetailScreen(0, PlanViewModel())
-//    }
-//}

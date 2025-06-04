@@ -33,8 +33,14 @@ sealed class Screen(
         unselectedIcon = R.drawable.activity_main_lecture_list_iv,
     )
 
-    data object PlanDetail: Screen(
-        title = "plan_detail",
+    data object SinglePlan: Screen(
+        title = "single_plan",
+        selectedIcon = R.drawable.activity_main_lecture_list_iv_on,
+        unselectedIcon = R.drawable.activity_main_lecture_list_iv,
+    )
+
+    data object GroupPlan: Screen(
+        title = "group_plan",
         selectedIcon = R.drawable.activity_main_lecture_list_iv_on,
         unselectedIcon = R.drawable.activity_main_lecture_list_iv,
     )
