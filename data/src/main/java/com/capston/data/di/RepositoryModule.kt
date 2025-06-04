@@ -25,6 +25,7 @@ import com.capston.data.repository.remote.repositoryImpl.LectureRepositoryImpl
 import com.capston.data.repository.remote.repositoryImpl.LoginRepositoryImpl
 import com.capston.data.repository.remote.repositoryImpl.MyPageRepositoryImpl
 import com.capston.data.repository.remote.repositoryImpl.PlanRepositoryImpl
+import com.capston.data.repository.remote.repositoryImpl.RecommendRepositoryImpl
 import com.capston.data.repository.remote.repositoryImpl.StudyGroupRepositoryImpl
 import com.capston.data.repository.remote.repositoryImpl.RecommendRepositoryImpl
 import com.capston.domain.datasource.DailyScheduleDataSource
@@ -36,6 +37,7 @@ import com.capston.domain.datasource.MyPageDataSource
 import com.capston.domain.datasource.PlanDataSource
 import com.capston.domain.datasource.RecommendDataSource
 import com.capston.domain.datasource.StudyGroupDataSource
+import com.capston.domain.datasource.RecommendDataSource
 import com.capston.domain.repository.DailyScheduleRepository
 import com.capston.domain.repository.ErrorRepository
 import com.capston.domain.repository.HomeRepository
@@ -43,6 +45,7 @@ import com.capston.domain.repository.LectureRepository
 import com.capston.domain.repository.LoginRepository
 import com.capston.domain.repository.MyPageRepository
 import com.capston.domain.repository.PlanRepository
+import com.capston.domain.repository.RecommendRepository
 import com.capston.domain.repository.StudyGroupRepository
 import com.capston.domain.repository.RecommendRepository
 import dagger.Module
