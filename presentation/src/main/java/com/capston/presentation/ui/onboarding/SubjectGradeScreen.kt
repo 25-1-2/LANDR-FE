@@ -123,55 +123,40 @@ fun SubjectGradeScreen(onSetupComplete: () -> Unit) {
             .fillMaxSize()
             .padding(16.dp)
     ) {
+        // 상단 LANDR 로고
+        Image(
+            painter = painterResource(R.drawable.landr_title_iv),
+            contentDescription = "과목명",
+            modifier = Modifier
+                .padding(top = 80.dp, start = 35.dp)
+                .size(80.dp)
+                .align(Alignment.TopStart)
+        )
+
+        // 텍스트 영역 (이미지 제거됨)
         Column(
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 140.dp)
+                .align(Alignment.TopCenter),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // 상단 LANDR 로고
-            Image(
-                painter = painterResource(R.drawable.landr_title_iv),
-                contentDescription = "LANDR 로고",
-                modifier = Modifier
-                    .padding(top = 60.dp, start = 20.dp)
-                    .size(80.dp)
+            Text(
+                text = "조은채님!\n맞춤형 인강 학습을 시작해볼까요?",
+                style = MaterialTheme.typography.titleLarge,
+                textAlign = TextAlign.Start,
+                fontSize = 24.sp
             )
 
-            Spacer(modifier = Modifier.height(40.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
-            // 메인 컨텐츠
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                Text(
-                    text = "조은채님!\n맞춤형 인강 학습을 시작해볼까요?",
-                    style = MaterialTheme.typography.titleLarge,
-                    textAlign = TextAlign.Start,
-                    fontSize = 24.sp
-                )
-
-                Spacer(modifier = Modifier.height(20.dp))
-
-                Text(
-                    text = "꼭 맞는 학습 계획을 LANDR가 제안해드릴게요:)",
-                    style = MaterialTheme.typography.bodyLarge,
-                    textAlign = TextAlign.Center,
-                    color = textGray,
-                    fontSize = 14.sp
-                )
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // 제목
-                Text(
-                    text = "2. 강의를 추천 받고 싶은 과목과 등급을 알려주세요",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MainPurple,
-                    modifier = Modifier.fillMaxWidth(),
-                    textAlign = TextAlign.Start
-                )
-            }
+            Text(
+                text = "꼭 맞는 학습 계획을 LANDR가 제안해드릴게요:)",
+                style = MaterialTheme.typography.bodyLarge,
+                textAlign = TextAlign.Center,
+                color = textGray,
+                fontSize = 14.sp
+            )
 
             Spacer(modifier = Modifier.height(16.dp))
 

@@ -54,18 +54,18 @@ fun SchoolYearScreen(onSetupComplete: () -> Unit) {
         // 상단 LANDR 로고
         Image(
             painter = painterResource(R.drawable.landr_title_iv),
-            contentDescription = "LANDR 로고",
+            contentDescription = "과목명",
             modifier = Modifier
-                .padding(top = 60.dp, start = 20.dp)
+                .padding(top = 80.dp, start = 35.dp)
                 .size(80.dp)
                 .align(Alignment.TopStart)
         )
 
-        // 텍스트 및 이미지 컨텐츠
+        // 텍스트 영역 (이미지 제거됨)
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 140.dp) // 로고보다 아래에 위치하도록
+                .padding(top = 140.dp)
                 .align(Alignment.TopCenter),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
