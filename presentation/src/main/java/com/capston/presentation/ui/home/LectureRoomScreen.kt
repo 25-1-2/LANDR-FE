@@ -274,6 +274,25 @@ fun LectureItem(lecture: GetPlanLectureRoomResponse, onClick: () -> Unit) {
                         )
                         .padding(horizontal = 4.dp, vertical = 4.dp)
                 )
+
+                // 과목 칩
+//                Text(
+//                    text = lecture.subject.label, // Subject enum에 label 프로퍼티가 있다고 가정
+//                    style = MaterialTheme.typography.labelMedium,
+//                    color = lecture.subject.borderColor,
+//                    modifier = Modifier
+//                        .padding(bottom = 6.dp)
+//                        .background(
+//                            color = lecture.subject.bgColor,
+//                            shape = RoundedCornerShape(8.dp)
+//                        )
+//                        .border(
+//                            width = 1.dp,
+//                            color = lecture.subject.borderColor,
+//                            shape = RoundedCornerShape(8.dp)
+//                        )
+//                        .padding(horizontal = 4.dp, vertical = 4.dp)
+//                )
             }
 
             // 수정된 코드 (조건부 표시)

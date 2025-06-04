@@ -452,7 +452,8 @@ fun SinglePlanTitleSection(
 fun OneDaySection(
     date: String,
     planDetailLessonSchedules: List<PlanDetailLessonSchedule>,
-    lectureRoomViewModel: LectureRoomViewModel
+    lectureRoomViewModel: LectureRoomViewModel,
+    isReadOnly: Boolean = false
 ) {
     val totalMinutes = planDetailLessonSchedules.sumOf { it.adjustedDuration }
 
@@ -512,7 +513,8 @@ fun OneDaySection(
             planDetailLessonSchedules.forEach { lessonSchedule ->
                 TaskItem(
                     planDetailLessonSchedule = lessonSchedule,
-                    lectureRoomViewModel = lectureRoomViewModel
+                    lectureRoomViewModel = lectureRoomViewModel,
+                    isReadOnly = isReadOnly
                 )
             }
         }
@@ -522,7 +524,8 @@ fun OneDaySection(
 @Composable
 fun TaskItem(
     planDetailLessonSchedule: PlanDetailLessonSchedule,
-    lectureRoomViewModel: LectureRoomViewModel
+    lectureRoomViewModel: LectureRoomViewModel,
+    isReadOnly: Boolean = false
 ) {
     // 각 체크박스의 상태를 remember로 관리하되, 초기값은 서버 데이터 사용
     var isChecked by remember(planDetailLessonSchedule.id, planDetailLessonSchedule.completed) {
@@ -553,9 +556,12 @@ fun TaskItem(
                     // 즉시 UI 업데이트 (사용자 경험 향상)
                     isChecked = !isChecked
 
-                    // 서버 업데이트 (백그라운드에서 실행)
-                    lectureRoomViewModel.patchLessonSchedulesCheckToggle(planDetailLessonSchedule.id)
-                }
+                    if (!isReadOnly) {
+                        // 체크박스 상태 변경 로직 (서버 업데이트, 백그라운드에서 실행)
+                        lectureRoomViewModel.patchLessonSchedulesCheckToggle(planDetailLessonSchedule.id)
+                    }
+                },
+                isReadOnly = isReadOnly
             )
             Text(
                 text = planDetailLessonSchedule.lessonTitle,
