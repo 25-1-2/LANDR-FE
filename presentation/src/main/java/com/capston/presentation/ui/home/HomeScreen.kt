@@ -2195,7 +2195,12 @@ fun SingleRecommendationCard(
 
                 // 강의 제목
                 Text(
-                    text = recommendation.title.take(30),
+                    // 강의 제목이 길 경우 처리
+                    text = if (recommendation.title.length >= 40) {
+                        recommendation.title.take(40) + "..."
+                    } else {
+                        recommendation.title
+                    },
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.Black,
