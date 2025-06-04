@@ -45,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat.shouldShowRequestPermissionRationale
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -73,6 +74,7 @@ import com.capston.presentation.viewmodel.LectureRoomViewModel
 import com.capston.presentation.viewmodel.LoginViewModel
 import com.capston.presentation.viewmodel.MyPageViewModel
 import com.capston.presentation.viewmodel.PlanViewModel
+import com.capston.presentation.viewmodel.RecommendViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
@@ -88,6 +90,7 @@ class MainActivity : ComponentActivity() {
     val dailyScheduleViewModel: DailyScheduleViewModel by viewModels()
     val lectureRoomViewModel: LectureRoomViewModel by viewModels()
     val myPageViewModel: MyPageViewModel by viewModels()
+    val recommendViewModel: RecommendViewModel by viewModels()
 
     // 뒤로가기 두 번 누르기 위한 변수들
     var backPressedTime: Long = 0
@@ -147,6 +150,7 @@ class MainActivity : ComponentActivity() {
                         lectureRoomViewModel = lectureRoomViewModel,
                         loginViewModel = loginViewModel,
                         myPageViewModel = myPageViewModel,
+                        recommendViewModel = recommendViewModel,
                         loadingStateManager = loadingStateManager
                     )
 
@@ -289,6 +293,7 @@ fun MainBottomBar(
     lectureRoomViewModel: LectureRoomViewModel,
     loginViewModel: LoginViewModel,
     myPageViewModel: MyPageViewModel,
+    recommendViewModel: RecommendViewModel,
     loadingStateManager: LoadingStateManager
 ) {
     var bottomNavState by rememberSaveable { mutableIntStateOf(0) }
@@ -354,7 +359,7 @@ fun MainBottomBar(
                         bottom = 60.dp // FAB를 고려한 적절한 하단 패딩 (80dp 바텀바 - 40dp FAB offset)
                     )
             ) {
-                composable(Screen.Home.title) { HomeScreen(homeViewModel, planViewModel, navController) }
+                composable(Screen.Home.title) { HomeScreen(homeViewModel, planViewModel, recommendViewModel, navController) }
                 composable(Screen.Calender.title) { CalenderScreen(homeViewModel, dailyScheduleViewModel) }
                 composable(Screen.LectureRoom.title) {
                     LectureRoomScreen(

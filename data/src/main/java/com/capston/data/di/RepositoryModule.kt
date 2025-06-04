@@ -1,5 +1,6 @@
 package com.capston.data.di
 
+import com.capston.data.local.storage.RecommendationStorage
 import com.capston.data.repository.remote.api.DailyScheduleApi
 import com.capston.data.repository.remote.api.ErrorApi
 import com.capston.data.repository.remote.api.HomeApi
@@ -26,6 +27,7 @@ import com.capston.data.repository.remote.repositoryImpl.LoginRepositoryImpl
 import com.capston.data.repository.remote.repositoryImpl.MyPageRepositoryImpl
 import com.capston.data.repository.remote.repositoryImpl.PlanRepositoryImpl
 import com.capston.data.repository.remote.repositoryImpl.RecommendRepositoryImpl
+import com.capston.data.repository.remote.repositoryImpl.RecommendationRepositoryImpl
 import com.capston.data.repository.remote.repositoryImpl.StudyGroupRepositoryImpl
 import com.capston.domain.datasource.DailyScheduleDataSource
 import com.capston.domain.datasource.ErrorDataSource
@@ -44,6 +46,7 @@ import com.capston.domain.repository.LoginRepository
 import com.capston.domain.repository.MyPageRepository
 import com.capston.domain.repository.PlanRepository
 import com.capston.domain.repository.RecommendRepository
+import com.capston.domain.repository.RecommendationRepository
 import com.capston.domain.repository.StudyGroupRepository
 import dagger.Module
 import dagger.Provides
@@ -179,4 +182,12 @@ object RepositoryModule {
     @Singleton
     fun provideRecommendRepository(recommendDataSource: RecommendDataSource): RecommendRepository =
         RecommendRepositoryImpl(recommendDataSource)
+
+    @Provides
+    @Singleton
+    fun provideRecommendationRepository(
+        recommendationStorage: RecommendationStorage
+    ): RecommendationRepository {
+        return RecommendationRepositoryImpl(recommendationStorage)
+    }
 }

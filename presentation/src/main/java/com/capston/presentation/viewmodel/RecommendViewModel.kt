@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.capston.domain.manager.LoadingStateManager
+import com.capston.domain.repository.RecommendationRepository
 import com.capston.domain.request.RecommendDto
 import com.capston.domain.response.recommend.RecommendResponse
 import com.capston.domain.usecase.recommend.PostRecommendLecturesUseCase
@@ -19,10 +20,33 @@ import javax.inject.Inject
 @HiltViewModel
 class RecommendViewModel @Inject constructor(
     private val postRecommendLecturesUseCase: PostRecommendLecturesUseCase,
+    private val recommendationRepository: RecommendationRepository,
     private val loadingStateManager: LoadingStateManager
 ) : ViewModel() {
     private val _postRecommendLectures = MutableStateFlow<List<RecommendResponse>>(emptyList())
     val postRecommendLectures: StateFlow<List<RecommendResponse>> = _postRecommendLectures.asStateFlow()
+
+    init {
+        // ViewModel 초기화 시 저장된 추천 데이터 불러오기
+        loadSavedRecommendations()
+    }
+
+    // 저장된 추천 데이터 불러오기
+    private fun loadSavedRecommendations() {
+        viewModelScope.launch {
+            try {
+                recommendationRepository.getRecommendations().collect { savedRecommendations ->
+                    Log.d("RecommendViewModel", "저장된 추천 데이터 불러오기: ${savedRecommendations.size}개")
+                    if (savedRecommendations.isNotEmpty()) {
+                        _postRecommendLectures.value = savedRecommendations
+                        Log.d("RecommendViewModel", "불러온 첫 번째 추천: ${savedRecommendations.first().title}")
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("RecommendViewModel", "저장된 추천 데이터 불러오기 실패: ${e.message}")
+            }
+        }
+    }
 
     // 단일 과목 추천 (기존 호환성 유지)
     fun postRecommendLectures(recommendDto: RecommendDto) {
@@ -72,6 +96,9 @@ class RecommendViewModel @Inject constructor(
 
                 _postRecommendLectures.value = sortedRecommendations
 
+                // 추천 데이터를 로컬에 저장
+                saveRecommendationsToStorage(sortedRecommendations)
+
                 Log.d("RecommendViewModel", "=== 모든 과목 추천 완료 ===")
                 Log.d("RecommendViewModel", "최종 추천 결과: ${sortedRecommendations.size}개")
 
@@ -90,9 +117,36 @@ class RecommendViewModel @Inject constructor(
         }
     }
 
+    // 추천 데이터를 로컬 저장소에 저장
+    private fun saveRecommendationsToStorage(recommendations: List<RecommendResponse>) {
+        viewModelScope.launch {
+            try {
+                recommendationRepository.saveRecommendations(recommendations)
+                Log.d("RecommendViewModel", "추천 데이터 저장 완료: ${recommendations.size}개")
+            } catch (e: Exception) {
+                Log.e("RecommendViewModel", "추천 데이터 저장 실패: ${e.message}")
+            }
+        }
+    }
+
     // 추천 결과 초기화
     fun clearRecommendations() {
-        Log.d("RecommendViewModel", "추천 결과 초기화")
-        _postRecommendLectures.value = emptyList()
+        viewModelScope.launch {
+            Log.d("RecommendViewModel", "추천 결과 초기화")
+            _postRecommendLectures.value = emptyList()
+
+            // 로컬 저장소에서도 삭제
+            try {
+                recommendationRepository.clearRecommendations()
+                Log.d("RecommendViewModel", "저장된 추천 데이터 삭제 완료")
+            } catch (e: Exception) {
+                Log.e("RecommendViewModel", "저장된 추천 데이터 삭제 실패: ${e.message}")
+            }
+        }
+    }
+
+    // 수동으로 저장된 추천 데이터 새로고침
+    fun refreshSavedRecommendations() {
+        loadSavedRecommendations()
     }
 }

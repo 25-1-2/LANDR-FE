@@ -128,30 +128,6 @@ fun RecommendedCoursesWithIndicator(
     }
 }
 
-// Card 내부에서 사용할 헤더 컴포넌트
-@Composable
-fun RecommendedCoursesHeader() {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Text(
-            text = "🎯 나에게 맞는 추천 강의",
-            style = MaterialTheme.typography.bodyLarge,
-            fontWeight = FontWeight.Bold,
-            fontSize = 20.sp
-        )
-
-        Spacer(modifier = Modifier.weight(1f))
-
-        Text(
-            text = "총 4개",
-            fontSize = 14.sp,
-            color = LightGray60
-        )
-    }
-}
-
 @Composable
 private fun PageIndicator(
     totalPages: Int,
