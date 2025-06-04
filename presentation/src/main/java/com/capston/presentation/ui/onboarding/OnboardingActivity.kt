@@ -82,30 +82,37 @@ fun AppNavHost(
             SubjectGradeScreen(
                 onSetupComplete = { subjectGrades ->
                     onboardingDataViewModel.updateSubjectGrades(subjectGrades)
-                    navController.navigate("learning-preference")
-                }
-            )
-        }
-
-        composable("learning-preference") {
-            LearningPreferenceScreen(
-                onSetupComplete = { focus, goal, styles ->
-                    onboardingDataViewModel.updateLearningPreferences(focus, goal, styles)
+                    // LearningPreferenceScreen을 건너뛰고 바로 완료 화면으로 이동
                     navController.navigate("onboarding-finish")
                 }
             )
         }
 
+        // LearningPreferenceScreen은 제거됨 - 각 과목별로 설정하므로 불필요
+
         composable("onboarding-finish") {
             OnboardingFinishScreen(
                 onCompleteOnboarding = {
-                    // 모든 과목에 대한 추천 API 호출 (수정된 부분)
+                    // 모든 과목에 대한 추천 API 호출
                     val recommendRequests = onboardingDataViewModel.createRecommendRequests()
+
+                    android.util.Log.d("OnboardingActivity", "=== 추천 요청 시작 ===")
+                    android.util.Log.d("OnboardingActivity", "생성된 추천 요청 수: ${recommendRequests.size}")
+
+                    recommendRequests.forEachIndexed { index, request ->
+                        android.util.Log.d("OnboardingActivity", "요청 ${index + 1}: ${request.subject.label}")
+                        android.util.Log.d("OnboardingActivity", "  - 학습방향: ${request.focus}")
+                        android.util.Log.d("OnboardingActivity", "  - 학습목표: ${request.goal}")
+                        android.util.Log.d("OnboardingActivity", "  - 학습스타일: ${request.styles}")
+                    }
+
                     if (recommendRequests.isNotEmpty()) {
                         // 이전 추천 결과 초기화
                         recommendViewModel.clearRecommendations()
-                        // 모든 과목에 대해 추천 요청
+                        // 모든 과목에 대해 각각의 설정으로 추천 요청
                         recommendViewModel.postMultipleRecommendLectures(recommendRequests)
+                    } else {
+                        android.util.Log.w("OnboardingActivity", "유효한 추천 요청이 없습니다!")
                     }
                     navController.navigate("study-plan-complete")
                 }

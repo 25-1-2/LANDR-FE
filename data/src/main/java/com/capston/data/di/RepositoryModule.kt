@@ -27,7 +27,6 @@ import com.capston.data.repository.remote.repositoryImpl.MyPageRepositoryImpl
 import com.capston.data.repository.remote.repositoryImpl.PlanRepositoryImpl
 import com.capston.data.repository.remote.repositoryImpl.RecommendRepositoryImpl
 import com.capston.data.repository.remote.repositoryImpl.StudyGroupRepositoryImpl
-import com.capston.data.repository.remote.repositoryImpl.RecommendRepositoryImpl
 import com.capston.domain.datasource.DailyScheduleDataSource
 import com.capston.domain.datasource.ErrorDataSource
 import com.capston.domain.datasource.HomeDataSource

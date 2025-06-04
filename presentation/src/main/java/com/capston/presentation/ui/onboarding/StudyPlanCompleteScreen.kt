@@ -26,6 +26,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -34,6 +35,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.airbnb.lottie.compose.LottieAnimation
+import com.airbnb.lottie.compose.LottieCompositionSpec
+import com.airbnb.lottie.compose.LottieConstants
+import com.airbnb.lottie.compose.animateLottieCompositionAsState
+import com.airbnb.lottie.compose.rememberLottieComposition
 import com.capston.domain.response.recommend.RecommendResponse
 import com.capston.presentation.R
 import com.capston.presentation.theme.MainPurple
@@ -115,14 +121,43 @@ fun StudyPlanCompleteScreen(
                     }
                 }
             } else {
-                // 로딩 상태
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.weight(1f)
+//                // 로딩 상태
+//                Column(
+//                    horizontalAlignment = Alignment.CenterHorizontally,
+//                    modifier = Modifier.weight(1f)
+//                ) {
+//                    CircularProgressIndicator(
+//                        modifier = Modifier.size(48.dp),
+//                        color = MainPurple
+//                    )
+//
+//                    Spacer(modifier = Modifier.height(16.dp))
+//
+//                    Text(
+//                        text = "모든 과목의 맞춤형 강의를 찾고 있어요...",
+//                        style = MaterialTheme.typography.bodyMedium,
+//                        color = textGray,
+//                        textAlign = TextAlign.Center
+//                    )
+//                }
+                val composition by rememberLottieComposition(
+                    LottieCompositionSpec.Asset("loading_dot.json") // assets 폴더 내 Lottie JSON 파일
+                )
+                val progress by animateLottieCompositionAsState(
+                    composition,
+                    iterations = LottieConstants.IterateForever
+                )
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Transparent),
+                    contentAlignment = Alignment.Center
                 ) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(48.dp),
-                        color = MainPurple
+                    LottieAnimation(
+                        composition = composition,
+                        progress = { progress },
+                        modifier = Modifier.size(50.dp)
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))
