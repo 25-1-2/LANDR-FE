@@ -363,7 +363,7 @@ fun MainBottomBar(
                             navController.navigate("${Screen.SinglePlan.title}/${plan.planId}")
                         },
                         onGroupPlanClick = { plan ->
-                            navController.navigate("${Screen.GroupPlan.title}/${plan.planId}")
+                            navController.navigate("${Screen.GroupPlan.title}/${plan.studyGroupId}/${plan.planId}")
                         },
                         onNotificationClick = { navController.navigate("notification") }
                     )
@@ -381,14 +381,18 @@ fun MainBottomBar(
                     )
                 }
                 composable(
-                    route = "${Screen.GroupPlan.title}/{planId}",
-                    arguments = listOf(navArgument("planId") { type = NavType.IntType })
+                    route = "${Screen.GroupPlan.title}/{groupId}/{planId}",
+                    arguments = listOf(
+                        navArgument("planId") { type = NavType.IntType },
+                        navArgument("groupId") { type = NavType.IntType }
+                    )
                 ) { backStackEntry ->
                     val planId = backStackEntry.arguments?.getInt("planId") ?: 0
-                    val planDetailResponse = GetPlanDetailResponse()
+                    val groupId = backStackEntry.arguments?.getInt("groupId") ?: 0
                     GroupPlanScreen(
-//                        planId = planId,
-//                        lectureRoomViewModel = lectureRoomViewModel,
+                        planId = planId,
+                        groupId = groupId,
+                        lectureRoomViewModel = lectureRoomViewModel,
                         navController = navController,
                     )
                 }
