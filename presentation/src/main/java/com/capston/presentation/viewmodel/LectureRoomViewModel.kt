@@ -17,6 +17,7 @@ import com.capston.domain.usecase.plan.GetPlanDetailUseCase
 import com.capston.domain.usecase.plan.GetPlanLectureRoomUseCase
 import com.capston.domain.usecase.plan.PostPlanRescheduleUseCase
 import com.capston.domain.usecase.study_group.GetOneStudyGroupUseCase
+import com.capston.domain.usecase.study_group.PostJoinStudyGroupUseCase
 import com.capston.domain.usecase.study_group.PostNewStudyGroupUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -35,6 +36,7 @@ class LectureRoomViewModel @Inject constructor(
     private val patchLessonSchedulesCheckToggleUseCase: PatchLessonSchedulesCheckToggleUseCase,
     private val postNewStudyGroupUseCase: PostNewStudyGroupUseCase,
     private val getOneStudyGroupUseCase: GetOneStudyGroupUseCase,
+    private val postJoinStudyGroupUseCase: PostJoinStudyGroupUseCase,
     private val loadingStateManager: LoadingStateManager
 ) : ViewModel() {
 
@@ -58,6 +60,9 @@ class LectureRoomViewModel @Inject constructor(
 
     private val _getOneStudyGroupResponse = MutableStateFlow(OneStudyGroupResponse())
     val getOneStudyGroupResponse: StateFlow<OneStudyGroupResponse> = _getOneStudyGroupResponse.asStateFlow()
+
+    private val _postJoinStudyGroupResponse = MutableStateFlow(MessageResponse())
+    val postJoinStudyGroupResponse: StateFlow<MessageResponse> = _postJoinStudyGroupResponse.asStateFlow()
 
     // HomeViewModel과의 동기화를 위한 콜백
     var onDataChanged: (() -> Unit)? = null
@@ -171,6 +176,19 @@ class LectureRoomViewModel @Inject constructor(
                 }
             } catch (e: Exception) {
                 Log.e("LectureRoomViewModel", "스터디그룹 불러오기 오류: ${e.message}", e)
+            }
+        }
+    }
+
+    fun postJoinStudyGroup(inviteCode: String) {
+        viewModelScope.launch {
+            try {
+                postJoinStudyGroupUseCase(inviteCode).collect { response ->
+                    _postJoinStudyGroupResponse.value = response
+                    Log.d("LectureRoomViewModel", "스터디그룹 가입 완료: $response")
+                }
+            } catch (e: Exception) {
+                Log.e("LectureRoomViewModel", "스터디그룹 가입 오류: ${e.message}", e)
             }
         }
     }
