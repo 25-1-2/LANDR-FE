@@ -10,12 +10,14 @@ import com.capston.domain.response.MessageResponse
 import com.capston.domain.response.plan.GetPlanDetailResponse
 import com.capston.domain.response.plan.PostPlanRescheduleResponse
 import com.capston.domain.response.study_group.NewStudyGroupResponse
+import com.capston.domain.response.study_group.OneStudyGroupResponse
 import com.capston.domain.usecase.home.PatchLessonSchedulesCheckToggleUseCase
 import com.capston.domain.usecase.plan.DeleteOnePlanUseCase
 import com.capston.domain.usecase.plan.GetPlanDetailUseCase
 import com.capston.domain.usecase.plan.GetPlanLectureRoomUseCase
 import com.capston.domain.usecase.plan.PostPlanRescheduleUseCase
 import com.capston.domain.usecase.study_group.PostNewStudyGroupUseCase
+import com.capston.domain.usecase.study_group.getOneStudyGroupUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -32,6 +34,7 @@ class LectureRoomViewModel @Inject constructor(
     private val deleteOnePlanUseCase: DeleteOnePlanUseCase,
     private val patchLessonSchedulesCheckToggleUseCase: PatchLessonSchedulesCheckToggleUseCase,
     private val postNewStudyGroupUseCase: PostNewStudyGroupUseCase,
+    private val getOneStudyGroupUseCase: getOneStudyGroupUseCase,
     private val loadingStateManager: LoadingStateManager
 ) : ViewModel() {
 
@@ -52,6 +55,9 @@ class LectureRoomViewModel @Inject constructor(
 
     private val _postNewStudyGroupResponse = MutableStateFlow(NewStudyGroupResponse())
     val postNewStudyGroupResponse: StateFlow<NewStudyGroupResponse> = _postNewStudyGroupResponse.asStateFlow()
+
+    private val _getOneStudyGroupResponse = MutableStateFlow(OneStudyGroupResponse())
+    val getOneStudyGroupResponse: StateFlow<OneStudyGroupResponse> = _getOneStudyGroupResponse.asStateFlow()
 
     // HomeViewModel과의 동기화를 위한 콜백
     var onDataChanged: (() -> Unit)? = null
@@ -152,6 +158,19 @@ class LectureRoomViewModel @Inject constructor(
                 }
             } catch (e: Exception) {
                 Log.e("LectureRoomViewModel", "스터디그룹 생성 오류: ${e.message}", e)
+            }
+        }
+    }
+
+    fun getOneStudyGroup(groupId: Int) {
+        viewModelScope.launch {
+            try {
+                getOneStudyGroupUseCase(groupId).collect { response ->
+                    _getOneStudyGroupResponse.value = response
+                    Log.d("LectureRoomViewModel", "스터디그룹 불러오기 완료: $response")
+                }
+            } catch (e: Exception) {
+                Log.e("LectureRoomViewModel", "스터디그룹 불러오기 오류: ${e.message}", e)
             }
         }
     }
