@@ -35,28 +35,40 @@ class OnboardingDataViewModel : ViewModel() {
         )
     }
 
-    fun createRecommendRequest(): RecommendDto? {
+    // 모든 과목에 대한 추천 요청 생성 (수정된 부분)
+    fun createRecommendRequests(): List<RecommendDto> {
         val data = _onboardingData.value
-
-        // 첫 번째 과목의 정보를 사용 (가장 중요한 과목으로 가정)
-        val primarySubject = data.subjectGrades.firstOrNull() ?: return null
-
-        // 과목명을 Subject enum으로 변환
-        val subject = convertStringToSubject(primarySubject.subject)
 
         // 학년 정보를 grade 형태로 변환
         val gradeNumber = extractGradeNumber(data.grade)
 
-        // 내신/모의고사 등급을 직접 사용 (이제 둘 다 입력되어 있음)
-        return RecommendDto(
-            grade = gradeNumber,
-            schoolRank = primarySubject.schoolGrade, // 내신 등급
-            mockRank = primarySubject.mockGrade, // 모의고사 등급
-            focus = data.focus,
-            goal = data.goal,
-            styles = data.styles,
-            subject = subject
-        )
+        // 모든 유효한 과목에 대해 RecommendDto 생성
+        return data.subjectGrades.mapNotNull { subjectGrade ->
+            if (subjectGrade.subject.isNotEmpty() &&
+                subjectGrade.schoolGrade > 0 &&
+                subjectGrade.mockGrade > 0) {
+
+                // 과목명을 Subject enum으로 변환
+                val subject = convertStringToSubject(subjectGrade.subject)
+
+                RecommendDto(
+                    grade = gradeNumber,
+                    schoolRank = subjectGrade.schoolGrade, // 내신 등급
+                    mockRank = subjectGrade.mockGrade, // 모의고사 등급
+                    focus = data.focus,
+                    goal = data.goal,
+                    styles = data.styles,
+                    subject = subject
+                )
+            } else {
+                null
+            }
+        }
+    }
+
+    // 단일 과목 추천 요청 (하위 호환성을 위해 유지)
+    fun createRecommendRequest(): RecommendDto? {
+        return createRecommendRequests().firstOrNull()
     }
 
     private fun convertStringToSubject(subjectName: String): Subject {

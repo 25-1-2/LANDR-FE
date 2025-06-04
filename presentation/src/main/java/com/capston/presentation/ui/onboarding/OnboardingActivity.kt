@@ -60,7 +60,7 @@ fun AppNavHost(
     // 온보딩 데이터를 관리할 ViewModel
     val onboardingDataViewModel: OnboardingDataViewModel = viewModel()
     val onboardingData by onboardingDataViewModel.onboardingData.collectAsState()
-    val recommendResponses by recommendViewModel.postRecommendLectures.collectAsState() // 리스트로 변경
+    val recommendResponses by recommendViewModel.postRecommendLectures.collectAsState()
 
     NavHost(navController = navController, startDestination = "onboarding") {
         composable("onboarding") {
@@ -99,9 +99,13 @@ fun AppNavHost(
         composable("onboarding-finish") {
             OnboardingFinishScreen(
                 onCompleteOnboarding = {
-                    // 추천 API 호출
-                    onboardingDataViewModel.createRecommendRequest()?.let { recommendDto ->
-                        recommendViewModel.postRecommendLectures(recommendDto)
+                    // 모든 과목에 대한 추천 API 호출 (수정된 부분)
+                    val recommendRequests = onboardingDataViewModel.createRecommendRequests()
+                    if (recommendRequests.isNotEmpty()) {
+                        // 이전 추천 결과 초기화
+                        recommendViewModel.clearRecommendations()
+                        // 모든 과목에 대해 추천 요청
+                        recommendViewModel.postMultipleRecommendLectures(recommendRequests)
                     }
                     navController.navigate("study-plan-complete")
                 }
@@ -110,7 +114,7 @@ fun AppNavHost(
 
         composable("study-plan-complete") {
             StudyPlanCompleteScreen(
-                recommendResponses = recommendResponses, // 단일 객체 -> 리스트로 변경
+                recommendResponses = recommendResponses,
                 onStartLearning = {
                     val userEmail = Firebase.auth.currentUser?.email
                     onboardingPreferenceStorage.setOnboardingCompleted(userEmail)
