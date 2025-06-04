@@ -67,8 +67,9 @@ import kotlinx.coroutines.launch
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun GroupPlanScreen(
-//    planId: Int,
-//    lectureRoomViewModel: LectureRoomViewModel,
+    planId: Int,
+    groupId: Int,
+    lectureRoomViewModel: LectureRoomViewModel,
     navController: NavController
 ) {
     val context = LocalContext.current
