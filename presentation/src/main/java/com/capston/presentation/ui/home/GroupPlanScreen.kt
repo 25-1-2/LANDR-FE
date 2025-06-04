@@ -120,7 +120,10 @@ fun GroupPlanScreen(
                     isLoading = isLoading,
                     onLoadingChange = { isLoading = it },
                     selectedPlanId = selectedPlanId,
-                    onMemberClick = { memberPlanId -> selectedPlanId = memberPlanId }
+                    onMemberClick = { memberPlanId ->
+                        selectedPlanId = memberPlanId
+                        lectureRoomViewModel.getPlanDetail(memberPlanId)
+                    }
                 )
 
                 HorizontalDivider()
