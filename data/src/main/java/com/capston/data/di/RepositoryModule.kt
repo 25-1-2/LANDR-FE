@@ -27,8 +27,6 @@ import com.capston.data.repository.remote.repositoryImpl.LoginRepositoryImpl
 import com.capston.data.repository.remote.repositoryImpl.MyPageRepositoryImpl
 import com.capston.data.repository.remote.repositoryImpl.PlanRepositoryImpl
 import com.capston.data.repository.remote.repositoryImpl.RecommendRepositoryImpl
-import com.capston.data.repository.remote.repositoryImpl.StudyGroupRepositoryImpl
-import com.capston.data.repository.remote.repositoryImpl.RecommendRepositoryImpl
 import com.capston.data.repository.remote.repositoryImpl.RecommendationRepositoryImpl
 import com.capston.data.repository.remote.repositoryImpl.StudyGroupRepositoryImpl
 import com.capston.domain.datasource.DailyScheduleDataSource
@@ -40,8 +38,6 @@ import com.capston.domain.datasource.MyPageDataSource
 import com.capston.domain.datasource.PlanDataSource
 import com.capston.domain.datasource.StudyGroupDataSource
 import com.capston.domain.datasource.RecommendDataSource
-import com.capston.domain.datasource.StudyGroupDataSource
-import com.capston.domain.datasource.RecommendDataSource
 import com.capston.domain.repository.DailyScheduleRepository
 import com.capston.domain.repository.ErrorRepository
 import com.capston.domain.repository.HomeRepository
@@ -50,8 +46,8 @@ import com.capston.domain.repository.LoginRepository
 import com.capston.domain.repository.MyPageRepository
 import com.capston.domain.repository.PlanRepository
 import com.capston.domain.repository.RecommendRepository
-import com.capston.domain.repository.StudyGroupRepository
 import com.capston.domain.repository.RecommendationRepository
+import com.capston.domain.repository.StudyGroupRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -179,32 +175,13 @@ object RepositoryModule {
     fun provideRecommendDataSource(
         recommandApi: RecommendApi
     ): RecommendDataSource {
-       return RecommendDataSourceImpl(recommandApi)
+        return RecommendDataSourceImpl(recommandApi)
     }
 
     @Provides
     @Singleton
     fun provideRecommendRepository(recommendDataSource: RecommendDataSource): RecommendRepository =
         RecommendRepositoryImpl(recommendDataSource)
-
-    // 스터디그룹
-    @Provides
-    @Singleton
-    fun provideRecommendationRepository(
-        recommendationStorage: RecommendationStorage
-    ): RecommendationRepository {
-        return RecommendationRepositoryImpl(recommendationStorage)
-    }
-    fun provideStudyGroupDataSource(
-        studyGroupApi: StudyGroupApi
-    ): StudyGroupDataSource {
-        return StudyGroupDataSourceImpl(studyGroupApi)
-    }
-
-    @Provides
-    @Singleton
-    fun provideStudyGroupRepository(studyGroupDataSource: StudyGroupDataSource): StudyGroupRepository =
-        StudyGroupRepositoryImpl(studyGroupDataSource)
 
     @Provides
     @Singleton
