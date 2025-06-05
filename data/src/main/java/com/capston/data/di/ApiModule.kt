@@ -11,7 +11,6 @@ import com.capston.data.repository.remote.api.MyPageApi
 import com.capston.data.repository.remote.api.PlanApi
 import com.capston.data.repository.remote.api.StudyGroupApi
 import com.capston.data.repository.remote.api.RecommendApi
-
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
