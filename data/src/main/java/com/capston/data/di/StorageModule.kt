@@ -3,10 +3,12 @@ package com.capston.data.di
 
 import android.content.Context
 import com.capston.data.local.storage.OnboardingPreferenceStorageImpl
+import com.capston.data.local.storage.RecommendationStorage
 import com.capston.data.local.storage.TokenDataStore
 import com.capston.data.repository.TokenRepositoryImpl
 import com.capston.domain.datasource.OnboardingPreferenceStorage
 import com.capston.domain.repository.TokenRepository
+import com.google.gson.Gson
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -36,5 +38,16 @@ object StorageModule {
         @ApplicationContext context: Context
     ): OnboardingPreferenceStorage {
         return OnboardingPreferenceStorageImpl(context)
+    }
+
+
+    // 로컬에 추천 결과 임시 저장
+    @Provides
+    @Singleton
+    fun provideRecommendationStorage(
+        @ApplicationContext context: Context,
+        gson: Gson
+    ): RecommendationStorage {
+        return RecommendationStorage(context, gson)
     }
 }

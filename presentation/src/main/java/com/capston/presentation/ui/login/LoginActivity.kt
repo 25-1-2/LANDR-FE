@@ -191,7 +191,10 @@ class LoginActivity : ComponentActivity() {
                                         // 온보딩 완료시 메인으로 이동
                                         startActivity(Intent(this@LoginActivity, MainActivity::class.java))
                                     }
-                                    finish()
+
+                                     finish()
+//                                    // 임시 테스트를 위함
+//                                    startActivity(Intent(this@LoginActivity, OnboardingActivity::class.java))
                                 }
                             }
                         }

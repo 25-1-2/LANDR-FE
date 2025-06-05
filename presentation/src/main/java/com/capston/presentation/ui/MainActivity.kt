@@ -19,6 +19,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -44,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat.shouldShowRequestPermissionRationale
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -72,6 +74,7 @@ import com.capston.presentation.viewmodel.LectureRoomViewModel
 import com.capston.presentation.viewmodel.LoginViewModel
 import com.capston.presentation.viewmodel.MyPageViewModel
 import com.capston.presentation.viewmodel.PlanViewModel
+import com.capston.presentation.viewmodel.RecommendViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
@@ -87,6 +90,7 @@ class MainActivity : ComponentActivity() {
     val dailyScheduleViewModel: DailyScheduleViewModel by viewModels()
     val lectureRoomViewModel: LectureRoomViewModel by viewModels()
     val myPageViewModel: MyPageViewModel by viewModels()
+    val recommendViewModel: RecommendViewModel by viewModels()
 
     // 뒤로가기 두 번 누르기 위한 변수들
     var backPressedTime: Long = 0
@@ -138,7 +142,7 @@ class MainActivity : ComponentActivity() {
             }
 
             CapstonTheme {
-                Box(modifier = Modifier.fillMaxSize()) {
+                Box(modifier = Modifier.fillMaxWidth()) {
                     MainBottomBar(
                         homeViewModel = homeViewModel,
                         planViewModel = planViewModel,
@@ -146,6 +150,7 @@ class MainActivity : ComponentActivity() {
                         lectureRoomViewModel = lectureRoomViewModel,
                         loginViewModel = loginViewModel,
                         myPageViewModel = myPageViewModel,
+                        recommendViewModel = recommendViewModel,
                         loadingStateManager = loadingStateManager
                     )
 
@@ -288,6 +293,7 @@ fun MainBottomBar(
     lectureRoomViewModel: LectureRoomViewModel,
     loginViewModel: LoginViewModel,
     myPageViewModel: MyPageViewModel,
+    recommendViewModel: RecommendViewModel,
     loadingStateManager: LoadingStateManager
 ) {
     var bottomNavState by rememberSaveable { mutableIntStateOf(0) }
@@ -295,10 +301,9 @@ fun MainBottomBar(
     val mainActivity = LocalActivity.current as MainActivity
     val context = LocalContext.current
 
-    // 뒤로가기 처리 추가 - 상태를 기반으로 처리
+    // BackHandler
     BackHandler {
         if (bottomNavState == 0) {
-            // 홈 화면에서는 원래 코드대로 앱 종료 로직 실행
             val currentTime = System.currentTimeMillis()
             if (currentTime - mainActivity.backPressedTime < mainActivity.BACK_PRESS_INTERVAL) {
                 mainActivity.finish()
@@ -311,63 +316,50 @@ fun MainBottomBar(
                 ).show()
             }
         } else {
-            // 어떤 화면에서든 항상 홈으로 강제 이동
             bottomNavState = 0
-
-            // 백스택을 완전히 비우고 홈으로 이동
             navController.navigate(Screen.Home.title) {
-                popUpTo(0) {
-                    inclusive = true
-                }
+                popUpTo(0) { inclusive = true }
             }
         }
     }
 
-    Scaffold(
-        bottomBar = {
-            BottomBar(
-                navController = navController,
-                bottomNavState = bottomNavState,
-                onNavItemClick = { index ->
-                    // 이전 상태와 현재 선택한 상태가 같지 않을 때만 처리
-                    if (bottomNavState != index) {
-                        bottomNavState = index
-                        val destination = when (index) {
-                            0 -> Screen.Home.title
-                            1 -> Screen.Calender.title
-                            2 -> Screen.LectureRoom.title
-                            3 -> Screen.Profile.title
-                            else -> Screen.Home.title
-                        }
-
-                        // 이동 시 백스택을 완전히 비우고 새 화면으로 교체
-                        navController.navigate(destination) {
-                            // 백스택 완전히 비우기 - 그래프 ID를 사용
-                            popUpTo(0) {
-                                inclusive = true
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
+            bottomBar = {
+                BottomBarWithoutFAB(
+                    navController = navController,
+                    bottomNavState = bottomNavState,
+                    onNavItemClick = { index ->
+                        if (bottomNavState != index) {
+                            bottomNavState = index
+                            val destination = when (index) {
+                                0 -> Screen.Home.title
+                                1 -> Screen.Calender.title
+                                2 -> Screen.LectureRoom.title
+                                3 -> Screen.Profile.title
+                                else -> Screen.Home.title
                             }
-                            launchSingleTop = true
+                            navController.navigate(destination) {
+                                popUpTo(0) { inclusive = true }
+                                launchSingleTop = true
+                            }
                         }
                     }
-                },
-                onSearchClick = { mainActivity.startSearchActivity() }
-            )
-        },
-        // 하단 시스템 바를 고려하도록 contentWindowInsets 설정
-        contentWindowInsets = WindowInsets(0, 0, 0, 0)
-    ) { contentPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(contentPadding)
-        ) {
+                )
+            },
+            contentWindowInsets = WindowInsets.systemBars.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Top)
+        ) { contentPadding ->
             NavHost(
                 navController = navController,
                 startDestination = Screen.Home.title,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(
+                        top = contentPadding.calculateTopPadding(),
+                        bottom = 60.dp // FAB를 고려한 적절한 하단 패딩 (80dp 바텀바 - 40dp FAB offset)
+                    )
             ) {
-                // 기존 코드와 동일한 부분 유지
-                composable(Screen.Home.title) { HomeScreen(homeViewModel, planViewModel, navController) }
+                composable(Screen.Home.title) { HomeScreen(homeViewModel, planViewModel, recommendViewModel, navController) }
                 composable(Screen.Calender.title) { CalenderScreen(homeViewModel, dailyScheduleViewModel) }
                 composable(Screen.LectureRoom.title) {
                     LectureRoomScreen(
@@ -418,6 +410,78 @@ fun MainBottomBar(
                 composable(Screen.Notification.title) { NotificationScreen() }
             }
         }
+
+        FloatingActionButton(
+            onClick = { mainActivity.startSearchActivity() },
+            containerColor = MainPurple,
+            modifier = Modifier
+                .size(60.dp)
+                .align(Alignment.BottomCenter)
+                .offset(y = (-20).dp),
+            shape = RoundedCornerShape(50)
+        ) {
+            Icon(
+                imageVector = Icons.Filled.Search,
+                contentDescription = "search",
+                tint = Color.White
+            )
+        }
+    }
+}
+
+@Composable
+fun BottomBarWithoutFAB(
+    navController: NavController,
+    bottomNavState: Int,
+    onNavItemClick: (Int) -> Unit
+) {
+    val items: List<Screen> = listOf(
+        Screen.Home,
+        Screen.Calender,
+        Screen.LectureRoom,
+        Screen.Profile,
+    )
+
+    // 완전 커스텀으로 만들기
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color.White)
+    ) {
+        Divider(color = LightGray2, thickness = 1.dp)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(80.dp)
+                .background(Color.White),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            items.forEachIndexed { index, item ->
+                if (index == 2) {
+                    Spacer(modifier = Modifier.width(60.dp))
+                }
+
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clickable { onNavItemClick(index) },
+                    contentAlignment = Alignment.Center
+                ) {
+                    when (val icon = if (bottomNavState == index) item.selectedIcon else item.unselectedIcon) {
+                        is ImageVector -> Icon(
+                            imageVector = icon,
+                            contentDescription = item.title,
+                            tint = if (bottomNavState == index) MainPurple else Color.Gray
+                        )
+                        is Int -> Image(
+                            painter = painterResource(icon),
+                            contentDescription = item.title
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -434,68 +498,61 @@ fun BottomBar(
         Screen.LectureRoom,
         Screen.Profile,
     )
-    val context = LocalContext.current
 
-    // 시스템 하단 네비게이션 높이 가져오기
-    val navigationBarsHeight = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-
-    Divider(color = LightGray2, thickness = 1.dp)
-    Box(
-        Modifier
-            .fillMaxWidth()
-            // 시스템 네비게이션 바 높이만큼 패딩 추가
-            .windowInsetsPadding(WindowInsets.navigationBars)
-    ) {
-        Row(
-            Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceAround
+    Column {
+        Divider(color = LightGray2, thickness = 1.dp)
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(100.dp) // 높이를 늘려서 FAB 공간 확보
+                .windowInsetsPadding(WindowInsets.navigationBars)
         ) {
-            items.forEachIndexed { index, item ->
-                if (index == items.size / 2) {
-                    Box(Modifier.weight(1f)) // 중앙 간격을 확보하기 위해 빈 Box 추가
-                }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .align(Alignment.BottomCenter) // Row를 아래쪽에 정렬
+                    .height(80.dp), // Row의 높이는 기존과 동일
+                horizontalArrangement = Arrangement.SpaceAround
+            ) {
+                items.forEachIndexed { index, item ->
+                    if (index == items.size / 2) {
+                        Box(Modifier.weight(1f)) // 중앙 간격 확보
+                    }
 
-                NavigationBarItem(
-                    selected = bottomNavState == index,
-                    onClick = {
-                        onNavItemClick(index)
-                        //navController.navigate(item.title) // 클릭 시 해당 화면으로 이동
-                    },
-                    icon = {
-                        when (val icon = if (bottomNavState == index) item.selectedIcon else item.unselectedIcon) {
-                            is ImageVector -> Icon(imageVector = icon, contentDescription = item.title)
-                            is Int -> Image(painter = painterResource(icon), contentDescription = item.title)
-                            else -> {} // 예외 처리
-                        }
-                    },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = MainPurple,
-                        selectedTextColor = MainPurple,
-                        indicatorColor = Color.Transparent
+                    NavigationBarItem(
+                        selected = bottomNavState == index,
+                        onClick = { onNavItemClick(index) },
+                        icon = {
+                            when (val icon = if (bottomNavState == index) item.selectedIcon else item.unselectedIcon) {
+                                is ImageVector -> Icon(imageVector = icon, contentDescription = item.title)
+                                is Int -> Image(painter = painterResource(icon), contentDescription = item.title)
+                                else -> {}
+                            }
+                        },
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = MainPurple,
+                            selectedTextColor = MainPurple,
+                            indicatorColor = Color.Transparent
+                        )
                     )
+                }
+            }
+
+            FloatingActionButton(
+                onClick = { onSearchClick() },
+                containerColor = MainPurple,
+                modifier = Modifier
+                    .size(60.dp)
+                    .align(Alignment.TopCenter) // 상단 중앙에 배치
+                    .offset(y = 10.dp), // 약간만 아래로 (기존 -20dp에서 +10dp로)
+                shape = RoundedCornerShape(50)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Search,
+                    contentDescription = "search",
+                    tint = Color.White
                 )
             }
-        }
-
-        FloatingActionButton(
-            onClick = {
-//                val intent = Intent(context, SearchActivity::class.java)
-//                context.startActivity(intent)
-
-                onSearchClick()
-            },
-            containerColor = MainPurple,
-            modifier = Modifier
-                .size(60.dp)
-                .align(Alignment.Center)
-                .offset(y = -20.dp), // FAB이 NavigationBar 위로 떠 있도록 설정
-            shape = RoundedCornerShape(50)
-        ) {
-            Icon(
-                imageVector = Icons.Filled.Search,
-                contentDescription = "search",
-                tint = Color.White
-            )
         }
     }
 }

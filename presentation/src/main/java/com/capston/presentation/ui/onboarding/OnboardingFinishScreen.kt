@@ -19,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.airbnb.lottie.compose.LottieAnimation
@@ -27,6 +28,7 @@ import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.animateLottieCompositionAsState
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.capston.presentation.R
+import com.capston.presentation.theme.CapstonTheme
 import com.capston.presentation.theme.textGray
 
 @Composable
@@ -38,26 +40,28 @@ fun OnboardingFinishScreen(
             .fillMaxSize()
             .padding(16.dp)
     ) {
+
         // 상단 LANDR 로고
         Image(
             painter = painterResource(R.drawable.landr_title_iv),
             contentDescription = "과목명",
             modifier = Modifier
-                .padding(top = 80.dp, start = 35.dp) // 원하는 만큼 아래로 내림
+                .padding(top = 80.dp, start = 35.dp)
                 .size(80.dp)
                 .align(Alignment.TopStart)
         )
 
-        // 텍스트 및 이미지 컨텐츠
+        // 텍스트 영역 (이미지 제거됨)
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 140.dp) // 로고보다 아래에 위치하도록
+                .padding(top = 140.dp)
                 .align(Alignment.TopCenter),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "조은채님,\n맞춤형 인강 학습 준비가 완료됐어요!",
+                text = "조은채님,\n" +
+                        "맞춤형 인강 학습 준비가 완료됐어요!",
                 style = MaterialTheme.typography.titleLarge,
                 textAlign = TextAlign.Start,
                 fontSize = 24.sp
@@ -99,5 +103,13 @@ fun OnboardingFinishScreen(
         ) {
             Text("완료")
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun LectureRoomPreview() {
+    CapstonTheme {
+        OnboardingFinishScreen(onCompleteOnboarding = {})
     }
 }

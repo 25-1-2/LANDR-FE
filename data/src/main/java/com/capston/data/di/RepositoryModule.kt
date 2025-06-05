@@ -1,5 +1,6 @@
 package com.capston.data.di
 
+import com.capston.data.local.storage.RecommendationStorage
 import com.capston.data.repository.remote.api.DailyScheduleApi
 import com.capston.data.repository.remote.api.ErrorApi
 import com.capston.data.repository.remote.api.HomeApi
@@ -7,6 +8,7 @@ import com.capston.data.repository.remote.api.LectureApi
 import com.capston.data.repository.remote.api.LoginApi
 import com.capston.data.repository.remote.api.MyPageApi
 import com.capston.data.repository.remote.api.PlanApi
+import com.capston.data.repository.remote.api.RecommendApi
 import com.capston.data.repository.remote.api.StudyGroupApi
 import com.capston.data.repository.remote.datasourcelmpl.DailyScheduleDataSourceImpl
 import com.capston.data.repository.remote.datasourcelmpl.ErrorDataSourceImpl
@@ -15,6 +17,7 @@ import com.capston.data.repository.remote.datasourcelmpl.LectureDataSourceImpl
 import com.capston.data.repository.remote.datasourcelmpl.LoginDataSourceImpl
 import com.capston.data.repository.remote.datasourcelmpl.MyPageDataSourceImpl
 import com.capston.data.repository.remote.datasourcelmpl.PlanDataSourceImpl
+import com.capston.data.repository.remote.datasourcelmpl.RecommendDataSourceImpl
 import com.capston.data.repository.remote.datasourcelmpl.StudyGroupDataSourceImpl
 import com.capston.data.repository.remote.repositoryImpl.DailyScheduleRepositoryImpl
 import com.capston.data.repository.remote.repositoryImpl.ErrorRepositoryImpl
@@ -23,6 +26,8 @@ import com.capston.data.repository.remote.repositoryImpl.LectureRepositoryImpl
 import com.capston.data.repository.remote.repositoryImpl.LoginRepositoryImpl
 import com.capston.data.repository.remote.repositoryImpl.MyPageRepositoryImpl
 import com.capston.data.repository.remote.repositoryImpl.PlanRepositoryImpl
+import com.capston.data.repository.remote.repositoryImpl.RecommendRepositoryImpl
+import com.capston.data.repository.remote.repositoryImpl.RecommendationRepositoryImpl
 import com.capston.data.repository.remote.repositoryImpl.StudyGroupRepositoryImpl
 import com.capston.domain.datasource.DailyScheduleDataSource
 import com.capston.domain.datasource.ErrorDataSource
@@ -32,6 +37,7 @@ import com.capston.domain.datasource.LoginDataSource
 import com.capston.domain.datasource.MyPageDataSource
 import com.capston.domain.datasource.PlanDataSource
 import com.capston.domain.datasource.StudyGroupDataSource
+import com.capston.domain.datasource.RecommendDataSource
 import com.capston.domain.repository.DailyScheduleRepository
 import com.capston.domain.repository.ErrorRepository
 import com.capston.domain.repository.HomeRepository
@@ -39,6 +45,8 @@ import com.capston.domain.repository.LectureRepository
 import com.capston.domain.repository.LoginRepository
 import com.capston.domain.repository.MyPageRepository
 import com.capston.domain.repository.PlanRepository
+import com.capston.domain.repository.RecommendRepository
+import com.capston.domain.repository.RecommendationRepository
 import com.capston.domain.repository.StudyGroupRepository
 import dagger.Module
 import dagger.Provides
@@ -160,4 +168,26 @@ object RepositoryModule {
     @Singleton
     fun provideStudyGroupRepository(studyGroupDataSource: StudyGroupDataSource): StudyGroupRepository =
         StudyGroupRepositoryImpl(studyGroupDataSource)
+
+    // 강의 추천
+    @Provides
+    @Singleton
+    fun provideRecommendDataSource(
+        recommandApi: RecommendApi
+    ): RecommendDataSource {
+        return RecommendDataSourceImpl(recommandApi)
+    }
+
+    @Provides
+    @Singleton
+    fun provideRecommendRepository(recommendDataSource: RecommendDataSource): RecommendRepository =
+        RecommendRepositoryImpl(recommendDataSource)
+
+    @Provides
+    @Singleton
+    fun provideRecommendationRepository(
+        recommendationStorage: RecommendationStorage
+    ): RecommendationRepository {
+        return RecommendationRepositoryImpl(recommendationStorage)
+    }
 }

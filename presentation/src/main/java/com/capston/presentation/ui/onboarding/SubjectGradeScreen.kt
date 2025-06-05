@@ -12,6 +12,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -55,7 +57,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
@@ -66,14 +67,54 @@ import com.capston.presentation.theme.MainPurple
 import com.capston.presentation.theme.textGray
 import kotlinx.coroutines.delay
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun SubjectGradeScreen(onSetupComplete: () -> Unit) {
+fun IncompleteWarningCard(incompleteCount: Int) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color(0xFFFFEBEE)
+        ),
+        border = BorderStroke(1.dp, Color(0xFFE57373)),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                imageVector = Icons.Default.Info,
+                contentDescription = "경고",
+                tint = Color(0xFFD32F2F),
+                modifier = Modifier.size(20.dp)
+            )
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            Text(
+                text = "${incompleteCount}개 과목의 모든 항목을 완성해주세요",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                color = Color(0xFFD32F2F),
+                textAlign = TextAlign.Center
+            )
+        }
+    }
+}
+
+@Composable
+fun SubjectGradeScreen(onSetupComplete: (List<SubjectGrade>) -> Unit) {
     var subjectGrades by remember { mutableStateOf(listOf(SubjectGrade())) }
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
     val focusedItemId by remember { mutableStateOf<String?>(null) }
 
-    // 과목을 영역별로 정리
+    // 과목을 영역별로 정리 (기존과 동일)
     val subjectCategories = listOf(
         SubjectCategory(
             categoryName = "국어 영역",
@@ -115,63 +156,68 @@ fun SubjectGradeScreen(onSetupComplete: () -> Unit) {
         )
     )
 
-    // 모든 과목을 하나의 리스트로 통합 (드롭다운용)
-    val allSubjects = subjectCategories.flatMap { it.subjects }
+    // 학습 방향, 목표, 스타일 옵션들
+    val focusOptions = listOf(
+        "수능 중심",
+        "내신 중심",
+        "균형 잡힌 학습"
+    )
+
+    val goalOptions = listOf(
+        "개념 정리",
+        "기출 분석",
+        "실전 문제풀이",
+        "빠른 요약 정리"
+    )
+
+    val styleOptions = listOf(
+        "체계적 학습",
+        "빠른 진도",
+        "반복 학습",
+        "실전 중심",
+        "이론 중심",
+        "문제풀이 중심"
+    )
 
     Box(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
     ) {
+        // 상단 LANDR 로고
+        Image(
+            painter = painterResource(R.drawable.landr_title_iv),
+            contentDescription = "과목명",
+            modifier = Modifier
+                .padding(top = 80.dp, start = 35.dp)
+                .size(80.dp)
+                .align(Alignment.TopStart)
+        )
+
+        // 텍스트 영역
         Column(
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 140.dp)
+                .align(Alignment.TopCenter),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // 상단 LANDR 로고
-            Image(
-                painter = painterResource(R.drawable.landr_title_iv),
-                contentDescription = "LANDR 로고",
-                modifier = Modifier
-                    .padding(top = 60.dp, start = 20.dp)
-                    .size(80.dp)
+            Text(
+                text = "조은채님!\n맞춤형 인강 학습을 시작해볼까요?",
+                style = MaterialTheme.typography.titleLarge,
+                textAlign = TextAlign.Start,
+                fontSize = 24.sp
             )
 
-            Spacer(modifier = Modifier.height(40.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
-            // 메인 컨텐츠
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                Text(
-                    text = "조은채님!\n맞춤형 인강 학습을 시작해볼까요?",
-                    style = MaterialTheme.typography.titleLarge,
-                    textAlign = TextAlign.Start,
-                    fontSize = 24.sp
-                )
-
-                Spacer(modifier = Modifier.height(20.dp))
-
-                Text(
-                    text = "꼭 맞는 학습 계획을 LANDR가 제안해드릴게요:)",
-                    style = MaterialTheme.typography.bodyLarge,
-                    textAlign = TextAlign.Center,
-                    color = textGray,
-                    fontSize = 14.sp
-                )
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // 제목
-                Text(
-                    text = "2. 강의를 추천 받고 싶은 과목과 등급을 알려주세요",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MainPurple,
-                    modifier = Modifier.fillMaxWidth(),
-                    textAlign = TextAlign.Start
-                )
-            }
+            Text(
+                text = "각 과목별로 상세한 학습 계획을 설정해주세요:)",
+                style = MaterialTheme.typography.bodyLarge,
+                textAlign = TextAlign.Center,
+                color = textGray,
+                fontSize = 14.sp
+            )
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -187,22 +233,14 @@ fun SubjectGradeScreen(onSetupComplete: () -> Unit) {
                     SubjectGradeCard(
                         subjectGrade = subjectGrade,
                         subjectCategories = subjectCategories,
-                        allSubjects = allSubjects,
+                        focusOptions = focusOptions,
+                        goalOptions = goalOptions,
+                        styleOptions = styleOptions,
                         canDelete = subjectGrades.size > 1,
                         isFocused = focusedItemId == subjectGrade.id,
-                        onSubjectChange = { newSubject ->
+                        onSubjectGradeChange = { updatedSubjectGrade ->
                             subjectGrades = subjectGrades.toMutableList().apply {
-                                this[index] = this[index].copy(subject = newSubject)
-                            }
-                        },
-                        onGradeChange = { newGrade ->
-                            subjectGrades = subjectGrades.toMutableList().apply {
-                                this[index] = this[index].copy(grade = newGrade)
-                            }
-                        },
-                        onGradeTypeChange = { newType ->
-                            subjectGrades = subjectGrades.toMutableList().apply {
-                                this[index] = this[index].copy(gradeType = newType)
+                                this[index] = updatedSubjectGrade
                             }
                         },
                         onDelete = {
@@ -223,7 +261,7 @@ fun SubjectGradeScreen(onSetupComplete: () -> Unit) {
 
                                     listState.animateScrollToItem(
                                         index = targetIndex,
-                                        scrollOffset = 0  // -200에서 0으로 변경
+                                        scrollOffset = 0
                                     )
                                 } else {
                                     listState.animateScrollToItem(0)
@@ -233,13 +271,29 @@ fun SubjectGradeScreen(onSetupComplete: () -> Unit) {
                     )
                 }
 
-                // + 버튼
+                // 미완성 과목이 있는 경우 경고 메시지 또는 + 버튼
+                val incompleteSubjects = subjectGrades.filter { subjectGrade ->
+                    !(subjectGrade.subject.isNotEmpty() &&
+                            subjectGrade.schoolGrade > 0 &&
+                            subjectGrade.mockGrade > 0 &&
+                            subjectGrade.focus.isNotEmpty() &&
+                            subjectGrade.goal.isNotEmpty() &&
+                            subjectGrade.styles.isNotEmpty())
+                }
+
+                if (incompleteSubjects.isNotEmpty()) {
+                    item {
+                        IncompleteWarningCard(incompleteCount = incompleteSubjects.size)
+                    }
+                }
+
+                // + 버튼 (최대 개수 미달성 시)
                 if (subjectGrades.size < 5) {
                     item {
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(300.dp),
+                                .height(100.dp),
                             contentAlignment = Alignment.TopCenter
                         ) {
                             Box(
@@ -258,8 +312,8 @@ fun SubjectGradeScreen(onSetupComplete: () -> Unit) {
 
                                             try {
                                                 listState.animateScrollToItem(
-                                                    index = newItemIndex, // 새로 추가된 아이템으로
-                                                    scrollOffset = 0 // 잘리지 않게 0으로 설정
+                                                    index = newItemIndex,
+                                                    scrollOffset = 0
                                                 )
                                             } catch (e: Exception) {
                                                 listState.scrollToItem(newItemIndex, 0)
@@ -267,10 +321,11 @@ fun SubjectGradeScreen(onSetupComplete: () -> Unit) {
 
                                             delay(800)
 
-                                            subjectGrades = subjectGrades.mapIndexed { index, item ->
-                                                if (index == newItemIndex) item.copy(isNew = false)
-                                                else item
-                                            }
+                                            subjectGrades =
+                                                subjectGrades.mapIndexed { index, item ->
+                                                    if (index == newItemIndex) item.copy(isNew = false)
+                                                    else item
+                                                }
                                         }
                                     }
                                     .background(
@@ -293,8 +348,7 @@ fun SubjectGradeScreen(onSetupComplete: () -> Unit) {
                             }
                         }
                     }
-                }
-                else {
+                } else {
                     // 최대 개수 도달 메시지
                     item {
                         MaxSubjectCard()
@@ -304,10 +358,39 @@ fun SubjectGradeScreen(onSetupComplete: () -> Unit) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // 하단 시작하기 버튼
+            // 하단 다음 버튼
             Button(
-                onClick = onSetupComplete,
-                enabled = subjectGrades.any { it.subject.isNotEmpty() && it.grade > 0 },
+                onClick = {
+                    // 유효한 과목 데이터만 필터링해서 전달 (모든 필드가 입력된 경우)
+                    val validSubjectGrades = subjectGrades.filter {
+                        val isValid = it.subject.isNotEmpty() &&
+                                it.schoolGrade > 0 &&
+                                it.mockGrade > 0 &&
+                                it.focus.isNotEmpty() &&
+                                it.goal.isNotEmpty() &&
+                                it.styles.isNotEmpty()
+
+                        // 디버깅 로그 추가
+                        android.util.Log.d("SubjectGradeScreen", "과목: ${it.subject}, 유효성: $isValid")
+                        android.util.Log.d("SubjectGradeScreen", "내신: ${it.schoolGrade}, 모의고사: ${it.mockGrade}")
+                        android.util.Log.d("SubjectGradeScreen", "방향: ${it.focus}, 목표: ${it.goal}")
+                        android.util.Log.d("SubjectGradeScreen", "스타일: ${it.styles}")
+
+                        isValid
+                    }
+
+                    android.util.Log.d("SubjectGradeScreen", "전체 과목 수: ${subjectGrades.size}, 유효한 과목 수: ${validSubjectGrades.size}")
+
+                    onSetupComplete(validSubjectGrades)
+                },
+                enabled = subjectGrades.any {
+                    it.subject.isNotEmpty() &&
+                            it.schoolGrade > 0 &&
+                            it.mockGrade > 0 &&
+                            it.focus.isNotEmpty() &&
+                            it.goal.isNotEmpty() &&
+                            it.styles.isNotEmpty()
+                },
                 shape = RoundedCornerShape(20.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MainPurple,
@@ -317,8 +400,17 @@ fun SubjectGradeScreen(onSetupComplete: () -> Unit) {
                     .fillMaxWidth()
                     .height(56.dp)
             ) {
+                val validCount = subjectGrades.count {
+                    it.subject.isNotEmpty() &&
+                            it.schoolGrade > 0 &&
+                            it.mockGrade > 0 &&
+                            it.focus.isNotEmpty() &&
+                            it.goal.isNotEmpty() &&
+                            it.styles.isNotEmpty()
+                }
+
                 Text(
-                    text = "다음",
+                    text = if (validCount > 0) "다음 (${validCount}개 과목)" else "다음",
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Medium,
                     color = Color.White
@@ -367,30 +459,31 @@ fun MaxSubjectCard() {
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun SubjectGradeCard(
     subjectGrade: SubjectGrade,
     subjectCategories: List<SubjectCategory>,
-    allSubjects: List<String>,
+    focusOptions: List<String>,
+    goalOptions: List<String>,
+    styleOptions: List<String>,
     canDelete: Boolean,
     isFocused: Boolean = false,
-    onSubjectChange: (String) -> Unit,
-    onGradeChange: (Int) -> Unit,
-    onGradeTypeChange: (String) -> Unit,
+    onSubjectGradeChange: (SubjectGrade) -> Unit,
     onDelete: () -> Unit
 ) {
     var showSubjectDropdown by remember { mutableStateOf(false) }
 
-    // 더 부드러운 애니메이션 스펙으로 개선
+    // 애니메이션
     val scale by animateFloatAsState(
         targetValue = when {
-            subjectGrade.isNew -> 1.03f // 스케일을 줄여서 더 자연스럽게
+            subjectGrade.isNew -> 1.03f
             isFocused -> 1.01f
             else -> 1f
         },
         animationSpec = spring(
-            dampingRatio = Spring.DampingRatioLowBouncy, // 더 부드러운 스프링
-            stiffness = Spring.StiffnessLow // 더 느린 애니메이션
+            dampingRatio = Spring.DampingRatioLowBouncy,
+            stiffness = Spring.StiffnessLow
         ),
         label = "card_scale"
     )
@@ -401,11 +494,10 @@ private fun SubjectGradeCard(
             isFocused -> 0.3f
             else -> 0f
         },
-        animationSpec = tween(durationMillis = 600), // 더 긴 지속시간
+        animationSpec = tween(durationMillis = 600),
         label = "border_alpha"
     )
 
-    // 배경색 애니메이션도 추가
     val backgroundAlpha by animateFloatAsState(
         targetValue = when {
             subjectGrade.isNew -> 0.08f
@@ -455,12 +547,30 @@ private fun SubjectGradeCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = "과목 선택",
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Color.Black
-                )
+                Column {
+                    Text(
+                        text = if (subjectGrade.subject.isEmpty()) "과목 선택" else subjectGrade.subject,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = if (subjectGrade.subject.isEmpty()) Color.Gray else MainPurple
+                    )
+
+                    // 진행 상태 표시
+                    val completedSteps = listOf(
+                        subjectGrade.subject.isNotEmpty(),
+                        subjectGrade.schoolGrade > 0,
+                        subjectGrade.mockGrade > 0,
+                        subjectGrade.focus.isNotEmpty(),
+                        subjectGrade.goal.isNotEmpty(),
+                        subjectGrade.styles.isNotEmpty()
+                    ).count { it }
+
+                    Text(
+                        text = "$completedSteps/6 단계 완료",
+                        fontSize = 12.sp,
+                        color = if (completedSteps == 6) MainPurple else Color.Gray
+                    )
+                }
 
                 if (canDelete) {
                     IconButton(
@@ -478,6 +588,13 @@ private fun SubjectGradeCard(
             }
 
             // 과목 선택 커스텀 드롭다운
+            Text(
+                text = "과목 선택",
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Medium,
+                color = Color.Black
+            )
+
             Box {
                 Box(
                     modifier = Modifier
@@ -523,22 +640,21 @@ private fun SubjectGradeCard(
                             .zIndex(1f),
                         colors = CardDefaults.cardColors(containerColor = Color.White),
                         elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
-                        shape = RoundedCornerShape(8.dp) // 선택 박스와 같은 모양
+                        shape = RoundedCornerShape(8.dp)
                     ) {
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(250.dp)
-                                .background(Color.White) // 명시적으로 흰색 배경 설정
+                                .background(Color.White)
                         ) {
                             LazyColumn(
                                 modifier = Modifier
                                     .padding(8.dp)
-                                    .background(Color.White) // LazyColumn도 흰색 배경
+                                    .background(Color.White)
                             ) {
                                 subjectCategories.forEach { category ->
                                     item {
-                                        // 카테고리 헤더
                                         Text(
                                             text = category.categoryName,
                                             fontSize = 14.sp,
@@ -550,20 +666,19 @@ private fun SubjectGradeCard(
                                         )
                                     }
 
-                                    // 해당 카테고리의 과목들
                                     items(category.subjects.size) { index ->
                                         val subject = category.subjects[index]
                                         Box(
                                             modifier = Modifier
                                                 .fillMaxWidth()
                                                 .clickable {
-                                                    onSubjectChange(subject)
+                                                    onSubjectGradeChange(subjectGrade.copy(subject = subject))
                                                     showSubjectDropdown = false
                                                 }
                                                 .padding(horizontal = 16.dp, vertical = 8.dp)
                                         ) {
                                             Text(
-                                                text = "  $subject", // 들여쓰기
+                                                text = "  $subject",
                                                 fontSize = 13.sp,
                                                 color = if (subject == subjectGrade.subject) MainPurple else Color.Black,
                                                 fontWeight = if (subject == subjectGrade.subject) FontWeight.SemiBold else FontWeight.Normal
@@ -571,7 +686,6 @@ private fun SubjectGradeCard(
                                         }
                                     }
 
-                                    // 카테고리 구분선 (마지막 카테고리 제외)
                                     if (category != subjectCategories.last()) {
                                         item {
                                             Spacer(
@@ -590,48 +704,13 @@ private fun SubjectGradeCard(
                 }
             }
 
-            // 등급 타입 토글 (내신/모의고사)
+            // 과목이 선택된 경우에만 나머지 필드들 표시
             if (subjectGrade.subject.isNotEmpty()) {
+                // 내신 등급 선택
                 Text(
-                    text = "등급 종류",
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Color.Black
-                )
-
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    listOf("내신", "모의고사").forEach { type ->
-                        Box(
-                            modifier = Modifier
-                                .clickable { onGradeTypeChange(type) }
-                                .border(
-                                    width = 1.dp,
-                                    color = if (subjectGrade.gradeType == type) MainPurple else Color.LightGray,
-                                    shape = RoundedCornerShape(18.dp)
-                                )
-                                .background(
-                                    color = if (subjectGrade.gradeType == type) MainPurple.copy(alpha = 0.1f) else Color.Transparent,
-                                    shape = RoundedCornerShape(18.dp)
-                                )
-                                .padding(horizontal = 14.dp, vertical = 6.dp)
-                        ) {
-                            Text(
-                                text = type,
-                                color = if (subjectGrade.gradeType == type) MainPurple else Color.Gray,
-                                fontSize = 13.sp,
-                                fontWeight = if (subjectGrade.gradeType == type) FontWeight.SemiBold else FontWeight.Normal
-                            )
-                        }
-                    }
-                }
-
-                // 등급 선택 - 원형 버튼
-                Text(
-                    text = "등급",
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.SemiBold,
+                    text = "내신 등급",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Medium,
                     color = Color.Black
                 )
 
@@ -643,21 +722,23 @@ private fun SubjectGradeCard(
                         Box(
                             modifier = Modifier
                                 .size(36.dp)
-                                .clickable { onGradeChange(grade) }
+                                .clickable {
+                                    onSubjectGradeChange(subjectGrade.copy(schoolGrade = grade))
+                                }
                                 .background(
-                                    color = if (subjectGrade.grade == grade) MainPurple else Color.Transparent,
+                                    color = if (subjectGrade.schoolGrade == grade) MainPurple else Color.Transparent,
                                     shape = CircleShape
                                 )
                                 .border(
                                     width = 1.5.dp,
-                                    color = if (subjectGrade.grade == grade) MainPurple else Color.LightGray,
+                                    color = if (subjectGrade.schoolGrade == grade) MainPurple else Color.LightGray,
                                     shape = CircleShape
                                 ),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
                                 text = grade.toString(),
-                                color = if (subjectGrade.grade == grade) Color.White else Color.Gray,
+                                color = if (subjectGrade.schoolGrade == grade) Color.White else Color.Gray,
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.SemiBold
                             )
@@ -673,28 +754,263 @@ private fun SubjectGradeCard(
                         Box(
                             modifier = Modifier
                                 .size(36.dp)
-                                .clickable { onGradeChange(grade) }
+                                .clickable {
+                                    onSubjectGradeChange(subjectGrade.copy(schoolGrade = grade))
+                                }
                                 .background(
-                                    color = if (subjectGrade.grade == grade) MainPurple else Color.Transparent,
+                                    color = if (subjectGrade.schoolGrade == grade) MainPurple else Color.Transparent,
                                     shape = CircleShape
                                 )
                                 .border(
                                     width = 1.5.dp,
-                                    color = if (subjectGrade.grade == grade) MainPurple else Color.LightGray,
+                                    color = if (subjectGrade.schoolGrade == grade) MainPurple else Color.LightGray,
                                     shape = CircleShape
                                 ),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
                                 text = grade.toString(),
-                                color = if (subjectGrade.grade == grade) Color.White else Color.Gray,
+                                color = if (subjectGrade.schoolGrade == grade) Color.White else Color.Gray,
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.SemiBold
                             )
                         }
                     }
                 }
+
+                // 모의고사 등급 선택
+                Text(
+                    text = "모의고사 등급",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Color.Black
+                )
+
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    (1..5).forEach { grade ->
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clickable {
+                                    onSubjectGradeChange(subjectGrade.copy(mockGrade = grade))
+                                }
+                                .background(
+                                    color = if (subjectGrade.mockGrade == grade) MainPurple else Color.Transparent,
+                                    shape = CircleShape
+                                )
+                                .border(
+                                    width = 1.5.dp,
+                                    color = if (subjectGrade.mockGrade == grade) MainPurple else Color.LightGray,
+                                    shape = CircleShape
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = grade.toString(),
+                                color = if (subjectGrade.mockGrade == grade) Color.White else Color.Gray,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                    }
+                }
+
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    (6..9).forEach { grade ->
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clickable {
+                                    onSubjectGradeChange(subjectGrade.copy(mockGrade = grade))
+                                }
+                                .background(
+                                    color = if (subjectGrade.mockGrade == grade) MainPurple else Color.Transparent,
+                                    shape = CircleShape
+                                )
+                                .border(
+                                    width = 1.5.dp,
+                                    color = if (subjectGrade.mockGrade == grade) MainPurple else Color.LightGray,
+                                    shape = CircleShape
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = grade.toString(),
+                                color = if (subjectGrade.mockGrade == grade) Color.White else Color.Gray,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                    }
+                }
+
+                // 학습 방향 선택
+                Text(
+                    text = "학습 방향",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Color.Black
+                )
+
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    focusOptions.forEach { option ->
+                        SelectionCard(
+                            text = option,
+                            isSelected = subjectGrade.focus == option,
+                            onSelect = {
+                                onSubjectGradeChange(subjectGrade.copy(focus = option))
+                            }
+                        )
+                    }
+                }
+
+                // 학습 목표 선택
+                Text(
+                    text = "학습 목표",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Color.Black
+                )
+
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    goalOptions.forEach { option ->
+                        SelectionCard(
+                            text = option,
+                            isSelected = subjectGrade.goal == option,
+                            onSelect = {
+                                onSubjectGradeChange(subjectGrade.copy(goal = option))
+                            }
+                        )
+                    }
+                }
+
+                // 학습 스타일 선택 (복수 선택)
+                Text(
+                    text = "학습 스타일 (복수선택 가능)",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Color.Black
+                )
+
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    styleOptions.forEach { style ->
+                        MultiSelectCard(
+                            text = style,
+                            isSelected = subjectGrade.styles.contains(style),
+                            onSelect = {
+                                val updatedStyles = if (subjectGrade.styles.contains(style)) {
+                                    subjectGrade.styles - style
+                                } else {
+                                    subjectGrade.styles + style
+                                }
+                                onSubjectGradeChange(subjectGrade.copy(styles = updatedStyles))
+                            }
+                        )
+                    }
+                }
             }
         }
+    }
+}
+
+@Composable
+private fun SelectionCard(
+    text: String,
+    isSelected: Boolean,
+    isIncomplete: Boolean = false,
+    onSelect: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onSelect() },
+        shape = RoundedCornerShape(8.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = when {
+                isSelected -> MainPurple.copy(alpha = 0.1f)
+                isIncomplete -> Color(0xFFFFEBEE)
+                else -> Color.Transparent
+            }
+        ),
+        border = BorderStroke(
+            width = if (isIncomplete) 2.dp else if (isSelected) 2.dp else 1.dp,
+            color = when {
+                isIncomplete -> Color(0xFFD32F2F)
+                isSelected -> MainPurple
+                else -> Color.LightGray
+            }
+        )
+    ) {
+        Text(
+            text = text,
+            fontSize = 12.sp,
+            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+            color = when {
+                isIncomplete -> Color(0xFFD32F2F)
+                isSelected -> MainPurple
+                else -> Color.Black
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 8.dp)
+        )
+    }
+}
+
+@Composable
+private fun MultiSelectCard(
+    text: String,
+    isSelected: Boolean,
+    isIncomplete: Boolean = false,
+    onSelect: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .clickable { onSelect() }
+            .background(
+                color = when {
+                    isSelected -> MainPurple.copy(alpha = 0.1f)
+                    isIncomplete -> Color(0xFFFFEBEE)
+                    else -> Color.Transparent
+                },
+                shape = RoundedCornerShape(16.dp)
+            )
+            .border(
+                width = if (isIncomplete) 2.dp else if (isSelected) 2.dp else 1.dp,
+                color = when {
+                    isIncomplete -> Color(0xFFD32F2F)
+                    isSelected -> MainPurple
+                    else -> Color.LightGray
+                },
+                shape = RoundedCornerShape(16.dp)
+            )
+            .padding(horizontal = 12.dp, vertical = 6.dp)
+    ) {
+        Text(
+            text = text,
+            fontSize = 11.sp,
+            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+            color = when {
+                isIncomplete -> Color(0xFFD32F2F)
+                isSelected -> MainPurple
+                else -> Color.Gray
+            }
+        )
     }
 }

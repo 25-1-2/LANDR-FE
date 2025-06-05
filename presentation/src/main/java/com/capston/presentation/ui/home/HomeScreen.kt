@@ -18,12 +18,15 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -35,9 +38,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.AlertDialog
@@ -120,12 +127,16 @@ import com.capston.domain.request.UpdateDDayRequest
 import com.capston.domain.response.enum_class.DayOfWeek
 import com.capston.domain.response.home.DistinctHomeIdResponse
 import com.capston.domain.response.plan.LectureAliasResponse
+import com.capston.domain.response.recommend.RecommendResponse
 import com.capston.presentation.theme.LightGray2
 import com.capston.presentation.theme.LightGray5
 import com.capston.presentation.theme.WarmPurple
 import com.capston.presentation.ui.common.CustomCheckBox
 import com.capston.presentation.ui.common.Screen
 import com.capston.presentation.ui.search.SearchActivity
+import com.capston.presentation.ui.search.bgColor
+import com.capston.presentation.ui.search.borderColor
+import com.capston.presentation.viewmodel.RecommendViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -136,12 +147,14 @@ import java.util.Locale
     "CoroutineCreationDuringComposition"
 )
 @Composable
-fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel, navController: NavController) {
+fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel, recommendViewModel: RecommendViewModel, navController: NavController) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
 
     val homeState by homeViewModel.getDistinctHome.collectAsState()
     val dDayState by homeViewModel.dDay.collectAsState()
+    val recommendResponses by recommendViewModel.postRecommendLectures.collectAsState() // 추천 결과 상태
+
     // 현재 D-Day 데이터 안전하게 가져오기
     val currentDDayData = remember(dDayState, homeState) {
         try {
@@ -234,6 +247,18 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel, navCo
         }
     }
 
+    // 디버깅을 위한 로그 추가
+    LaunchedEffect(recommendResponses) {
+        Log.d("HomeScreen", "=== 추천 데이터 상태 확인 ===")
+        Log.d("HomeScreen", "추천 결과 개수: ${recommendResponses.size}")
+        if (recommendResponses.isNotEmpty()) {
+            Log.d("HomeScreen", "첫 번째 추천: ${recommendResponses.first().title}")
+            Log.d("HomeScreen", "모든 추천 제목들: ${recommendResponses.map { it.title }}")
+        } else {
+            Log.d("HomeScreen", "추천 결과가 비어있음")
+        }
+    }
+
     // 이번주 학습 성취율 섹션 확장/축소 상태
     var isWeeklyExpanded by remember { mutableStateOf(true) }
 
@@ -276,15 +301,19 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel, navCo
 
                         Spacer(modifier = Modifier.height(20.dp))
 
-                        RecommendedCoursesWithIndicator(
-                            homeViewModel = homeViewModel,
-                            modifier = Modifier.fillMaxWidth()
+                        // 추천 강의 카드 (수정된 부분)
+                        RecommendedCoursesCard(
+                            recommendResponses = recommendResponses,
+                            navController = navController,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            context = context
                         )
                     }
                 }
             }
             else {
-                // 오늘의 강의 카드
                 TodayLectureCard(
                     todayLessonList = todayLessonList,
                     todayTotalLesson = todayTotalLesson,
@@ -324,7 +353,7 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel, navCo
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                    .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
                 shape = RoundedCornerShape(10.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White),
                 border = BorderStroke(1.dp, color = LightGray60)
@@ -406,6 +435,50 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel, navCo
             showDeleteCompleteDialog = false
         }
     )
+}
+
+@Composable
+fun TodayLectureCard(
+    todayLessonList: List<LessonScheduleResponse>?,
+    todayTotalLesson: Int,
+    todayTotalDuration: Int,
+    homeViewModel: HomeViewModel,
+    context: Context
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 16.dp, end = 16.dp, bottom = 10.dp),
+        shape = RoundedCornerShape(10.dp),
+        colors = CardDefaults.cardColors(containerColor = White),
+        border = BorderStroke(1.dp, color = LightGray60)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            // 카드 헤더 (제목 + 정보)
+            if (todayLessonList != null && todayLessonList.isNotEmpty()) {
+                TodayLectureHeader(todayTotalLesson, todayTotalDuration)
+            }
+            else {
+                RecommendedCoursesHeader()
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // 강의 목록 또는 빈 상태
+            if (todayLessonList != null && todayLessonList.isNotEmpty()) {
+                ModifiedLessonList(homeViewModel, 330, todayLessonList)
+            } else {
+                RecommendedCoursesWithIndicator(
+                    homeViewModel = homeViewModel,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        }
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -678,7 +751,6 @@ fun LearningStatusCard(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 10.dp)
         ) {
             Column(
                 modifier = Modifier.padding(horizontal = 10.dp)
@@ -927,50 +999,6 @@ fun CircleGraph(
                 radius = indicatorOuterRadius * 0.5f,
                 center = Offset(indicatorX, indicatorY)
             )
-        }
-    }
-}
-
-@Composable
-fun TodayLectureCard(
-    todayLessonList: List<LessonScheduleResponse>?,
-    todayTotalLesson: Int,
-    todayTotalDuration: Int,
-    homeViewModel: HomeViewModel,
-    context: Context
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
-        shape = RoundedCornerShape(10.dp),
-        colors = CardDefaults.cardColors(containerColor = White),
-        border = BorderStroke(1.dp, color = LightGray60)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
-            // 카드 헤더 (제목 + 정보)
-            if (todayLessonList != null && todayLessonList.isNotEmpty()) {
-                TodayLectureHeader(todayTotalLesson, todayTotalDuration)
-            }
-            else {
-                RecommendedCoursesHeader()
-            }
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            // 강의 목록 또는 빈 상태
-            if (todayLessonList != null && todayLessonList.isNotEmpty()) {
-                ModifiedLessonList(homeViewModel, 330, todayLessonList)
-            } else {
-                RecommendedCoursesWithIndicator(
-                    homeViewModel = homeViewModel,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
         }
     }
 }
@@ -1332,9 +1360,10 @@ fun OnlineLectureSiteList(context: Context) {
     // 인강 사이트 패키지명
     val etoosPackageName = stringResource(R.string.package_etoos)
     val megaPackageName = stringResource(R.string.package_megastudy)
-    val mimacPackageName = stringResource(R.string.package_mimac)
+    val daesungPackageName = stringResource(R.string.package_mimac)
+    val ebsiPackageName = stringResource(R.string.package_ebsi)
 
-    // 사이트 목록
+    // 사이트 목록을 2x2 그리드로 배치
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -1342,36 +1371,74 @@ fun OnlineLectureSiteList(context: Context) {
         verticalArrangement = Arrangement.spacedBy(8.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // 각 사이트 카드
-        OnlineLectureSiteItem(stringResource(R.string.etoos), etoosPackageName, context)
-        OnlineLectureSiteItem(stringResource(R.string.megastudy), megaPackageName, context)
-        OnlineLectureSiteItem(stringResource(R.string.mimac), mimacPackageName, context)
+        // 첫 번째 행: 이투스, 메가
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            OnlineLectureSiteItem(
+                name = stringResource(R.string.etoos),
+                packageName = etoosPackageName,
+                context = context,
+                modifier = Modifier.weight(1f)
+            )
+            OnlineLectureSiteItem(
+                name = stringResource(R.string.megastudy),
+                packageName = megaPackageName,
+                context = context,
+                modifier = Modifier.weight(1f)
+            )
+        }
+
+        // 두 번째 행: 대성, ebsi
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            OnlineLectureSiteItem(
+                name = stringResource(R.string.mimac),
+                packageName = daesungPackageName,
+                context = context,
+                modifier = Modifier.weight(1f)
+            )
+            OnlineLectureSiteItem(
+                name = stringResource(R.string.ebsi),
+                packageName = ebsiPackageName,
+                context = context,
+                modifier = Modifier.weight(1f)
+            )
+        }
     }
 }
 
 @Composable
-fun OnlineLectureSiteItem(name: String, packageName: String, context: Context) {
+fun OnlineLectureSiteItem(
+    name: String,
+    packageName: String,
+    context: Context,
+    modifier: Modifier = Modifier
+) {
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
+        modifier = modifier
+            .height(48.dp) // 정사각형으로 만들기
             .clickable { openAppOrPlayStore(context, packageName) },
         colors = CardDefaults.cardColors(containerColor = WarmPurple_20.copy(alpha = 0.2f)),
         border = BorderStroke(1.dp, WarmPurple),
         shape = RoundedCornerShape(8.dp),
     ) {
-        Row(
+        Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
+                .fillMaxSize()
+                .padding(12.dp),
+            contentAlignment = Alignment.Center
         ) {
             Text(
                 text = name,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Medium,
                 style = MaterialTheme.typography.headlineMedium,
-                color = MainPurple
+                color = MainPurple,
+                textAlign = TextAlign.Center
             )
         }
     }
@@ -1976,6 +2043,379 @@ fun DeleteCompleteDialog(
                     Text("확인")
                 }
             }
+        )
+    }
+}
+
+// 새로운 추천 강의 카드 컴포넌트
+@Composable
+fun RecommendedCoursesCard(
+    recommendResponses: List<RecommendResponse>,
+    navController: NavController,
+    modifier: Modifier = Modifier,
+    context: Context
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+    ) {
+        // 추천 강의 헤더
+        //RecommendedCoursesHeader()
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        if (recommendResponses.isNotEmpty()) {
+            // 추천 강의가 있는 경우
+            RecommendedCoursesList(
+                recommendResponses = recommendResponses,
+                navController = navController,
+                modifier = Modifier.fillMaxWidth(),
+                context = context
+            )
+        } else {
+            // 추천 강의가 없는 경우
+            EmptyRecommendationsState()
+        }
+    }
+}
+
+@Composable
+fun RecommendedCoursesHeader() {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Text(
+            text = "💡 맞춤 추천 강의",
+            style = MaterialTheme.typography.bodyLarge,
+            fontWeight = FontWeight.Bold,
+            fontSize = 20.sp
+        )
+    }
+}
+
+@Composable
+fun RecommendedCoursesList(
+    recommendResponses: List<RecommendResponse>,
+    navController: NavController,
+    modifier: Modifier = Modifier,
+    context: Context
+) {
+    if (recommendResponses.isEmpty()) {
+        EmptyRecommendationsState()
+        return
+    }
+
+    var currentPage by remember { mutableStateOf(0) }
+    val lazyListState = rememberLazyListState()
+
+    // 현재 페이지 추적
+    LaunchedEffect(lazyListState.firstVisibleItemIndex) {
+        currentPage = lazyListState.firstVisibleItemIndex
+    }
+
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        // 좌우 스와이프 가능한 추천 강의 리스트
+        LazyRow(
+            state = lazyListState,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(250.dp), // 고정 높이
+            flingBehavior = rememberSnapFlingBehavior(lazyListState = lazyListState),
+            horizontalArrangement = Arrangement.spacedBy(0.dp)
+        ) {
+            itemsIndexed(recommendResponses) { index, recommendation ->
+                SingleRecommendationCard(
+                    recommendation = recommendation,
+                    navController = navController,
+                    modifier = Modifier
+                        .fillParentMaxWidth() // 전체 너비 사용
+                        .fillMaxHeight()
+                        .padding(horizontal = 16.dp),
+                    context = context
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // 원형 페이지 인디케이터
+        if (recommendResponses.size > 1) {
+            PageIndicator(
+                pageCount = recommendResponses.size,
+                currentPage = currentPage,
+                onPageSelected = { selectedPage ->
+                    currentPage = selectedPage
+                }
+            )
+        }
+    }
+}
+
+// 단일 추천강의 카드 컴포넌트:
+@Composable
+fun SingleRecommendationCard(
+    recommendation: RecommendResponse,
+    navController: NavController,
+    modifier: Modifier = Modifier,
+    context: Context
+) {
+    Card(
+        modifier = modifier
+            .clickable {
+                // 디버깅용 로그 추가
+                Log.d("RecommendationCard", "recommendation.id: ${recommendation.id}")
+                Log.d("RecommendationCard", "recommendation.lectureId: ${recommendation.id}")
+                Log.d("RecommendationCard", "recommendation.tag: ${recommendation.tag}")
+                Log.d("RecommendationCard", "recommendation.totalLessons: ${recommendation.totalLessons}")
+
+                // SearchActivity로 이동하면서 lectureId 전달
+                val intent = Intent(context, SearchActivity::class.java).apply {
+                    putExtra("LECTURE_ID", recommendation.id)
+                    putExtra("FROM_RECOMMENDATION", true)
+                    putExtra("LECTURE_TITLE", recommendation.title)
+                    putExtra("LECTURE_TEACHER", recommendation.teacher)
+                    putExtra("LECTURE_PLATFORM", recommendation.platform.label)
+                    putExtra("LECTURE_SUBJECT", recommendation.subject.label)
+                    putExtra("LECTURE_TAG", recommendation.tag)
+                    putExtra("LECTURE_TOTAL_LESSONS", recommendation.totalLessons)
+                }
+                context.startActivity(intent)
+            },
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        border = BorderStroke(1.dp, color = LightGray60.copy(alpha = 0.3f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(24.dp),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            // 상단: 과목 정보
+            Column {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // 과목 아이콘과 이름
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = when (recommendation.subject.label) {
+                                "국어" -> "📖"
+                                "영어" -> "🔤"
+                                "수학" -> "📊"
+                                "사탐" -> "🌍"
+                                "과탐" -> "🔬"
+                                "한국사" -> "📜"
+                                else -> "📚"
+                            },
+                            fontSize = 24.sp
+                        )
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        // 플랫폼 정보
+                        Box(
+                            modifier = Modifier
+                                .background(
+                                    color = White,
+                                    shape = RoundedCornerShape(12.dp)
+                                )
+                                .padding(horizontal = 16.dp, vertical = 8.dp)
+                        ) {
+                            Text(
+                                text = recommendation.platform.label,
+                                fontSize = 14.sp,
+                                color = MainPurple,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.padding(5.dp))
+
+                        // 플랫폼 정보
+                        Box(
+                            modifier = Modifier
+                                .background(
+                                    color = recommendation.subject.bgColor,
+                                    shape = RoundedCornerShape(12.dp)
+                                )
+                                .padding(horizontal = 16.dp, vertical = 8.dp)
+                        ) {
+                            Text(
+                                text = recommendation.subject.label,
+                                fontSize = 14.sp,
+                                color = recommendation.subject.borderColor,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+
+
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // 강의 제목
+                Text(
+                    // 강의 제목이 길 경우 처리
+                    text = if (recommendation.title.length >= 40) {
+                        recommendation.title.take(40) + "..."
+                    } else {
+                        recommendation.title
+                    },
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black,
+                    lineHeight = 28.sp,
+                    maxLines = 3
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // 선생님 이름
+                Text(
+                    text = recommendation.teacher,
+                    fontSize = 16.sp,
+                    color = textGray,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+
+            // 하단: 플랫폼 정보
+            Column {
+                Spacer(modifier = Modifier.height(20.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+
+                    // 적합도 배지
+                    Box(
+                        modifier = Modifier
+                            .background(
+                                color = MainPurple,
+                                shape = RoundedCornerShape(20.dp)
+                            )
+                            .padding(horizontal = 12.dp, vertical = 6.dp)
+                    ) {
+                        Text(
+                            text = "${recommendation.recommendScore}% 적합",
+                            fontSize = 12.sp,
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    // 더보기 아이콘
+                    Icon(
+                        painter = painterResource(id = R.drawable.screen_profile_see_more_iv),
+                        contentDescription = "자세히 보기",
+                        modifier = Modifier
+                            .size(20.dp)
+                            .clickable { /* 추후 상세 페이지 이동 */ },
+                        tint = MainPurple
+                    )
+                }
+            }
+        }
+    }
+}
+
+// 페이지 인디케이터 컴포넌트:
+@Composable
+fun PageIndicator(
+    pageCount: Int,
+    currentPage: Int,
+    onPageSelected: (Int) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        repeat(pageCount) { index ->
+            IndicatorDot(
+                isSelected = index == currentPage,
+                onClick = {
+                    // 클릭 시 해당 페이지로 스크롤하는 기능은 제거
+                    // 스와이프로만 이동하도록 함
+                }
+            )
+        }
+    }
+}
+
+@Composable
+fun IndicatorDot(
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val animatedSize by animateFloatAsState(
+        targetValue = if (isSelected) 10f else 6f,
+        animationSpec = tween(300),
+        label = "dot_size_animation"
+    )
+
+    val animatedAlpha by animateFloatAsState(
+        targetValue = if (isSelected) 1f else 0.4f,
+        animationSpec = tween(300),
+        label = "dot_alpha_animation"
+    )
+
+    Box(
+        modifier = modifier
+            .size(animatedSize.dp)
+            .background(
+                color = MainPurple.copy(alpha = animatedAlpha),
+                shape = CircleShape
+            )
+    )
+}
+
+@Composable
+fun EmptyRecommendationsState() {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(200.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Image(
+            painter = painterResource(R.drawable.screen_search_empty_iv),
+            contentDescription = "추천 없음",
+            modifier = Modifier.size(80.dp)
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            text = "맞춤 추천 강의가 없어요",
+            textAlign = TextAlign.Center,
+            fontSize = 16.sp,
+            color = textGray
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(
+            text = "학습 정보를 설정하고\n강의를 추천 받아 보세요",
+            textAlign = TextAlign.Center,
+            fontSize = 14.sp,
+            color = textGray.copy(alpha = 0.7f),
+            maxLines = 2
         )
     }
 }

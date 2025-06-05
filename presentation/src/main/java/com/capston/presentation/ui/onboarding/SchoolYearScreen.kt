@@ -36,7 +36,7 @@ import com.capston.presentation.theme.MainPurple
 import com.capston.presentation.theme.textGray
 
 @Composable
-fun SchoolYearScreen(onSetupComplete: () -> Unit) {
+fun SchoolYearScreen(onSetupComplete: (String) -> Unit) {
     var selectedGrade by remember { mutableStateOf<String?>(null) }
 
     val gradeOptions = listOf(
@@ -54,18 +54,18 @@ fun SchoolYearScreen(onSetupComplete: () -> Unit) {
         // 상단 LANDR 로고
         Image(
             painter = painterResource(R.drawable.landr_title_iv),
-            contentDescription = "LANDR 로고",
+            contentDescription = "과목명",
             modifier = Modifier
-                .padding(top = 60.dp, start = 20.dp)
+                .padding(top = 80.dp, start = 35.dp)
                 .size(80.dp)
                 .align(Alignment.TopStart)
         )
 
-        // 텍스트 및 이미지 컨텐츠
+        // 텍스트 영역 (이미지 제거됨)
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 140.dp) // 로고보다 아래에 위치하도록
+                .padding(top = 140.dp)
                 .align(Alignment.TopCenter),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -116,9 +116,13 @@ fun SchoolYearScreen(onSetupComplete: () -> Unit) {
             }
         }
 
-        // 하단 다음 버튼
+        // 하단 다음 버튼 부분 수정:
         Button(
-            onClick = onSetupComplete,
+            onClick = {
+                selectedGrade?.let { grade ->
+                    onSetupComplete(grade) // 선택된 학년을 콜백으로 전달
+                }
+            },
             enabled = selectedGrade != null,
             shape = RoundedCornerShape(20.dp),
             colors = ButtonDefaults.buttonColors(

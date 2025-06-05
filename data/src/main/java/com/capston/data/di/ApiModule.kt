@@ -1,7 +1,6 @@
 package com.capston.data.di
 
 import android.content.Context
-import com.capston.data.loading.LoadingManager
 import com.capston.data.local.storage.UserPreferencesRepository
 import com.capston.data.repository.remote.api.DailyScheduleApi
 import com.capston.data.repository.remote.api.ErrorApi
@@ -11,6 +10,7 @@ import com.capston.data.repository.remote.api.LoginApi
 import com.capston.data.repository.remote.api.MyPageApi
 import com.capston.data.repository.remote.api.PlanApi
 import com.capston.data.repository.remote.api.StudyGroupApi
+import com.capston.data.repository.remote.api.RecommendApi
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -78,4 +78,10 @@ object ApiModule {
     fun provideStudyGroupServer(
         @MainRetrofit retrofit: Retrofit
     ) : StudyGroupApi = retrofit.create(StudyGroupApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideRecommendServer(
+        @MainRetrofit retrofit: Retrofit
+    ) : RecommendApi = retrofit.create(RecommendApi::class.java)
 }

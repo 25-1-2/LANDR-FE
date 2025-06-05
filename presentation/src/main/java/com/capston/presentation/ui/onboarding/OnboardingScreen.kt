@@ -40,16 +40,16 @@ fun OnboardingScreen(
             painter = painterResource(R.drawable.landr_title_iv),
             contentDescription = "과목명",
             modifier = Modifier
-                .padding(top = 80.dp, start = 35.dp) // 원하는 만큼 아래로 내림
+                .padding(top = 80.dp, start = 35.dp)
                 .size(80.dp)
                 .align(Alignment.TopStart)
         )
 
-        // 텍스트 및 이미지 컨텐츠
+        // 텍스트 영역 (이미지 제거됨)
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 140.dp) // 로고보다 아래에 위치하도록
+                .padding(top = 140.dp)
                 .align(Alignment.TopCenter),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -69,15 +69,16 @@ fun OnboardingScreen(
                 color = textGray,
                 fontSize = 14.sp
             )
-
-            Spacer(modifier = Modifier.height(40.dp))
-
-            Image(
-                painter = painterResource(R.drawable.screen_search_empty_iv),
-                contentDescription = "과목명",
-                modifier = Modifier.size(230.dp)
-            )
         }
+
+        // 설명 이미지 중앙 배치
+        Image(
+            painter = painterResource(R.drawable.screen_search_empty_iv),
+            contentDescription = "설명 이미지",
+            modifier = Modifier
+                .size(230.dp)
+                .align(Alignment.Center)
+        )
 
         // 하단 버튼
         Button(
