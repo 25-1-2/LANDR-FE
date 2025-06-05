@@ -5,6 +5,25 @@
 
 <img width="940" alt="앱 구조도" src="https://github.com/user-attachments/assets/246e1d1a-5487-460f-9d2b-aeacd2a0176b" />
 
+
+## 기술 스택
+|Category|Technology Stack|
+|:---:|:---|
+|Architecture|<img src="https://img.shields.io/badge/Clean_Architecture-4CAF50?style=for-the-badge&logo=android&logoColor=white"> <img src="https://img.shields.io/badge/MVVM-2196F3?style=for-the-badge&logo=android&logoColor=white">|
+|UI|<img src="https://img.shields.io/badge/Jetpack_Compose-4285F4?style=for-the-badge&logo=jetpackcompose&logoColor=white"> <img src="https://img.shields.io/badge/Material3-757575?style=for-the-badge&logo=materialdesign&logoColor=white">|
+|DI|<img src="https://img.shields.io/badge/Hilt-FF6F00?style=for-the-badge&logo=android&logoColor=white">|
+|Network|<img src="https://img.shields.io/badge/Retrofit-48B983?style=for-the-badge&logo=square&logoColor=white"> <img src="https://img.shields.io/badge/OkHttp-3E4348?style=for-the-badge&logo=square&logoColor=white">|
+|Local Storage|<img src="https://img.shields.io/badge/DataStore-1976D2?style=for-the-badge&logo=android&logoColor=white">|
+|Authentication|<img src="https://img.shields.io/badge/Firebase_Auth-DD2C00?style=for-the-badge&logo=firebase&logoColor=white"> <img src="https://img.shields.io/badge/Google_Login-4285F4?style=for-the-badge&logo=google&logoColor=white">|
+|Push Notification|<img src="https://img.shields.io/badge/Firebase_FCM-DD2C00?style=for-the-badge&logo=firebase&logoColor=white">|
+|Navigation|<img src="https://img.shields.io/badge/Navigation_Compose-4285F4?style=for-the-badge&logo=jetpackcompose&logoColor=white">|
+|Async|<img src="https://img.shields.io/badge/Kotlin_Coroutines-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white"> <img src="https://img.shields.io/badge/Flow-0095D5?style=for-the-badge&logo=kotlin&logoColor=white">|
+|JSON|<img src="https://img.shields.io/badge/Gson-FF6F00?style=for-the-badge&logo=json&logoColor=white">|
+|Animation|<img src="https://img.shields.io/badge/Lottie-FF6B6B?style=for-the-badge&logo=airbnb&logoColor=white">|
+|Build Tool|<img src="https://img.shields.io/badge/Gradle_KTS-02303A?style=for-the-badge&logo=gradle&logoColor=white">|
+|Language|<img src="https://img.shields.io/badge/Kotlin-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white">|
+|Version Control|<img src="https://img.shields.io/badge/Git-F05032?style=for-the-badge&logo=git&logoColor=white"> <img src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white">|
+
 ## 프로젝트 구조
 ```
 ├── README.md
