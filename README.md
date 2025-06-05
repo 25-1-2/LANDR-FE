@@ -1,5 +1,5 @@
 <p align="center"><img width="940" alt="표지" src="https://github.com/user-attachments/assets/71ebc912-aa10-44c7-8b0a-da51db640d10" /></p>
-<br/><br/>
+<br/>
 
 <div align="center">
   
@@ -16,7 +16,7 @@
 
 <h3>🎯 <b>"오늘은 꼭 들어야지" 다짐만 하고 있나요?</b></h3>
 
-<b>LANDR</b>가 <u>강의 계획</u>을 대신 생성해드립니다! ✨  
+<b>LANDR</b>가 <u>강의 계획</u>을 대신 생성해드립니다!  
 지금 바로, <b>작심삼일</b>을 <b>작심완강</b>으로 바꿔보세요! 🚀
 
 </div>
@@ -31,8 +31,11 @@
     <img width="940" alt="홍보4" src="https://github.com/user-attachments/assets/c2245084-d696-432a-94b1-4b582ff08360" />
 </p>
 
-<img width="940" alt="시스템 구조도" src="https://github.com/user-attachments/assets/3cb2400a-8d76-4338-912d-3498edc6c42e" />
-<img width="940" alt="앱 구조도" src="https://github.com/user-attachments/assets/246e1d1a-5487-460f-9d2b-aeacd2a0176b" />
+## 소프트웨어 아키텍처
+<p align="center"> <img width="940" alt="시스템 구조도" src="https://github.com/user-attachments/assets/3cb2400a-8d76-4338-912d-3498edc6c42e" /> </p>
+
+## 앱 구조도
+<p align="center"> <img width="940" alt="앱 구조도" src="https://github.com/user-attachments/assets/246e1d1a-5487-460f-9d2b-aeacd2a0176b" /> </p>
 
 ## ✨ 주요 기능
 
@@ -160,3 +163,13 @@
         ├── test/
         └── androidTest/
 ```
+
+## 안드로이드
+<table>
+  <tbody>
+    <tr>
+      <td align="center"><a href="https://github.com/zunione"><img width="200" src="" alt=""/><br /><sub><b>전희원</b></sub></a><br /></td>
+      <td align="center"><a href="https://github.com/eccho03"><img width="200" src="https://github.com/user-attachments/assets/e2f75f85-d4f8-4b05-af57-342a7f5b03dc" alt=""/><br /><sub><b>조은채</b></sub></a><br /></td>
+    </tr>
+  </tbody>
+</table>
