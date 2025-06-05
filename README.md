@@ -1,8 +1,12 @@
 # LANDR
 <img width="940" alt="표지" src="https://github.com/user-attachments/assets/71ebc912-aa10-44c7-8b0a-da51db640d10" />
 
-<img width="940" alt="시스템 구조도" src="https://github.com/user-attachments/assets/3cb2400a-8d76-4338-912d-3498edc6c42e" />
+<img width="940" alt="홍보1" src="https://github.com/user-attachments/assets/6e1b6656-4d45-4987-a759-0c528c5aac36" />
+<img width="940" alt="홍보2" src="https://github.com/user-attachments/assets/a240e40c-c0b1-4289-b2ed-a2c8c038ff74" />
+<img width="940" alt="홍보3" src="https://github.com/user-attachments/assets/7680eace-c79b-4547-a5b7-0e53eb30b863" />
+<img width="940" alt="홍보4" src="https://github.com/user-attachments/assets/c2245084-d696-432a-94b1-4b582ff08360" />
 
+<img width="940" alt="시스템 구조도" src="https://github.com/user-attachments/assets/3cb2400a-8d76-4338-912d-3498edc6c42e" />
 <img width="940" alt="앱 구조도" src="https://github.com/user-attachments/assets/246e1d1a-5487-460f-9d2b-aeacd2a0176b" />
 
 
