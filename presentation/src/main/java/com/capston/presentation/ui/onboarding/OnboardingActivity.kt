@@ -23,6 +23,7 @@ import androidx.navigation.compose.rememberNavController
 import com.capston.domain.datasource.OnboardingPreferenceStorage
 import com.capston.presentation.theme.CapstonTheme
 import com.capston.presentation.ui.MainActivity
+import com.capston.presentation.viewmodel.LoginViewModel
 import com.capston.presentation.viewmodel.RecommendViewModel
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
@@ -35,6 +36,7 @@ class OnboardingActivity : ComponentActivity() {
     lateinit var onboardingPreferenceStorage: OnboardingPreferenceStorage
 
     private val recommendViewModel: RecommendViewModel by viewModels()
+    private val loginViewModel: LoginViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -47,7 +49,8 @@ class OnboardingActivity : ComponentActivity() {
                     navController = navController,
                     context = this,
                     onboardingPreferenceStorage = onboardingPreferenceStorage,
-                    recommendViewModel = recommendViewModel
+                    recommendViewModel = recommendViewModel,
+                    loginViewModel = loginViewModel
                 )
             }
         }
@@ -59,22 +62,30 @@ fun AppNavHost(
     navController: NavHostController,
     context: Context,
     onboardingPreferenceStorage: OnboardingPreferenceStorage,
-    recommendViewModel: RecommendViewModel
+    recommendViewModel: RecommendViewModel,
+    loginViewModel: LoginViewModel
 ) {
     // 온보딩 데이터를 관리할 ViewModel
     val onboardingDataViewModel: OnboardingDataViewModel = viewModel()
     val onboardingData by onboardingDataViewModel.onboardingData.collectAsState()
     val recommendResponses by recommendViewModel.postRecommendLectures.collectAsState()
+    val userProfile by loginViewModel.getUserProfile.collectAsState()
 
     // 완료 상태 관리
     var isAllComplete by remember { mutableStateOf(false) }
     var expectedSubjectCount by remember { mutableStateOf(0) }
 
+    LaunchedEffect(Unit) {
+        loginViewModel.getUserProfile()
+    }
+
     NavHost(navController = navController, startDestination = "onboarding") {
         composable("onboarding") {
             OnboardingScreen(onCompleteOnboarding = {
                 navController.navigate("school-year")
-            })
+            },
+                userProfile = userProfile
+            )
         }
 
         composable("school-year") {
@@ -82,7 +93,8 @@ fun AppNavHost(
                 onSetupComplete = { selectedGrade ->
                     onboardingDataViewModel.updateGrade(selectedGrade)
                     navController.navigate("subject-grade")
-                }
+                },
+                userProfile = userProfile
             )
         }
 
@@ -92,7 +104,8 @@ fun AppNavHost(
                     onboardingDataViewModel.updateSubjectGrades(subjectGrades)
                     // LearningPreferenceScreen을 건너뛰고 바로 완료 화면으로 이동
                     navController.navigate("onboarding-finish")
-                }
+                },
+                userProfile = userProfile
             )
         }
 
@@ -112,7 +125,8 @@ fun AppNavHost(
                         recommendViewModel.postMultipleRecommendLectures(recommendRequests)
                     }
                     navController.navigate("study-plan-complete")
-                }
+                },
+                userProfile = userProfile
             )
         }
 
@@ -134,7 +148,8 @@ fun AppNavHost(
                     onboardingPreferenceStorage.setOnboardingCompleted(userEmail)
                     context.startActivity(Intent(context, MainActivity::class.java))
                     (context as? Activity)?.finish()
-                }
+                },
+                userProfile = userProfile
             )
         }
     }

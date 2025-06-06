@@ -41,6 +41,7 @@ import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.animateLottieCompositionAsState
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.capston.domain.response.recommend.RecommendResponse
+import com.capston.domain.response.user.UserProfileResponse
 import com.capston.presentation.R
 import com.capston.presentation.theme.MainPurple
 import com.capston.presentation.theme.textGray
@@ -50,6 +51,7 @@ import com.capston.presentation.ui.search.borderColor
 @Composable
 fun StudyPlanCompleteScreen(
     recommendResponses: List<RecommendResponse>,
+    userProfile: UserProfileResponse,
     isAllRecommendationsComplete: Boolean, // 모든 추천이 완료되었는지 확인하는 플래그
     onStartLearning: () -> Unit
 ) {
@@ -78,7 +80,7 @@ fun StudyPlanCompleteScreen(
         ) {
             // 완성 메시지
             Text(
-                text = "조은채님에게 딱 맞는\n플랜이 완성됐어요!",
+                text = "${userProfile.name}님에게 딱 맞는\n플랜이 완성됐어요!",
                 style = MaterialTheme.typography.titleLarge,
                 textAlign = TextAlign.Center,
                 fontSize = 24.sp,

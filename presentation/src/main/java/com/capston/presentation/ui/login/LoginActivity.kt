@@ -184,17 +184,17 @@ class LoginActivity : ComponentActivity() {
                                     val hasCompletedOnboarding = onboardingPreferenceStorage
                                         .hasCompletedOnboarding(userEmail)
 
-                                    if (!hasCompletedOnboarding) {
-                                        // 온보딩 미완료시 온보딩으로 이동
-                                        startActivity(Intent(this@LoginActivity, OnboardingActivity::class.java))
-                                    } else {
-                                        // 온보딩 완료시 메인으로 이동
-                                        startActivity(Intent(this@LoginActivity, MainActivity::class.java))
-                                    }
-
-                                     finish()
+//                                    if (!hasCompletedOnboarding) {
+//                                        // 온보딩 미완료시 온보딩으로 이동
+//                                        startActivity(Intent(this@LoginActivity, OnboardingActivity::class.java))
+//                                    } else {
+//                                        // 온보딩 완료시 메인으로 이동
+//                                        startActivity(Intent(this@LoginActivity, MainActivity::class.java))
+//                                    }
+//
+//                                     finish()
 //                                    // 임시 테스트를 위함
-//                                    startActivity(Intent(this@LoginActivity, OnboardingActivity::class.java))
+                                    startActivity(Intent(this@LoginActivity, OnboardingActivity::class.java))
                                 }
                             }
                         }

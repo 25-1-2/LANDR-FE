@@ -60,6 +60,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
+import com.capston.domain.response.user.UserProfileResponse
 import com.capston.presentation.R
 import com.capston.presentation.theme.CapstonTheme
 import com.capston.presentation.theme.LightGray4
@@ -108,7 +109,10 @@ fun IncompleteWarningCard(incompleteCount: Int) {
 }
 
 @Composable
-fun SubjectGradeScreen(onSetupComplete: (List<SubjectGrade>) -> Unit) {
+fun SubjectGradeScreen(
+    onSetupComplete: (List<SubjectGrade>) -> Unit,
+    userProfile: UserProfileResponse
+) {
     var subjectGrades by remember { mutableStateOf(listOf(SubjectGrade())) }
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
@@ -203,7 +207,7 @@ fun SubjectGradeScreen(onSetupComplete: (List<SubjectGrade>) -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "조은채님!\n맞춤형 인강 학습을 시작해볼까요?",
+                text = "${userProfile.name}님!\n맞춤형 인강 학습을 시작해볼까요?",
                 style = MaterialTheme.typography.titleLarge,
                 textAlign = TextAlign.Start,
                 fontSize = 24.sp
