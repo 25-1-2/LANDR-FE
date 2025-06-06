@@ -35,7 +35,7 @@
 <p align="center"> <img width="940" alt="시스템 구조도" src="https://github.com/user-attachments/assets/3cb2400a-8d76-4338-912d-3498edc6c42e" /> </p>
 
 ## 앱 구조도
-<p align="center"> <img width="940" alt="앱 구조도" src="https://github.com/user-attachments/assets/246e1d1a-5487-460f-9d2b-aeacd2a0176b" /> </p>
+<p align="center"> <img width="940" alt="앱 구조도" src="https://github.com/user-attachments/assets/2a810c9f-34fc-46d6-a676-58c479c443a8" /> </p>
 
 ## ✨ 주요 기능
 
