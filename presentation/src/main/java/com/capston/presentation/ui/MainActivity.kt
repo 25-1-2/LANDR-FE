@@ -153,6 +153,7 @@ class MainActivity : ComponentActivity() {
                     Box(modifier = Modifier
                         .consumeWindowInsets(paddingValues)
                     ) {
+
                         MainBottomBar(
                             homeViewModel = homeViewModel,
                             planViewModel = planViewModel,
