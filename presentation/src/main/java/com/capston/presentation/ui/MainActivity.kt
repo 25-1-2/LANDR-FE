@@ -670,20 +670,21 @@ fun AnimatedSmallFAB(
         ) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.width(IntrinsicSize.Min) // 최소 필요한 너비만 사용
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 // 라벨을 항상 위쪽에 배치
                 Text(
                     text = label,
                     fontSize = 12.sp,
                     color = Color.DarkGray,
+                    maxLines = 1, // 한 줄로 제한
                     modifier = Modifier
                         .background(
                             Color.White.copy(alpha = 0.9f),
                             RoundedCornerShape(12.dp)
                         )
                         .padding(horizontal = 8.dp, vertical = 4.dp)
+                        .wrapContentWidth() // 텍스트 너비에 맞춤
                 )
 
                 FloatingActionButton(
