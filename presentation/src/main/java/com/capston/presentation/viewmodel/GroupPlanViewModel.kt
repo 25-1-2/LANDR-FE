@@ -62,6 +62,17 @@ class GroupPlanViewModel @Inject constructor(
         }
     }
 
+    fun postPlanReschedule(planId: Int) = viewModelScope.launch {
+        postPlanRescheduleUseCase(planId)
+            .catch { e ->
+                Log.e("LectureRoomViewModel", "postPlanReschedule 에러: ${e.message}")
+            }
+            .collect { response ->
+                _postPlanRescheduleResponse.value = response
+                Log.d("LectureRoomViewModel", "postPlanReschedule 업데이트됨: $response")
+            }
+    }
+
     fun patchLessonSchedulesCheckToggle(lessonScheduleId: Int) {
         viewModelScope.launch {
             try {
