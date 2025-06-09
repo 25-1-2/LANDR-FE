@@ -18,7 +18,6 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -30,12 +29,30 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.remember
+import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.EaseOutQuart
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideIn
+import androidx.compose.animation.slideOut
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.material.icons.filled.AccountBox
+import androidx.compose.material.icons.filled.AddCircle
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -53,8 +70,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.capston.domain.manager.LoadingStateManager
 import com.capston.domain.response.plan.GetPlanDetailResponse
+import com.capston.presentation.R
 import com.capston.presentation.theme.CapstonTheme
-import com.capston.presentation.theme.LightGray2
 import com.capston.presentation.theme.LightGray4_40
 import com.capston.presentation.theme.MainPurple
 import com.capston.presentation.theme.dividerGray
@@ -148,7 +165,6 @@ class MainActivity : ComponentActivity() {
             }
 
             CapstonTheme {
-
                 Scaffold(
                     modifier = Modifier
                         .windowInsetsPadding(WindowInsets.systemBars) // ⬅️ 상태바 + 네비게이션 바 여백 포함
@@ -450,19 +466,17 @@ fun MainBottomBar(
             }
         }
 
-        FloatingActionButton(
-            onClick = { mainActivity.startSearchActivity() },
-            containerColor = MainPurple,
+        // 검색 FAB
+        Box(
             modifier = Modifier
-                .size(60.dp)
+                .size(64.dp)
+//                .clip(RoundedCornerShape(30.dp))    // 외곽 라운드
                 .align(Alignment.BottomCenter)
                 .offset(y = (-20).dp),
-            shape = RoundedCornerShape(50)
         ) {
-            Icon(
-                imageVector = Icons.Filled.Search,
-                contentDescription = "search",
-                tint = Color.White
+            ExpandingFAB(
+                modifier = Modifier.fillMaxSize(),
+                fabColor = MainPurple,
             )
         }
     }
@@ -525,73 +539,124 @@ fun BottomBarWithoutFAB(
 }
 
 @Composable
-fun BottomBar(
-    navController: NavController,
-    bottomNavState: Int,
-    onNavItemClick: (Int) -> Unit,
-    onSearchClick: () -> Unit
+fun ExpandingFAB(
+    modifier: Modifier = Modifier,
+    fabColor: Color = MainPurple,
 ) {
-    val items: List<Screen> = listOf(
-        Screen.Home,
-        Screen.Calender,
-        Screen.LectureRoom,
-        Screen.Profile,
+    var expanded by remember { mutableStateOf(false) }
+    val mainActivity = LocalActivity.current as MainActivity
+
+    val rotationYValue by animateFloatAsState(
+        targetValue = if (expanded) 180f else 0f,
+        animationSpec = tween(
+            durationMillis = 300,
+            easing = EaseOutQuart
+        ),
+        label = "rotationY"
     )
 
-    Column {
-        Divider(color = LightGray2, thickness = 1.dp)
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(100.dp) // 높이를 늘려서 FAB 공간 확보
-                .windowInsetsPadding(WindowInsets.navigationBars)
+    Box(
+        modifier = modifier,
+        contentAlignment = Alignment.BottomCenter
+    ) {
+        // 왼쪽 대각선 위 (-60dp x, -60dp y)
+        AnimatedVisibility(
+            visible = expanded,
+            enter = fadeIn() + slideIn(initialOffset = { IntOffset(-180, 180) }),
+            exit = fadeOut() + slideOut(targetOffset = { IntOffset(-180, 180) })
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .align(Alignment.BottomCenter) // Row를 아래쪽에 정렬
-                    .height(80.dp), // Row의 높이는 기존과 동일
-                horizontalArrangement = Arrangement.SpaceAround
+            Box(
+                modifier = Modifier.offset(x = (-60).dp, y = (-60).dp)
             ) {
-                items.forEachIndexed { index, item ->
-                    if (index == items.size / 2) {
-                        Box(Modifier.weight(1f)) // 중앙 간격 확보
+                SmallFAB(
+                    icon = Icons.Default.Star,
+                    description = "Favorite",
+                    onClick = {
+                        expanded = false
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                            mainActivity.startSearchActivity()
+                        }
                     }
-
-                    NavigationBarItem(
-                        selected = bottomNavState == index,
-                        onClick = { onNavItemClick(index) },
-                        icon = {
-                            when (val icon = if (bottomNavState == index) item.selectedIcon else item.unselectedIcon) {
-                                is ImageVector -> Icon(imageVector = icon, contentDescription = item.title)
-                                is Int -> Image(painter = painterResource(icon), contentDescription = item.title)
-                                else -> {}
-                            }
-                        },
-                        colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = MainPurple,
-                            selectedTextColor = MainPurple,
-                            indicatorColor = Color.Transparent
-                        )
-                    )
-                }
-            }
-
-            FloatingActionButton(
-                onClick = { onSearchClick() },
-                containerColor = MainPurple,
-                modifier = Modifier
-                    .size(60.dp)
-                    .align(Alignment.TopCenter) // 상단 중앙에 배치
-                    .offset(y = 10.dp), // 약간만 아래로 (기존 -20dp에서 +10dp로)
-                shape = RoundedCornerShape(50)
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Search,
-                    contentDescription = "search",
-                    tint = Color.White
                 )
             }
         }
+
+        // 바로 위 (0dp x, -80dp y)
+        AnimatedVisibility(
+            visible = expanded,
+            enter = fadeIn() + slideIn(initialOffset = { IntOffset(-180, 180) }),
+            exit = fadeOut() + slideOut(targetOffset = { IntOffset(-180, 180) })
+        ) {
+            Box(
+                modifier = Modifier.offset(x = 0.dp, y = (-80).dp)
+            ) {
+                SmallFAB(
+                    icon = Icons.Default.Search,
+                    description = "Search",
+                    onClick = {
+                        expanded = false
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                            mainActivity.startSearchActivity()
+                        }
+                    }
+                )
+            }
+        }
+
+        // 오른쪽 대각선 위 (60dp x, -60dp y)
+        AnimatedVisibility(
+            visible = expanded,
+            enter = fadeIn() + slideIn(initialOffset = { IntOffset(-180, 180) }),
+            exit = fadeOut() + slideOut(targetOffset = { IntOffset(-180, 180) })
+        ) {
+            Box(
+                modifier = Modifier.offset(x = 60.dp, y = (-60).dp)
+            ) {
+                SmallFAB(
+                    icon = Icons.Default.AddCircle,
+                    description = "Add",
+                    onClick = {
+                        expanded = false
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                            mainActivity.startSearchActivity()
+                        }
+                    }
+                )
+            }
+        }
+
+        // 메인 FAB (뒤집기 효과)
+        FloatingActionButton(
+            onClick = { expanded = !expanded },
+            containerColor = fabColor,
+            shape = RoundedCornerShape(30.dp),
+            modifier = Modifier
+                .graphicsLayer {
+                    rotationY = rotationYValue
+                }
+        ) {
+            Icon(
+                painter = if (expanded) painterResource(id = R.drawable.icon_xmark) else painterResource(id = R.drawable.icon_search),
+                contentDescription = null,
+            )
+        }
+    }
+}
+
+@Composable
+fun SmallFAB(
+    icon: ImageVector,
+    description: String,
+    onClick: () -> Unit
+) {
+    FloatingActionButton(
+        onClick = onClick,
+        shape = RoundedCornerShape(30.dp),
+        containerColor = MaterialTheme.colorScheme.primary,
+        modifier = Modifier
+            .size(64.dp)
+            .padding(bottom = 8.dp)  // 버튼 간 간격
+    ) {
+        Icon(imageVector = icon, contentDescription = description)
     }
 }
