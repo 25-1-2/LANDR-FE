@@ -382,62 +382,40 @@ fun SinglePlanTitleSection(
                 .padding(end = 8.dp)
                 .weight(10f),
         )
-        Column(
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            // 재스케줄링 버튼
-            IconButton(
-                onClick = {
-                    coroutineScope.launch {
-                        onLoadingChange(true)
-                        try {
-                            // 재스케줄링을 시작하고 완료될 때까지 기다립니다
-                            val rescheduleJob = singlePlanViewModel.postPlanReschedule(planId)
-                            rescheduleJob.join()
 
-                            // 이제 업데이트된 데이터 가져오기
-                            singlePlanViewModel.getPlanDetail(planId)
+        // 재스케줄링 버튼
+        IconButton(
+            onClick = {
+                coroutineScope.launch {
+                    onLoadingChange(true)
+                    try {
+                        // 재스케줄링을 시작하고 완료될 때까지 기다립니다
+                        val rescheduleJob = singlePlanViewModel.postPlanReschedule(planId)
+                        rescheduleJob.join()
 
-                            delay(1000)
-                        } finally {
-                            onLoadingChange(false)
-                        }
+                        // 이제 업데이트된 데이터 가져오기
+                        singlePlanViewModel.getPlanDetail(planId)
+
+                        delay(1000)
+                    } finally {
+                        onLoadingChange(false)
                     }
-                },
-                modifier = Modifier
-                    .size(40.dp)
-                    .border(
-                        width = 1.dp,
-                        color = MainPurple,
-                        shape = CircleShape
-                    )
-            ) {
-                Icon(
-                    imageVector = ImageVector.vectorResource(R.drawable.icon_reschedule),
-                    contentDescription = "재스케줄링",
-                    tint = MainPurple,
-                    modifier = Modifier.padding(8.dp)
+                }
+            },
+            modifier = Modifier
+                .size(40.dp)
+                .border(
+                    width = 1.dp,
+                    color = MainPurple,
+                    shape = CircleShape
                 )
-            }
-
-            // 그룹원 추가 버튼
-            IconButton(
-                onClick = onGroupClick,
-                modifier = Modifier
-                    .size(40.dp)
-                    .border(
-                        width = 1.dp,
-                        color = MainPurple,
-                        shape = CircleShape
-                    )
-            ) {
-                Icon(
-                    imageVector = ImageVector.vectorResource(R.drawable.icon_group),
-                    contentDescription = "그룹 추가",
-                    tint = MainPurple,
-                    modifier = Modifier.padding(8.dp)
-                )
-            }
+        ) {
+            Icon(
+                imageVector = ImageVector.vectorResource(R.drawable.icon_reschedule),
+                contentDescription = "재스케줄링",
+                tint = MainPurple,
+                modifier = Modifier.padding(8.dp)
+            )
         }
     }
 }
