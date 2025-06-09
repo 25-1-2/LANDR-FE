@@ -99,18 +99,6 @@ fun LectureRoomScreen(
                 onNotificationClick = onNotificationClick
             )
         },
-        floatingActionButton = {  // 이 부분 추가
-            FloatingActionButton(
-                onClick = { showInviteDialog = true },
-                containerColor = MainPurple,
-                contentColor = Color.White
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "스터디그룹 가입"
-                )
-            }
-        }
     ) { innerPadding ->
         if (lectures.isEmpty()) {
             // 빈 상태 화면
