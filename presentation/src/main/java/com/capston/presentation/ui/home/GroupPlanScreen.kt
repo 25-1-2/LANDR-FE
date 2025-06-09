@@ -291,12 +291,32 @@ fun GroupPlanTopBar(
                                     modifier = Modifier.size(20.dp)
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Text("수정하기", color = Color.Black)
+                                Text("그룹원 관리", color = Color.Black)
                             }
                         },
                         onClick = {
                             onMenuDismiss()
 //                            onDeleteClick()
+                        }
+                    )
+
+                    // 그룹장 위임 (방장)
+                    DropdownMenuItem(
+                        text = {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.icon_user_crown), // 삭제 아이콘 리소스 필요
+                                    contentDescription = "그룹장 위임",
+                                    tint = Color.Black,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("그룹장 위임", color = Color.Black)
+                            }
+                        },
+                        onClick = {
+                            onMenuDismiss()
+                            onDeleteClick()
                         }
                     )
 
