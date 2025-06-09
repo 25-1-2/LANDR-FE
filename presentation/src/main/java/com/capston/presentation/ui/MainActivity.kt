@@ -42,6 +42,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideIn
 import androidx.compose.animation.slideOut
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.animateIntOffsetAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.material.icons.filled.AccountBox
 import androidx.compose.material.icons.filled.AddCircle
@@ -55,6 +56,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
@@ -559,78 +561,55 @@ fun ExpandingFAB(
         modifier = modifier,
         contentAlignment = Alignment.BottomCenter
     ) {
-        // 왼쪽 대각선 위 (-60dp x, -60dp y)
-        AnimatedVisibility(
+        // 왼쪽 대각선 위 (-100dp x, -100dp y) - 강의 검색
+        AnimatedSmallFAB(
             visible = expanded,
-            enter = fadeIn() + slideIn(initialOffset = { IntOffset(-180, 180) }),
-            exit = fadeOut() + slideOut(targetOffset = { IntOffset(-180, 180) })
-        ) {
-            Box(
-                modifier = Modifier.offset(x = (-60).dp, y = (-60).dp)
-            ) {
-                SmallFAB(
-                    icon = Icons.Default.Star,
-                    description = "Favorite",
-                    onClick = {
-                        expanded = false
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                            mainActivity.startSearchActivity()
-                        }
-                    }
-                )
-            }
-        }
+            targetOffset = IntOffset(-180, -180), // 이 offset은 중앙을 기준으로 조절해야 할 수 있음
+            icon = Icons.Default.Search,
+            label = "강의 검색",
+            onClick = {
+                expanded = false
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    mainActivity.startSearchActivity()
+                }
+            },
+        )
 
-        // 바로 위 (0dp x, -80dp y)
-        AnimatedVisibility(
+        // 바로 위 (0dp x, -120dp y) - 그룹 생성
+        AnimatedSmallFAB(
             visible = expanded,
-            enter = fadeIn() + slideIn(initialOffset = { IntOffset(-180, 180) }),
-            exit = fadeOut() + slideOut(targetOffset = { IntOffset(-180, 180) })
-        ) {
-            Box(
-                modifier = Modifier.offset(x = 0.dp, y = (-80).dp)
-            ) {
-                SmallFAB(
-                    icon = Icons.Default.Search,
-                    description = "Search",
-                    onClick = {
-                        expanded = false
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                            mainActivity.startSearchActivity()
-                        }
-                    }
-                )
-            }
-        }
+            targetOffset = IntOffset(0, -240),
+            icon = Icons.Default.AddCircle,
+            label = "그룹 생성",
+            onClick = {
+                expanded = false
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    mainActivity.startSearchActivity()
+                }
+            },
+        )
 
-        // 오른쪽 대각선 위 (60dp x, -60dp y)
-        AnimatedVisibility(
+        // 오른쪽 대각선 위 (100dp x, -100dp y) - 그룹 검색
+        AnimatedSmallFAB(
             visible = expanded,
-            enter = fadeIn() + slideIn(initialOffset = { IntOffset(-180, 180) }),
-            exit = fadeOut() + slideOut(targetOffset = { IntOffset(-180, 180) })
-        ) {
-            Box(
-                modifier = Modifier.offset(x = 60.dp, y = (-60).dp)
-            ) {
-                SmallFAB(
-                    icon = Icons.Default.AddCircle,
-                    description = "Add",
-                    onClick = {
-                        expanded = false
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                            mainActivity.startSearchActivity()
-                        }
-                    }
-                )
-            }
-        }
+            targetOffset = IntOffset(180, -180), // 이 offset은 중앙을 기준으로 조절해야 할 수 있음
+            icon = Icons.Default.AccountBox,
+            label = "그룹 검색",
+            onClick = {
+                expanded = false
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    mainActivity.startSearchActivity()
+                }
+            },
+        )
 
         // 메인 FAB (뒤집기 효과)
         FloatingActionButton(
             onClick = { expanded = !expanded },
             containerColor = fabColor,
-            shape = RoundedCornerShape(30.dp),
+            shape = RoundedCornerShape(32.dp), // 더 둥글게
             modifier = Modifier
+                .size(64.dp)
                 .graphicsLayer {
                     rotationY = rotationYValue
                 }
@@ -638,25 +617,95 @@ fun ExpandingFAB(
             Icon(
                 painter = if (expanded) painterResource(id = R.drawable.icon_xmark) else painterResource(id = R.drawable.icon_search),
                 contentDescription = null,
+                modifier = Modifier.size(24.dp)
             )
         }
     }
 }
 
 @Composable
-fun SmallFAB(
+fun AnimatedSmallFAB(
+    visible: Boolean,
+    targetOffset: IntOffset,
     icon: ImageVector,
-    description: String,
+    label: String,
     onClick: () -> Unit
 ) {
-    FloatingActionButton(
-        onClick = onClick,
-        shape = RoundedCornerShape(30.dp),
-        containerColor = MaterialTheme.colorScheme.primary,
-        modifier = Modifier
-            .size(64.dp)
-            .padding(bottom = 8.dp)  // 버튼 간 간격
-    ) {
-        Icon(imageVector = icon, contentDescription = description)
+    val density = LocalDensity.current
+
+    // 위치 애니메이션 - 메인 FAB 위치(0,0)에서 시작해서 목표 위치로 이동
+    val animatedOffset by animateIntOffsetAsState(
+        targetValue = if (visible) targetOffset else IntOffset(0, 0),
+        animationSpec = tween(
+            durationMillis = 300, // 400ms -> 300ms로 단축
+            easing = EaseOutQuart
+        ),
+        label = "fabOffset"
+    )
+
+    // 스케일과 투명도를 하나의 애니메이션으로 통합
+    val animationProgress by animateFloatAsState(
+        targetValue = if (visible) 1f else 0f,
+        animationSpec = tween(
+            durationMillis = 250, // 단축
+            delayMillis = if (visible) 50 else 0, // 지연 시간 단축
+            easing = EaseOutQuart
+        ),
+        label = "fabAnimation"
+    )
+
+    // 스케일을 0.3에서 시작하도록 조정 (완전히 납작하지 않게)
+    val scale = 0.3f + (animationProgress * 0.7f)
+    val alpha = animationProgress
+
+    if (visible || animationProgress > 0f) {
+        Box(
+            modifier = Modifier
+                .offset { animatedOffset }
+                .graphicsLayer {
+                    scaleX = scale
+                    scaleY = scale
+                    this.alpha = alpha
+                },
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.width(IntrinsicSize.Min) // 최소 필요한 너비만 사용
+            ) {
+                // 라벨을 항상 위쪽에 배치
+                Text(
+                    text = label,
+                    fontSize = 12.sp,
+                    color = Color.DarkGray,
+                    modifier = Modifier
+                        .background(
+                            Color.White.copy(alpha = 0.9f),
+                            RoundedCornerShape(12.dp)
+                        )
+                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                )
+
+                FloatingActionButton(
+                    onClick = onClick,
+                    shape = RoundedCornerShape(28.dp),
+                    containerColor = Color.White.copy(alpha = 0.95f),
+                    contentColor = MainPurple,
+                    modifier = Modifier
+                        .size(56.dp)
+                        .aspectRatio(1f), // 정사각형 비율 강제
+                    elevation = FloatingActionButtonDefaults.elevation(
+                        defaultElevation = 8.dp,
+                        pressedElevation = 12.dp
+                    )
+                ) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = label,
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
+            }
+        }
     }
 }
