@@ -18,7 +18,6 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -30,18 +29,48 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.remember
+import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.EaseOutQuart
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideIn
+import androidx.compose.animation.slideOut
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.animateIntOffsetAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.filled.AccountBox
+import androidx.compose.material.icons.filled.AddCircle
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.core.app.ActivityCompat.shouldShowRequestPermissionRationale
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
@@ -52,13 +81,20 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.capston.domain.manager.LoadingStateManager
+import com.capston.domain.request.JoinStudyGroupDto
 import com.capston.domain.response.plan.GetPlanDetailResponse
+import com.capston.domain.response.plan.GetPlanLectureRoomResponse
+import com.capston.presentation.R
 import com.capston.presentation.theme.CapstonTheme
-import com.capston.presentation.theme.LightGray2
 import com.capston.presentation.theme.LightGray4_40
+import com.capston.presentation.theme.LightGray60
 import com.capston.presentation.theme.MainPurple
+import com.capston.presentation.theme.chipGray
+import com.capston.presentation.theme.dividerGray
+import com.capston.presentation.theme.textGray
 import com.capston.presentation.ui.common.LoadingIndicator
 import com.capston.presentation.ui.common.Screen
+import com.capston.presentation.ui.common.noRippleClickable
 import com.capston.presentation.ui.home.CalenderScreen
 import com.capston.presentation.ui.home.GroupPlanScreen
 import com.capston.presentation.ui.home.HomeScreen
@@ -126,6 +162,8 @@ class MainActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // 시스템 레이아웃 설정
         enableEdgeToEdge()
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
@@ -144,7 +182,6 @@ class MainActivity : ComponentActivity() {
             }
 
             CapstonTheme {
-
                 Scaffold(
                     modifier = Modifier
                         .windowInsetsPadding(WindowInsets.systemBars) // ⬅️ 상태바 + 네비게이션 바 여백 포함
@@ -152,7 +189,6 @@ class MainActivity : ComponentActivity() {
                     Box(modifier = Modifier
                         .consumeWindowInsets(paddingValues)
                     ) {
-
                         MainBottomBar(
                             homeViewModel = homeViewModel,
                             planViewModel = planViewModel,
@@ -332,14 +368,20 @@ fun MainBottomBar(
     recommendViewModel: RecommendViewModel,
     loadingStateManager: LoadingStateManager
 ) {
-    var bottomNavState by rememberSaveable { mutableIntStateOf(0) }
-    val navController = rememberNavController()
-    val mainActivity = LocalActivity.current as MainActivity
     val context = LocalContext.current
+    val mainActivity = LocalActivity.current as MainActivity
+    val navController = rememberNavController()
+
+    var bottomNavState by rememberSaveable { mutableIntStateOf(0) }
+    var fabExpanded by remember { mutableStateOf(false) }
+    var showInviteCodeDialog by remember { mutableStateOf(false) }
+    var showGroupCreationBottomSheet by remember { mutableStateOf(false) }
 
     // BackHandler
     BackHandler {
-        if (bottomNavState == 0) {
+        if (fabExpanded) {
+            fabExpanded = false
+        } else if (bottomNavState == 0) {
             val currentTime = System.currentTimeMillis()
             if (currentTime - mainActivity.backPressedTime < mainActivity.BACK_PRESS_INTERVAL) {
                 mainActivity.finish()
@@ -447,19 +489,51 @@ fun MainBottomBar(
             }
         }
 
-        FloatingActionButton(
-            onClick = { mainActivity.startSearchActivity() },
-            containerColor = MainPurple,
+        // 배경 오버레이 추가
+        if (fabExpanded) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.White.copy(alpha = 0.8f))
+                    .noRippleClickable { fabExpanded = false }
+            )
+        }
+
+        // 검색 FAB
+        Box(
             modifier = Modifier
-                .size(60.dp)
+                .size(64.dp)
                 .align(Alignment.BottomCenter)
                 .offset(y = (-20).dp),
-            shape = RoundedCornerShape(50)
         ) {
-            Icon(
-                imageVector = Icons.Filled.Search,
-                contentDescription = "search",
-                tint = Color.White
+            ExpandingFAB(
+                modifier = Modifier.fillMaxSize(),
+                fabColor = MainPurple,
+                expanded = fabExpanded, // 상태 전달
+                onExpandedChange = { fabExpanded = it }, // 상태 변경 콜백
+                onInviteCodeClick = { showInviteCodeDialog = true },
+                onGroupCreationClick = { showGroupCreationBottomSheet = true }
+            )
+        }
+
+        if (showInviteCodeDialog) {
+            InviteCodeDialog(
+                onDismiss = { showInviteCodeDialog = false },
+                onConfirm = { inviteCode ->
+                    lectureRoomViewModel.postJoinStudyGroup(
+                        JoinStudyGroupDto(inviteCode = inviteCode)
+                    )
+                    showInviteCodeDialog = false
+                }
+            )
+        }
+
+        // 그룹 생성 바텀시트 추가
+        if (showGroupCreationBottomSheet) {
+            GroupCreationBottomSheet(
+                lectureRoomViewModel = lectureRoomViewModel,
+                singlePlanViewModel = singlePlanViewModel,
+                onDismiss = { showGroupCreationBottomSheet = false }
             )
         }
     }
@@ -484,11 +558,11 @@ fun BottomBarWithoutFAB(
             .fillMaxWidth()
             .background(Color.White)
     ) {
-        Divider(color = LightGray2, thickness = 1.dp)
+        HorizontalDivider(color = dividerGray)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(80.dp)
+                .height(64.dp)
                 .background(Color.White),
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
@@ -501,7 +575,7 @@ fun BottomBarWithoutFAB(
                 Box(
                     modifier = Modifier
                         .weight(1f)
-                        .clickable { onNavItemClick(index) },
+                        .noRippleClickable { onNavItemClick(index) },
                     contentAlignment = Alignment.Center
                 ) {
                     when (val icon = if (bottomNavState == index) item.selectedIcon else item.unselectedIcon) {
@@ -522,73 +596,469 @@ fun BottomBarWithoutFAB(
 }
 
 @Composable
-fun BottomBar(
-    navController: NavController,
-    bottomNavState: Int,
-    onNavItemClick: (Int) -> Unit,
-    onSearchClick: () -> Unit
+fun ExpandingFAB(
+    modifier: Modifier = Modifier,
+    fabColor: Color = MainPurple,
+    expanded: Boolean,
+    onExpandedChange: (Boolean) -> Unit,
+    onInviteCodeClick: () -> Unit,
+    onGroupCreationClick: () -> Unit
 ) {
-    val items: List<Screen> = listOf(
-        Screen.Home,
-        Screen.Calender,
-        Screen.LectureRoom,
-        Screen.Profile,
+    val mainActivity = LocalActivity.current as MainActivity
+
+    val rotationYValue by animateFloatAsState(
+        targetValue = if (expanded) 180f else 0f,
+        animationSpec = tween(
+            durationMillis = 300,
+            easing = EaseOutQuart
+        ),
+        label = "rotationY"
     )
 
-    Column {
-        Divider(color = LightGray2, thickness = 1.dp)
+    Box(
+        modifier = modifier,
+        contentAlignment = Alignment.BottomCenter
+    ) {
+        // 왼쪽 대각선 위 (-100dp x, -100dp y) - 강의 검색
+        AnimatedSmallFAB(
+            visible = expanded,
+            targetOffset = IntOffset(-180, -180), // 이 offset은 중앙을 기준으로 조절해야 할 수 있음
+            icon = R.drawable.icon_search,
+            label = "강의 검색",
+            onClick = {
+                onExpandedChange(false)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    mainActivity.startSearchActivity()
+                }
+            },
+        )
+
+        // 바로 위 (0dp x, -120dp y) - 그룹 생성
+        AnimatedSmallFAB(
+            visible = expanded,
+            targetOffset = IntOffset(0, -240),
+            icon = R.drawable.icon_group,
+            label = "그룹 생성",
+            onClick = {
+                onExpandedChange(false)
+                // SearchActivity 대신 바텀시트 표시 로직으로 변경
+                onGroupCreationClick() // 새로운 콜백 추가 필요
+            },
+        )
+
+        // 오른쪽 대각선 위 (100dp x, -100dp y) - 그룹 검색
+        AnimatedSmallFAB(
+            visible = expanded,
+            targetOffset = IntOffset(180, -180), // 이 offset은 중앙을 기준으로 조절해야 할 수 있음
+            icon = R.drawable.icon_community,
+            label = "그룹 참여",
+            onClick = {
+                onExpandedChange(false)
+                onInviteCodeClick()
+            },
+        )
+
+        // 메인 FAB (뒤집기 효과)
+        FloatingActionButton(
+            onClick = { onExpandedChange(!expanded) },
+            containerColor = fabColor,
+            shape = RoundedCornerShape(32.dp), // 더 둥글게
+            modifier = Modifier
+                .size(64.dp)
+                .graphicsLayer {
+                    rotationY = rotationYValue
+                }
+        ) {
+            Icon(
+                painter = if (expanded) painterResource(id = R.drawable.icon_xmark) else painterResource(id = R.drawable.icon_search),
+                contentDescription = null,
+                modifier = Modifier.size(24.dp)
+            )
+        }
+    }
+}
+
+@Composable
+fun AnimatedSmallFAB(
+    visible: Boolean,
+    targetOffset: IntOffset,
+    icon: Int,
+    label: String,
+    onClick: () -> Unit
+) {
+    val density = LocalDensity.current
+
+    // 위치 애니메이션 - 메인 FAB 위치(0,0)에서 시작해서 목표 위치로 이동
+    val animatedOffset by animateIntOffsetAsState(
+        targetValue = if (visible) targetOffset else IntOffset(0, 0),
+        animationSpec = tween(
+            durationMillis = 300, // 400ms -> 300ms로 단축
+            easing = EaseOutQuart
+        ),
+        label = "fabOffset"
+    )
+
+    // 스케일과 투명도를 하나의 애니메이션으로 통합
+    val animationProgress by animateFloatAsState(
+        targetValue = if (visible) 1f else 0f,
+        animationSpec = tween(
+            durationMillis = 250, // 단축
+            delayMillis = if (visible) 50 else 0, // 지연 시간 단축
+            easing = EaseOutQuart
+        ),
+        label = "fabAnimation"
+    )
+
+    // 스케일을 0.3에서 시작하도록 조정 (완전히 납작하지 않게)
+    val scale = 0.3f + (animationProgress * 0.7f)
+    val alpha = animationProgress
+
+    if (visible || animationProgress > 0f) {
         Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .height(100.dp) // 높이를 늘려서 FAB 공간 확보
-                .windowInsetsPadding(WindowInsets.navigationBars)
+                .offset { animatedOffset }
+                .graphicsLayer {
+                    scaleX = scale
+                    scaleY = scale
+                    this.alpha = alpha
+                },
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .align(Alignment.BottomCenter) // Row를 아래쪽에 정렬
-                    .height(80.dp), // Row의 높이는 기존과 동일
-                horizontalArrangement = Arrangement.SpaceAround
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                items.forEachIndexed { index, item ->
-                    if (index == items.size / 2) {
-                        Box(Modifier.weight(1f)) // 중앙 간격 확보
-                    }
-
-                    NavigationBarItem(
-                        selected = bottomNavState == index,
-                        onClick = { onNavItemClick(index) },
-                        icon = {
-                            when (val icon = if (bottomNavState == index) item.selectedIcon else item.unselectedIcon) {
-                                is ImageVector -> Icon(imageVector = icon, contentDescription = item.title)
-                                is Int -> Image(painter = painterResource(icon), contentDescription = item.title)
-                                else -> {}
-                            }
-                        },
-                        colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = MainPurple,
-                            selectedTextColor = MainPurple,
-                            indicatorColor = Color.Transparent
+                // 라벨을 항상 위쪽에 배치
+                Text(
+                    text = label,
+                    fontSize = 12.sp,
+                    color = Color.DarkGray,
+                    maxLines = 1, // 한 줄로 제한
+                    modifier = Modifier
+                        .background(
+                            Color.White.copy(alpha = 0.9f),
+                            RoundedCornerShape(12.dp)
                         )
+                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                        .wrapContentWidth() // 텍스트 너비에 맞춤
+                )
+
+                FloatingActionButton(
+                    onClick = onClick,
+                    shape = RoundedCornerShape(28.dp),
+                    containerColor = Color.White.copy(alpha = 0.95f),
+                    contentColor = MainPurple,
+                    modifier = Modifier
+                        .size(56.dp)
+                        .aspectRatio(1f), // 정사각형 비율 강제
+                    elevation = FloatingActionButtonDefaults.elevation(
+                        defaultElevation = 8.dp,
+                        pressedElevation = 12.dp
+                    )
+                ) {
+                    Icon(
+                        imageVector = ImageVector.vectorResource(id = icon),
+                        contentDescription = label,
+                        modifier = Modifier.size(22.dp)
                     )
                 }
             }
+        }
+    }
+}
 
-            FloatingActionButton(
-                onClick = { onSearchClick() },
-                containerColor = MainPurple,
-                modifier = Modifier
-                    .size(60.dp)
-                    .align(Alignment.TopCenter) // 상단 중앙에 배치
-                    .offset(y = 10.dp), // 약간만 아래로 (기존 -20dp에서 +10dp로)
-                shape = RoundedCornerShape(50)
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun GroupCreationBottomSheet(
+    lectureRoomViewModel: LectureRoomViewModel,
+    singlePlanViewModel: SinglePlanViewModel,
+    onDismiss: () -> Unit
+) {
+    var showConfirmDialog by remember { mutableStateOf(false) }
+    var selectedPlan by remember { mutableStateOf<GetPlanLectureRoomResponse?>(null) }
+
+    val lectures by lectureRoomViewModel.getPlanLectureRoomResponse.collectAsState()
+    val individualPlans = lectures.filter { !it.studyGroup } // 개별 계획만 필터링
+
+    // 바텀시트가 열릴 때 데이터 로드
+    LaunchedEffect(Unit) {
+        lectureRoomViewModel.getPlanLectureRoom()
+    }
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        containerColor = Color.White
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            // 헤더
+            Text(
+                text = "그룹으로 전환할 계획 선택",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+
+            if (individualPlans.isEmpty()) {
+                // 빈 상태
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 32.dp)
+                ) {
+                    Text(
+                        text = "그룹으로 전환할 수 있는 개별 계획이 없습니다.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = textGray,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            } else {
+                // 개별 계획 목록
+                LazyColumn {
+                    items(individualPlans) { plan ->
+                        PlanSelectionItem(
+                            plan = plan,
+                            onSelectClick = {
+                                selectedPlan = plan
+                                showConfirmDialog = true
+                            }
+                        )
+                        if (plan != individualPlans.last()) {
+                            HorizontalDivider(color = dividerGray)
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+    }
+
+    // 확인 다이얼로그
+    if (showConfirmDialog && selectedPlan != null) {
+        AlertDialog(
+            onDismissRequest = { showConfirmDialog = false },
+            title = { Text("그룹 전환 확인") },
+            text = {
+                Text("'${selectedPlan!!.lectureTitle}' 계획을\n스터디 그룹으로 전환하시겠습니까?")
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        singlePlanViewModel.postNewStudyGroup(selectedPlan!!.planId)
+                        showConfirmDialog = false
+                        onDismiss()
+                    }
+                ) {
+                    Text("확인", color = MainPurple)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showConfirmDialog = false }) {
+                    Text("취소", color = textGray)
+                }
+            }
+        )
+    }
+}
+
+@Composable
+fun PlanSelectionItem(
+    plan: GetPlanLectureRoomResponse,
+    onSelectClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 12.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(
+            modifier = Modifier.weight(1f)
+        ) {
+            // 플랫폼과 선생님 태그
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                modifier = Modifier.padding(bottom = 8.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Filled.Search,
-                    contentDescription = "search",
-                    tint = Color.White
+                Text(
+                    text = plan.platform.label,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MainPurple,
+                    modifier = Modifier
+                        .border(
+                            width = 1.dp,
+                            color = MainPurple,
+                            shape = RoundedCornerShape(6.dp)
+                        )
+                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                )
+
+                Text(
+                    text = plan.teacher,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MainPurple,
+                    modifier = Modifier
+                        .border(
+                            width = 1.dp,
+                            color = MainPurple,
+                            shape = RoundedCornerShape(6.dp)
+                        )
+                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                )
+            }
+
+            // 강의 제목과 진행률
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Bottom,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = plan.lectureTitle,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.weight(1f)
+                )
+                Text(
+                    text = "${plan.completedLessons}/${plan.totalLessons}",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = textGray
                 )
             }
         }
+
+        Spacer(modifier = Modifier.width(16.dp))
+
+        // 선택 버튼
+        TextButton(
+            onClick = onSelectClick,
+            colors = ButtonDefaults.textButtonColors(
+                containerColor = MainPurple,
+                contentColor = Color.White
+            ),
+            shape = RoundedCornerShape(8.dp),
+            modifier = Modifier
+                .height(36.dp)
+                .width(60.dp)
+        ) {
+            Text(
+                text = "선택",
+                fontSize = 12.sp
+            )
+        }
+    }
+}
+
+@Composable
+fun InviteCodeDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (String) -> Unit
+) {
+    var inviteCode by remember { mutableStateOf("") }
+    val focusRequester = remember { FocusRequester() }
+
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(
+            dismissOnBackPress = true,
+            dismissOnClickOutside = true
+        )
+    ) {
+        Card(
+            modifier = Modifier.width(240.dp),
+            shape = RoundedCornerShape(10.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .background(Color.White)
+                    .padding(16.dp)
+            ) {
+                // 헤더
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = "그룹 참여",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                // 구분선
+                HorizontalDivider(color = dividerGray)
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // 초대코드 입력
+                TextField(
+                    value = inviteCode,
+                    onValueChange = { inviteCode = it },
+                    singleLine = true,
+                    placeholder = { Text("초대코드를 입력하세요", fontSize = 14.sp, color = Color.Gray) },
+                    textStyle = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = Color.White,
+                        unfocusedContainerColor = Color.White,
+                        disabledContainerColor = Color.White,
+                        focusedIndicatorColor = MainPurple,
+                        unfocusedIndicatorColor = LightGray60
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .focusRequester(focusRequester)
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // 버튼들
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    FilterChip(
+                        selected = false,
+                        onClick = { onDismiss() },
+                        label = { Text("취소", fontSize = 12.sp) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            containerColor = chipGray,
+                            labelColor = Color.Black
+                        ),
+                        border = null
+                    )
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    FilterChip(
+                        selected = false,
+                        onClick = {
+                            if (inviteCode.isNotBlank()) {
+                                onConfirm(inviteCode.trim())
+                            }
+                        },
+                        label = { Text("참여", fontSize = 12.sp) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            containerColor = MainPurple,
+                            labelColor = Color.White
+                        ),
+                        border = null
+                    )
+                }
+            }
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        focusRequester.requestFocus()
     }
 }

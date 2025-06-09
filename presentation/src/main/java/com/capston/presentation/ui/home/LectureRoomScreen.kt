@@ -53,6 +53,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.capston.domain.request.JoinStudyGroupDto
+import com.capston.domain.response.enum_class.Subject
 import com.capston.domain.response.plan.GetPlanLectureRoomResponse
 import com.capston.presentation.R
 import com.capston.presentation.theme.LightGray2
@@ -99,18 +100,6 @@ fun LectureRoomScreen(
                 onNotificationClick = onNotificationClick
             )
         },
-        floatingActionButton = {  // 이 부분 추가
-            FloatingActionButton(
-                onClick = { showInviteDialog = true },
-                containerColor = MainPurple,
-                contentColor = Color.White
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "스터디그룹 가입"
-                )
-            }
-        }
     ) { innerPadding ->
         if (lectures.isEmpty()) {
             // 빈 상태 화면
@@ -296,26 +285,11 @@ fun LectureItem(lecture: GetPlanLectureRoomResponse, onClick: () -> Unit) {
                             color = MainPurple,
                             shape = RoundedCornerShape(8.dp)
                         )
-                        .padding(horizontal = 4.dp, vertical = 4.dp)
+                        .padding(horizontal = 6.dp, vertical = 4.dp)
                 )
 
-                Text(
-                    text = lecture.teacher,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MainPurple,
-                    modifier = Modifier
-                        .padding(bottom = 6.dp)
-                        .border(
-                            width = 1.dp,
-                            color = MainPurple,
-                            shape = RoundedCornerShape(8.dp)
-                        )
-                        .padding(horizontal = 4.dp, vertical = 4.dp)
-                )
-
-                // 과목 칩
 //                Text(
-//                    text = lecture.subject.label, // Subject enum에 label 프로퍼티가 있다고 가정
+//                    text = lecture.subject.label,
 //                    style = MaterialTheme.typography.labelMedium,
 //                    color = lecture.subject.borderColor,
 //                    modifier = Modifier
@@ -333,23 +307,51 @@ fun LectureItem(lecture: GetPlanLectureRoomResponse, onClick: () -> Unit) {
 //                )
             }
 
-            // 수정된 코드 (조건부 표시)
-            if (lecture.studyGroup) {
-                Text(
-                    text = "그룹",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MainPurple,
-                    modifier = Modifier
-                        .padding(bottom = 6.dp)
-                        .border(
-                            width = 1.dp,
-                            color = MainPurple,
-                            shape = RoundedCornerShape(8.dp)
-                        )
-                        .padding(horizontal = 4.dp, vertical = 4.dp)
-                )
+            // 오른쪽 칩들
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                // 완강 칩 (완료된 경우에만 표시)
+                if (lecture.completedLessons == lecture.totalLessons) {
+                    Text(
+                        text = "완강",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = Color(0xFFE53E3E),
+                        modifier = Modifier
+                            .padding(bottom = 8.dp)
+                            .border(
+                                width = 1.dp,
+                                color = Color(0xFFE53E3E),
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                            .padding(horizontal = 6.dp, vertical = 4.dp)
+                    )
+                }
+
+                // 그룹 칩 (스터디그룹인 경우에만 표시)
+                if (lecture.studyGroup) {
+                    Text(
+                        text = "그룹",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MainPurple,
+                        modifier = Modifier
+                            .padding(bottom = 8.dp)
+                            .border(
+                                width = 1.dp,
+                                color = MainPurple,
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                            .padding(horizontal = 6.dp, vertical = 4.dp)
+                    )
+                }
             }
         }
+
+        Text(
+            text = lecture.lectureTitle,
+            style = Typography.titleMedium,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
 
         Row(
             verticalAlignment = Alignment.Bottom,
@@ -357,12 +359,11 @@ fun LectureItem(lecture: GetPlanLectureRoomResponse, onClick: () -> Unit) {
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(
-                text = lecture.lectureTitle,
-                style = Typography.titleMedium,
-                modifier = Modifier
-                    .weight(1f)          // ← 폭을 제한하고
-                    .padding(end = 16.dp)
+                text = "${lecture.teacher}",
+                style = MaterialTheme.typography.labelMedium,
+                color = textGray
             )
+
             Text(
                 text = "${lecture.completedLessons}/${lecture.totalLessons}",
                 style = MaterialTheme.typography.labelMedium,
@@ -440,6 +441,32 @@ fun InviteCodeDialog(
         }
     )
 }
+
+val Subject.bgColor: Color
+    get() = when (this) {
+        Subject.KOR -> Color(0xFFFFD8D8)   // 연한 핑크
+        Subject.ENG -> Color(0xFFC5D9FF)   // 연한 하늘색
+        Subject.MATH -> Color(0xFFD3F7D3)  // 연한 민트
+        Subject.SOC -> Color(0xFFFFF4C6)   // 연한 노랑
+        Subject.SCI -> Color(0xFFC1E8F7)   // 연한 파랑
+        Subject.HIST -> Color(0xFFE1B5E8)  // 연한 보라
+        Subject.UNIV -> Color(0xFFC7F6F9)  // 연한 청록
+        Subject.LANG2 -> Color(0xFFFFD8E6) // 연한 분홍
+        Subject.VOC -> Color(0xFFF0F0F0)   // 연한 회색
+    }
+
+val Subject.borderColor: Color
+    get() = when (this) {
+        Subject.KOR -> Color(0xFFFF6B6B)   // 부드러운 빨강
+        Subject.ENG -> Color(0xFF5D9CFF)    // 부드러운 파랑
+        Subject.MATH -> Color(0xFF5BBF63)   // 부드러운 초록
+        Subject.SOC -> Color(0xFFFFC046)    // 부드러운 노랑
+        Subject.SCI -> Color(0xFF1EB0D2)    // 부드러운 하늘색
+        Subject.HIST -> Color(0xFF9E4FB0)   // 부드러운 보라
+        Subject.UNIV -> Color(0xFF00A7B4)   // 부드러운 청록
+        Subject.LANG2 -> Color(0xFFF08C8C)  // 부드러운 분홍
+        Subject.VOC -> Color(0xFFB0B0B0)    // 부드러운 회색
+    }
 
 //@Preview(showBackground = true)
 //@Composable
