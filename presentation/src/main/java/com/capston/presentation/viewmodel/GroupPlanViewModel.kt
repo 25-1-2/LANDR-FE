@@ -12,6 +12,7 @@ import com.capston.domain.usecase.home.PatchLessonSchedulesCheckToggleUseCase
 import com.capston.domain.usecase.plan.DeleteOnePlanUseCase
 import com.capston.domain.usecase.plan.GetPlanDetailUseCase
 import com.capston.domain.usecase.plan.PostPlanRescheduleUseCase
+import com.capston.domain.usecase.study_group.DeleteOneStudyGroupUseCase
 import com.capston.domain.usecase.study_group.GetOneStudyGroupUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,6 +27,7 @@ class GroupPlanViewModel @Inject constructor(
     private val getPlanDetailUseCase: GetPlanDetailUseCase,
     private val postPlanRescheduleUseCase: PostPlanRescheduleUseCase,
     private val deleteOnePlanUseCase: DeleteOnePlanUseCase,
+    private val deleteOneStudyGroupUseCase: DeleteOneStudyGroupUseCase,
     private val patchLessonSchedulesCheckToggleUseCase: PatchLessonSchedulesCheckToggleUseCase,
     private val getOneStudyGroupUseCase: GetOneStudyGroupUseCase,
     private val loadingStateManager: LoadingStateManager
@@ -39,6 +41,9 @@ class GroupPlanViewModel @Inject constructor(
 
     private val _deleteOnePlanResponse = MutableStateFlow(MessageResponse())
     val deleteOnePlanResponse: StateFlow<MessageResponse> = _deleteOnePlanResponse.asStateFlow()
+
+    private val _deleteOneStudyGroupResponse = MutableStateFlow(MessageResponse())
+    val deleteOneStudyGroupResponse: StateFlow<MessageResponse> = _deleteOneStudyGroupResponse.asStateFlow()
 
     private val _patchLessonSchedulesCheckToggle = MutableStateFlow(CheckResponse())
     val patchLessonSchedulesCheckToggle = _patchLessonSchedulesCheckToggle
@@ -71,6 +76,38 @@ class GroupPlanViewModel @Inject constructor(
                 _postPlanRescheduleResponse.value = response
                 Log.d("LectureRoomViewModel", "postPlanReschedule 업데이트됨: $response")
             }
+    }
+
+    fun deleteOnePlan(planId: Int) {
+        viewModelScope.launch {
+            deleteOnePlanUseCase(planId)
+                .catch { e ->
+                    Log.e("LectureRoomViewModel", "deleteOnePlan 에러: ${e.message}")
+                }
+                .collect { response ->
+                    _deleteOnePlanResponse.value = response
+                    Log.d("LectureRoomViewModel", "deleteOnePlan 업데이트됨: $response")
+
+                    // HomeViewModel 동기화
+                    onDataChanged?.invoke()
+                }
+        }
+    }
+
+    fun deleteOneStudyGroup(groupId: Int) {
+        viewModelScope.launch {
+            deleteOneStudyGroupUseCase(groupId)
+                .catch { e ->
+                    Log.e("GroupPlanViewModel", "deleteOneStudyGroup 에러: ${e.message}")
+                }
+                .collect { response ->
+                    _deleteOneStudyGroupResponse.value = response
+                    Log.d("GroupPlanViewModel", "deleteOneStudyGroup 업데이트됨: $response")
+
+                    // HomeViewModel 동기화
+                    onDataChanged?.invoke()
+                }
+        }
     }
 
     fun patchLessonSchedulesCheckToggle(lessonScheduleId: Int) {

@@ -58,7 +58,6 @@ import com.capston.presentation.theme.textGray
 import com.capston.presentation.ui.common.CustomCheckBox
 import com.capston.presentation.ui.common.LandrUtil.Companion.formatDateYMDE
 import com.capston.presentation.viewmodel.GroupPlanViewModel
-import com.capston.presentation.viewmodel.SinglePlanViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -75,7 +74,8 @@ fun GroupPlanScreen(
     val coroutineScope = rememberCoroutineScope()
 
     var showDeleteDropdown by remember { mutableStateOf(false) }
-    var showDeleteConfirmDialog by remember { mutableStateOf(false) }
+    var showPlanDeleteConfirmDialog by remember { mutableStateOf(false) }
+    var showGroupDeleteConfirmDialog by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
 
     // 선택된 멤버의 planId 상태
@@ -83,6 +83,7 @@ fun GroupPlanScreen(
 
     val getOneStudyGroupResponse by groupPlanViewModel.getOneStudyGroupResponse.collectAsState()
     val planDetailResponse by groupPlanViewModel.getPlanDetailResponse.collectAsState()
+    val deleteOneStudyGroupResponse by groupPlanViewModel.deleteOneStudyGroupResponse.collectAsState()
 
     val myMember = getOneStudyGroupResponse.members.find { it.planId == planId }
     val isLeader = myMember?.userId == getOneStudyGroupResponse.leaderId
@@ -109,7 +110,8 @@ fun GroupPlanScreen(
                     showMenu = showDeleteDropdown,
                     onMenuClick = { showDeleteDropdown = !showDeleteDropdown },
                     onMenuDismiss = { showDeleteDropdown = false },
-                    onDeleteClick = { showDeleteConfirmDialog = true },
+                    onPlanDeleteClick = { showPlanDeleteConfirmDialog = true },
+                    onGroupDeleteClick = { showGroupDeleteConfirmDialog = true },
                     isLeader = isLeader
                 )
             }
@@ -155,30 +157,56 @@ fun GroupPlanScreen(
             }
 
             // 삭제 확인 다이얼로그
-            if (showDeleteConfirmDialog) {
+            if (showPlanDeleteConfirmDialog) {
                 AlertDialog(
                     containerColor = Color.White,
                     iconContentColor = Color.Black,
                     titleContentColor = Color.Black,
                     textContentColor = Color.Black,
                     tonalElevation = 0.dp, // 그림자 효과 제거
-                    onDismissRequest = { showDeleteConfirmDialog = false },
+                    onDismissRequest = { showPlanDeleteConfirmDialog = false },
                     title = { Text("계획 삭제") },
                     text = { Text("이 계획을 삭제하시겠습니까?") },
                     confirmButton = {
                         TextButton(
                             onClick = {
                                 // 삭제 로직 실행
-//                                lectureRoomViewModel.deleteOnePlan(planId)
-//                                navController.popBackStack() // 이전 화면으로 돌아가기
-//                                showDeleteConfirmDialog = false
+                                groupPlanViewModel.deleteOnePlan(planId)
+                                navController.popBackStack() // 이전 화면으로 돌아가기
+                                showPlanDeleteConfirmDialog = false
                             }
                         ) {
                             Text("삭제", color = Color.Red)
                         }
                     },
                     dismissButton = {
-                        TextButton(onClick = { showDeleteConfirmDialog = false }) {
+                        TextButton(onClick = { showPlanDeleteConfirmDialog = false }) {
+                            Text("취소")
+                        }
+                    }
+                )
+            }
+
+            // 그룹 삭제 다이얼로그
+            if (showGroupDeleteConfirmDialog) {
+                AlertDialog(
+                    // 다이얼로그 내용
+                    onDismissRequest = { showGroupDeleteConfirmDialog = false },
+                    title = { Text("그룹 삭제") },
+                    text = { Text("그룹을 삭제하시겠습니까?\n그룹원까지 모두 계획이 삭제됩니다.") },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                groupPlanViewModel.deleteOneStudyGroup(studyGroupId)
+                                navController.popBackStack() // 이전 화면으로 돌아가기
+                                showGroupDeleteConfirmDialog = false
+                            }
+                        ) {
+                            Text("삭제", color = Color.Red)
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showGroupDeleteConfirmDialog = false }) {
                             Text("취소")
                         }
                     }
@@ -236,7 +264,8 @@ fun GroupPlanTopBar(
     showMenu: Boolean,
     onMenuClick: () -> Unit,
     onMenuDismiss: () -> Unit,
-    onDeleteClick: () -> Unit,
+    onPlanDeleteClick: () -> Unit,
+    onGroupDeleteClick: () -> Unit,
     isLeader: Boolean
 ) {
     Column {
@@ -316,7 +345,7 @@ fun GroupPlanTopBar(
                             },
                             onClick = {
                                 onMenuDismiss()
-                                onDeleteClick()
+//                                onDeleteClick()
                             }
                         )
 
@@ -335,7 +364,7 @@ fun GroupPlanTopBar(
                             },
                             onClick = {
                                 onMenuDismiss()
-                                onDeleteClick()
+                                onGroupDeleteClick()
                             }
                         )
                     } else {
@@ -355,7 +384,7 @@ fun GroupPlanTopBar(
                             },
                             onClick = {
                                 onMenuDismiss()
-                                onDeleteClick()
+                                onPlanDeleteClick()
                             }
                         )
                     }

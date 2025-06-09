@@ -22,4 +22,8 @@ class StudyGroupDataSourceImpl @Inject constructor(
     override suspend fun postJoinStudyGroup(joinStudyGroupDto: JoinStudyGroupDto): MessageResponse {
         return studyGroupApi.postJoinStudyGroup(joinStudyGroupDto)
     }
+
+    override suspend fun deleteOneStudyGroup(studyGroupId: Int): MessageResponse {
+        return studyGroupApi.deleteOneStudyGroup(studyGroupId)
+    }
 }
