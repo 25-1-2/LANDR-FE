@@ -57,6 +57,7 @@ import com.capston.presentation.theme.CapstonTheme
 import com.capston.presentation.theme.LightGray2
 import com.capston.presentation.theme.LightGray4_40
 import com.capston.presentation.theme.MainPurple
+import com.capston.presentation.theme.dividerGray
 import com.capston.presentation.ui.common.LoadingIndicator
 import com.capston.presentation.ui.common.Screen
 import com.capston.presentation.ui.home.CalenderScreen
@@ -126,6 +127,8 @@ class MainActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // 시스템 레이아웃 설정
         enableEdgeToEdge()
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
@@ -152,7 +155,6 @@ class MainActivity : ComponentActivity() {
                     Box(modifier = Modifier
                         .consumeWindowInsets(paddingValues)
                     ) {
-
                         MainBottomBar(
                             homeViewModel = homeViewModel,
                             planViewModel = planViewModel,
@@ -484,11 +486,11 @@ fun BottomBarWithoutFAB(
             .fillMaxWidth()
             .background(Color.White)
     ) {
-        Divider(color = LightGray2, thickness = 1.dp)
+        HorizontalDivider(color = dividerGray)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(80.dp)
+                .height(64.dp)
                 .background(Color.White),
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
