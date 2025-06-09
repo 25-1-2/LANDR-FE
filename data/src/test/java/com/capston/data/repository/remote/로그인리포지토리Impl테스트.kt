@@ -14,14 +14,14 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.Assert.*
 
-class LoginRepositoryImplTest {
+class 로그인리포지토리Impl테스트 {
 
-    private val loginDataSource: LoginDataSource = mockk()
-    private lateinit var loginRepository: LoginRepositoryImpl
+    private val 로그인데이터소스: LoginDataSource = mockk()
+    private lateinit var 로그인리포지토리: LoginRepositoryImpl
 
     @Before
     fun setUp() {
-        loginRepository = LoginRepositoryImpl(loginDataSource)
+        로그인리포지토리 = LoginRepositoryImpl(로그인데이터소스)
     }
 
     @Test
@@ -32,16 +32,16 @@ class LoginRepositoryImplTest {
             name = "Test User",
             fcmToken = "test_fcm_token"
         )
-        val expectedResponse = LoginResponse(token = "test_access_token")
+        val 예상결과 = LoginResponse(token = "test_access_token")
 
-        coEvery { loginDataSource.postLoginInfo(loginDto) } returns expectedResponse
+        coEvery { 로그인데이터소스.postLoginInfo(loginDto) } returns 예상결과
 
         // When
-        val result = loginRepository.postLoginInfo(loginDto)
+        val result = 로그인리포지토리.postLoginInfo(loginDto)
 
         // Then
-        assertEquals(expectedResponse.token, result.token)
-        coVerify { loginDataSource.postLoginInfo(loginDto) }
+        assertEquals(예상결과.token, result.token)
+        coVerify { 로그인데이터소스.postLoginInfo(loginDto) }
     }
 
     @Test
@@ -53,57 +53,57 @@ class LoginRepositoryImplTest {
             name = "Test User"
         )
 
-        coEvery { loginDataSource.getUserProfile() } returns expectedProfile
+        coEvery { 로그인데이터소스.getUserProfile() } returns expectedProfile
 
         // When
-        val result = loginRepository.getUserProfile()
+        val result = 로그인리포지토리.getUserProfile()
 
         // Then
         assertNotNull(result)
         assertEquals(expectedProfile.email, result.email)
         assertEquals(expectedProfile.name, result.name)
-        coVerify { loginDataSource.getUserProfile() }
+        coVerify { 로그인데이터소스.getUserProfile() }
     }
 
     @Test
     fun `사용자 이름 수정 테스트`() = runTest {
         // Given
-        val userNameDto = UserNameDto(name = "Updated Name")
-        val expectedResponse = UserProfileResponse(
+        val 유저이름 = UserNameDto(name = "Updated Name")
+        val 예상결과 = UserProfileResponse(
             id = 1,
             email = "test@example.com",
             name = "Updated Name"
         )
 
-        coEvery { loginDataSource.patchUserName(userNameDto) } returns expectedResponse
+        coEvery { 로그인데이터소스.patchUserName(유저이름) } returns 예상결과
 
         // When
-        val result = loginRepository.patchUserName(userNameDto)
+        val result = 로그인리포지토리.patchUserName(유저이름)
 
         // Then
         assertEquals("Updated Name", result.name)
-        coVerify { loginDataSource.patchUserName(userNameDto) }
+        coVerify { 로그인데이터소스.patchUserName(유저이름) }
     }
 
     @Test
     fun `로그인 실패 시 예외가 발생하는지 테스트`() = runTest {
         // Given
-        val loginDto = LoginDto(
+        val 로그인정보 = LoginDto(
             email = "invalid@example.com",
             name = "Test User",
             fcmToken = "test_fcm_token"
         )
 
-        coEvery { loginDataSource.postLoginInfo(loginDto) } throws RuntimeException("Login failed")
+        coEvery { 로그인데이터소스.postLoginInfo(로그인정보) } throws RuntimeException("로그인 실패")
 
         // When & Then
         try {
-            loginRepository.postLoginInfo(loginDto)
-            fail("Expected exception was not thrown")
+            로그인리포지토리.postLoginInfo(로그인정보)
+            fail("예상결과가 아닙니다")
         } catch (e: RuntimeException) {
-            assertEquals("Login failed", e.message)
+            assertEquals("로그인 실패", e.message)
         }
 
-        coVerify { loginDataSource.postLoginInfo(loginDto) }
+        coVerify { 로그인데이터소스.postLoginInfo(로그인정보) }
     }
 }
