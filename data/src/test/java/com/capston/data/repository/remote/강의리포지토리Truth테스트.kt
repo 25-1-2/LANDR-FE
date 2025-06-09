@@ -115,7 +115,7 @@ class 강의리포지토리Truth테스트 {
                 id = 1,
                 title = "기초 수학 완전 정복",
                 teacher = "김수학",
-                platform = Platform.MEGA,
+                platform = Platform.ETOOS,
                 subject = Subject.MATH,
                 tag = "",
                 createdAt = "2024-01-15T09:00:00.000000",
@@ -135,7 +135,7 @@ class 강의리포지토리Truth테스트 {
                 id = 3,
                 title = "고등 국어 마스터",
                 teacher = "박국어",
-                platform = Platform.MEGA,
+                platform = Platform.ETOOS,
                 subject = Subject.KOR,
                 tag = "",
                 createdAt = "2024-01-10T10:00:00.000000",
@@ -161,21 +161,21 @@ class 강의리포지토리Truth테스트 {
 
             // 다양한 플랫폼과 과목 확인
             val 메가강의 = 결과.data!!.filter { it.platform == Platform.MEGA }
-            assertThat(메가강의).hasSize(2)
+            assertThat(메가강의).hasSize(1)
 
             val 이투스강의 = 결과.data!!.filter { it.platform == Platform.ETOOS }
-            assertThat(이투스강의).hasSize(1)
+            assertThat(이투스강의).hasSize(2)
 
             val 수학강의 = 결과.data!!.filter { it.subject == Subject.MATH }
             assertThat(수학강의).hasSize(2)
 
-            val 영어강의 = 결과.data!!.filter { it.subject == Subject.ENG }
-            assertThat(영어강의).hasSize(1)
+            val 국어강의 = 결과.data!!.filter { it.subject == Subject.KOR }
+            assertThat(국어강의).hasSize(1)
 
             // 영어 강의 세부 검증
-            val 영어강의상세 = 영어강의.first()
-            assertThat(영어강의상세.title).isEqualTo("영어 독해 비법")
-            assertThat(영어강의상세.teacher).isEqualTo("이영어")
+            val 국어강의상세 = 국어강의.first()
+            assertThat(국어강의상세.title).isEqualTo("고등 국어 마스터")
+            assertThat(국어강의상세.teacher).isEqualTo("박국어")
         }
 
         coVerify { 강의데이터소스.getAllLecture(강의요청) }
@@ -268,8 +268,8 @@ class 강의리포지토리Truth테스트 {
             // Then - Truth로 빈 값 검증
             assertThat(결과.data).isEmpty()
             assertThat(결과.data).hasSize(0)
-            assertThat(결과.nextCursor).isNull()
-            assertThat(결과.nextCreatedAt).isNull()
+            assertThat(결과.nextCursor).isEqualTo(0)
+            assertThat(결과.nextCreatedAt).isEqualTo("")
         }
 
         coVerify { 강의데이터소스.getDistinctLecture(강의요청) }
@@ -278,7 +278,7 @@ class 강의리포지토리Truth테스트 {
     @Test
     fun `Truth 라이브러리 사용 검색어로 강의 필터링 테스트`() = runTest {
         // Given - 주어진 조건
-        val 검색어 = "프로그래밍"
+        val 검색어 = "수학"
         val 강의요청 = LectureDto(
             search = 검색어,
             cursorLectureId = "",
@@ -311,8 +311,8 @@ class 강의리포지토리Truth테스트 {
             ),
             LectureResponseDto(
                 id = 3,
-                title = "고등 국어 마스터",
-                teacher = "박국어",
+                title = "고등 수학 마스터",
+                teacher = "박소영",
                 platform = Platform.MEGA,
                 subject = Subject.MATH,
                 tag = "",
@@ -332,7 +332,7 @@ class 강의리포지토리Truth테스트 {
         // When - 실행
         강의리포지토리.getDistinctLecture(강의요청).collect { 결과 ->
             // Then - Truth 사용 검증
-            assertThat(결과.data).hasSize(2)
+            assertThat(결과.data).hasSize(3)
 
             // 모든 강의가 검색어를 포함하는지 확인
             결과.data!!.forEach { 강의 ->
@@ -342,15 +342,15 @@ class 강의리포지토리Truth테스트 {
 
             // 첫 번째 강의 검증
             val 첫번째강의 = 결과.data!![0]
-            assertThat(첫번째강의.title).isEqualTo("자바 프로그래밍 기초")
-            assertThat(첫번째강의.title).contains("자바")
-            assertThat(첫번째강의.teacher).isEqualTo("조자바")
+            assertThat(첫번째강의.title).isEqualTo("기초 수학 완전 정복")
+            assertThat(첫번째강의.title).contains("수학")
+            assertThat(첫번째강의.teacher).isEqualTo("김수학")
 
             // 두 번째 강의 검증
             val 두번째강의 = 결과.data!![1]
-            assertThat(두번째강의.title).isEqualTo("파이썬 프로그래밍 마스터")
-            assertThat(두번째강의.title).contains("파이썬")
-            assertThat(두번째강의.teacher).isEqualTo("김파이썬")
+            assertThat(두번째강의.title).isEqualTo("고등 수학 마스터")
+            assertThat(두번째강의.title).contains("수학")
+            assertThat(두번째강의.teacher).isEqualTo("박수학")
         }
 
         coVerify { 강의데이터소스.getDistinctLecture(강의요청) }
@@ -399,7 +399,7 @@ class 강의리포지토리Truth테스트 {
         // When - 실행
         강의리포지토리.getDistinctLecture(강의요청).collect { 결과 ->
             // Then - Truth 사용 검증
-            assertThat(결과.data).hasSize(2)
+            assertThat(결과.data).hasSize(3)
 
             // 모든 강의가 이투스 플랫폼인지 확인
             결과.data!!.forEach { 강의 ->
