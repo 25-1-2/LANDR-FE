@@ -22,13 +22,15 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.capston.domain.response.user.UserProfileResponse
 import com.capston.presentation.R
 import com.capston.presentation.theme.CapstonTheme
 import com.capston.presentation.theme.textGray
 
 @Composable
 fun OnboardingScreen(
-    onCompleteOnboarding: () -> Unit
+    onCompleteOnboarding: () -> Unit,
+    userProfile: UserProfileResponse
 ) {
     Box(
         modifier = Modifier
@@ -54,7 +56,7 @@ fun OnboardingScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "조은채님!\n맞춤형 인강 학습을 시작해볼까요?",
+                text = "${userProfile.name}님!\n맞춤형 인강 학습을 시작해볼까요?",
                 style = MaterialTheme.typography.titleLarge,
                 textAlign = TextAlign.Start,
                 fontSize = 24.sp

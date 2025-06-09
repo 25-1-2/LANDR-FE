@@ -16,6 +16,7 @@
         <package android:name="com.etoos.etoosstudyapp" />
         <package android:name="net.megastudy.smartplay.main" />
         <package android:name="com.ds.mimacstudy.smartnplayer" />
+        <package android:name="com.coden.android.ebs" />
     </queries>
 
 </manifest>

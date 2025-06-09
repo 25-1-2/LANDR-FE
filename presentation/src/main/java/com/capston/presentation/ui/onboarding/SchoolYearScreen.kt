@@ -31,12 +31,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.capston.domain.response.user.UserProfileResponse
 import com.capston.presentation.R
 import com.capston.presentation.theme.MainPurple
 import com.capston.presentation.theme.textGray
 
 @Composable
-fun SchoolYearScreen(onSetupComplete: (String) -> Unit) {
+fun SchoolYearScreen(
+    onSetupComplete: (String) -> Unit,
+    userProfile: UserProfileResponse
+) {
     var selectedGrade by remember { mutableStateOf<String?>(null) }
 
     val gradeOptions = listOf(
@@ -70,7 +74,7 @@ fun SchoolYearScreen(onSetupComplete: (String) -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "조은채님!\n맞춤형 인강 학습을 시작해볼까요?",
+                text = "${userProfile.name}님!\n맞춤형 인강 학습을 시작해볼까요?",
                 style = MaterialTheme.typography.titleLarge,
                 textAlign = TextAlign.Start,
                 fontSize = 24.sp

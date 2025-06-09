@@ -1,9 +1,11 @@
 package com.capston.presentation.ui.home
 
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.Intent
 import android.os.Build
 import android.util.Log
+import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
@@ -35,6 +37,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -109,6 +112,9 @@ import com.capston.presentation.theme.SubPurple
 import com.capston.presentation.theme.WarmPurple
 import com.capston.presentation.theme.chipGray
 import com.capston.presentation.theme.textGray
+import com.capston.presentation.ui.common.ScreenshotManager
+import com.capston.presentation.ui.common.rememberScreenshotManager
+import com.capston.presentation.ui.common.useScreenshotCapture
 import com.capston.presentation.ui.login.LoginActivity
 import com.capston.presentation.ui.login.SubjectDataDto
 import com.capston.presentation.viewmodel.LoginViewModel
@@ -131,9 +137,46 @@ fun ProfileScreen(loginViewModel: LoginViewModel, myPageViewModel: MyPageViewMod
 
     // Get the current context
     val context = LocalContext.current
+    val activity = context as? Activity
 
-// Create rememberable coroutine scope
+    // Create rememberable coroutine scope
     val scope = rememberCoroutineScope()
+
+    // Screenshot functionality
+    val screenshotManager = rememberScreenshotManager()
+    var isCapturing by remember { mutableStateOf(false) }
+
+    // 캡처 및 공유 함수 정의
+    val captureAndShare: (Activity) -> Unit = { activity ->
+        scope.launch {
+            try {
+                // 햅틱 피드백 (선택사항)
+                // activity.window.decorView.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+
+                // 캡처 실행 (Toast 없이)
+                screenshotManager.captureAndShare(activity)
+            } catch (e: Exception) {
+                Log.e("ProfileScreen", "캡처 및 공유 실패: ${e.message}")
+                Toast.makeText(context, "❌ 캡처에 실패했습니다.", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    // 캡처만 하는 함수 정의
+    val captureOnly: (Activity) -> Unit = { activity ->
+        scope.launch {
+            try {
+                // 햅틱 피드백 (선택사항)
+                // activity.window.decorView.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+
+                // 캡처 실행 (Toast 없이)
+                screenshotManager.captureOnly(activity)
+            } catch (e: Exception) {
+                Log.e("ProfileScreen", "캡처 실패: ${e.message}")
+                Toast.makeText(context, "❌ 캡처에 실패했습니다.", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
 
     val mypageState by myPageViewModel.getDistinctMyPage.collectAsState()
     val myStatisticsState by myPageViewModel.getMyPageStatistics.collectAsState()
@@ -195,319 +238,352 @@ fun ProfileScreen(loginViewModel: LoginViewModel, myPageViewModel: MyPageViewMod
     }
 
     Scaffold(
-        topBar = { MyPageTopBar(hasUnreadNotifications = true) },
+        topBar = {
+            MyPageTopBar(
+                hasUnreadNotifications = true,
+                onCaptureClick = {
+                    activity?.let { captureOnly(it) }
+                },
+                isCapturing = isCapturing
+            )
+        },
+        floatingActionButton = {
+            // 하단 우측에 캡처 플로팅 버튼 추가 (선택사항)
+            if (!isCapturing) {
+                ExtendedFloatingActionButton(
+                    onClick = {
+                        activity?.let { captureAndShare(it) }
+                    },
+                    containerColor = MainPurple,
+                    contentColor = Color.White
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.screen_mypage_upload_iv),
+                        contentDescription = "캡처 및 공유",
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("공유하기")
+                }
+            }
+        },
         modifier = Modifier.fillMaxSize()
     ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .verticalScroll(rememberScrollState()), // 전체 화면 사용
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            // 상단 프로필 정보
-            Row(
+        // 캡처 중일 때 오버레이 표시
+        Box(modifier = Modifier.fillMaxSize()) {
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 20.dp, start = 20.dp), // 최상단 + 왼쪽 여백
-                verticalAlignment = Alignment.CenterVertically // 세로 가운데 정렬
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .verticalScroll(rememberScrollState()),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Image(
-                    painter = painterResource(R.drawable.screen_profile_basic_profile_iv),
-                    contentDescription = "기본 프로필",
+                // 기존 UI 코드들...
+                // 상단 프로필 정보
+                Row(
                     modifier = Modifier
-                        .padding(end = 10.dp)
-                )
-                Text(
-                    text = stringResource(R.string.mypage_title),
-                    fontSize = 20.sp,
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(end = 10.dp)
-                )
-                Text(
-                    text = "${mypageState.userName}님",
-                    fontSize = 14.sp,
-                    style = MaterialTheme.typography.bodyMedium
-                )
-
-                Spacer(modifier = Modifier.weight(1f))
-
-                // 내 정보 수정 텍스트 버튼
-                Text(
-                    text = "내 정보 수정",
-                    fontSize = 14.sp,
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.clickable {
-                        editUserName = mypageState.userName  // 현재 이름으로 초기화
-                        showEditDialog = true    // 다이얼로그 표시
-                    }
-                )
-
-                // 토글 버튼
-                IconButton(
-                    onClick = {
-                        editUserName = mypageState.userName  // 현재 이름으로 초기화
-                        showEditDialog = true    // 다이얼로그 표시
-                    },
-                    modifier = Modifier
-                        .padding(end = 20.dp)
-                        .size(24.dp)
+                        .fillMaxWidth()
+                        .padding(top = 20.dp, start = 20.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Image(
-                        painter = painterResource(id = R.drawable.screen_profile_see_more_iv),
-                        contentDescription = "내 정보 수정"
+                        painter = painterResource(R.drawable.screen_profile_basic_profile_iv),
+                        contentDescription = "기본 프로필",
+                        modifier = Modifier.padding(end = 10.dp)
+                    )
+                    Text(
+                        text = stringResource(R.string.mypage_title),
+                        fontSize = 20.sp,
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.padding(end = 10.dp)
+                    )
+                    Text(
+                        text = "${mypageState.userName}님",
+                        fontSize = 14.sp,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+
+                    Spacer(modifier = Modifier.weight(1f))
+
+                    Text(
+                        text = "내 정보 수정",
+                        fontSize = 14.sp,
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.clickable {
+                            editUserName = mypageState.userName
+                            showEditDialog = true
+                        }
+                    )
+
+                    IconButton(
+                        onClick = {
+                            editUserName = mypageState.userName
+                            showEditDialog = true
+                        },
+                        modifier = Modifier
+                            .padding(end = 20.dp)
+                            .size(24.dp)
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.screen_profile_see_more_iv),
+                            contentDescription = "내 정보 수정"
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                // 나머지 기존 UI 코드들... (오늘 계획 원형 그래프, 보라색 박스 등)
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    TodayCircleGraph(
+                        name = stringResource(R.string.mypage_today_plan),
+                        cleared = mypageState.todayCompletedLessonCount,
+                        total = mypageState.todayTotalLessonCount
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                // 보라색 박스
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp)
+                        .height(120.dp),
+                    shape = RoundedCornerShape(10.dp),
+                    colors = CardDefaults.cardColors(containerColor = SubPurple)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 40.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // 완료한 강의
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Image(
+                                painter = painterResource(R.drawable.screen_profile_completed_iv),
+                                contentDescription = "완료한 강의",
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = stringResource(R.string.mypage_completed_lecture),
+                                color = Color.White,
+                                style = MaterialTheme.typography.labelMedium,
+                                fontSize = 12.sp
+                            )
+                            Text(
+                                text = "${mypageState.completedLectureCount}개",
+                                color = Color.White,
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontSize = 18.sp
+                            )
+                        }
+
+                        // 연속 일수
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Image(
+                                painter = painterResource(R.drawable.screen_profile_sequence_iv),
+                                contentDescription = "연속 n일째",
+                            )
+                            Text(
+                                text = stringResource(R.string.mypage_sequence_day),
+                                color = Color.White,
+                                style = MaterialTheme.typography.labelMedium,
+                                fontSize = 12.sp
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "${mypageState.studyStreak}일째",
+                                color = Color.White,
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontSize = 18.sp
+                            )
+                        }
+
+                        // 수강중인 강의
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Image(
+                                painter = painterResource(R.drawable.screen_profile_course_iv),
+                                contentDescription = "수강 중인 강의",
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = stringResource(R.string.mypage_current_lecture),
+                                color = Color.White,
+                                style = MaterialTheme.typography.labelMedium,
+                                fontSize = 12.sp
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "${mypageState.inProgressLectureCount}개",
+                                color = Color.White,
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontSize = 18.sp
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                // 나머지 기존 Card들...
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp),
+                    shape = RoundedCornerShape(10.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    border = BorderStroke(1.dp, color = LightGray60)
+                ) {
+                    CompletedLecturesToggle(
+                        lectures = mypageState.completedPlanList,
+                        isExpanded = isLecturesExpanded,
+                        onToggle = { isLecturesExpanded = it }
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                CalendarSelectionRow(myPageViewModel)
+
+                // 통계 섹션들...
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 10.dp),
+                    shape = RoundedCornerShape(10.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    border = BorderStroke(1.dp, color = LightGray60)
+                ) {
+                    SubjectDistributionGraph(
+                        isExpanded = isStudyTimeExpanded,
+                        onToggle = { isStudyTimeExpanded = it },
+                        statisticsResponse = myStatisticsState
+                    )
+                }
+
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 10.dp),
+                    shape = RoundedCornerShape(10.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    border = BorderStroke(1.dp, color = LightGray60)
+                ) {
+                    WeeklyStudyStatisticsGraph(
+                        isExpanded = isStudyStatusExpanded,
+                        onToggle = { isStudyStatusExpanded = it },
+                        myStatisticsState = myStatisticsState
+                    )
+                }
+
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 10.dp),
+                    shape = RoundedCornerShape(10.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    border = BorderStroke(1.dp, color = LightGray60)
+                ) {
+                    SubjectAchievementGraph(
+                        isExpanded = isSubjectExpanded,
+                        onToggle = { isSubjectExpanded = it },
+                        mypageState
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.weight(1f))
+
+                // 로그아웃 버튼
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 32.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "로그아웃",
+                        color = MainPurple,
+                        fontSize = 16.sp,
+                        modifier = Modifier
+                            .clickable {
+                                scope.launch {
+                                    loginViewModel.logout()
+                                    try {
+                                        val intent = Intent(context, LoginActivity::class.java).apply {
+                                            flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+                                                    Intent.FLAG_ACTIVITY_CLEAR_TASK
+                                        }
+                                        Log.d("ProfileScreen", "Starting LoginActivity, context: $context")
+                                        context.startActivity(intent)
+                                    } catch (e: Exception) {
+                                        Log.e("ProfileScreen", "Error during logout navigation: ${e.message}", e)
+                                    }
+                                }
+                            }
+                            .padding(16.dp)
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
-
-            // 오늘 계획 원형 그래프 추가 - 중앙 정렬
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                TodayCircleGraph(
-                    name = stringResource(R.string.mypage_today_plan),
-                    cleared = mypageState.todayCompletedLessonCount,
-                    total = mypageState.todayTotalLessonCount
-                )
-            }
-
-            // 그래프와 보라색 박스 사이의 여백
-            Spacer(modifier = Modifier.height(10.dp))
-
-            // 보라색 박스 - 둥근 모서리
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp)
-                    .height(120.dp), // 직접 높이 설정
-                shape = RoundedCornerShape(10.dp), // 둥근 모서리
-                colors = CardDefaults.cardColors(
-                    containerColor = SubPurple // 보라색 배경
-                )
-            ) {
-                Row(
+            // 캡처 중일 때 로딩 오버레이
+            if (isCapturing) {
+                Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(horizontal = 40.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                        .background(Color.Black.copy(alpha = 0.5f)),
+                    contentAlignment = Alignment.Center
                 ) {
-                    // 첫 번째 - 완료한 강의
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
+                    Card(
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
                     ) {
-                        Image(
-                            painter = painterResource(R.drawable.screen_profile_completed_iv),
-                            contentDescription = "완료한 강의",
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = stringResource(R.string.mypage_completed_lecture),
-                            color = Color.White,
-                            style = MaterialTheme.typography.labelMedium,
-                            fontSize = 12.sp
-                        )
-                        Text(
-                            text = "${mypageState.completedLectureCount}개",
-                            color = Color.White,
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontSize = 18.sp
-                        )
-                    }
-
-                    // 두 번째 - 연속 일수
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Image(
-                            painter = painterResource(R.drawable.screen_profile_sequence_iv),
-                            contentDescription = "연속 n일째",
-                        )
-                        Text(
-                            text = stringResource(R.string.mypage_sequence_day),
-                            color = Color.White,
-                            style = MaterialTheme.typography.labelMedium,
-                            fontSize = 12.sp
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-
-                        Text(
-                            text = "${mypageState.studyStreak}일째",
-                            color = Color.White,
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontSize = 18.sp
-                        )
-                    }
-
-                    // 세 번째 - 수강중인 강의
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Image(
-                            painter = painterResource(R.drawable.screen_profile_course_iv),
-                            contentDescription = "수강 중인 강의",
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = stringResource(R.string.mypage_current_lecture),
-                            color = Color.White,
-                            style = MaterialTheme.typography.labelMedium,
-                            fontSize = 12.sp
-                        )
-
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = "${mypageState.inProgressLectureCount}개",
-                            color = Color.White,
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontSize = 18.sp
-                        )
+                        Column(
+                            modifier = Modifier.padding(24.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            // 로딩 애니메이션 (간단한 텍스트로 대체)
+                            Text(
+                                text = "📸",
+                                fontSize = 32.sp,
+                                modifier = Modifier.padding(bottom = 8.dp)
+                            )
+                            Text(
+                                text = "화면을 캡처하고 있습니다...",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = Color.Gray
+                            )
+                        }
                     }
                 }
-            }
-
-            // 보라색 박스와 회색 테두리 박스 사이의 여백
-            Spacer(modifier = Modifier.height(20.dp))
-
-            // 회색 테두리 박스 - 둥근 모서리 (배경색 없음)
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp),
-                shape = RoundedCornerShape(10.dp), // 둥근 모서리
-                colors = CardDefaults.cardColors(
-                    containerColor = Color.White // 흰색 배경
-                ),
-                border = BorderStroke(1.dp, color = LightGray60)
-            ) {
-
-                // isLecturesExpanded 상태를 CompletedLecturesToggle로 전달
-                CompletedLecturesToggle(
-                    lectures = mypageState.completedPlanList,
-                    isExpanded = isLecturesExpanded,
-                    onToggle = { isLecturesExpanded = it }
-                )
-            }
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            // 내 공부 기록 통계 섹션 (제목 + 달력 선택 박스)
-            CalendarSelectionRow(myPageViewModel)
-
-            // 회색 테두리 박스 - 둥근 모서리 (배경색 없음)
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 10.dp),
-                shape = RoundedCornerShape(10.dp), // 둥근 모서리
-                colors = CardDefaults.cardColors(
-                    containerColor = Color.White // 흰색 배경
-                ),
-                border = BorderStroke(1.dp, color = LightGray60)
-            ) {
-                // 접기/펼치기 기능이 있는 SubjectDistributionGraph 컴포넌트 호출
-                SubjectDistributionGraph(
-                    isExpanded = isStudyTimeExpanded,
-                    onToggle = { isStudyTimeExpanded = it },
-                    statisticsResponse = myStatisticsState
-                )
-            }
-
-            // 회색 테두리 박스 - 둥근 모서리 (배경색 없음)
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 10.dp),
-                shape = RoundedCornerShape(10.dp), // 둥근 모서리
-                colors = CardDefaults.cardColors(
-                    containerColor = Color.White // 흰색 배경
-                ),
-                border = BorderStroke(1.dp, color = LightGray60)
-            ) {
-                // 접기/펼치기 기능이 있는 WeeklyStudyStatisticsGraph 컴포넌트 호출
-                WeeklyStudyStatisticsGraph(
-                    isExpanded = isStudyStatusExpanded,
-                    onToggle = { isStudyStatusExpanded = it },
-                    myStatisticsState = myStatisticsState
-                )
-            }
-
-            // 회색 테두리 박스 - 둥근 모서리 (배경색 없음)
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 10.dp),
-                shape = RoundedCornerShape(10.dp), // 둥근 모서리
-                colors = CardDefaults.cardColors(
-                    containerColor = Color.White // 흰색 배경
-                ),
-                border = BorderStroke(1.dp, color = LightGray60)
-            ) {
-                SubjectAchievementGraph(
-                    isExpanded = isSubjectExpanded,
-                    onToggle = { isSubjectExpanded = it },
-                    mypageState
-                )
-            }
-
-            // 하단 여백
-            Spacer(modifier = Modifier.height(20.dp))
-
-            Spacer(modifier = Modifier.weight(1f))
-
-// Box를 사용하여 가로 중앙 정렬
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 32.dp), // 하단 여백 추가
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "로그아웃",
-                    color = MainPurple,
-                    fontSize = 16.sp, // 폰트 크기 키우기
-                    modifier = Modifier
-                        .clickable {
-                            scope.launch {
-                                // 로그아웃
-                                loginViewModel.logout()
-
-                                try {
-                                    // 로그인 액티비티 이동
-                                    val intent = Intent(context, LoginActivity::class.java).apply {
-                                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or
-                                                Intent.FLAG_ACTIVITY_CLEAR_TASK
-                                    }
-
-                                    Log.d("ProfileScreen", "Starting LoginActivity, context: $context")
-                                    context.startActivity(intent)
-                                } catch (e: Exception) {
-                                    Log.e("ProfileScreen", "Error during logout navigation: ${e.message}", e)
-                                }
-                            }
-                        }
-                        .padding(16.dp)
-                )
             }
         }
     }
 }
 
+// 수정된 MyPageTopBar - 캡처 버튼 추가
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MyPageTopBar(hasUnreadNotifications: Boolean) {
+fun MyPageTopBar(
+    hasUnreadNotifications: Boolean,
+    onCaptureClick: () -> Unit = {},
+    isCapturing: Boolean = false
+) {
     Column {
         TopAppBar(
             modifier = Modifier
                 .padding(10.dp)
                 .height(80.dp),
             title = {
-                // 앱 이름
                 Icon(
                     painter = painterResource(id = R.drawable.landr_title_iv),
                     contentDescription = "앱 이름",
@@ -519,13 +595,30 @@ fun MyPageTopBar(hasUnreadNotifications: Boolean) {
                 Icon(
                     painter = painterResource(R.drawable.ic_launcher),
                     contentDescription = "앱 로고",
-                    modifier = Modifier
-                        .height(50.dp),
+                    modifier = Modifier.height(50.dp),
                     tint = Color.Unspecified
                 )
             },
             actions = {
-                // 읽지 않은 알람이 있을 경우 빨간색 배지 표시
+                // 캡처 버튼 추가
+                IconButton(
+                    onClick = onCaptureClick,
+                    enabled = !isCapturing
+                ) {
+                    if (isCapturing) {
+                        // 캡처 중일 때는 로딩 표시
+                        Text("📸", fontSize = 20.sp)
+                    } else {
+                        // 캡처 아이콘 (카메라 또는 공유 아이콘)
+                        Image(
+                            painter = painterResource(R.drawable.screen_mypage_download_iv),
+                            contentDescription = "화면 캡처 및 공유",
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                }
+
+                // 알림 버튼
                 if (hasUnreadNotifications) {
                     IconButton(onClick = { /* 알람 클릭 */ }) {
                         Image(
@@ -533,9 +626,7 @@ fun MyPageTopBar(hasUnreadNotifications: Boolean) {
                             contentDescription = "alarm icon",
                         )
                     }
-                }
-
-                else {
+                } else {
                     IconButton(onClick = { /* 알람 클릭 */ }) {
                         Image(
                             painter = painterResource(R.drawable.home_screen_notification_iv),

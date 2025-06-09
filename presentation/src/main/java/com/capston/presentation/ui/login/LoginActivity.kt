@@ -179,22 +179,22 @@ class LoginActivity : ComponentActivity() {
                         lifecycleScope.launchWhenStarted {
                             loginViewModel.isTokenSaved.collect { isSaved ->
                                 if (isSaved) {
-                                    // 사용자 이메일 기준으로 온보딩 완료 여부 확인
-                                    val userEmail = auth.currentUser?.email
-                                    val hasCompletedOnboarding = onboardingPreferenceStorage
-                                        .hasCompletedOnboarding(userEmail)
-
-                                    if (!hasCompletedOnboarding) {
-                                        // 온보딩 미완료시 온보딩으로 이동
-                                        startActivity(Intent(this@LoginActivity, OnboardingActivity::class.java))
-                                    } else {
-                                        // 온보딩 완료시 메인으로 이동
-                                        startActivity(Intent(this@LoginActivity, MainActivity::class.java))
-                                    }
-
-                                     finish()
-//                                    // 임시 테스트를 위함
-//                                    startActivity(Intent(this@LoginActivity, OnboardingActivity::class.java))
+//                                    // 사용자 이메일 기준으로 온보딩 완료 여부 확인
+//                                    val userEmail = auth.currentUser?.email
+//                                    val hasCompletedOnboarding = onboardingPreferenceStorage
+//                                        .hasCompletedOnboarding(userEmail)
+//
+//                                    if (!hasCompletedOnboarding) {
+//                                        // 온보딩 미완료시 온보딩으로 이동
+//                                        startActivity(Intent(this@LoginActivity, OnboardingActivity::class.java))
+//                                    } else {
+//                                        // 온보딩 완료시 메인으로 이동
+//                                        startActivity(Intent(this@LoginActivity, MainActivity::class.java))
+//                                    }
+//
+//                                     finish()
+                                    // 임시 테스트를 위함
+                                    startActivity(Intent(this@LoginActivity, OnboardingActivity::class.java))
                                 }
                             }
                         }

@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat.shouldShowRequestPermissionRationale
 import androidx.core.content.ContextCompat
+import androidx.core.view.WindowCompat
 import androidx.navigation.NavController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -63,8 +64,8 @@ import com.capston.presentation.ui.home.GroupPlanScreen
 import com.capston.presentation.ui.home.HomeScreen
 import com.capston.presentation.ui.home.LectureRoomScreen
 import com.capston.presentation.ui.home.NotificationScreen
-import com.capston.presentation.ui.home.SinglePlanScreen
 import com.capston.presentation.ui.home.ProfileScreen
+import com.capston.presentation.ui.home.SinglePlanScreen
 import com.capston.presentation.ui.search.SearchActivity
 import com.capston.presentation.viewmodel.DailyScheduleViewModel
 import com.capston.presentation.viewmodel.GroupPlanViewModel
@@ -126,6 +127,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        WindowCompat.setDecorFitsSystemWindows(window, false)
 
         loginViewModel.checkAccessToken()
 
@@ -142,22 +144,31 @@ class MainActivity : ComponentActivity() {
             }
 
             CapstonTheme {
-                Box(modifier = Modifier.fillMaxWidth()) {
-                    MainBottomBar(
-                        homeViewModel = homeViewModel,
-                        planViewModel = planViewModel,
-                        dailyScheduleViewModel = dailyScheduleViewModel,
-                        lectureRoomViewModel = lectureRoomViewModel,
-                        singlePlanViewModel = singlePlanViewModel,
-                        groupPlanViewModel = groupPlanViewModel,
-                        loginViewModel = loginViewModel,
-                        myPageViewModel = myPageViewModel,
-                        recommendViewModel = recommendViewModel,
-                        loadingStateManager = loadingStateManager
-                    )
 
-                    // 전역 로딩 인디케이터
-                    LoadingIndicator(loadingStateManager)
+                Scaffold(
+                    modifier = Modifier
+                        .windowInsetsPadding(WindowInsets.systemBars) // ⬅️ 상태바 + 네비게이션 바 여백 포함
+                ) { paddingValues ->
+                    Box(modifier = Modifier
+                        .consumeWindowInsets(paddingValues)
+                    ) {
+
+                        MainBottomBar(
+                            homeViewModel = homeViewModel,
+                            planViewModel = planViewModel,
+                            dailyScheduleViewModel = dailyScheduleViewModel,
+                            lectureRoomViewModel = lectureRoomViewModel,
+                            singlePlanViewModel = singlePlanViewModel,
+                            groupPlanViewModel = groupPlanViewModel,
+                            loginViewModel = loginViewModel,
+                            myPageViewModel = myPageViewModel,
+                            recommendViewModel = recommendViewModel,
+                            loadingStateManager = loadingStateManager
+                        )
+
+                        // 전역 로딩 인디케이터
+                        LoadingIndicator(loadingStateManager)
+                    }
                 }
             }
         }

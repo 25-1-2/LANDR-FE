@@ -27,13 +27,15 @@ import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.animateLottieCompositionAsState
 import com.airbnb.lottie.compose.rememberLottieComposition
+import com.capston.domain.response.user.UserProfileResponse
 import com.capston.presentation.R
 import com.capston.presentation.theme.CapstonTheme
 import com.capston.presentation.theme.textGray
 
 @Composable
 fun OnboardingFinishScreen(
-    onCompleteOnboarding: () -> Unit
+    onCompleteOnboarding: () -> Unit,
+    userProfile: UserProfileResponse
 ) {
     Box(
         modifier = Modifier
@@ -60,7 +62,7 @@ fun OnboardingFinishScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "조은채님,\n" +
+                text = "${userProfile.name}님,\n" +
                         "맞춤형 인강 학습 준비가 완료됐어요!",
                 style = MaterialTheme.typography.titleLarge,
                 textAlign = TextAlign.Start,
@@ -110,6 +112,6 @@ fun OnboardingFinishScreen(
 @Composable
 fun LectureRoomPreview() {
     CapstonTheme {
-        OnboardingFinishScreen(onCompleteOnboarding = {})
+        OnboardingFinishScreen(onCompleteOnboarding = {}, userProfile = UserProfileResponse())
     }
 }
