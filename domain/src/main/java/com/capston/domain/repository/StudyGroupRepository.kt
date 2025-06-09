@@ -20,4 +20,9 @@ interface StudyGroupRepository {
     suspend fun postJoinStudyGroup(
         joinStudyGroupDto: JoinStudyGroupDto
     ): MessageResponse
+
+    // 스터디그룹 삭제
+    suspend fun deleteOneStudyGroup(
+        studyGroupId: Int
+    ): MessageResponse
 }

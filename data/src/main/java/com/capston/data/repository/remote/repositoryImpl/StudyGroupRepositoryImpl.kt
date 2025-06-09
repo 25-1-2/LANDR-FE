@@ -22,4 +22,8 @@ class StudyGroupRepositoryImpl @Inject constructor(
     override suspend fun postJoinStudyGroup(
         joinStudyGroupDto: JoinStudyGroupDto
     ): MessageResponse = studyGroupDataSource.postJoinStudyGroup(joinStudyGroupDto)
+
+    override suspend fun deleteOneStudyGroup(
+        studyGroupId: Int
+    ): MessageResponse = studyGroupDataSource.deleteOneStudyGroup(studyGroupId)
 }

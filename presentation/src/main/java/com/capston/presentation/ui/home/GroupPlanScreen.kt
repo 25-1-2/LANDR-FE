@@ -58,8 +58,9 @@ import com.capston.presentation.theme.textGray
 import com.capston.presentation.ui.common.CustomCheckBox
 import com.capston.presentation.ui.common.LandrUtil.Companion.formatDateYMDE
 import com.capston.presentation.viewmodel.GroupPlanViewModel
-import com.capston.presentation.viewmodel.SinglePlanViewModel
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -73,7 +74,8 @@ fun GroupPlanScreen(
     val coroutineScope = rememberCoroutineScope()
 
     var showDeleteDropdown by remember { mutableStateOf(false) }
-    var showDeleteConfirmDialog by remember { mutableStateOf(false) }
+    var showPlanDeleteConfirmDialog by remember { mutableStateOf(false) }
+    var showGroupDeleteConfirmDialog by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
 
     // 선택된 멤버의 planId 상태
@@ -81,6 +83,10 @@ fun GroupPlanScreen(
 
     val getOneStudyGroupResponse by groupPlanViewModel.getOneStudyGroupResponse.collectAsState()
     val planDetailResponse by groupPlanViewModel.getPlanDetailResponse.collectAsState()
+    val deleteOneStudyGroupResponse by groupPlanViewModel.deleteOneStudyGroupResponse.collectAsState()
+
+    val myMember = getOneStudyGroupResponse.members.find { it.planId == planId }
+    val isLeader = myMember?.userId == getOneStudyGroupResponse.leaderId
 
     LaunchedEffect(studyGroupId) {
         groupPlanViewModel.getOneStudyGroup(studyGroupId)
@@ -104,7 +110,9 @@ fun GroupPlanScreen(
                     showMenu = showDeleteDropdown,
                     onMenuClick = { showDeleteDropdown = !showDeleteDropdown },
                     onMenuDismiss = { showDeleteDropdown = false },
-                    onDeleteClick = { showDeleteConfirmDialog = true }
+                    onPlanDeleteClick = { showPlanDeleteConfirmDialog = true },
+                    onGroupDeleteClick = { showGroupDeleteConfirmDialog = true },
+                    isLeader = isLeader
                 )
             }
         ) { innerPadding ->
@@ -149,30 +157,56 @@ fun GroupPlanScreen(
             }
 
             // 삭제 확인 다이얼로그
-            if (showDeleteConfirmDialog) {
+            if (showPlanDeleteConfirmDialog) {
                 AlertDialog(
                     containerColor = Color.White,
                     iconContentColor = Color.Black,
                     titleContentColor = Color.Black,
                     textContentColor = Color.Black,
                     tonalElevation = 0.dp, // 그림자 효과 제거
-                    onDismissRequest = { showDeleteConfirmDialog = false },
+                    onDismissRequest = { showPlanDeleteConfirmDialog = false },
                     title = { Text("계획 삭제") },
                     text = { Text("이 계획을 삭제하시겠습니까?") },
                     confirmButton = {
                         TextButton(
                             onClick = {
                                 // 삭제 로직 실행
-//                                lectureRoomViewModel.deleteOnePlan(planId)
-//                                navController.popBackStack() // 이전 화면으로 돌아가기
-//                                showDeleteConfirmDialog = false
+                                groupPlanViewModel.deleteOnePlan(planId)
+                                navController.popBackStack() // 이전 화면으로 돌아가기
+                                showPlanDeleteConfirmDialog = false
                             }
                         ) {
                             Text("삭제", color = Color.Red)
                         }
                     },
                     dismissButton = {
-                        TextButton(onClick = { showDeleteConfirmDialog = false }) {
+                        TextButton(onClick = { showPlanDeleteConfirmDialog = false }) {
+                            Text("취소")
+                        }
+                    }
+                )
+            }
+
+            // 그룹 삭제 다이얼로그
+            if (showGroupDeleteConfirmDialog) {
+                AlertDialog(
+                    // 다이얼로그 내용
+                    onDismissRequest = { showGroupDeleteConfirmDialog = false },
+                    title = { Text("그룹 삭제") },
+                    text = { Text("그룹을 삭제하시겠습니까?\n그룹원까지 모두 계획이 삭제됩니다.") },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                groupPlanViewModel.deleteOneStudyGroup(studyGroupId)
+                                navController.popBackStack() // 이전 화면으로 돌아가기
+                                showGroupDeleteConfirmDialog = false
+                            }
+                        ) {
+                            Text("삭제", color = Color.Red)
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showGroupDeleteConfirmDialog = false }) {
                             Text("취소")
                         }
                     }
@@ -230,7 +264,9 @@ fun GroupPlanTopBar(
     showMenu: Boolean,
     onMenuClick: () -> Unit,
     onMenuDismiss: () -> Unit,
-    onDeleteClick: () -> Unit
+    onPlanDeleteClick: () -> Unit,
+    onGroupDeleteClick: () -> Unit,
+    isLeader: Boolean
 ) {
     Column {
         TopAppBar(
@@ -260,85 +296,98 @@ fun GroupPlanTopBar(
                         .background(Color.White)
                         .width(150.dp)
                 ) {
-                    // 계획 수정
-                    DropdownMenuItem(
-                        text = {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.icon_edit_pencil),
-                                    contentDescription = "수정",
-                                    tint = Color.Black,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("수정하기", color = Color.Black)
-                            }
-                        },
-                        onClick = {
-                            onMenuDismiss()
-//                            onDeleteClick()
-                        }
-                    )
+                    if (isLeader) {
+                        // 방장일 경우 메뉴들
+                        DropdownMenuItem(
+                            text = {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        painter = painterResource(id = R.drawable.icon_edit_pencil),
+                                        contentDescription = "수정",
+                                        tint = Color.Black,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("수정하기", color = Color.Black)
+                                }
+                            },
+                            onClick = { onMenuDismiss() }
+                        )
 
-                    // 그룹원 관리
-                    DropdownMenuItem(
-                        text = {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.icon_group),
-                                    contentDescription = "수정",
-                                    tint = Color.Black,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("수정하기", color = Color.Black)
-                            }
-                        },
-                        onClick = {
-                            onMenuDismiss()
-//                            onDeleteClick()
-                        }
-                    )
+                        DropdownMenuItem(
+                            text = {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        painter = painterResource(id = R.drawable.icon_group),
+                                        contentDescription = "그룹원 관리",
+                                        tint = Color.Black,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("그룹원 관리", color = Color.Black)
+                                }
+                            },
+                            onClick = { onMenuDismiss() }
+                        )
 
-                    // 그룹 삭제 (방장)
-                    DropdownMenuItem(
-                        text = {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.icon_user_xmark), // 삭제 아이콘 리소스 필요
-                                    contentDescription = "그룹 삭제",
-                                    tint = Color.Red,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("그룹 삭제", color = Color.Red)
+                        DropdownMenuItem(
+                            text = {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        painter = painterResource(id = R.drawable.icon_user_crown),
+                                        contentDescription = "그룹장 위임",
+                                        tint = Color.Black,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("그룹장 위임", color = Color.Black)
+                                }
+                            },
+                            onClick = {
+                                onMenuDismiss()
+//                                onDeleteClick()
                             }
-                        },
-                        onClick = {
-                            onMenuDismiss()
-                            onDeleteClick()
-                        }
-                    )
+                        )
 
-                    // 그룹 나가기 (그룹원)
-                    DropdownMenuItem(
-                        text = {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.icon_user_xmark), // 삭제 아이콘 리소스 필요
-                                    contentDescription = "그룹 나가기",
-                                    tint = Color.Red,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("그룹 나가기", color = Color.Red)
+                        DropdownMenuItem(
+                            text = {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        painter = painterResource(id = R.drawable.icon_user_xmark),
+                                        contentDescription = "그룹 삭제",
+                                        tint = Color.Red,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("그룹 삭제", color = Color.Red)
+                                }
+                            },
+                            onClick = {
+                                onMenuDismiss()
+                                onGroupDeleteClick()
                             }
-                        },
-                        onClick = {
-                            onMenuDismiss()
-                            onDeleteClick()
-                        }
-                    )
+                        )
+                    } else {
+                        // 그룹원일 경우 메뉴
+                        DropdownMenuItem(
+                            text = {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        painter = painterResource(id = R.drawable.icon_user_xmark),
+                                        contentDescription = "그룹 나가기",
+                                        tint = Color.Red,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("그룹 나가기", color = Color.Red)
+                                }
+                            },
+                            onClick = {
+                                onMenuDismiss()
+                                onPlanDeleteClick()
+                            }
+                        )
+                    }
                 }
             }
         )
@@ -358,6 +407,13 @@ fun GroupPlanTitleSection(
     selectedPlanId: Int,
     onMemberClick: (Int) -> Unit
 ) {
+    // 내가 방장인지 확인
+    val myMember = getOneStudyGroupResponse.members.find { it.planId == planId }
+    val isLeader = myMember?.userId == getOneStudyGroupResponse.leaderId
+
+    // 내 계획을 보고 있는지 확인
+    val isMyPlan = selectedPlanId == planId
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -391,47 +447,50 @@ fun GroupPlanTitleSection(
 
             // 버튼들
             Column{
-                // 재스케줄링 버튼
-                IconButton(
-                    onClick = {
-//                    coroutineScope.launch {
-//                        onLoadingChange(true)
-//                        try {
-//                            // 재스케줄링을 시작하고 완료될 때까지 기다립니다
-//                            val rescheduleJob = lectureRoomViewModel.postPlanReschedule(planId)
-//                            rescheduleJob.join()
-//
-//                            // 이제 업데이트된 데이터 가져오기
-//                            lectureRoomViewModel.getPlanDetail(planId)
-//
-//                            delay(1000)
-//                        } finally {
-//                            onLoadingChange(false)
-//                        }
-//                    }
-                    },
-                    modifier = Modifier
-                        .padding(bottom = 16.dp)
-                        .size(40.dp)
-                        .clip(CircleShape)
-                        .border(
-                            width = 1.dp,
-                            color = MainPurple,
-                            shape = CircleShape
+                if (isMyPlan) {
+                    // 재스케줄링 버튼 - 내 계획일 때만 표시
+                    IconButton(
+                        onClick = {
+                            coroutineScope.launch {
+                                onLoadingChange(true)
+                                try {
+                                    // 재스케줄링을 시작하고 완료될 때까지 기다립니다
+                                    val rescheduleJob = groupPlanViewModel.postPlanReschedule(planId)
+                                    rescheduleJob.join()
+
+                                    // 이제 업데이트된 데이터 가져오기
+                                    groupPlanViewModel.getPlanDetail(planId)
+
+                                    delay(1000)
+                                } finally {
+                                    onLoadingChange(false)
+                                }
+                        }
+                        },
+                        modifier = Modifier
+                            .padding(bottom = 16.dp)
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .border(
+                                width = 1.dp,
+                                color = MainPurple,
+                                shape = CircleShape
+                            )
+                            .background(Color.White)
+                    ) {
+                        Icon(
+                            imageVector = ImageVector.vectorResource(R.drawable.icon_reschedule),
+                            contentDescription = "재스케줄링",
+                            tint = MainPurple,
+                            modifier = Modifier.padding(8.dp)
                         )
-                        .background(Color.White)
-                ) {
-                    Icon(
-                        imageVector = ImageVector.vectorResource(R.drawable.icon_reschedule),
-                        contentDescription = "재스케줄링",
-                        tint = MainPurple,
-                        modifier = Modifier.padding(8.dp)
-                    )
+                    }
                 }
 
-                // 그룹 이름 편집 버튼
-                IconButton(
-                    onClick = {
+                if (isLeader) {
+                    // 그룹 이름 편집 버튼
+                    IconButton(
+                        onClick = {
 //                    coroutineScope.launch {
 //                        onLoadingChange(true)
 //                        try {
@@ -447,23 +506,24 @@ fun GroupPlanTitleSection(
 //                            onLoadingChange(false)
 //                        }
 //                    }
-                    },
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape)
-                        .border(
-                            width = 1.dp,
-                            color = MainPurple,
-                            shape = CircleShape
+                        },
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .border(
+                                width = 1.dp,
+                                color = MainPurple,
+                                shape = CircleShape
+                            )
+                            .background(Color.White)
+                    ) {
+                        Icon(
+                            imageVector = ImageVector.vectorResource(R.drawable.icon_edit_pencil),
+                            contentDescription = "이름 편집",
+                            tint = MainPurple,
+                            modifier = Modifier.padding(8.dp)
                         )
-                        .background(Color.White)
-                ) {
-                    Icon(
-                        imageVector = ImageVector.vectorResource(R.drawable.icon_edit_pencil),
-                        contentDescription = "이름 편집",
-                        tint = MainPurple,
-                        modifier = Modifier.padding(8.dp)
-                    )
+                    }
                 }
             }
         }

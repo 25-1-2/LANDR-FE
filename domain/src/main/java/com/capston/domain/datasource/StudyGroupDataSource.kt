@@ -20,4 +20,11 @@ interface StudyGroupDataSource {
     suspend fun postJoinStudyGroup(
         joinStudyGroupDto: JoinStudyGroupDto
     ): MessageResponse
+
+    // 스터디그룹 가입
+    suspend fun deleteOneStudyGroup(
+        studyGroupId: Int
+    ): MessageResponse
+
+
 }

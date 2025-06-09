@@ -5,6 +5,7 @@ import com.capston.domain.response.MessageResponse
 import com.capston.domain.response.study_group.NewStudyGroupResponse
 import com.capston.domain.response.study_group.OneStudyGroupResponse
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Path
@@ -26,5 +27,11 @@ interface StudyGroupApi {
     @POST("/v1/study-groups/join")
     suspend fun postJoinStudyGroup(
         @Body joinStudyGroupDto: JoinStudyGroupDto
+    ): MessageResponse
+
+    // 스터디그룹 삭제
+    @DELETE("/v1/study-groups/{studyGroupId}")
+    suspend fun deleteOneStudyGroup(
+        @Path("studyGroupId") studyGroupId: Int,
     ): MessageResponse
 }
