@@ -77,6 +77,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.capston.domain.manager.LoadingStateManager
+import com.capston.domain.request.JoinStudyGroupDto
 import com.capston.domain.response.plan.GetPlanDetailResponse
 import com.capston.presentation.R
 import com.capston.presentation.theme.CapstonTheme
@@ -361,12 +362,13 @@ fun MainBottomBar(
     recommendViewModel: RecommendViewModel,
     loadingStateManager: LoadingStateManager
 ) {
+    val context = LocalContext.current
+    val mainActivity = LocalActivity.current as MainActivity
+    val navController = rememberNavController()
+
     var bottomNavState by rememberSaveable { mutableIntStateOf(0) }
     var fabExpanded by remember { mutableStateOf(false) }
     var showInviteCodeDialog by remember { mutableStateOf(false) }
-    val navController = rememberNavController()
-    val mainActivity = LocalActivity.current as MainActivity
-    val context = LocalContext.current
 
     // BackHandler
     BackHandler {
@@ -510,9 +512,10 @@ fun MainBottomBar(
             InviteCodeDialog(
                 onDismiss = { showInviteCodeDialog = false },
                 onConfirm = { inviteCode ->
+                    lectureRoomViewModel.postJoinStudyGroup(
+                        JoinStudyGroupDto(inviteCode = inviteCode)
+                    )
                     showInviteCodeDialog = false
-                    // TODO: 초대코드로 그룹 참여 로직 구현
-                    // groupPlanViewModel.joinGroup(inviteCode)
                 }
             )
         }

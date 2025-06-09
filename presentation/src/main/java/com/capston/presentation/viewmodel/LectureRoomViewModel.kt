@@ -54,6 +54,9 @@ class LectureRoomViewModel @Inject constructor(
                 postJoinStudyGroupUseCase(joinStudyGroupDto).collect { response ->
                     _postJoinStudyGroupResponse.value = response
                     Log.d("LectureRoomViewModel", "스터디그룹 가입 완료: $response")
+
+                    // 성공 시 onDataChanged 콜백 호출
+                    onDataChanged?.invoke()
                 }
             } catch (e: Exception) {
                 Log.e("LectureRoomViewModel", "스터디그룹 가입 오류: ${e.message}", e)
