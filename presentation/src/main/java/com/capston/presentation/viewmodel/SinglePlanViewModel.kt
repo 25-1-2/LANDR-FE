@@ -118,6 +118,9 @@ class SinglePlanViewModel @Inject constructor(
                 postNewStudyGroupUseCase(planId).collect { response ->
                     _postNewStudyGroupResponse.value = response
                     Log.d("LectureRoomViewModel", "스터디그룹 생성 완료: $response")
+
+                    // HomeViewModel 동기화
+                    onDataChanged?.invoke()
                 }
             } catch (e: Exception) {
                 Log.e("LectureRoomViewModel", "스터디그룹 생성 오류: ${e.message}", e)
