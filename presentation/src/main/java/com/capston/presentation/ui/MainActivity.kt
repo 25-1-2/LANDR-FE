@@ -58,6 +58,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -716,7 +717,7 @@ fun AnimatedSmallFAB(
                     )
                 ) {
                     Icon(
-                        painter = painterResource(id = icon),
+                        imageVector = ImageVector.vectorResource(id = icon),
                         contentDescription = label,
                         modifier = Modifier.size(22.dp)
                     )
