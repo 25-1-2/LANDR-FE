@@ -92,7 +92,6 @@ fun LectureRoomScreen(
         }
     }
 
-
     Scaffold(
         topBar = {
             LectureRoomTopBar(
@@ -176,9 +175,6 @@ fun LectureRoomTopBar(
 ) {
     Column {
         TopAppBar(
-            modifier = Modifier
-                .padding(10.dp)
-                .height(80.dp),
             title = {
 //                Text(
 //                    text = "나의 강의실",
@@ -188,20 +184,19 @@ fun LectureRoomTopBar(
 //                )
 
                 // 앱 이름
-                Icon(
+                Image(
                     painter = painterResource(id = R.drawable.landr_title_iv),
                     contentDescription = "앱 이름",
                     modifier = Modifier.size(70.dp),
-                    tint = Color.Unspecified
                 )
             },
             navigationIcon = {
-                Icon(
+                Image(
                     painter = painterResource(R.drawable.ic_launcher),
                     contentDescription = "앱 로고",
                     modifier = Modifier
-                        .height(50.dp),
-                    tint = Color.Unspecified
+                        .padding(start = 8.dp)
+                        .height(48.dp),
                 )
             },
             actions = {
