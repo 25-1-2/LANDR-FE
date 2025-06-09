@@ -50,8 +50,7 @@ import com.capston.presentation.theme.dividerGray
 import com.capston.presentation.theme.materialGray
 import com.capston.presentation.theme.textGray
 import com.capston.presentation.ui.common.CustomCheckBox
-import com.capston.presentation.ui.common.LandrUtil.Companion.formatDateYMDE
-import com.capston.presentation.viewmodel.LectureRoomViewModel
+import com.capston.presentation.ui.common.formatDateYMDE
 import com.capston.presentation.viewmodel.SinglePlanViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay

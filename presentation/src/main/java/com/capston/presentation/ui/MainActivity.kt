@@ -60,6 +60,7 @@ import com.capston.presentation.theme.MainPurple
 import com.capston.presentation.theme.dividerGray
 import com.capston.presentation.ui.common.LoadingIndicator
 import com.capston.presentation.ui.common.Screen
+import com.capston.presentation.ui.common.noRippleClickable
 import com.capston.presentation.ui.home.CalenderScreen
 import com.capston.presentation.ui.home.GroupPlanScreen
 import com.capston.presentation.ui.home.HomeScreen
@@ -503,7 +504,7 @@ fun BottomBarWithoutFAB(
                 Box(
                     modifier = Modifier
                         .weight(1f)
-                        .clickable { onNavItemClick(index) },
+                        .noRippleClickable { onNavItemClick(index) },
                     contentAlignment = Alignment.Center
                 ) {
                     when (val icon = if (bottomNavState == index) item.selectedIcon else item.unselectedIcon) {
