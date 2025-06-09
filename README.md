@@ -173,3 +173,79 @@
     </tr>
   </tbody>
 </table>
+
+# Git 워크플로우 가이드
+
+## 브랜치 구조
+
+- **`main`** - 배포용 브랜치 (프로덕션)
+- **`release`** - 릴리즈 준비 브랜치
+- **`develop`** - 개발 통합 브랜치
+- **`feature/*`** - 기능 개발 브랜치
+
+## 📝 커밋 규칙
+
+커밋 메시지는 다음 형식을 따릅니다:
+
+```
+TYPE(파일명) : 커밋 메시지
+```
+
+### 커밋 타입
+
+| 타입 | 설명 | 예시 |
+|------|------|------|
+| `INIT` | 초기 프로젝트 생성 시 | `INIT(ALL) : 프로젝트 초기 설정` |
+| `FEAT` | 새로운 기능 추가 | `FEAT(MainActivity.kt) : 사용자 로그인 기능 추가` |
+| `FIX` | 버그, 오류 수정 | `FIX(LoginActivity.kt) 로그인 시 에러 처리 수정` |
+| `REFACTO` | 전면 수정(코드 리펙토링) | `REFACTO((LoginActivity.kt) : 사용자 인증 로직 리팩토링` |
+| `CHORE` | 코드 수정, 내부 파일 수정 | `CHORE(DATA) : 패키지 의존성 업데이트` |
+| `TEST` | 테스트 코드 추가 및 수정 | `TEST((LoginActivity.kt) 로그인 컴포넌트 테스트 추가` |
+| `RENAME` | 변수명, 파일명 수정 | `RENAME(MainActivity.kt) : 컴포넌트 파일명 변경` |
+
+## 🔄 개발 워크플로우
+
+### 1. 이슈 생성
+- GitHub Issues에서 작업할 내용을 이슈로 등록
+- 이슈 번호와 제목을 명확하게 작성
+
+### 2. 개발 브랜치 생성 및 개발
+```bash
+# develop 브랜치에서 새 브랜치 생성
+git checkout develop
+git pull origin develop
+git checkout -b feature/issue-번호-기능명
+
+# 개발 작업 수행
+# 커밋 규칙에 따라 커밋
+git add .
+git commit -m "FEAT(MainActivity.kt) : 새로운 기능 구현"
+```
+
+### 3. Pull Request 생성
+- 개발 완료 후 GitHub에서 PR 생성
+- `feature/브랜치` → `develop` 브랜치로 PR
+- 이슈 번호를 PR 제목이나 설명에 포함
+- 코드 리뷰 요청
+
+### 4. Develop 브랜치 Merge
+- 코드 리뷰 완료 후 develop 브랜치에 merge
+- 머지 후 feature 브랜치 삭제
+
+## 📋 체크리스트
+
+### PR 생성 전 체크사항
+- [ ] 커밋 메시지가 규칙에 맞게 작성되었는가?
+- [ ] 코드가 정상적으로 동작하는가?
+- [ ] 테스트 코드가 작성되었는가?
+- [ ] 관련 이슈가 연결되어 있는가?
+
+### 머지 전 체크사항
+- [ ] 코드 리뷰가 완료되었는가?
+- [ ] 충돌이 해결되었는가?
+
+## 🚀 릴리즈 프로세스
+1. `develop` → `release` 브랜치 생성
+2. 릴리즈 테스트 및 버그 수정
+3. `release` → `main` 브랜치 머지
+4. 버전 태그 생성 및 배포
