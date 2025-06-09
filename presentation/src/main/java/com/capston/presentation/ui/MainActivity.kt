@@ -6,7 +6,6 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
@@ -45,7 +44,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat.shouldShowRequestPermissionRationale
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -65,19 +63,19 @@ import com.capston.presentation.ui.home.GroupPlanScreen
 import com.capston.presentation.ui.home.HomeScreen
 import com.capston.presentation.ui.home.LectureRoomScreen
 import com.capston.presentation.ui.home.NotificationScreen
-import com.capston.presentation.ui.home.PlanDetailScreen
+import com.capston.presentation.ui.home.SinglePlanScreen
 import com.capston.presentation.ui.home.ProfileScreen
 import com.capston.presentation.ui.search.SearchActivity
 import com.capston.presentation.viewmodel.DailyScheduleViewModel
+import com.capston.presentation.viewmodel.GroupPlanViewModel
 import com.capston.presentation.viewmodel.HomeViewModel
 import com.capston.presentation.viewmodel.LectureRoomViewModel
 import com.capston.presentation.viewmodel.LoginViewModel
 import com.capston.presentation.viewmodel.MyPageViewModel
 import com.capston.presentation.viewmodel.PlanViewModel
 import com.capston.presentation.viewmodel.RecommendViewModel
+import com.capston.presentation.viewmodel.SinglePlanViewModel
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.collectLatest
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
@@ -89,6 +87,8 @@ class MainActivity : ComponentActivity() {
     val planViewModel: PlanViewModel by viewModels()
     val dailyScheduleViewModel: DailyScheduleViewModel by viewModels()
     val lectureRoomViewModel: LectureRoomViewModel by viewModels()
+    val singlePlanViewModel: SinglePlanViewModel by viewModels()  // 추가
+    val groupPlanViewModel: GroupPlanViewModel by viewModels()
     val myPageViewModel: MyPageViewModel by viewModels()
     val recommendViewModel: RecommendViewModel by viewModels()
 
@@ -148,6 +148,8 @@ class MainActivity : ComponentActivity() {
                         planViewModel = planViewModel,
                         dailyScheduleViewModel = dailyScheduleViewModel,
                         lectureRoomViewModel = lectureRoomViewModel,
+                        singlePlanViewModel = singlePlanViewModel,
+                        groupPlanViewModel = groupPlanViewModel,
                         loginViewModel = loginViewModel,
                         myPageViewModel = myPageViewModel,
                         recommendViewModel = recommendViewModel,
@@ -178,6 +180,27 @@ class MainActivity : ComponentActivity() {
         // DailyScheduleViewModel에서 데이터가 변경되면 HomeViewModel도 새로고침
         dailyScheduleViewModel.onDataChanged = {
             homeViewModel.forceRefresh()
+        }
+
+        // 여기에 추가 ↓
+        singlePlanViewModel.onDataChanged = {
+            lectureRoomViewModel.getPlanLectureRoom() // 강의실 목록 새로고침
+            homeViewModel.forceRefresh()
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                dailyScheduleViewModel.getDailySchedule(
+                    LocalDate.now().format(DateTimeFormatter.ISO_DATE)
+                )
+            }
+        }
+
+        groupPlanViewModel.onDataChanged = {
+            lectureRoomViewModel.getPlanLectureRoom() // 강의실 목록 새로고침
+            homeViewModel.forceRefresh()
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                dailyScheduleViewModel.getDailySchedule(
+                    LocalDate.now().format(DateTimeFormatter.ISO_DATE)
+                )
+            }
         }
     }
 
@@ -291,6 +314,8 @@ fun MainBottomBar(
     planViewModel: PlanViewModel,
     dailyScheduleViewModel: DailyScheduleViewModel,
     lectureRoomViewModel: LectureRoomViewModel,
+    singlePlanViewModel: SinglePlanViewModel,
+    groupPlanViewModel: GroupPlanViewModel,
     loginViewModel: LoginViewModel,
     myPageViewModel: MyPageViewModel,
     recommendViewModel: RecommendViewModel,
@@ -379,9 +404,9 @@ fun MainBottomBar(
                 ) { backStackEntry ->
                     val planId = backStackEntry.arguments?.getInt("planId") ?: 0
                     val planDetailResponse = GetPlanDetailResponse()
-                    PlanDetailScreen(
+                    SinglePlanScreen(
                         planId = planId,
-                        lectureRoomViewModel = lectureRoomViewModel,
+                        singlePlanViewModel = singlePlanViewModel,
                         navController = navController,
                     )
                 }
@@ -397,7 +422,7 @@ fun MainBottomBar(
                     GroupPlanScreen(
                         planId = planId,
                         studyGroupId = studyGroupId,
-                        lectureRoomViewModel = lectureRoomViewModel,
+                        groupPlanViewModel = groupPlanViewModel,
                         navController = navController,
                     )
                 }

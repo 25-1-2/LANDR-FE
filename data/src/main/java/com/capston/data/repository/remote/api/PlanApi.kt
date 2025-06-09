@@ -6,7 +6,6 @@ import com.capston.domain.request.PostNewPlanDto
 import com.capston.domain.response.MessageResponse
 import com.capston.domain.response.plan.GetPlanDetailResponse
 import com.capston.domain.response.plan.LectureAliasResponse
-import com.capston.domain.response.plan.PostPlanRescheduleResponse
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
@@ -42,7 +41,7 @@ interface PlanApi {
     @POST("/v1/plans/{planId}/reschedule")
     suspend fun postPlanReschedule(
         @Path("planId") planId: Int
-    ): PostPlanRescheduleResponse
+    ): MessageResponse
 
     // 계획 삭제
     @DELETE("/v1/plans/{planId}")

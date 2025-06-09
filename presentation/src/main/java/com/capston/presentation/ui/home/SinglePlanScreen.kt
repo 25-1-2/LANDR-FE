@@ -5,7 +5,6 @@ import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -27,7 +26,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -48,22 +46,22 @@ import com.capston.domain.response.plan.GetPlanDetailResponse
 import com.capston.domain.response.plan.PlanDetailLessonSchedule
 import com.capston.presentation.theme.LightGray2
 import com.capston.presentation.theme.MainPurple
-import com.capston.presentation.theme.backgroundGray
 import com.capston.presentation.theme.dividerGray
 import com.capston.presentation.theme.materialGray
 import com.capston.presentation.theme.textGray
 import com.capston.presentation.ui.common.CustomCheckBox
 import com.capston.presentation.ui.common.LandrUtil.Companion.formatDateYMDE
 import com.capston.presentation.viewmodel.LectureRoomViewModel
+import com.capston.presentation.viewmodel.SinglePlanViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun PlanDetailScreen(
+fun SinglePlanScreen(
     planId: Int,
-    lectureRoomViewModel: LectureRoomViewModel,
+    singlePlanViewModel: SinglePlanViewModel,
     navController: NavController
 ) {
     val context = LocalContext.current
@@ -75,11 +73,11 @@ fun PlanDetailScreen(
     var showGroupCodeDialog by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
 
-    val planDetailResponse by lectureRoomViewModel.getPlanDetailResponse.collectAsState()
-    val studyGroupResponse by lectureRoomViewModel.postNewStudyGroupResponse.collectAsState()
+    val planDetailResponse by singlePlanViewModel.getPlanDetailResponse.collectAsState()
+    val studyGroupResponse by singlePlanViewModel.postNewStudyGroupResponse.collectAsState()
 
     LaunchedEffect(planId) {
-        lectureRoomViewModel.getPlanDetail(planId)
+        singlePlanViewModel.getPlanDetail(planId)
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -108,7 +106,7 @@ fun PlanDetailScreen(
             ) {
                 SinglePlanTitleSection(
                     planId = planId,
-                    lectureRoomViewModel = lectureRoomViewModel,
+                    singlePlanViewModel = singlePlanViewModel,
                     planDetailResponse = planDetailResponse,
                     coroutineScope = coroutineScope,
                     onLoadingChange = { isLoading = it },
@@ -120,7 +118,7 @@ fun PlanDetailScreen(
                     OneDaySection(
                         date = schedule.date,
                         planDetailLessonSchedules = schedule.lessonSchedules,
-                        lectureRoomViewModel = lectureRoomViewModel
+                        singlePlanViewModel = singlePlanViewModel
                     )
                 }
             }
@@ -140,7 +138,7 @@ fun PlanDetailScreen(
                         TextButton(
                             onClick = {
                                 // 삭제 로직 실행
-                                lectureRoomViewModel.deleteOnePlan(planId)
+                                singlePlanViewModel.deleteOnePlan(planId)
                                 navController.popBackStack()
                                 showDeleteConfirmDialog = false
                             }
@@ -173,7 +171,7 @@ fun PlanDetailScreen(
                         TextButton(
                             onClick = {
                                 showGroupConfirmDialog = false
-                                lectureRoomViewModel.postNewStudyGroup(planId)
+                                singlePlanViewModel.postNewStudyGroup(planId)
                                 showGroupCodeDialog = true
                             }
                         ) {
@@ -365,7 +363,7 @@ fun SinglePlanTopBar(
 @Composable
 fun SinglePlanTitleSection(
     planId: Int,
-    lectureRoomViewModel: LectureRoomViewModel,
+    singlePlanViewModel: SinglePlanViewModel,
     planDetailResponse: GetPlanDetailResponse,
     coroutineScope: CoroutineScope,
     onLoadingChange: (Boolean) -> Unit,
@@ -395,11 +393,11 @@ fun SinglePlanTitleSection(
                         onLoadingChange(true)
                         try {
                             // 재스케줄링을 시작하고 완료될 때까지 기다립니다
-                            val rescheduleJob = lectureRoomViewModel.postPlanReschedule(planId)
+                            val rescheduleJob = singlePlanViewModel.postPlanReschedule(planId)
                             rescheduleJob.join()
 
                             // 이제 업데이트된 데이터 가져오기
-                            lectureRoomViewModel.getPlanDetail(planId)
+                            singlePlanViewModel.getPlanDetail(planId)
 
                             delay(1000)
                         } finally {
@@ -450,7 +448,7 @@ fun SinglePlanTitleSection(
 fun OneDaySection(
     date: String,
     planDetailLessonSchedules: List<PlanDetailLessonSchedule>,
-    lectureRoomViewModel: LectureRoomViewModel,
+    singlePlanViewModel: SinglePlanViewModel,
     isReadOnly: Boolean = false
 ) {
     val totalMinutes = planDetailLessonSchedules.sumOf { it.adjustedDuration }
@@ -511,7 +509,7 @@ fun OneDaySection(
             planDetailLessonSchedules.forEach { lessonSchedule ->
                 TaskItem(
                     planDetailLessonSchedule = lessonSchedule,
-                    lectureRoomViewModel = lectureRoomViewModel,
+                    singlePlanViewModel = singlePlanViewModel,
                     isReadOnly = isReadOnly
                 )
             }
@@ -522,7 +520,7 @@ fun OneDaySection(
 @Composable
 fun TaskItem(
     planDetailLessonSchedule: PlanDetailLessonSchedule,
-    lectureRoomViewModel: LectureRoomViewModel,
+    singlePlanViewModel: SinglePlanViewModel,
     isReadOnly: Boolean = false
 ) {
     // 각 체크박스의 상태를 remember로 관리하되, 초기값은 서버 데이터 사용
@@ -556,7 +554,7 @@ fun TaskItem(
 
                     if (!isReadOnly) {
                         // 체크박스 상태 변경 로직 (서버 업데이트, 백그라운드에서 실행)
-                        lectureRoomViewModel.patchLessonSchedulesCheckToggle(planDetailLessonSchedule.id)
+                        singlePlanViewModel.patchLessonSchedulesCheckToggle(planDetailLessonSchedule.id)
                     }
                 },
                 isReadOnly = isReadOnly
