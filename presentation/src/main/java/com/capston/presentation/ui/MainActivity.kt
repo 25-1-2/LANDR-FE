@@ -354,13 +354,16 @@ fun MainBottomBar(
     loadingStateManager: LoadingStateManager
 ) {
     var bottomNavState by rememberSaveable { mutableIntStateOf(0) }
+    var fabExpanded by remember { mutableStateOf(false) }
     val navController = rememberNavController()
     val mainActivity = LocalActivity.current as MainActivity
     val context = LocalContext.current
 
     // BackHandler
     BackHandler {
-        if (bottomNavState == 0) {
+        if (fabExpanded) {
+            fabExpanded = false
+        } else if (bottomNavState == 0) {
             val currentTime = System.currentTimeMillis()
             if (currentTime - mainActivity.backPressedTime < mainActivity.BACK_PRESS_INTERVAL) {
                 mainActivity.finish()
@@ -468,17 +471,28 @@ fun MainBottomBar(
             }
         }
 
+        // 배경 오버레이 추가
+        if (fabExpanded) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.White.copy(alpha = 0.8f))
+                    .noRippleClickable { fabExpanded = false }
+            )
+        }
+
         // 검색 FAB
         Box(
             modifier = Modifier
                 .size(64.dp)
-//                .clip(RoundedCornerShape(30.dp))    // 외곽 라운드
                 .align(Alignment.BottomCenter)
                 .offset(y = (-20).dp),
         ) {
             ExpandingFAB(
                 modifier = Modifier.fillMaxSize(),
                 fabColor = MainPurple,
+                expanded = fabExpanded, // 상태 전달
+                onExpandedChange = { fabExpanded = it } // 상태 변경 콜백
             )
         }
     }
@@ -544,8 +558,9 @@ fun BottomBarWithoutFAB(
 fun ExpandingFAB(
     modifier: Modifier = Modifier,
     fabColor: Color = MainPurple,
+    expanded: Boolean,
+    onExpandedChange: (Boolean) -> Unit
 ) {
-    var expanded by remember { mutableStateOf(false) }
     val mainActivity = LocalActivity.current as MainActivity
 
     val rotationYValue by animateFloatAsState(
@@ -565,10 +580,10 @@ fun ExpandingFAB(
         AnimatedSmallFAB(
             visible = expanded,
             targetOffset = IntOffset(-180, -180), // 이 offset은 중앙을 기준으로 조절해야 할 수 있음
-            icon = Icons.Default.Search,
+            icon = R.drawable.icon_search,
             label = "강의 검색",
             onClick = {
-                expanded = false
+                onExpandedChange(false)
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     mainActivity.startSearchActivity()
                 }
@@ -579,10 +594,10 @@ fun ExpandingFAB(
         AnimatedSmallFAB(
             visible = expanded,
             targetOffset = IntOffset(0, -240),
-            icon = Icons.Default.AddCircle,
+            icon = R.drawable.icon_group,
             label = "그룹 생성",
             onClick = {
-                expanded = false
+                onExpandedChange(false)
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     mainActivity.startSearchActivity()
                 }
@@ -593,10 +608,10 @@ fun ExpandingFAB(
         AnimatedSmallFAB(
             visible = expanded,
             targetOffset = IntOffset(180, -180), // 이 offset은 중앙을 기준으로 조절해야 할 수 있음
-            icon = Icons.Default.AccountBox,
-            label = "그룹 검색",
+            icon = R.drawable.icon_community,
+            label = "그룹 참여",
             onClick = {
-                expanded = false
+                onExpandedChange(false)
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     mainActivity.startSearchActivity()
                 }
@@ -605,7 +620,7 @@ fun ExpandingFAB(
 
         // 메인 FAB (뒤집기 효과)
         FloatingActionButton(
-            onClick = { expanded = !expanded },
+            onClick = { onExpandedChange(!expanded) },
             containerColor = fabColor,
             shape = RoundedCornerShape(32.dp), // 더 둥글게
             modifier = Modifier
@@ -627,7 +642,7 @@ fun ExpandingFAB(
 fun AnimatedSmallFAB(
     visible: Boolean,
     targetOffset: IntOffset,
-    icon: ImageVector,
+    icon: Int,
     label: String,
     onClick: () -> Unit
 ) {
@@ -701,7 +716,7 @@ fun AnimatedSmallFAB(
                     )
                 ) {
                     Icon(
-                        imageVector = icon,
+                        painter = painterResource(id = icon),
                         contentDescription = label,
                         modifier = Modifier.size(22.dp)
                     )
