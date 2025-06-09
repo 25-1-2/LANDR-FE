@@ -4,21 +4,14 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.capston.domain.manager.LoadingStateManager
-import com.capston.domain.request.JoinStudyGroupDto
 import com.capston.domain.response.CheckResponse
 import com.capston.domain.response.MessageResponse
 import com.capston.domain.response.plan.GetPlanDetailResponse
-import com.capston.domain.response.plan.GetPlanLectureRoomResponse
-import com.capston.domain.response.plan.PostPlanRescheduleResponse
 import com.capston.domain.response.study_group.NewStudyGroupResponse
-import com.capston.domain.response.study_group.OneStudyGroupResponse
 import com.capston.domain.usecase.home.PatchLessonSchedulesCheckToggleUseCase
 import com.capston.domain.usecase.plan.DeleteOnePlanUseCase
 import com.capston.domain.usecase.plan.GetPlanDetailUseCase
-import com.capston.domain.usecase.plan.GetPlanLectureRoomUseCase
 import com.capston.domain.usecase.plan.PostPlanRescheduleUseCase
-import com.capston.domain.usecase.study_group.GetOneStudyGroupUseCase
-import com.capston.domain.usecase.study_group.PostJoinStudyGroupUseCase
 import com.capston.domain.usecase.study_group.PostNewStudyGroupUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -41,8 +34,8 @@ class SinglePlanViewModel @Inject constructor(
     private val _getPlanDetailResponse = MutableStateFlow(GetPlanDetailResponse())
     val getPlanDetailResponse: StateFlow<GetPlanDetailResponse> = _getPlanDetailResponse.asStateFlow()
 
-    private val _postPlanRescheduleResponse = MutableStateFlow(PostPlanRescheduleResponse())
-    val postPlanRescheduleResponse: StateFlow<PostPlanRescheduleResponse> = _postPlanRescheduleResponse.asStateFlow()
+    private val _postPlanRescheduleResponse = MutableStateFlow(MessageResponse())
+    val postPlanRescheduleResponse: StateFlow<MessageResponse> = _postPlanRescheduleResponse.asStateFlow()
 
     private val _deleteOnePlanResponse = MutableStateFlow(MessageResponse())
     val deleteOnePlanResponse: StateFlow<MessageResponse> = _deleteOnePlanResponse.asStateFlow()
