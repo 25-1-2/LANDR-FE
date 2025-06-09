@@ -52,6 +52,8 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -60,8 +62,11 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.core.app.ActivityCompat.shouldShowRequestPermissionRationale
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
@@ -76,7 +81,9 @@ import com.capston.domain.response.plan.GetPlanDetailResponse
 import com.capston.presentation.R
 import com.capston.presentation.theme.CapstonTheme
 import com.capston.presentation.theme.LightGray4_40
+import com.capston.presentation.theme.LightGray60
 import com.capston.presentation.theme.MainPurple
+import com.capston.presentation.theme.chipGray
 import com.capston.presentation.theme.dividerGray
 import com.capston.presentation.ui.common.LoadingIndicator
 import com.capston.presentation.ui.common.Screen
@@ -356,6 +363,7 @@ fun MainBottomBar(
 ) {
     var bottomNavState by rememberSaveable { mutableIntStateOf(0) }
     var fabExpanded by remember { mutableStateOf(false) }
+    var showInviteCodeDialog by remember { mutableStateOf(false) }
     val navController = rememberNavController()
     val mainActivity = LocalActivity.current as MainActivity
     val context = LocalContext.current
@@ -493,7 +501,19 @@ fun MainBottomBar(
                 modifier = Modifier.fillMaxSize(),
                 fabColor = MainPurple,
                 expanded = fabExpanded, // 상태 전달
-                onExpandedChange = { fabExpanded = it } // 상태 변경 콜백
+                onExpandedChange = { fabExpanded = it }, // 상태 변경 콜백
+                onInviteCodeClick = { showInviteCodeDialog = true }
+            )
+        }
+
+        if (showInviteCodeDialog) {
+            InviteCodeDialog(
+                onDismiss = { showInviteCodeDialog = false },
+                onConfirm = { inviteCode ->
+                    showInviteCodeDialog = false
+                    // TODO: 초대코드로 그룹 참여 로직 구현
+                    // groupPlanViewModel.joinGroup(inviteCode)
+                }
             )
         }
     }
@@ -560,7 +580,8 @@ fun ExpandingFAB(
     modifier: Modifier = Modifier,
     fabColor: Color = MainPurple,
     expanded: Boolean,
-    onExpandedChange: (Boolean) -> Unit
+    onExpandedChange: (Boolean) -> Unit,
+    onInviteCodeClick: () -> Unit
 ) {
     val mainActivity = LocalActivity.current as MainActivity
 
@@ -613,9 +634,7 @@ fun ExpandingFAB(
             label = "그룹 참여",
             onClick = {
                 onExpandedChange(false)
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    mainActivity.startSearchActivity()
-                }
+                onInviteCodeClick()
             },
         )
 
@@ -724,5 +743,113 @@ fun AnimatedSmallFAB(
                 }
             }
         }
+    }
+}
+
+@Composable
+fun InviteCodeDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (String) -> Unit
+) {
+    var inviteCode by remember { mutableStateOf("") }
+    val focusRequester = remember { FocusRequester() }
+
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(
+            dismissOnBackPress = true,
+            dismissOnClickOutside = true
+        )
+    ) {
+        Card(
+            modifier = Modifier.width(240.dp),
+            shape = RoundedCornerShape(10.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .background(Color.White)
+                    .padding(16.dp)
+            ) {
+                // 헤더
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = "그룹 참여",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                // 구분선
+                HorizontalDivider(color = dividerGray)
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // 초대코드 입력
+                TextField(
+                    value = inviteCode,
+                    onValueChange = { inviteCode = it },
+                    singleLine = true,
+                    placeholder = { Text("초대코드를 입력하세요", fontSize = 14.sp, color = Color.Gray) },
+                    textStyle = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = Color.White,
+                        unfocusedContainerColor = Color.White,
+                        disabledContainerColor = Color.White,
+                        focusedIndicatorColor = MainPurple,
+                        unfocusedIndicatorColor = LightGray60
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .focusRequester(focusRequester)
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // 버튼들
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    FilterChip(
+                        selected = false,
+                        onClick = { onDismiss() },
+                        label = { Text("취소", fontSize = 12.sp) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            containerColor = chipGray,
+                            labelColor = Color.Black
+                        ),
+                        border = null
+                    )
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    FilterChip(
+                        selected = false,
+                        onClick = {
+                            if (inviteCode.isNotBlank()) {
+                                onConfirm(inviteCode.trim())
+                            }
+                        },
+                        label = { Text("참여", fontSize = 12.sp) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            containerColor = MainPurple,
+                            labelColor = Color.White
+                        ),
+                        border = null
+                    )
+                }
+            }
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        focusRequester.requestFocus()
     }
 }
