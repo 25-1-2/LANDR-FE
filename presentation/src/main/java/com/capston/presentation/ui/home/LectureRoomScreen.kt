@@ -284,7 +284,7 @@ fun LectureItem(lecture: GetPlanLectureRoomResponse, onClick: () -> Unit) {
                             color = MainPurple,
                             shape = RoundedCornerShape(8.dp)
                         )
-                        .padding(horizontal = 4.dp, vertical = 4.dp)
+                        .padding(horizontal = 6.dp, vertical = 4.dp)
                 )
 
                 Text(
@@ -298,7 +298,7 @@ fun LectureItem(lecture: GetPlanLectureRoomResponse, onClick: () -> Unit) {
                             color = MainPurple,
                             shape = RoundedCornerShape(8.dp)
                         )
-                        .padding(horizontal = 4.dp, vertical = 4.dp)
+                        .padding(horizontal = 6.dp, vertical = 4.dp)
                 )
 
                 // 과목 칩
@@ -317,25 +317,47 @@ fun LectureItem(lecture: GetPlanLectureRoomResponse, onClick: () -> Unit) {
 //                            color = lecture.subject.borderColor,
 //                            shape = RoundedCornerShape(8.dp)
 //                        )
-//                        .padding(horizontal = 4.dp, vertical = 4.dp)
+//                        .padding(horizontal = 6.dp, vertical = 4.dp)
 //                )
             }
 
-            // 수정된 코드 (조건부 표시)
-            if (lecture.studyGroup) {
-                Text(
-                    text = "그룹",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MainPurple,
-                    modifier = Modifier
-                        .padding(bottom = 6.dp)
-                        .border(
-                            width = 1.dp,
-                            color = MainPurple,
-                            shape = RoundedCornerShape(8.dp)
-                        )
-                        .padding(horizontal = 4.dp, vertical = 4.dp)
-                )
+            // 오른쪽 칩들
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                // 완강 칩 (완료된 경우에만 표시)
+                if (lecture.completedLessons == lecture.totalLessons) {
+                    Text(
+                        text = "완강",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = Color(0xFFE53E3E),
+                        modifier = Modifier
+                            .padding(bottom = 6.dp)
+                            .border(
+                                width = 1.dp,
+                                color = Color(0xFFE53E3E),
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                            .padding(horizontal = 6.dp, vertical = 4.dp)
+                    )
+                }
+
+                // 그룹 칩 (스터디그룹인 경우에만 표시)
+                if (lecture.studyGroup) {
+                    Text(
+                        text = "그룹",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MainPurple,
+                        modifier = Modifier
+                            .padding(bottom = 6.dp)
+                            .border(
+                                width = 1.dp,
+                                color = MainPurple,
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                            .padding(horizontal = 6.dp, vertical = 4.dp)
+                    )
+                }
             }
         }
 
