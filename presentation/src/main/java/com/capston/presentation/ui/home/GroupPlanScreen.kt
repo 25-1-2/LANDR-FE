@@ -39,7 +39,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.navigation.NavController
@@ -47,6 +47,7 @@ import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.rememberLottieComposition
+import com.capston.domain.response.plan.PlanDetailLessonSchedule
 import com.capston.domain.response.study_group.OneStudyGroupResponse
 import com.capston.presentation.theme.LightGray2
 import com.capston.presentation.theme.MainPurple
@@ -55,7 +56,9 @@ import com.capston.presentation.theme.dividerGray
 import com.capston.presentation.theme.materialGray
 import com.capston.presentation.theme.textGray
 import com.capston.presentation.ui.common.CustomCheckBox
-import com.capston.presentation.viewmodel.LectureRoomViewModel
+import com.capston.presentation.ui.common.LandrUtil.Companion.formatDateYMDE
+import com.capston.presentation.viewmodel.GroupPlanViewModel
+import com.capston.presentation.viewmodel.SinglePlanViewModel
 import kotlinx.coroutines.CoroutineScope
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -63,7 +66,7 @@ import kotlinx.coroutines.CoroutineScope
 fun GroupPlanScreen(
     planId: Int,
     studyGroupId: Int,
-    lectureRoomViewModel: LectureRoomViewModel,
+    groupPlanViewModel: GroupPlanViewModel,
     navController: NavController
 ) {
     val context = LocalContext.current
@@ -76,16 +79,16 @@ fun GroupPlanScreen(
     // 선택된 멤버의 planId 상태
     var selectedPlanId by remember { mutableIntStateOf(planId) }
 
-    val getOneStudyGroupResponse by lectureRoomViewModel.getOneStudyGroupResponse.collectAsState()
-    val planDetailResponse by lectureRoomViewModel.getPlanDetailResponse.collectAsState()
+    val getOneStudyGroupResponse by groupPlanViewModel.getOneStudyGroupResponse.collectAsState()
+    val planDetailResponse by groupPlanViewModel.getPlanDetailResponse.collectAsState()
 
     LaunchedEffect(studyGroupId) {
-        lectureRoomViewModel.getOneStudyGroup(studyGroupId)
+        groupPlanViewModel.getOneStudyGroup(studyGroupId)
     }
 
     // 선택된 planId가 변경될 때마다 해당 플랜 상세 정보 가져오기
     LaunchedEffect(planId) {
-        lectureRoomViewModel.getPlanDetail(planId)
+        groupPlanViewModel.getPlanDetail(planId)
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -114,7 +117,7 @@ fun GroupPlanScreen(
                 GroupPlanTitleSection(
                     planId = planId,
                     studyGroupId = studyGroupId,
-                    lectureRoomViewModel = lectureRoomViewModel,
+                    groupPlanViewModel = groupPlanViewModel,
                     getOneStudyGroupResponse = getOneStudyGroupResponse,
                     coroutineScope = coroutineScope,
                     isLoading = isLoading,
@@ -122,8 +125,8 @@ fun GroupPlanScreen(
                     selectedPlanId = selectedPlanId,
                     onMemberClick = { memberPlanId ->
                         selectedPlanId = memberPlanId
-                        lectureRoomViewModel.getPlanDetail(memberPlanId)
-                    }
+                        groupPlanViewModel.getPlanDetail(memberPlanId)
+                    },
                 )
 
                 HorizontalDivider()
@@ -134,10 +137,10 @@ fun GroupPlanScreen(
                         .padding(horizontal = 20.dp)
                 ) {
                     planDetailResponse.dailySchedules.forEach { schedule ->
-                        OneDaySection(
+                        GroupPlanOneDaySection(
                             date = schedule.date,
                             planDetailLessonSchedules = schedule.lessonSchedules,
-                            lectureRoomViewModel = lectureRoomViewModel,
+                            groupPlanViewModel = groupPlanViewModel,
                             isReadOnly = selectedPlanId != planId  // 추가: 내 계획이 아니면 읽기 전용
                         )
                     }
@@ -347,7 +350,7 @@ fun GroupPlanTopBar(
 fun GroupPlanTitleSection(
     planId: Int,
     studyGroupId: Int,
-    lectureRoomViewModel: LectureRoomViewModel,
+    groupPlanViewModel: GroupPlanViewModel,
     getOneStudyGroupResponse: OneStudyGroupResponse,
     coroutineScope: CoroutineScope,
     isLoading: Boolean,
@@ -559,7 +562,148 @@ fun ProfileItem(
             fontWeight = if (isMe) FontWeight.Bold else FontWeight.Normal,
             maxLines = 1,
             modifier = Modifier.fillMaxWidth(),
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            textAlign = TextAlign.Center
+        )
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun GroupPlanOneDaySection(
+    date: String,
+    planDetailLessonSchedules: List<PlanDetailLessonSchedule>,
+    groupPlanViewModel: GroupPlanViewModel,
+    isReadOnly: Boolean = false
+) {
+    val totalMinutes = planDetailLessonSchedules.sumOf { it.adjustedDuration }
+
+    Column {
+        Text(
+            text = formatDateYMDE(date),
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 32.dp)
+                .border(
+                    width = 1.dp,
+                    color = dividerGray,
+                    shape = RoundedCornerShape(12.dp)
+                )
+                .padding(24.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // 하루 강의 개수
+                Text(
+                    text = "총 ${planDetailLessonSchedules.size}강",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                )
+
+                // 하루 강의 시간
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = ImageVector.vectorResource(R.drawable.icon_clock_filled),
+                        contentDescription = "시간",
+                        tint = materialGray,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "약 ${totalMinutes}분",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = textGray
+                    )
+                }
+            }
+
+            HorizontalDivider()
+
+            planDetailLessonSchedules.forEach { lessonSchedule ->
+                GroupPlanTaskItem(
+                    planDetailLessonSchedule = lessonSchedule,
+                    groupPlanViewModel = groupPlanViewModel,
+                    isReadOnly = isReadOnly
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun GroupPlanTaskItem(
+    planDetailLessonSchedule: PlanDetailLessonSchedule,
+    groupPlanViewModel: GroupPlanViewModel,
+    isReadOnly: Boolean = false
+) {
+    // 각 체크박스의 상태를 remember로 관리하되, 초기값은 서버 데이터 사용
+    var isChecked by remember(planDetailLessonSchedule.id, planDetailLessonSchedule.completed) {
+        mutableStateOf(planDetailLessonSchedule.completed)
+    }
+
+    // 서버 데이터가 변경되면 로컬 상태도 동기화
+    LaunchedEffect(planDetailLessonSchedule.completed) {
+        isChecked = planDetailLessonSchedule.completed
+    }
+
+    Row(
+        verticalAlignment = Alignment.Bottom,
+        horizontalArrangement = Arrangement.SpaceBetween,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 12.dp)
+    ) {
+        Row(
+            verticalAlignment = Alignment.Top,
+            modifier = Modifier
+                .weight(1f)
+                .padding(end = 4.dp)
+        ) {
+            CustomCheckBox(
+                isChecked = isChecked,
+                onCheckedChange = {
+                    // 즉시 UI 업데이트 (사용자 경험 향상)
+                    isChecked = !isChecked
+
+                    if (!isReadOnly) {
+                        // 체크박스 상태 변경 로직 (서버 업데이트, 백그라운드에서 실행)
+                        groupPlanViewModel.patchLessonSchedulesCheckToggle(planDetailLessonSchedule.id)
+                    }
+                },
+                isReadOnly = isReadOnly
+            )
+            Text(
+                text = planDetailLessonSchedule.lessonTitle,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Normal,
+                lineHeight = 28.sp,
+                modifier = Modifier.padding(top = 12.dp)
+            )
+        }
+
+        Text(
+            text = "${planDetailLessonSchedule.adjustedDuration}분",
+            style = MaterialTheme.typography.labelMedium,
+            color = MainPurple,
+            modifier = Modifier
+                .padding(bottom = 6.dp)
+                .border(
+                    width = 1.dp,
+                    color = MainPurple,
+                    shape = RoundedCornerShape(8.dp)
+                )
+                .padding(horizontal = 4.dp, vertical = 4.dp)
         )
     }
 }
