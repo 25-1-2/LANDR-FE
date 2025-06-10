@@ -12,6 +12,7 @@ import com.capston.domain.usecase.lecture.GetAllLectureUseCase
 import com.capston.domain.usecase.lecture.GetDistinctLectureUseCase
 import com.capston.domain.usecase.lecture.GetLessonsByLectureIdUseCase
 import com.capston.domain.model.LectureItemDto
+import com.capston.domain.model.Lesson
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -40,8 +41,8 @@ class LectureViewModel @Inject constructor(
     private val _selectedLecture = MutableStateFlow<LectureItemDto?>(null)
     val selectedLecture: StateFlow<LectureItemDto?> = _selectedLecture.asStateFlow()
 
-    private val _lessonsByLectureId = MutableStateFlow<List<NewPlanLesson>>(emptyList())
-    val lessonsByLectureId: StateFlow<List<NewPlanLesson>> = _lessonsByLectureId
+    private val _lessonsByLectureId = MutableStateFlow<List<Lesson>>(emptyList())
+    val lessonsByLectureId: StateFlow<List<Lesson>> = _lessonsByLectureId
 
     // LectureDto를 직접 받는 함수
     fun getDistinctLecture(lectureDto: LectureDto) {
