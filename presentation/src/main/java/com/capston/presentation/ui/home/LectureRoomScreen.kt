@@ -288,23 +288,23 @@ fun LectureItem(lecture: GetPlanLectureRoomResponse, onClick: () -> Unit) {
                         .padding(horizontal = 6.dp, vertical = 4.dp)
                 )
 
-//                Text(
-//                    text = lecture.subject.label,
-//                    style = MaterialTheme.typography.labelMedium,
-//                    color = lecture.subject.borderColor,
-//                    modifier = Modifier
-//                        .padding(bottom = 6.dp)
-//                        .background(
-//                            color = lecture.subject.bgColor,
-//                            shape = RoundedCornerShape(8.dp)
-//                        )
-//                        .border(
-//                            width = 1.dp,
-//                            color = lecture.subject.borderColor,
-//                            shape = RoundedCornerShape(8.dp)
-//                        )
-//                        .padding(horizontal = 4.dp, vertical = 4.dp)
-//                )
+                Text(
+                    text = lecture.subject.label,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = lecture.subject.borderColor,
+                    modifier = Modifier
+                        .padding(bottom = 6.dp)
+                        .background(
+                            color = lecture.subject.bgColor,
+                            shape = RoundedCornerShape(8.dp)
+                        )
+                        .border(
+                            width = 1.dp,
+                            color = lecture.subject.borderColor,
+                            shape = RoundedCornerShape(8.dp)
+                        )
+                        .padding(horizontal = 4.dp, vertical = 4.dp)
+                )
             }
 
             // 오른쪽 칩들
@@ -359,7 +359,7 @@ fun LectureItem(lecture: GetPlanLectureRoomResponse, onClick: () -> Unit) {
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(
-                text = "${lecture.teacher}",
+                text = "${lecture.teacher} · ${lecture.tag}",
                 style = MaterialTheme.typography.labelMedium,
                 color = textGray
             )
