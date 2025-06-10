@@ -1,6 +1,7 @@
 package com.capston.domain.response.plan
 
 import com.capston.domain.response.enum_class.Platform
+import com.capston.domain.response.enum_class.Subject
 
 data class GetPlanLectureRoomResponse(
     val planId: Int = 0,
@@ -11,4 +12,6 @@ data class GetPlanLectureRoomResponse(
     val totalLessons: Int = 0,
     val studyGroupId: Int? = 0,
     val studyGroup: Boolean = false,
+    val subject: Subject = Subject.KOR,
+    val tag: String = ""
 )
