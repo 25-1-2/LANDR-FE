@@ -77,7 +77,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Color.Companion.Transparent
 import androidx.compose.ui.graphics.Color.Companion.White
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -1111,15 +1110,15 @@ fun TodayLectureHeader(todayTotalLesson: Int, todayTotalDuration: Int) {
                 // 강의 수 아이콘 + 텍스트
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
-                        painter = painterResource(id = R.drawable.home_screen_total_count_iv),
+                        painter = painterResource(id = R.drawable.icon_check_circle),
                         contentDescription = "총 강의 수",
                         modifier = Modifier.size(16.dp),
-                        tint = Color.Unspecified
+                        tint = MainPurple
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
                         text = "총 ${todayTotalLesson}강",
-                        fontSize = 14.sp,
+                        style = MaterialTheme.typography.labelMedium,
                         color = textGray
                     )
                 }
@@ -1129,15 +1128,15 @@ fun TodayLectureHeader(todayTotalLesson: Int, todayTotalDuration: Int) {
                 // 시간 아이콘 + 텍스트
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
-                        painter = painterResource(id = R.drawable.home_screen_total_duration_iv),
+                        painter = painterResource(id = R.drawable.icon_clock),
                         contentDescription = "총 시간",
                         modifier = Modifier.size(16.dp),
-                        tint = Color.Unspecified
+                        tint = MainPurple
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
                         text = "약 ${todayTotalDuration}분",
-                        fontSize = 14.sp,
+                        style = MaterialTheme.typography.labelMedium,
                         color = textGray
                     )
                 }
