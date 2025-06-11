@@ -484,7 +484,10 @@ fun TodayLectureCard(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeTopBar(hasUnreadNotifications: Boolean, homeViewModel: HomeViewModel) {
+fun HomeTopBar(
+    hasUnreadNotifications: Boolean,
+    homeViewModel: HomeViewModel
+) {
     Column {
         TopAppBar(
             title = {

@@ -155,7 +155,12 @@ fun CalenderScreen(homeViewModel: HomeViewModel, dailyScheduleViewModel: DailySc
     }
 
     Scaffold(
-        topBar = { CalendarTopBar(hasUnreadNotifications = true) },
+        topBar = {
+            CalendarTopBar(
+                hasUnreadNotifications = true,
+                homeViewModel = homeViewModel
+            )
+        },
         modifier = Modifier.fillMaxSize()
     ) { innerPadding ->
         Column(
@@ -263,7 +268,10 @@ fun CalenderScreen(homeViewModel: HomeViewModel, dailyScheduleViewModel: DailySc
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CalendarTopBar(hasUnreadNotifications: Boolean) {
+fun CalendarTopBar(
+    hasUnreadNotifications: Boolean,
+    homeViewModel: HomeViewModel
+) {
     Column {
         TopAppBar(
             title = {
@@ -286,7 +294,7 @@ fun CalendarTopBar(hasUnreadNotifications: Boolean) {
             actions = {
                 // 읽지 않은 알람이 있을 경우 빨간색 배지 표시
                 if (hasUnreadNotifications) {
-                    IconButton(onClick = { /* 알람 클릭 */ }) {
+                    IconButton(onClick = { homeViewModel.sendIncompleteNotification() }) {
                         Image(
                             painter = painterResource(R.drawable.icon_notification_on),
                             contentDescription = "alarm icon",
@@ -295,7 +303,7 @@ fun CalendarTopBar(hasUnreadNotifications: Boolean) {
                 }
 
                 else {
-                    IconButton(onClick = { /* 알람 클릭 */ }) {
+                    IconButton(onClick = { homeViewModel.sendIncompleteNotification() }) {
                         Image(
                             painter = painterResource(R.drawable.home_screen_notification_iv),
                             contentDescription = "alarm icon",

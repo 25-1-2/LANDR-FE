@@ -6,10 +6,12 @@ import androidx.lifecycle.viewModelScope
 import com.capston.domain.manager.LoadingStateManager
 import com.capston.domain.request.UpdateDDayRequest
 import com.capston.domain.response.CheckResponse
+import com.capston.domain.response.MessageResponse
 import com.capston.domain.response.home.DDayResponse
 import com.capston.domain.response.home.DistinctHomeIdResponse
 import com.capston.domain.response.home.TodayScheduleResponse
 import com.capston.domain.usecase.SendDDayNotificationUseCase
+import com.capston.domain.usecase.SendIncompleteNotificationUseCase
 import com.capston.domain.usecase.home.DeleteDDayUseCase
 import com.capston.domain.usecase.home.GetDDayUseCase
 import com.capston.domain.usecase.home.GetDistinctHomeUseCase
@@ -32,7 +34,8 @@ class HomeViewModel @Inject constructor(
     private val postDDayUseCase: PostDDayUseCase,
     private val deleteDDayUseCase: DeleteDDayUseCase,
     private val patchDDayUseCase: PatchDDayUseCase,
-    private val sendDDayNotificationUseCase: SendDDayNotificationUseCase, // <<-- 주입 받도록 追加
+    private val sendDDayNotificationUseCase: SendDDayNotificationUseCase,
+    private val sendIncompleteNotificationUseCase: SendIncompleteNotificationUseCase,// <<-- 주입 받도록 追加
     private val loadingStateManager: LoadingStateManager
 ) : ViewModel() {
 
@@ -45,8 +48,11 @@ class HomeViewModel @Inject constructor(
     private val _dDay = MutableStateFlow<DDayResponse?>(null)
     val dDay: StateFlow<DDayResponse?> = _dDay.asStateFlow()
 
-    private val _dDayNotificationResult = MutableStateFlow<String?>(null) // 알림 결과 메시지 (옵션)
-    val dDayNotificationResult: StateFlow<String?> = _dDayNotificationResult.asStateFlow()
+    private val _dDayNotificationResult = MutableStateFlow<MessageResponse?>(null) // 알림 결과 메시지 (옵션)
+    val dDayNotificationResult: StateFlow<MessageResponse?> = _dDayNotificationResult.asStateFlow()
+
+    private val _incompleteNotificationResult = MutableStateFlow<MessageResponse?>(null) // 알림 결과 메시지 (옵션)
+    val incompleteNotificationResult: StateFlow<MessageResponse?> = _incompleteNotificationResult.asStateFlow()
 
     // 캐시된 데이터 유지
     private var lastLoadTime: Long = 0
@@ -59,14 +65,28 @@ class HomeViewModel @Inject constructor(
                 .onSuccess { messageResponse ->
                     // 알림 전송 성공 시 처리
                     Log.d("HomeViewModel", "D-Day 알림 전송 성공: ${messageResponse.message}")
-                    _dDayNotificationResult.value = "D-Day 알림이 성공적으로 전송되었습니다." // UI에 표시할 메시지 (예시)
-                    // TODO: 사용자에게 성공 메시지를 보여주는 로직 (예: Toast, Snackbar)
+                    _dDayNotificationResult.value = messageResponse // UI에 표시할 메시지 (예시)
                 }
                 .onFailure { exception ->
                     // 알림 전송 실패 시 처리
                     Log.e("HomeViewModel", "D-Day 알림 전송 실패", exception)
-                    _dDayNotificationResult.value = "D-Day 알림 전송에 실패했습니다: ${exception.message}" // UI에 표시할 메시지 (예시)
-                    // TODO: 사용자에게 오류 메시지를 보여주는 로직
+                }
+            loadingStateManager.hide() // 로딩 상태 숨김
+        }
+    }
+
+    fun sendIncompleteNotification() {
+        viewModelScope.launch {
+            loadingStateManager.show() // 필요에 따라 로딩 상태 표시
+            sendIncompleteNotificationUseCase()
+                .onSuccess { messageResponse ->
+                    // 알림 전송 성공 시 처리
+                    Log.d("HomeViewModel", "미완료 알림 전송 성공: ${messageResponse.message}")
+                    _incompleteNotificationResult.value = messageResponse // UI에 표시할 메시지 (예시)
+                }
+                .onFailure { exception ->
+                    // 알림 전송 실패 시 처리
+                    Log.e("HomeViewModel", "미완료 알림 전송 실패", exception)
                 }
             loadingStateManager.hide() // 로딩 상태 숨김
         }
