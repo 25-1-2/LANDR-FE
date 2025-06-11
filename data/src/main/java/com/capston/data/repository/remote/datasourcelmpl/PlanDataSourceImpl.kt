@@ -6,7 +6,7 @@ import com.capston.domain.response.plan.GetPlanLectureRoomResponse
 import com.capston.domain.request.PatchPlanDto
 import com.capston.domain.request.PostNewPlanDto
 import com.capston.domain.response.MessageResponse
-import com.capston.domain.response.plan.GetPlanDetailResponse
+import com.capston.domain.response.plan.PlanDetailResponse
 import com.capston.domain.response.plan.LectureAliasResponse
 import javax.inject.Inject
 
@@ -25,7 +25,7 @@ class PlanDataSourceImpl @Inject constructor(
         return planApi.getPlanLectureRoom()
     }
 
-    override suspend fun getPlanDetail(planId: Int): GetPlanDetailResponse {
+    override suspend fun getPlanDetail(planId: Int): PlanDetailResponse {
         return planApi.getPlanDetail(planId)
     }
 

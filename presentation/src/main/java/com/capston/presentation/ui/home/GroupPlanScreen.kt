@@ -82,7 +82,7 @@ fun GroupPlanScreen(
     var selectedPlanId by remember { mutableIntStateOf(planId) }
 
     val getOneStudyGroupResponse by groupPlanViewModel.getOneStudyGroupResponse.collectAsState()
-    val planDetailResponse by groupPlanViewModel.getPlanDetailResponse.collectAsState()
+    val planDetailResponse by groupPlanViewModel.planDetailResponse.collectAsState()
     val deleteOneStudyGroupResponse by groupPlanViewModel.deleteOneStudyGroupResponse.collectAsState()
 
     val myMember = getOneStudyGroupResponse.members.find { it.planId == planId }

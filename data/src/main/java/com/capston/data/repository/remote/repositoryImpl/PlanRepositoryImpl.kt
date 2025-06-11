@@ -6,7 +6,7 @@ import com.capston.domain.repository.PlanRepository
 import com.capston.domain.request.PatchPlanDto
 import com.capston.domain.request.PostNewPlanDto
 import com.capston.domain.response.MessageResponse
-import com.capston.domain.response.plan.GetPlanDetailResponse
+import com.capston.domain.response.plan.PlanDetailResponse
 import com.capston.domain.response.plan.LectureAliasResponse
 import javax.inject.Inject
 
@@ -26,7 +26,7 @@ class PlanRepositoryImpl @Inject constructor(
 
     override suspend fun getPlanDetail(
         planId: Int
-    ): GetPlanDetailResponse = planDataSource.getPlanDetail(planId)
+    ): PlanDetailResponse = planDataSource.getPlanDetail(planId)
 
     override suspend fun postPlanReschedule(
         planId: Int
