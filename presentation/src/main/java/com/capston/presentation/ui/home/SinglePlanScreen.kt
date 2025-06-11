@@ -412,13 +412,13 @@ fun SinglePlanTitleSection(
         // 플랫폼 태그
         Row(
             horizontalArrangement = Arrangement.spacedBy(4.dp),
+            modifier = Modifier.padding(bottom = 8.dp)
         ) {
             Text(
-                text = planDetailResponse.platform,
+                text = planDetailResponse.platform.label,
                 style = MaterialTheme.typography.labelMedium,
                 color = MainPurple,
                 modifier = Modifier
-                    .padding(bottom = 6.dp)
                     .border(
                         width = 1.dp,
                         color = MainPurple,
@@ -432,7 +432,14 @@ fun SinglePlanTitleSection(
         Text(
             text = planDetailResponse.lectureTitle,
             style = MaterialTheme.typography.headlineSmall,
-            modifier = Modifier.padding(top = 8.dp)
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+
+        // 강의 제목
+        Text(
+            text = "${planDetailResponse.teacher} ·",
+            style = MaterialTheme.typography.labelMedium,
+            color = textGray
         )
     }
 }

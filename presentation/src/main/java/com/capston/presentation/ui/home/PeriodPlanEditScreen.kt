@@ -133,7 +133,7 @@ fun PeriodPlanEditScreen(
             PeriodPlanEditHeaderSection(
                 lectureTitle = planDetailResponse.lectureTitle,
                 teacher = planDetailResponse.teacher,
-                platform = planDetailResponse.platform
+                platform = planDetailResponse.platform.label
             )
             HorizontalDivider(color = dividerGray)
 
