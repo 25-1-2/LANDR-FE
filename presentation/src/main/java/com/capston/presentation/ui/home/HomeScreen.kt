@@ -857,7 +857,12 @@ fun LearningProgressGraphs(
                 val currentLectureName = if (item.planId == patchData.planId) {
                     patchData.lectureAlias
                 } else {
-                    item.lectureAlias
+                    if (item.lectureAlias.length > 8) {
+                        item.lectureAlias.take(8) + "..."
+                    }
+                    else {
+                        item.lectureAlias
+                    }
                 }
                 CircleGraph(
                     name = currentLectureName,
