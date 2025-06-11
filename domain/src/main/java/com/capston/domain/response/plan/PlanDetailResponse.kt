@@ -10,7 +10,7 @@ data class PlanDetailResponse (
     val startDate: String = "",
     val endDate: String = "",
     val dailyTime: Int = 0,
-    val playbackSpeed: Int = 0,
+    val playbackSpeed: Double = 0.0,
     val dailySchedules: List<PlanDetailDailySchedule> = emptyList(),
 )
 

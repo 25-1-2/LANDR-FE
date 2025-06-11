@@ -98,16 +98,14 @@ fun PeriodPlanEditScreen(
         }
     }
 
-    // 응답을 관찰하여 액티비티 종료 처리
+    // 응답을 관찰하여 이전 화면으로 돌아가기
     LaunchedEffect(patchResponse, requestSent) {
         if (requestSent && patchResponse.message.isNotEmpty()) {
             delay(1000)
             loadingStateManager.hide()
 
-            if (context is ComponentActivity) {
-                context.setResult(Activity.RESULT_OK)
-                context.finish()
-            }
+            // 네비게이션 백스택 pop
+            navController.popBackStack()
         }
     }
 
