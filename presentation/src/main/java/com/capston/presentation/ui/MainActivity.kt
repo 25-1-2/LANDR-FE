@@ -91,6 +91,8 @@ import com.capston.presentation.ui.home.LectureRoomScreen
 import com.capston.presentation.ui.home.NotificationScreen
 import com.capston.presentation.ui.home.ProfileScreen
 import com.capston.presentation.ui.home.SinglePlanScreen
+import com.capston.presentation.ui.home.PeriodPlanEditScreen
+import com.capston.presentation.ui.home.TimePlanEditScreen
 import com.capston.presentation.ui.search.SearchActivity
 import com.capston.presentation.viewmodel.DailyScheduleViewModel
 import com.capston.presentation.viewmodel.GroupPlanViewModel
@@ -98,9 +100,11 @@ import com.capston.presentation.viewmodel.HomeViewModel
 import com.capston.presentation.viewmodel.LectureRoomViewModel
 import com.capston.presentation.viewmodel.LoginViewModel
 import com.capston.presentation.viewmodel.MyPageViewModel
+import com.capston.presentation.viewmodel.PeriodPlanEditViewModel
 import com.capston.presentation.viewmodel.PlanViewModel
 import com.capston.presentation.viewmodel.RecommendViewModel
 import com.capston.presentation.viewmodel.SinglePlanViewModel
+import com.capston.presentation.viewmodel.TimePlanEditViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -113,8 +117,10 @@ class MainActivity : ComponentActivity() {
     val planViewModel: PlanViewModel by viewModels()
     val dailyScheduleViewModel: DailyScheduleViewModel by viewModels()
     val lectureRoomViewModel: LectureRoomViewModel by viewModels()
-    val singlePlanViewModel: SinglePlanViewModel by viewModels()  // 추가
+    val singlePlanViewModel: SinglePlanViewModel by viewModels()
     val groupPlanViewModel: GroupPlanViewModel by viewModels()
+    val periodPlanEditViewModel: PeriodPlanEditViewModel by viewModels()
+    val timePlanEditViewModel: TimePlanEditViewModel by viewModels()
     val myPageViewModel: MyPageViewModel by viewModels()
     val recommendViewModel: RecommendViewModel by viewModels()
 
@@ -185,6 +191,8 @@ class MainActivity : ComponentActivity() {
                             lectureRoomViewModel = lectureRoomViewModel,
                             singlePlanViewModel = singlePlanViewModel,
                             groupPlanViewModel = groupPlanViewModel,
+                            periodPlanEditViewModel = periodPlanEditViewModel,
+                            timePlanEditViewModel = timePlanEditViewModel,
                             loginViewModel = loginViewModel,
                             myPageViewModel = myPageViewModel,
                             recommendViewModel = recommendViewModel,
@@ -352,6 +360,8 @@ fun MainBottomBar(
     lectureRoomViewModel: LectureRoomViewModel,
     singlePlanViewModel: SinglePlanViewModel,
     groupPlanViewModel: GroupPlanViewModel,
+    periodPlanEditViewModel: PeriodPlanEditViewModel,
+    timePlanEditViewModel: TimePlanEditViewModel,
     loginViewModel: LoginViewModel,
     myPageViewModel: MyPageViewModel,
     recommendViewModel: RecommendViewModel,
@@ -426,8 +436,14 @@ fun MainBottomBar(
                         bottom = 60.dp // FAB를 고려한 적절한 하단 패딩 (80dp 바텀바 - 40dp FAB offset)
                     )
             ) {
-                composable(Screen.Home.title) { HomeScreen(homeViewModel, planViewModel, recommendViewModel, navController) }
-                composable(Screen.Calender.title) { CalenderScreen(homeViewModel, dailyScheduleViewModel) }
+                composable(Screen.Home.title) {
+                    HomeScreen(homeViewModel, planViewModel, recommendViewModel, navController)
+                }
+
+                composable(Screen.Calender.title) {
+                    CalenderScreen(homeViewModel, dailyScheduleViewModel)
+
+                }
                 composable(Screen.LectureRoom.title) {
                     LectureRoomScreen(
                         lectureRoomViewModel = lectureRoomViewModel,
@@ -440,6 +456,7 @@ fun MainBottomBar(
                         onNotificationClick = { navController.navigate("notification") }
                     )
                 }
+
                 composable(
                     route = "${Screen.SinglePlan.title}/{planId}",
                     arguments = listOf(navArgument("planId") { type = NavType.IntType })
@@ -452,6 +469,7 @@ fun MainBottomBar(
                         navController = navController,
                     )
                 }
+
                 composable(
                     route = "${Screen.GroupPlan.title}/{studyGroupId}/{planId}",
                     arguments = listOf(
@@ -468,12 +486,34 @@ fun MainBottomBar(
                         navController = navController,
                     )
                 }
+
+                composable("${Screen.PeriodPlanEdit.title}") {
+                    // 필요한 ViewModel을 생성하거나 기존 것을 사용
+                    // val lectureViewModel: LectureViewModel by viewModels() // MainActivity에서 추가 필요
+                    PeriodPlanEditScreen(
+                        periodPlanEditViewModel = periodPlanEditViewModel,
+                        planViewModel = planViewModel,
+                        navController = navController,
+                        loadingStateManager = loadingStateManager
+                    )
+                }
+
+                composable("${Screen.TimePlanEdit.title}") {
+                    TimePlanEditScreen(
+                        timePlanEditViewModel = timePlanEditViewModel,
+                        planViewModel = planViewModel,
+                        navController = navController,
+                        loadingStateManager = loadingStateManager
+                    )
+                }
+
                 composable(Screen.Profile.title) {
                     ProfileScreen(
                         loginViewModel = loginViewModel,
                         myPageViewModel = myPageViewModel
                     )
                 }
+
                 composable(Screen.Notification.title) { NotificationScreen() }
             }
         }

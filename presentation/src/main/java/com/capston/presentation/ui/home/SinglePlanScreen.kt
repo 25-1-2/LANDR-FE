@@ -92,7 +92,15 @@ fun SinglePlanScreen(
                     showMenu = showDeleteDropdown,
                     onMenuClick = { showDeleteDropdown = !showDeleteDropdown },
                     onMenuDismiss = { showDeleteDropdown = false },
-                    onDeleteClick = { showDeleteConfirmDialog = true }
+                    onDeleteClick = { showDeleteConfirmDialog = true },
+                    onEditClick = {
+                        val editRoute = when (planDetailResponse.planType) {
+                            "PERIOD" -> "period_plan_edit"
+                            "TIME" -> "time_plan_edit"
+                            else -> "period_plan_edit" // 기본값
+                        }
+                        navController.navigate(editRoute)
+                    }
                 )
             }
         ) { innerPadding ->
@@ -283,7 +291,8 @@ fun SinglePlanTopBar(
     showMenu: Boolean,
     onMenuClick: () -> Unit,
     onMenuDismiss: () -> Unit,
-    onDeleteClick: () -> Unit
+    onDeleteClick: () -> Unit,
+    onEditClick: () -> Unit
 ) {
     Column {
         TopAppBar(
@@ -329,7 +338,7 @@ fun SinglePlanTopBar(
                         },
                         onClick = {
                             onMenuDismiss()
-//                            onDeleteClick()
+                            onEditClick()
                         }
                     )
 

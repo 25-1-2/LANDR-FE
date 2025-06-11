@@ -107,12 +107,21 @@ fun GroupPlanScreen(
             topBar = {
                 GroupPlanTopBar(
                     navController = navController,
+                    isLeader = isLeader,
                     showMenu = showDeleteDropdown,
                     onMenuClick = { showDeleteDropdown = !showDeleteDropdown },
                     onMenuDismiss = { showDeleteDropdown = false },
                     onPlanDeleteClick = { showPlanDeleteConfirmDialog = true },
                     onGroupDeleteClick = { showGroupDeleteConfirmDialog = true },
-                    isLeader = isLeader
+                    // 수정: 계획 수정 콜백 추가
+                    onEditClick = {
+                        val editRoute = when (planDetailResponse.planType) {
+                            "PERIOD" -> "period_plan_edit"
+                            "TIME" -> "time_plan_edit"
+                            else -> "period_plan_edit" // 기본값
+                        }
+                        navController.navigate(editRoute)
+                    },
                 )
             }
         ) { innerPadding ->
@@ -261,12 +270,13 @@ fun GroupPlanScreen(
 @Composable
 fun GroupPlanTopBar(
     navController: NavController,
+    isLeader: Boolean,
     showMenu: Boolean,
     onMenuClick: () -> Unit,
     onMenuDismiss: () -> Unit,
     onPlanDeleteClick: () -> Unit,
     onGroupDeleteClick: () -> Unit,
-    isLeader: Boolean
+    onEditClick: () -> Unit
 ) {
     Column {
         TopAppBar(
@@ -308,10 +318,13 @@ fun GroupPlanTopBar(
                                         modifier = Modifier.size(20.dp)
                                     )
                                     Spacer(modifier = Modifier.width(8.dp))
-                                    Text("수정하기", color = Color.Black)
+                                    Text("계획 수정", color = Color.Black)
                                 }
                             },
-                            onClick = { onMenuDismiss() }
+                            onClick = {
+                                onMenuDismiss()
+                                onEditClick()
+                            }
                         )
 
                         DropdownMenuItem(
