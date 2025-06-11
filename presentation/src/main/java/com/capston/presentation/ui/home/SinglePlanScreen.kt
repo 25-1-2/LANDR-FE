@@ -566,7 +566,7 @@ fun TaskItem(
                     color = MainPurple,
                     shape = RoundedCornerShape(8.dp)
                 )
-                .padding(horizontal = 4.dp, vertical = 4.dp)
+                .padding(horizontal = 6.dp, vertical = 4.dp)
         )
     }
 }
