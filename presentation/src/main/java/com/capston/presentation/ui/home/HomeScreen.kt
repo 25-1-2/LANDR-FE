@@ -118,6 +118,8 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
@@ -507,18 +509,18 @@ fun HomeTopBar(hasUnreadNotifications: Boolean) {
                 // 읽지 않은 알람이 있을 경우 빨간색 배지 표시
                 if (hasUnreadNotifications) {
                     IconButton(onClick = { /* 알람 클릭 */ }) {
-                        Image(
-                            painter = painterResource(R.drawable.icon_notification_on),
-                            contentDescription = "alarm icon",
+                        Icon(
+                            imageVector = ImageVector.vectorResource(R.drawable.icon_notification_on),
+                            contentDescription = "alarm icon"
                         )
                     }
                 }
 
                 else {
                     IconButton(onClick = { /* 알람 클릭 */ }) {
-                        Image(
-                            painter = painterResource(R.drawable.home_screen_notification_iv),
-                            contentDescription = "alarm icon",
+                        Icon(
+                            imageVector = ImageVector.vectorResource(R.drawable.icon_notification_off),
+                            contentDescription = "alarm icon"
                         )
                     }
                 }
