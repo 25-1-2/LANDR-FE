@@ -8,7 +8,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -19,19 +18,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -39,8 +32,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -52,8 +43,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.capston.domain.request.JoinStudyGroupDto
-import com.capston.domain.response.enum_class.Subject
 import com.capston.domain.response.plan.GetPlanLectureRoomResponse
 import com.capston.presentation.R
 import com.capston.presentation.theme.LightGray2
@@ -62,7 +51,8 @@ import com.capston.presentation.theme.Typography
 import com.capston.presentation.theme.textGray
 import com.capston.presentation.ui.search.SearchActivity
 import com.capston.presentation.viewmodel.LectureRoomViewModel
-import kotlinx.coroutines.launch
+import com.capston.presentation.ui.common.bgColor
+import com.capston.presentation.ui.common.borderColor
 
 @Composable
 fun LectureRoomScreen(
@@ -73,24 +63,12 @@ fun LectureRoomScreen(
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
-    var showInviteDialog by remember { mutableStateOf(false) }
-    var inviteCode by remember { mutableStateOf("") }
 
     val lectures by lectureRoomViewModel.getPlanLectureRoomResponse.collectAsState()
-    val joinResponse by lectureRoomViewModel.postJoinStudyGroupResponse.collectAsState()
 
     // 화면이 처음 표시될 때 데이터를 로드
     LaunchedEffect(Unit) {
         lectureRoomViewModel.getPlanLectureRoom()
-    }
-
-    // 스터디그룹 가입 성공 감지
-    LaunchedEffect(joinResponse) {
-        if (joinResponse.message.isNotEmpty()) {
-            lectureRoomViewModel.getPlanLectureRoom() // 목록 새로고침
-            showInviteDialog = false
-            inviteCode = ""
-        }
     }
 
     Scaffold(
@@ -133,26 +111,6 @@ fun LectureRoomScreen(
                 }
             }
         }
-
-        if (showInviteDialog) {
-            InviteCodeDialog(
-                inviteCode = inviteCode,
-                onInviteCodeChange = { inviteCode = it },
-                onConfirm = {
-                    if (inviteCode.isNotEmpty()) {
-                        // 초대코드를 DTO에 담아서 전달
-                        lectureRoomViewModel.postJoinStudyGroup(
-                            JoinStudyGroupDto(inviteCode = inviteCode)
-                        )
-                    }
-                },
-                onDismiss = {
-                    showInviteDialog = false
-                    inviteCode = ""
-                }
-            )
-        }
-
     }
 }
 
@@ -303,7 +261,7 @@ fun LectureItem(lecture: GetPlanLectureRoomResponse, onClick: () -> Unit) {
                             color = lecture.subject.borderColor,
                             shape = RoundedCornerShape(8.dp)
                         )
-                        .padding(horizontal = 4.dp, vertical = 4.dp)
+                        .padding(horizontal = 6.dp, vertical = 4.dp)
                 )
             }
 
@@ -349,7 +307,7 @@ fun LectureItem(lecture: GetPlanLectureRoomResponse, onClick: () -> Unit) {
 
         Text(
             text = lecture.lectureTitle,
-            style = Typography.titleMedium,
+            style = Typography.titleSmall,
             modifier = Modifier.padding(bottom = 8.dp)
         )
 
@@ -370,27 +328,6 @@ fun LectureItem(lecture: GetPlanLectureRoomResponse, onClick: () -> Unit) {
                 color = textGray
             )
         }
-    }
-}
-
-@Composable
-fun StatusChip(status: String, isCompleted: Boolean) {
-    val backgroundColor = when {
-        isCompleted -> Color(0xFFFFE0E0)
-        status == "그룹" -> Color(0xFFEDF1FF)
-        else -> Color.LightGray
-    }
-    val textColor = when {
-        isCompleted -> Color.Red
-        else -> Color(0xFF4E6EF2)
-    }
-
-    Box(
-        modifier = Modifier
-            .background(color = backgroundColor, shape = RoundedCornerShape(12.dp))
-            .padding(horizontal = 8.dp, vertical = 4.dp)
-    ) {
-        Text(text = status, color = textColor, style = MaterialTheme.typography.labelSmall)
     }
 }
 
@@ -441,33 +378,6 @@ fun InviteCodeDialog(
         }
     )
 }
-
-val Subject.bgColor: Color
-    get() = when (this) {
-        Subject.KOR -> Color(0xFFFFD8D8)   // 연한 핑크
-        Subject.ENG -> Color(0xFFC5D9FF)   // 연한 하늘색
-        Subject.MATH -> Color(0xFFD3F7D3)  // 연한 민트
-        Subject.SOC -> Color(0xFFFFF4C6)   // 연한 노랑
-        Subject.SCI -> Color(0xFFC1E8F7)   // 연한 파랑
-        Subject.HIST -> Color(0xFFE1B5E8)  // 연한 보라
-        Subject.UNIV -> Color(0xFFC7F6F9)  // 연한 청록
-        Subject.LANG2 -> Color(0xFFFFD8E6) // 연한 분홍
-        Subject.VOC -> Color(0xFFF0F0F0)   // 연한 회색
-    }
-
-val Subject.borderColor: Color
-    get() = when (this) {
-        Subject.KOR -> Color(0xFFFF6B6B)   // 부드러운 빨강
-        Subject.ENG -> Color(0xFF5D9CFF)    // 부드러운 파랑
-        Subject.MATH -> Color(0xFF5BBF63)   // 부드러운 초록
-        Subject.SOC -> Color(0xFFFFC046)    // 부드러운 노랑
-        Subject.SCI -> Color(0xFF1EB0D2)    // 부드러운 하늘색
-        Subject.HIST -> Color(0xFF9E4FB0)   // 부드러운 보라
-        Subject.UNIV -> Color(0xFF00A7B4)   // 부드러운 청록
-        Subject.LANG2 -> Color(0xFFF08C8C)  // 부드러운 분홍
-        Subject.VOC -> Color(0xFFB0B0B0)    // 부드러운 회색
-    }
-
 //@Preview(showBackground = true)
 //@Composable
 //fun LectureRoomPreview() {
