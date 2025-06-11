@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
@@ -382,10 +383,10 @@ fun MainBottomBar(
                 mainActivity.finish()
             } else {
                 mainActivity.backPressedTime = currentTime
-                android.widget.Toast.makeText(
+                Toast.makeText(
                     context,
                     "한 번 더 뒤로가기를 누르면 앱이 종료됩니다",
-                    android.widget.Toast.LENGTH_SHORT
+                    Toast.LENGTH_SHORT
                 ).show()
             }
         } else {
@@ -491,18 +492,21 @@ fun MainBottomBar(
                     PeriodPlanEditScreen(
                         planId = planId,
                         planEditViewModel = planEditViewModel,
-                        planViewModel = planViewModel,
                         navController = navController,
                         loadingStateManager = loadingStateManager
                     )
                 }
 
-                composable("${Screen.TimePlanEdit.title}") {
+                composable(
+                    route = "${Screen.TimePlanEdit.title}/{planId}",
+                    arguments = listOf(navArgument("planId") { type = NavType.IntType })
+                ) { backStackEntry ->
+                    val planId = backStackEntry.arguments?.getInt("planId") ?: 0
                     TimePlanEditScreen(
+                        planId = TODO(),
                         planEditViewModel = planEditViewModel,
-                        planViewModel = planViewModel,
                         navController = navController,
-                        loadingStateManager = loadingStateManager
+                        loadingStateManager = loadingStateManager,
                     )
                 }
 

@@ -31,8 +31,8 @@ class SinglePlanViewModel @Inject constructor(
     private val loadingStateManager: LoadingStateManager
 ) : ViewModel() {
 
-    private val _PlanDetailResponse = MutableStateFlow(PlanDetailResponse())
-    val planDetailResponse: StateFlow<PlanDetailResponse> = _PlanDetailResponse.asStateFlow()
+    private val _planDetailResponse = MutableStateFlow(PlanDetailResponse())
+    val planDetailResponse: StateFlow<PlanDetailResponse> = _planDetailResponse.asStateFlow()
 
     private val _postPlanRescheduleResponse = MutableStateFlow(MessageResponse())
     val postPlanRescheduleResponse: StateFlow<MessageResponse> = _postPlanRescheduleResponse.asStateFlow()
@@ -56,7 +56,7 @@ class SinglePlanViewModel @Inject constructor(
                     Log.e("LectureRoomViewModel", "getPlanDetail 에러: ${e.message}")
                 }
                 .collect { response ->
-                    _PlanDetailResponse.value = response
+                    _planDetailResponse.value = response
                     Log.d("LectureRoomViewModel", "getPlanDetail 업데이트됨: $response")
                 }
         }
@@ -98,7 +98,7 @@ class SinglePlanViewModel @Inject constructor(
                     Log.d("LectureRoomViewModel", "체크 토글 완료: $response")
 
                     // 현재 보고 있는 계획 세부 정보 새로고침
-                    val currentPlanId = _PlanDetailResponse.value.planId
+                    val currentPlanId = _planDetailResponse.value.planId
                     if (currentPlanId > 0) {
                         getPlanDetail(currentPlanId)
                     }
