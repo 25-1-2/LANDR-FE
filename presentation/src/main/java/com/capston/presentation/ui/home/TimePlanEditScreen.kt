@@ -78,7 +78,9 @@ import com.capston.presentation.theme.backgroundGray
 import com.capston.presentation.theme.chipGray
 import com.capston.presentation.theme.dividerGray
 import com.capston.presentation.theme.textGray
+import com.capston.presentation.ui.common.formatDateYMD
 import com.capston.presentation.viewmodel.LectureViewModel
+import com.capston.presentation.viewmodel.PlanEditViewModel
 import com.capston.presentation.viewmodel.PlanViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
@@ -88,63 +90,6 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
-
-fun formatDate(millis: Long?): String {
-    return if (millis != null) {
-        val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-        sdf.format(Date(millis))
-    } else {
-        ""
-    }
-}
-
-// Calendar.DAY_OF_WEEK를 DayOfWeek enum name으로 변환
-fun calendarDayOfWeekToEnumName(calendarDayOfWeek: Int): String {
-    return when (calendarDayOfWeek) {
-        Calendar.SUNDAY -> DayOfWeek.SUN.name
-        Calendar.MONDAY -> DayOfWeek.MON.name
-        Calendar.TUESDAY -> DayOfWeek.TUE.name
-        Calendar.WEDNESDAY -> DayOfWeek.WED.name
-        Calendar.THURSDAY -> DayOfWeek.THU.name
-        Calendar.FRIDAY -> DayOfWeek.FRI.name
-        Calendar.SATURDAY -> DayOfWeek.SAT.name
-        else -> ""
-    }
-}
-
-// 선택한 요일들이 기간 내에 존재하는지 확인
-fun checkSelectedDaysExistInPeriod(
-    startDateStr: String,
-    endDateStr: String,
-    selectedDays: List<String>
-): Boolean {
-    if (startDateStr == "시작일 선택" || endDateStr == "종료일 선택") return false
-
-    try {
-        val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-        val startDate = dateFormat.parse(startDateStr) ?: return false
-        val endDate = dateFormat.parse(endDateStr) ?: return false
-
-        val calendar = Calendar.getInstance()
-        calendar.time = startDate
-
-        val daysInPeriod = mutableSetOf<String>()
-
-        // 시작일부터 종료일까지 모든 날짜의 요일을 수집
-        while (!calendar.time.after(endDate)) {
-            val dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK)
-            val enumName = calendarDayOfWeekToEnumName(dayOfWeek)
-            daysInPeriod.add(enumName)
-            calendar.add(Calendar.DAY_OF_MONTH, 1)
-        }
-
-        // 선택한 요일 중 하나라도 기간 내에 존재하는지 확인
-        return selectedDays.any { it in daysInPeriod }
-
-    } catch (e: ParseException) {
-        return false
-    }
-}
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -200,7 +145,7 @@ fun TimePlanEditScreen(
         )
     }
     val dailyTime = remember { mutableIntStateOf(120) } // Default to 120 mins
-    val today = com.capston.presentation.ui.search.formatDate(System.currentTimeMillis())
+    val today = formatDateYMD(System.currentTimeMillis())
     val startDate = remember { mutableStateOf(today) }
     val endDate = remember { mutableStateOf(today) }
     val playbackSpeed = remember { mutableDoubleStateOf(1.0) }
@@ -604,7 +549,7 @@ fun DurationSection(
     if (showStartDatePicker) {
         DatePickerModal(
             onDateSelected = { millis ->
-                startDate.value = com.capston.presentation.ui.search.formatDate(millis)
+                startDate.value = formatDateYMD(millis)
             },
             onDismiss = { showStartDatePicker = false }
         )
@@ -613,7 +558,7 @@ fun DurationSection(
     if (showEndDatePicker) {
         DatePickerModal(
             onDateSelected = { millis ->
-                endDate.value = com.capston.presentation.ui.search.formatDate(millis)
+                endDate.value = formatDateYMD(millis)
             },
             onDismiss = { showEndDatePicker = false }
         )
