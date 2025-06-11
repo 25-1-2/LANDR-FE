@@ -50,6 +50,7 @@ import com.capston.presentation.theme.dividerGray
 import com.capston.presentation.theme.materialGray
 import com.capston.presentation.theme.textGray
 import com.capston.presentation.ui.common.CustomCheckBox
+import com.capston.presentation.ui.common.Screen
 import com.capston.presentation.ui.common.formatDateYMDE
 import com.capston.presentation.viewmodel.SinglePlanViewModel
 import kotlinx.coroutines.CoroutineScope
@@ -95,9 +96,9 @@ fun SinglePlanScreen(
                     onDeleteClick = { showDeleteConfirmDialog = true },
                     onEditClick = {
                         val editRoute = when (planDetailResponse.planType) {
-                            "PERIOD" -> "period_plan_edit"
-                            "TIME" -> "time_plan_edit"
-                            else -> "period_plan_edit" // 기본값
+                            "PERIOD" -> "${Screen.PeriodPlanEdit.title}/$planId"
+                            "TIME" -> "${Screen.TimePlanEdit.title}/$planId"
+                            else -> "${Screen.PeriodPlanEdit.title}/$planId" // 기본값
                         }
                         navController.navigate(editRoute)
                     }

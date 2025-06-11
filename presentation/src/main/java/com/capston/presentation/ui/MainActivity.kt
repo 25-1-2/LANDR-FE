@@ -483,10 +483,13 @@ fun MainBottomBar(
                     )
                 }
 
-                composable("${Screen.PeriodPlanEdit.title}") {
-                    // 필요한 ViewModel을 생성하거나 기존 것을 사용
-                    // val lectureViewModel: LectureViewModel by viewModels() // MainActivity에서 추가 필요
+                composable(
+                    route = "${Screen.PeriodPlanEdit.title}/{planId}",
+                    arguments = listOf(navArgument("planId") { type = NavType.IntType })
+                ) { backStackEntry ->
+                    val planId = backStackEntry.arguments?.getInt("planId") ?: 0
                     PeriodPlanEditScreen(
+                        planId = planId,
                         planEditViewModel = planEditViewModel,
                         planViewModel = planViewModel,
                         navController = navController,

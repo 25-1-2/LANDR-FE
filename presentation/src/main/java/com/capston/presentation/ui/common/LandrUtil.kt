@@ -7,8 +7,21 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
+import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import java.util.Date
+import java.util.Locale
+
+@RequiresApi(Build.VERSION_CODES.O)
+fun formatDateYMD(millis: Long?): String {
+    return if (millis != null) {
+        val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+        sdf.format(Date(millis))
+    } else {
+        ""
+    }
+}
 
 @RequiresApi(Build.VERSION_CODES.O)
 fun formatDateYMDE(dateString: String): String {
