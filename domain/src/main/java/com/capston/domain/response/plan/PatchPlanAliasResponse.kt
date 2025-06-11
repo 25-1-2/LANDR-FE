@@ -1,6 +1,6 @@
 package com.capston.domain.response.plan
 
-data class LectureAliasResponse(
+data class PatchPlanAliasResponse(
     val planId: Int = 0,
     var lectureAlias: String = ""
 )

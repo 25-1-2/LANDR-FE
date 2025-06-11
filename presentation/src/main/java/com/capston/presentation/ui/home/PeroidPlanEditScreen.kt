@@ -79,7 +79,7 @@ import com.capston.presentation.theme.chipGray
 import com.capston.presentation.theme.dividerGray
 import com.capston.presentation.theme.textGray
 import com.capston.presentation.viewmodel.LectureViewModel
-import com.capston.presentation.viewmodel.PeriodPlanEditViewModel
+import com.capston.presentation.viewmodel.PlanEditViewModel
 import com.capston.presentation.viewmodel.PlanViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
@@ -150,7 +150,7 @@ fun checkSelectedDaysExistInPeriod(
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun PeriodPlanEditScreen(
-    periodPlanEditViewModel: PeriodPlanEditViewModel,
+    planEditViewModel: PlanEditViewModel,
     planViewModel: PlanViewModel,
     navController: NavController,
     loadingStateManager: LoadingStateManager

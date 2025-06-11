@@ -1,11 +1,13 @@
 package com.capston.domain.repository
 
+import com.capston.domain.request.PatchPeriodPlanDto
 import com.capston.domain.response.plan.GetPlanLectureRoomResponse
-import com.capston.domain.request.PatchPlanDto
+import com.capston.domain.request.PatchPlanAliasDto
+import com.capston.domain.request.PatchTimePlanDto
 import com.capston.domain.request.PostNewPlanDto
 import com.capston.domain.response.MessageResponse
 import com.capston.domain.response.plan.PlanDetailResponse
-import com.capston.domain.response.plan.LectureAliasResponse
+import com.capston.domain.response.plan.PatchPlanAliasResponse
 
 interface PlanRepository {
     // 강의 생성
@@ -14,10 +16,10 @@ interface PlanRepository {
     ): MessageResponse
 
     // 강의 별명 수정
-    suspend fun patchPlanName(
+    suspend fun patchPlanAlias(
         planId: Int,
-        patchPlanDto: PatchPlanDto
-    ): LectureAliasResponse
+        patchPlanAliasDto: PatchPlanAliasDto
+    ): PatchPlanAliasResponse
 
     // 나의 강의실 조회
     suspend fun getPlanLectureRoom(): List<GetPlanLectureRoomResponse>
@@ -30,6 +32,16 @@ interface PlanRepository {
     // 재스케줄링
     suspend fun postPlanReschedule(
         planId: Int
+    ): MessageResponse
+
+    suspend fun patchPeriodPlan(
+        planId: Int,
+        patchPeriodPlanDto: PatchPeriodPlanDto
+    ): MessageResponse
+
+    suspend fun patchTimePlan(
+        planId: Int,
+        patchTimePlanDto: PatchTimePlanDto
     ): MessageResponse
 
     // 계획 삭제
