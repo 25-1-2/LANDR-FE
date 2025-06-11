@@ -1,5 +1,5 @@
 package com.capston.domain.request
 
-data class PatchPlanDto(
+data class PatchPlanAliasDto(
     val lectureAlias: String
 )

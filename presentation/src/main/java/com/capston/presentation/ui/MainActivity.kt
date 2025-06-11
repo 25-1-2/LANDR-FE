@@ -100,11 +100,10 @@ import com.capston.presentation.viewmodel.HomeViewModel
 import com.capston.presentation.viewmodel.LectureRoomViewModel
 import com.capston.presentation.viewmodel.LoginViewModel
 import com.capston.presentation.viewmodel.MyPageViewModel
-import com.capston.presentation.viewmodel.PeriodPlanEditViewModel
+import com.capston.presentation.viewmodel.PlanEditViewModel
 import com.capston.presentation.viewmodel.PlanViewModel
 import com.capston.presentation.viewmodel.RecommendViewModel
 import com.capston.presentation.viewmodel.SinglePlanViewModel
-import com.capston.presentation.viewmodel.TimePlanEditViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -119,8 +118,7 @@ class MainActivity : ComponentActivity() {
     val lectureRoomViewModel: LectureRoomViewModel by viewModels()
     val singlePlanViewModel: SinglePlanViewModel by viewModels()
     val groupPlanViewModel: GroupPlanViewModel by viewModels()
-    val periodPlanEditViewModel: PeriodPlanEditViewModel by viewModels()
-    val timePlanEditViewModel: TimePlanEditViewModel by viewModels()
+    val planEditViewModel: PlanEditViewModel by viewModels()
     val myPageViewModel: MyPageViewModel by viewModels()
     val recommendViewModel: RecommendViewModel by viewModels()
 
@@ -191,8 +189,7 @@ class MainActivity : ComponentActivity() {
                             lectureRoomViewModel = lectureRoomViewModel,
                             singlePlanViewModel = singlePlanViewModel,
                             groupPlanViewModel = groupPlanViewModel,
-                            periodPlanEditViewModel = periodPlanEditViewModel,
-                            timePlanEditViewModel = timePlanEditViewModel,
+                            planEditViewModel = planEditViewModel,
                             loginViewModel = loginViewModel,
                             myPageViewModel = myPageViewModel,
                             recommendViewModel = recommendViewModel,
@@ -360,8 +357,7 @@ fun MainBottomBar(
     lectureRoomViewModel: LectureRoomViewModel,
     singlePlanViewModel: SinglePlanViewModel,
     groupPlanViewModel: GroupPlanViewModel,
-    periodPlanEditViewModel: PeriodPlanEditViewModel,
-    timePlanEditViewModel: TimePlanEditViewModel,
+    planEditViewModel: PlanEditViewModel,
     loginViewModel: LoginViewModel,
     myPageViewModel: MyPageViewModel,
     recommendViewModel: RecommendViewModel,
@@ -491,7 +487,7 @@ fun MainBottomBar(
                     // 필요한 ViewModel을 생성하거나 기존 것을 사용
                     // val lectureViewModel: LectureViewModel by viewModels() // MainActivity에서 추가 필요
                     PeriodPlanEditScreen(
-                        periodPlanEditViewModel = periodPlanEditViewModel,
+                        planEditViewModel = planEditViewModel,
                         planViewModel = planViewModel,
                         navController = navController,
                         loadingStateManager = loadingStateManager
@@ -500,7 +496,7 @@ fun MainBottomBar(
 
                 composable("${Screen.TimePlanEdit.title}") {
                     TimePlanEditScreen(
-                        timePlanEditViewModel = timePlanEditViewModel,
+                        planEditViewModel = planEditViewModel,
                         planViewModel = planViewModel,
                         navController = navController,
                         loadingStateManager = loadingStateManager
