@@ -263,7 +263,7 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel, recom
     var isWeeklyExpanded by remember { mutableStateOf(true) }
 
     Scaffold(
-        topBar = { HomeTopBar(hasUnreadNotifications = true) },
+        topBar = { HomeTopBar(hasUnreadNotifications = false) },
         modifier = Modifier.fillMaxSize()
     ) { innerPadding ->
         Column(
