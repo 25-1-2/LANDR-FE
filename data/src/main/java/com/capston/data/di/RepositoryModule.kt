@@ -7,6 +7,7 @@ import com.capston.data.repository.remote.api.HomeApi
 import com.capston.data.repository.remote.api.LectureApi
 import com.capston.data.repository.remote.api.LoginApi
 import com.capston.data.repository.remote.api.MyPageApi
+import com.capston.data.repository.remote.api.NotificationApi
 import com.capston.data.repository.remote.api.PlanApi
 import com.capston.data.repository.remote.api.RecommendApi
 import com.capston.data.repository.remote.api.StudyGroupApi
@@ -16,6 +17,7 @@ import com.capston.data.repository.remote.datasourcelmpl.HomeDataSourceImpl
 import com.capston.data.repository.remote.datasourcelmpl.LectureDataSourceImpl
 import com.capston.data.repository.remote.datasourcelmpl.LoginDataSourceImpl
 import com.capston.data.repository.remote.datasourcelmpl.MyPageDataSourceImpl
+import com.capston.data.repository.remote.datasourcelmpl.NotificationDataSourceImpl
 import com.capston.data.repository.remote.datasourcelmpl.PlanDataSourceImpl
 import com.capston.data.repository.remote.datasourcelmpl.RecommendDataSourceImpl
 import com.capston.data.repository.remote.datasourcelmpl.StudyGroupDataSourceImpl
@@ -25,6 +27,7 @@ import com.capston.data.repository.remote.repositoryImpl.HomeRepositoryImpl
 import com.capston.data.repository.remote.repositoryImpl.LectureRepositoryImpl
 import com.capston.data.repository.remote.repositoryImpl.LoginRepositoryImpl
 import com.capston.data.repository.remote.repositoryImpl.MyPageRepositoryImpl
+import com.capston.data.repository.remote.repositoryImpl.NotificationRepositoryImpl
 import com.capston.data.repository.remote.repositoryImpl.PlanRepositoryImpl
 import com.capston.data.repository.remote.repositoryImpl.RecommendRepositoryImpl
 import com.capston.data.repository.remote.repositoryImpl.RecommendationRepositoryImpl
@@ -35,6 +38,7 @@ import com.capston.domain.datasource.HomeDataSource
 import com.capston.domain.datasource.LectureDataSource
 import com.capston.domain.datasource.LoginDataSource
 import com.capston.domain.datasource.MyPageDataSource
+import com.capston.domain.datasource.NotificationDataSource
 import com.capston.domain.datasource.PlanDataSource
 import com.capston.domain.datasource.StudyGroupDataSource
 import com.capston.domain.datasource.RecommendDataSource
@@ -44,6 +48,7 @@ import com.capston.domain.repository.HomeRepository
 import com.capston.domain.repository.LectureRepository
 import com.capston.domain.repository.LoginRepository
 import com.capston.domain.repository.MyPageRepository
+import com.capston.domain.repository.NotificationRepository
 import com.capston.domain.repository.PlanRepository
 import com.capston.domain.repository.RecommendRepository
 import com.capston.domain.repository.RecommendationRepository
@@ -190,4 +195,20 @@ object RepositoryModule {
     ): RecommendationRepository {
         return RecommendationRepositoryImpl(recommendationStorage)
     }
+
+    // 알림
+    @Provides
+    @Singleton
+    fun provideNotificationDataSource(
+        notificationApi: NotificationApi
+    ): NotificationDataSource {
+        return NotificationDataSourceImpl(notificationApi)
+    }
+
+    @Provides
+    @Singleton
+    fun provideNotificationRepository(
+        notificationDataSource: NotificationDataSource
+        ): NotificationRepository =
+        NotificationRepositoryImpl(notificationDataSource)
 }

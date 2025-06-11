@@ -18,6 +18,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -48,6 +49,7 @@ import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.capston.domain.response.plan.PlanDetailLessonSchedule
+import com.capston.domain.response.plan.PlanDetailResponse
 import com.capston.domain.response.study_group.OneStudyGroupResponse
 import com.capston.presentation.theme.LightGray2
 import com.capston.presentation.theme.MainPurple
@@ -56,6 +58,8 @@ import com.capston.presentation.theme.dividerGray
 import com.capston.presentation.theme.materialGray
 import com.capston.presentation.theme.textGray
 import com.capston.presentation.ui.common.CustomCheckBox
+import com.capston.presentation.ui.common.bgColor
+import com.capston.presentation.ui.common.borderColor
 import com.capston.presentation.ui.common.formatDateYMDE
 import com.capston.presentation.viewmodel.GroupPlanViewModel
 import kotlinx.coroutines.CoroutineScope
@@ -123,6 +127,39 @@ fun GroupPlanScreen(
                         navController.navigate(editRoute)
                     },
                 )
+            },
+            // 재스케줄링 FAB 추가 (내 계획일 때만)
+            floatingActionButton = {
+                if (!isLoading && selectedPlanId == planId) { // 로딩 중이 아니고 내 계획일 때만 표시
+                    ExtendedFloatingActionButton(
+                        onClick = {
+                            coroutineScope.launch {
+                                isLoading = true
+                                try {
+                                    // 재스케줄링을 시작하고 완료될 때까지 기다립니다
+                                    val rescheduleJob = groupPlanViewModel.postPlanReschedule(planId)
+                                    rescheduleJob.join()
+
+                                    // 이제 업데이트된 데이터 가져오기
+                                    groupPlanViewModel.getPlanDetail(planId)
+
+                                    delay(1000)
+                                } finally {
+                                    isLoading = false
+                                }
+                            }
+                        },
+                        containerColor = MainPurple,
+                        contentColor = Color.White
+                    ) {
+                        Icon(
+                            imageVector = ImageVector.vectorResource(R.drawable.icon_reschedule),
+                            contentDescription = "재스케줄링",
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("재스케줄링")
+                    }
+                }
             }
         ) { innerPadding ->
             Column(
@@ -237,12 +274,6 @@ fun GroupPlanScreen(
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center,
-//                    modifier = Modifier
-//                        .background(
-//                            Color.White.copy(alpha = 0.95f),
-//                            shape = RoundedCornerShape(16.dp)
-//                        )
-//                        .padding(32.dp)
                 ) {
                     Image(
                         painter = painterResource(id = R.drawable.screen_home_todaylesson_empty_iv),
@@ -433,113 +464,54 @@ fun GroupPlanTitleSection(
             .background(color = WarmPurple_20)
             .padding(horizontal = 20.dp, vertical = 24.dp)
     ) {
+        // 플랫폼 및 과목 태그
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp),
-//            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.Top
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            Column(
+            Text(
+                text = "플랫폼"/*planDetailResponse.platform.label*/,
+                style = MaterialTheme.typography.labelMedium,
+                color = MainPurple,
                 modifier = Modifier
-                    .padding(end = 8.dp)
-                    .fillMaxWidth()
-                    .weight(10f),
-            ) {
-                Text(
-                    text = "${getOneStudyGroupResponse.name} (#${getOneStudyGroupResponse.inviteCode})",
-                    style = MaterialTheme.typography.headlineSmall,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-                Text(
-                    text = getOneStudyGroupResponse.lectureName,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = textGray
-                )
-            }
+                    .padding(bottom = 6.dp)
+                    .border(
+                        width = 1.dp,
+                        color = MainPurple,
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                    .padding(horizontal = 6.dp, vertical = 4.dp)
+            )
 
-            // 버튼들
-            Column{
-                if (isMyPlan) {
-                    // 재스케줄링 버튼 - 내 계획일 때만 표시
-                    IconButton(
-                        onClick = {
-                            coroutineScope.launch {
-                                onLoadingChange(true)
-                                try {
-                                    // 재스케줄링을 시작하고 완료될 때까지 기다립니다
-                                    val rescheduleJob = groupPlanViewModel.postPlanReschedule(planId)
-                                    rescheduleJob.join()
-
-                                    // 이제 업데이트된 데이터 가져오기
-                                    groupPlanViewModel.getPlanDetail(planId)
-
-                                    delay(1000)
-                                } finally {
-                                    onLoadingChange(false)
-                                }
-                        }
-                        },
-                        modifier = Modifier
-                            .padding(bottom = 16.dp)
-                            .size(40.dp)
-                            .clip(CircleShape)
-                            .border(
-                                width = 1.dp,
-                                color = MainPurple,
-                                shape = CircleShape
-                            )
-                            .background(Color.White)
-                    ) {
-                        Icon(
-                            imageVector = ImageVector.vectorResource(R.drawable.icon_reschedule),
-                            contentDescription = "재스케줄링",
-                            tint = MainPurple,
-                            modifier = Modifier.padding(8.dp)
-                        )
-                    }
-                }
-
-                if (isLeader) {
-                    // 그룹 이름 편집 버튼
-                    IconButton(
-                        onClick = {
-//                    coroutineScope.launch {
-//                        onLoadingChange(true)
-//                        try {
-//                            // 재스케줄링을 시작하고 완료될 때까지 기다립니다
-//                            val rescheduleJob = lectureRoomViewModel.postPlanReschedule(planId)
-//                            rescheduleJob.join()
-//
-//                            // 이제 업데이트된 데이터 가져오기
-//                            lectureRoomViewModel.getPlanDetail(planId)
-//
-//                            delay(1000)
-//                        } finally {
-//                            onLoadingChange(false)
-//                        }
-//                    }
-                        },
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(CircleShape)
-                            .border(
-                                width = 1.dp,
-                                color = MainPurple,
-                                shape = CircleShape
-                            )
-                            .background(Color.White)
-                    ) {
-                        Icon(
-                            imageVector = ImageVector.vectorResource(R.drawable.icon_edit_pencil),
-                            contentDescription = "이름 편집",
-                            tint = MainPurple,
-                            modifier = Modifier.padding(8.dp)
-                        )
-                    }
-                }
-            }
+//            Text(
+//                text = planDetailResponse.subject.label,
+//                style = MaterialTheme.typography.labelMedium,
+//                color = planDetailResponse.subject.borderColor,
+//                modifier = Modifier
+//                    .padding(bottom = 6.dp)
+//                    .background(
+//                        color = planDetailResponse.subject.bgColor,
+//                        shape = RoundedCornerShape(8.dp)
+//                    )
+//                    .border(
+//                        width = 1.dp,
+//                        color = planDetailResponse.subject.borderColor,
+//                        shape = RoundedCornerShape(8.dp)
+//                    )
+//                    .padding(horizontal = 6.dp, vertical = 4.dp)
+//            )
         }
+
+        Text(
+            text = "${getOneStudyGroupResponse.name} (#${getOneStudyGroupResponse.inviteCode})",
+            style = MaterialTheme.typography.headlineSmall,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+        Text(
+            text = "${getOneStudyGroupResponse.lectureName}",
+            style = MaterialTheme.typography.bodyMedium,
+            color = textGray,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
 
         // 프로필 목록
         Row(
@@ -780,12 +752,3 @@ fun GroupPlanTaskItem(
         )
     }
 }
-
-//@RequiresApi(Build.VERSION_CODES.O)
-//@Preview(showBackground = true)
-//@Composable
-//fun GroupPlanScreenPreview() {
-//    CapstonTheme {
-//        GroupPlanScreen()
-//    }
-//}

@@ -155,14 +155,19 @@ fun CalenderScreen(homeViewModel: HomeViewModel, dailyScheduleViewModel: DailySc
     }
 
     Scaffold(
-        topBar = { CalendarTopBar(hasUnreadNotifications = true) },
+        topBar = {
+            CalendarTopBar(
+                hasUnreadNotifications = true,
+                homeViewModel = homeViewModel
+            )
+        },
         modifier = Modifier.fillMaxSize()
     ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(top = 16.dp, start = 20.dp, end = 20.dp) // 상단 + 좌우 패딩 추가
+                .padding(top = 10.dp, start = 10.dp, end = 10.dp) // 상단 + 좌우 패딩 추가
                 .nestedScroll(nestedScrollConnection)
                 .pointerInput(Unit) {
                     detectVerticalDragGestures { change, dragAmount ->
@@ -190,24 +195,20 @@ fun CalenderScreen(homeViewModel: HomeViewModel, dailyScheduleViewModel: DailySc
                 onDatePickerClick = { showDatePickerDialog = true }
             )
 
-            Row(
+            // 선택된 날짜 표시
+            val localDate = LocalDate.parse(selectedDate)
+            Text(
+                text = "$selectedDate (${getKoreanDayOfWeek(localDate.dayOfWeek.value)})",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Medium,
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 10.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                val localDate = LocalDate.parse(selectedDate)
-                Text(
-                    text = "$selectedDate (${getKoreanDayOfWeek(localDate.dayOfWeek.value)})",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Medium,
-                    modifier = Modifier.weight(1f)
-                )
-            }
+                    .padding(top = 16.dp, start = 16.dp)
+
+            )
 
             // 일정 목록
             Box(modifier = Modifier.weight(1f)) {
-                if (todayLessonList != null && todayLessonList.isNotEmpty()) {
+                if (!todayLessonList.isNullOrEmpty()) {
                     // LessonContainer도 화면 크기에 맞게 상대적 높이 조정
                     DraggableLessonContainer(
                         homeViewModel = homeViewModel,
@@ -263,7 +264,10 @@ fun CalenderScreen(homeViewModel: HomeViewModel, dailyScheduleViewModel: DailySc
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CalendarTopBar(hasUnreadNotifications: Boolean) {
+fun CalendarTopBar(
+    hasUnreadNotifications: Boolean,
+    homeViewModel: HomeViewModel
+) {
     Column {
         TopAppBar(
             title = {
@@ -286,7 +290,7 @@ fun CalendarTopBar(hasUnreadNotifications: Boolean) {
             actions = {
                 // 읽지 않은 알람이 있을 경우 빨간색 배지 표시
                 if (hasUnreadNotifications) {
-                    IconButton(onClick = { /* 알람 클릭 */ }) {
+                    IconButton(onClick = { homeViewModel.sendIncompleteNotification() }) {
                         Image(
                             painter = painterResource(R.drawable.icon_notification_on),
                             contentDescription = "alarm icon",
@@ -295,7 +299,7 @@ fun CalendarTopBar(hasUnreadNotifications: Boolean) {
                 }
 
                 else {
-                    IconButton(onClick = { /* 알람 클릭 */ }) {
+                    IconButton(onClick = { homeViewModel.sendIncompleteNotification() }) {
                         Image(
                             painter = painterResource(R.drawable.home_screen_notification_iv),
                             contentDescription = "alarm icon",
@@ -387,7 +391,7 @@ fun SimpleCalendar(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 16.dp, vertical = 8.dp)
+                .padding(horizontal = 10.dp, vertical = 10.dp)
         ) {
             // 달력 헤더 - 년월 또는 주간 범위 표시
             Row(
@@ -518,7 +522,7 @@ fun SimpleCalendar(
         Box(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(bottom = 4.dp)
+                .padding(bottom = 12.dp)
                 .width(60.dp)
                 .height(4.dp)
                 .background(Color.Gray, RoundedCornerShape(2.dp))
@@ -773,7 +777,7 @@ fun DraggableLessonContainer(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(top = 16.dp)
+                .padding(top = 8.dp, start = 8.dp, end = 8.dp)
         ) {
             // 수정된 ModifiedLessonList를 사용하여 내용 표시
             ModifiedLessonList(

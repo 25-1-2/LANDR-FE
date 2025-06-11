@@ -45,8 +45,8 @@ import com.capston.domain.response.user.UserProfileResponse
 import com.capston.presentation.R
 import com.capston.presentation.theme.MainPurple
 import com.capston.presentation.theme.textGray
-import com.capston.presentation.ui.search.bgColor
-import com.capston.presentation.ui.search.borderColor
+import com.capston.presentation.ui.common.bgColor
+import com.capston.presentation.ui.common.borderColor
 
 @Composable
 fun StudyPlanCompleteScreen(

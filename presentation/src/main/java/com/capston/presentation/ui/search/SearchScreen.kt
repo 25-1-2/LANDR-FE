@@ -1,6 +1,7 @@
 package com.capston.presentation.ui.search
 
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.Intent
 import android.os.Build
 import android.util.Log
@@ -19,6 +20,7 @@ import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -28,11 +30,13 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
@@ -42,10 +46,9 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
-import androidx.compose.material3.SuggestionChip
-import androidx.compose.material3.SuggestionChipDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -69,6 +72,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -96,10 +100,10 @@ import com.capston.presentation.theme.MainPurple
 import com.capston.presentation.theme.materialGray
 import com.capston.presentation.theme.textGray
 import com.capston.domain.model.LectureItemDto
-import com.capston.presentation.ui.common.LoadingIndicator
-import com.capston.presentation.ui.MainActivity
+import com.capston.presentation.theme.LightGray4_40
+import com.capston.presentation.ui.common.bgColor
+import com.capston.presentation.ui.common.borderColor
 import com.capston.presentation.ui.common.Screen
-import com.capston.presentation.ui.SearchFieldWithIcons
 import com.capston.presentation.viewmodel.LectureViewModel
 import com.capston.presentation.viewmodel.PlanViewModel
 import kotlinx.coroutines.Job
@@ -115,6 +119,7 @@ fun SearchScreen(
     initialQuery: String = "",
     loadingStateManager: LoadingStateManager
 ) {
+    val context = LocalContext.current
     var searchQuery by remember { mutableStateOf(initialQuery) }
     val scope = rememberCoroutineScope()
     val searchLectureResponse by lectureViewModel.distinctLecture.collectAsState()
@@ -410,7 +415,11 @@ fun SearchScreen(
                 searchQuery = searchQuery,
                 onQueryChanged = { searchQuery = it },
                 lectureViewModel = lectureViewModel,
-                onSearchClick = {}
+                onSearchClick = {},
+                onBackClick = {
+                    // 현재 컨텍스트가 Activity인지 확인하고 finish() 호출
+                    (context as? Activity)?.finish()
+                },
             )
 
             // 필터 바 컴포넌트
@@ -534,7 +543,7 @@ fun LectureFilterBarDropdown(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp),
+            .padding(start = 16.dp, end = 16.dp, bottom = 4.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         // 왼쪽: 강의 사이트 필터
@@ -900,106 +909,88 @@ fun SearchLectureItem(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 10.dp, horizontal = 16.dp)
+            .padding(bottom = 16.dp)
             .clickable { onClick() }
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column() {
+            Column {
                 // platform + totalLessons Row
                 Row(
                     modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .padding(end = 5.dp)
-                            .border(
-                                width = 1.dp,
-                                color = MainPurple,
-                                shape = RoundedCornerShape(8.dp)
-                            )
-                            .background(color = Transparent, shape = RoundedCornerShape(12.dp))
-                            .padding(horizontal = 10.dp, vertical = 4.dp)
-                    ) {
+                    Row {
                         Text(
                             text = lectureItem.platform.label,
-                            fontSize = 12.sp,
-                            color = MainPurple
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MainPurple,
+                            modifier = Modifier
+                                .padding(end = 4.dp)
+                                .border(
+                                    width = 1.dp,
+                                    color = MainPurple,
+                                    shape = RoundedCornerShape(8.dp)
+                                )
+                                .padding(horizontal = 6.dp, vertical = 4.dp)
                         )
-                    }
 
-                    Box(
-                        modifier = Modifier
-                            .padding(end = 5.dp)
-                            .border(
-                                width = 1.dp,
-                                color = lectureItem.subject.borderColor,
-                                shape = RoundedCornerShape(8.dp)
-                            )
-                            .background(color = lectureItem.subject.bgColor, shape = RoundedCornerShape(12.dp))
-                            .padding(horizontal = 5.dp, vertical = 4.dp)
-                    ) {
                         Text(
                             text = lectureItem.subject.label,
-                            fontSize = 12.sp,
-                            color = lectureItem.subject.borderColor
+                            style = MaterialTheme.typography.labelSmall,
+                            color = lectureItem.subject.borderColor,
+                            modifier = Modifier
+                                .padding(end = 5.dp)
+                                .border(
+                                    width = 1.dp,
+                                    color = lectureItem.subject.borderColor,
+                                    shape = RoundedCornerShape(8.dp)
+                                )
+                                .background(color = lectureItem.subject.bgColor, shape = RoundedCornerShape(8.dp))
+                                .padding(horizontal = 6.dp, vertical = 4.dp)
                         )
-                    }
-                }
 
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 4.dp),
-                    verticalAlignment = Alignment.Top
-                ) {
-                    Text(
-                        text = highlightedTitle,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(end = 8.dp)
-                    )
-
-                    Box(
-                        modifier = Modifier
-                            .border(
-                                width = 1.dp,
-                                color = materialGray,
-                                shape = RoundedCornerShape(8.dp)
-                            )
-                            .background(color = Transparent, shape = RoundedCornerShape(12.dp))
-                            .padding(horizontal = 6.dp, vertical = 4.dp)
-                    ) {
                         Text(
                             text = "${lectureItem.totalLessons}강",
-                            color = materialGray,
-                            fontSize = 12.sp
+                            color = textGray,
+                            style = MaterialTheme.typography.labelSmall,
+                            modifier = Modifier
+                                .border(
+                                    width = 1.dp,
+                                    color = materialGray,
+                                    shape = RoundedCornerShape(8.dp)
+                                )
+                                .padding(horizontal = 6.dp, vertical = 4.dp)
                         )
                     }
                 }
+
+                Text(
+                    text = highlightedTitle,
+                    style = MaterialTheme.typography.titleSmall,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
 
                 FlowRow(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 2.dp),
+                        .padding(top = 8.dp),
                 ) {
                     // 여기서 선생님 이름에 하이라이트 적용
                     Text(
                         text = highlightedTeacher,
                         color = textGray,
-                        fontSize = 14.sp
+                        style = MaterialTheme.typography.labelMedium,
                     )
 
                     Text(
                         text = " · [${lectureItem.tag}]",
                         color = textGray,
-                        fontSize = 14.sp
+                        style = MaterialTheme.typography.labelMedium,
                     )
                 }
             }
@@ -1013,6 +1004,7 @@ fun SearchTopBar(
     searchQuery: String,
     onQueryChanged: (String) -> Unit,
     lectureViewModel: LectureViewModel,
+    onBackClick: () -> Unit,
     onSearchClick: () -> Unit
 ) {
     val context = LocalContext.current
@@ -1022,42 +1014,99 @@ fun SearchTopBar(
             SearchFieldWithIcons(
                 searchQuery = searchQuery,
                 onQueryChanged = onQueryChanged,
-                onBackClick = {
-                    val intent = Intent(context, MainActivity::class.java)
-                    context.startActivity(intent)
-                },
-                onSearchClick = {
-                    // 검색 버튼을 클릭했을 때 검색 실행
-                    onSearchClick()
-                }
+                onBackClick = onBackClick,
+                onSearchClick = onSearchClick
             )
         }
     )
 }
 
+@Composable
+fun SearchFieldWithIcons(
+    searchQuery: String,
+    onQueryChanged: (String) -> Unit,
+    onBackClick: () -> Unit,
+    onSearchClick: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(end = 16.dp)
+            .height(40.dp)
+            .border(BorderStroke(0.5.dp, Color.LightGray), shape = RoundedCornerShape(20.dp))
+            .background(LightGray4_40, shape = RoundedCornerShape(20.dp))
+            .padding(horizontal = 8.dp)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxSize() // Use fillMaxSize to take up the full height
+        ) {
+            IconButton(
+                onClick = onBackClick,
+                modifier = Modifier
+                    .size(24.dp)
+                    .padding(start = 4.dp)
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.icon_arrow_back),
+                    contentDescription = "뒤로 가기",
+                    tint = Color.Gray
+                )
+            }
 
-val Subject.bgColor: Color
-    get() = when (this) {
-        Subject.KOR -> Color(0xFFFFD8D8)   // 연한 핑크
-        Subject.ENG -> Color(0xFFC5D9FF)   // 연한 하늘색
-        Subject.MATH -> Color(0xFFD3F7D3)  // 연한 민트
-        Subject.SOC -> Color(0xFFFFF4C6)   // 연한 노랑
-        Subject.SCI -> Color(0xFFC1E8F7)   // 연한 파랑
-        Subject.HIST -> Color(0xFFE1B5E8)  // 연한 보라
-        Subject.UNIV -> Color(0xFFC7F6F9)  // 연한 청록
-        Subject.LANG2 -> Color(0xFFFFD8E6) // 연한 분홍
-        Subject.VOC -> Color(0xFFF0F0F0)   // 연한 회색
-    }
+            BasicTextField(
+                value = searchQuery,
+                onValueChange = onQueryChanged,
+                singleLine = true,
+                textStyle = TextStyle(fontSize = 14.sp, color = Color.DarkGray),
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 8.dp)
+                    .wrapContentHeight(Alignment.CenterVertically), // Center text vertically
+                decorationBox = { innerTextField ->
+                    Box(
+                        contentAlignment = Alignment.CenterStart,
+                        modifier = Modifier.fillMaxHeight()
+                    ) {
+                        if (searchQuery.isEmpty()) {
+                            Text(
+                                text = "계획을 생성하고 싶은 강의 또는 선생님을 검색하세요",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Color.Gray
+                            )
+                        }
+                        innerTextField()
+                    }
+                }
+            )
 
-val Subject.borderColor: Color
-    get() = when (this) {
-        Subject.KOR -> Color(0xFFFF6B6B)   // 부드러운 빨강
-        Subject.ENG -> Color(0xFF5D9CFF)    // 부드러운 파랑
-        Subject.MATH -> Color(0xFF5BBF63)   // 부드러운 초록
-        Subject.SOC -> Color(0xFFFFC046)    // 부드러운 노랑
-        Subject.SCI -> Color(0xFF1EB0D2)    // 부드러운 하늘색
-        Subject.HIST -> Color(0xFF9E4FB0)   // 부드러운 보라
-        Subject.UNIV -> Color(0xFF00A7B4)   // 부드러운 청록
-        Subject.LANG2 -> Color(0xFFF08C8C)  // 부드러운 분홍
-        Subject.VOC -> Color(0xFFB0B0B0)    // 부드러운 회색
+            if (searchQuery.isNotEmpty()) {
+                IconButton(
+                    onClick = { onQueryChanged("") },
+                    modifier = Modifier
+                        .size(24.dp)
+                        .padding(end = 4.dp)
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.icon_xmark),
+                        contentDescription = "Clear",
+                        tint = Color.Gray
+                    )
+                }
+            }
+
+            IconButton(
+                onClick = { onSearchClick() },
+                modifier = Modifier
+                    .size(24.dp)
+                    .padding(end = 4.dp)
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.icon_search),
+                    contentDescription = "검색",
+                    tint = Color.Gray
+                )
+            }
+        }
     }
+}

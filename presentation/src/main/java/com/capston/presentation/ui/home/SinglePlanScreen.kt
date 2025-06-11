@@ -14,19 +14,23 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Color.Companion.White
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -51,12 +55,15 @@ import com.capston.presentation.theme.materialGray
 import com.capston.presentation.theme.textGray
 import com.capston.presentation.ui.common.CustomCheckBox
 import com.capston.presentation.ui.common.Screen
+import com.capston.presentation.ui.common.bgColor
+import com.capston.presentation.ui.common.borderColor
 import com.capston.presentation.ui.common.formatDateYMDE
 import com.capston.presentation.viewmodel.SinglePlanViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3Api::class)
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun SinglePlanScreen(
@@ -67,6 +74,7 @@ fun SinglePlanScreen(
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
+    var showEditBottomSheet by remember { mutableStateOf(false) }
     var showDeleteDropdown by remember { mutableStateOf(false) }
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
     var showGroupConfirmDialog by remember { mutableStateOf(false) }
@@ -90,19 +98,41 @@ fun SinglePlanScreen(
             topBar = {
                 SinglePlanTopBar(
                     navController = navController,
-                    showMenu = showDeleteDropdown,
-                    onMenuClick = { showDeleteDropdown = !showDeleteDropdown },
-                    onMenuDismiss = { showDeleteDropdown = false },
-                    onDeleteClick = { showDeleteConfirmDialog = true },
-                    onEditClick = {
-                        val editRoute = when (planDetailResponse.planType) {
-                            "PERIOD" -> "${Screen.PeriodPlanEdit.title}/${planId}"
-                            "TIME" -> "${Screen.TimePlanEdit.title}/${planId}"
-                            else -> "${Screen.PeriodPlanEdit.title}/${planId}" // 기본값
-                        }
-                        navController.navigate(editRoute)
-                    }
+                    onMenuClick = { showEditBottomSheet = true }
                 )
+            },
+            // 재스케줄링 FAB 추가
+            floatingActionButton = {
+                if (!isLoading) { // 로딩 중이 아닐 때만 표시
+                    ExtendedFloatingActionButton(
+                        onClick = {
+                            coroutineScope.launch {
+                                isLoading = true
+                                try {
+                                    // 재스케줄링을 시작하고 완료될 때까지 기다립니다
+                                    val rescheduleJob = singlePlanViewModel.postPlanReschedule(planId)
+                                    rescheduleJob.join()
+
+                                    // 이제 업데이트된 데이터 가져오기
+                                    singlePlanViewModel.getPlanDetail(planId)
+
+                                    delay(1000)
+                                } finally {
+                                    isLoading = false
+                                }
+                            }
+                        },
+                        containerColor = MainPurple,
+                        contentColor = Color.White
+                    ) {
+                        Icon(
+                            imageVector = ImageVector.vectorResource(R.drawable.icon_reschedule),
+                            contentDescription = "재스케줄링",
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("재스케줄링")
+                    }
+                }
             }
         ) { innerPadding ->
             Column(
@@ -112,12 +142,9 @@ fun SinglePlanScreen(
                     .padding(horizontal = 20.dp)
                     .verticalScroll(rememberScrollState())
             ) {
+                // 재스케줄링 버튼을 제거한 SinglePlanTitleSection
                 SinglePlanTitleSection(
-                    planId = planId,
-                    singlePlanViewModel = singlePlanViewModel,
                     planDetailResponse = planDetailResponse,
-                    coroutineScope = coroutineScope,
-                    onLoadingChange = { isLoading = it },
                     onGroupClick = { showGroupConfirmDialog = true }
                 )
 
@@ -131,7 +158,31 @@ fun SinglePlanScreen(
                 }
             }
 
-            // 삭제 확인 다이얼로그
+            if (showEditBottomSheet) {
+                ModalBottomSheet(
+                    onDismissRequest = { showEditBottomSheet = false },
+                    sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+                    containerColor = Color.White
+                ) {
+                    PlanDetailBottomSheet(
+                        planDetailResponse = planDetailResponse,
+                        onEditClick = {
+                            showEditBottomSheet = false
+                            val editRoute = when (planDetailResponse.planType) {
+                                "PERIOD" -> "${Screen.PeriodPlanEdit.title}/${planId}"
+                                "TIME" -> "${Screen.TimePlanEdit.title}/${planId}"
+                                else -> "${Screen.PeriodPlanEdit.title}/${planId}" // 기본값
+                            }
+                            navController.navigate(editRoute)
+                        },
+                        onDeleteClick = {
+                            showEditBottomSheet = false
+                            showDeleteConfirmDialog = true
+                        }
+                    )
+                }
+            }
+
             if (showDeleteConfirmDialog) {
                 AlertDialog(
                     containerColor = Color.White,
@@ -145,7 +196,6 @@ fun SinglePlanScreen(
                     confirmButton = {
                         TextButton(
                             onClick = {
-                                // 삭제 로직 실행
                                 singlePlanViewModel.deleteOnePlan(planId)
                                 navController.popBackStack()
                                 showDeleteConfirmDialog = false
@@ -162,7 +212,6 @@ fun SinglePlanScreen(
                 )
             }
 
-            // 그룹 전환 확인 다이얼로그
             if (showGroupConfirmDialog) {
                 AlertDialog(
                     containerColor = Color.White,
@@ -194,7 +243,6 @@ fun SinglePlanScreen(
                 )
             }
 
-            // 그룹 코드 표시 다이얼로그
             if (showGroupCodeDialog) {
                 AlertDialog(
                     containerColor = Color.White,
@@ -289,11 +337,7 @@ fun SinglePlanScreen(
 @Composable
 fun SinglePlanTopBar(
     navController: NavController,
-    showMenu: Boolean,
     onMenuClick: () -> Unit,
-    onMenuDismiss: () -> Unit,
-    onDeleteClick: () -> Unit,
-    onEditClick: () -> Unit
 ) {
     Column {
         TopAppBar(
@@ -315,118 +359,54 @@ fun SinglePlanTopBar(
                         contentDescription = "alarm icon",
                     )
                 }
-
-                DropdownMenu(
-                    expanded = showMenu,
-                    onDismissRequest = onMenuDismiss,
-                    modifier = Modifier
-                        .background(Color.White)
-                        .width(150.dp)
-                ) {
-                    // 계획 수정
-                    DropdownMenuItem(
-                        text = {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.icon_edit_pencil),
-                                    contentDescription = "수정",
-                                    tint = Color.Black,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("수정하기", color = Color.Black)
-                            }
-                        },
-                        onClick = {
-                            onMenuDismiss()
-                            onEditClick()
-                        }
-                    )
-
-                    // 계획 삭제
-                    DropdownMenuItem(
-                        text = {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.icon_trash),
-                                    contentDescription = "삭제",
-                                    tint = Color.Red,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("삭제하기", color = Color.Red)
-                            }
-                        },
-                        onClick = {
-                            onMenuDismiss()
-                            onDeleteClick()
-                        }
-                    )
-                }
             }
         )
-        HorizontalDivider(thickness = 1.dp, color = LightGray2)
+        HorizontalDivider(thickness = 1.dp, color = dividerGray)
     }
 }
 
 @Composable
 fun SinglePlanTitleSection(
-    planId: Int,
-    singlePlanViewModel: SinglePlanViewModel,
     planDetailResponse: PlanDetailResponse,
-    coroutineScope: CoroutineScope,
-    onLoadingChange: (Boolean) -> Unit,
     onGroupClick: () -> Unit
 ) {
-    Row(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 24.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.Top
+            .padding(vertical = 24.dp)
     ) {
+        // 플랫폼 태그
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            modifier = Modifier.padding(bottom = 8.dp)
+        ) {
+            Text(
+                text = planDetailResponse.platform.label,
+                style = MaterialTheme.typography.labelMedium,
+                color = MainPurple,
+                modifier = Modifier
+                    .border(
+                        width = 1.dp,
+                        color = MainPurple,
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                    .padding(horizontal = 6.dp, vertical = 4.dp)
+            )
+        }
+
+        // 강의 제목
         Text(
             text = planDetailResponse.lectureTitle,
             style = MaterialTheme.typography.headlineSmall,
-            modifier = Modifier
-                .padding(end = 8.dp)
-                .weight(10f),
+            modifier = Modifier.padding(bottom = 8.dp)
         )
 
-        // 재스케줄링 버튼
-        IconButton(
-            onClick = {
-                coroutineScope.launch {
-                    onLoadingChange(true)
-                    try {
-                        // 재스케줄링을 시작하고 완료될 때까지 기다립니다
-                        val rescheduleJob = singlePlanViewModel.postPlanReschedule(planId)
-                        rescheduleJob.join()
-
-                        // 이제 업데이트된 데이터 가져오기
-                        singlePlanViewModel.getPlanDetail(planId)
-
-                        delay(1000)
-                    } finally {
-                        onLoadingChange(false)
-                    }
-                }
-            },
-            modifier = Modifier
-                .size(40.dp)
-                .border(
-                    width = 1.dp,
-                    color = MainPurple,
-                    shape = CircleShape
-                )
-        ) {
-            Icon(
-                imageVector = ImageVector.vectorResource(R.drawable.icon_reschedule),
-                contentDescription = "재스케줄링",
-                tint = MainPurple,
-                modifier = Modifier.padding(8.dp)
-            )
-        }
+        // 강의 제목
+        Text(
+            text = "${planDetailResponse.teacher} ·",
+            style = MaterialTheme.typography.labelMedium,
+            color = textGray
+        )
     }
 }
 
@@ -566,7 +546,150 @@ fun TaskItem(
                     color = MainPurple,
                     shape = RoundedCornerShape(8.dp)
                 )
-                .padding(horizontal = 4.dp, vertical = 4.dp)
+                .padding(horizontal = 6.dp, vertical = 4.dp)
+        )
+    }
+}
+
+@Composable
+fun PlanDetailBottomSheet(
+    planDetailResponse: PlanDetailResponse,
+    onEditClick: () -> Unit,
+    onDeleteClick: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(White)
+            .padding(horizontal = 20.dp, vertical = 24.dp)
+    ) {
+        // 바텀시트 제목
+        Text(
+            text = "계획 상세 정보",
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(bottom = 24.dp)
+        )
+
+        // 계획 정보 목록
+        PlanInfoItem(
+            label = "계획 유형",
+            value = when (planDetailResponse.planType) {
+                "PERIOD" -> "기간"
+                "TIME" -> "시간"
+                else -> planDetailResponse.planType
+            }
+        )
+
+        PlanInfoItem(
+            label = "시작일",
+            value = planDetailResponse.startDate
+        )
+
+        PlanInfoItem(
+            label = "종료일",
+            value = planDetailResponse.endDate ?: "설정되지 않음"
+        )
+
+        PlanInfoItem(
+            label = "배속",
+            value = "${planDetailResponse.playbackSpeed}배속"
+        )
+
+        // 구분선
+        HorizontalDivider(
+            modifier = Modifier.padding(vertical = 24.dp),
+            color = dividerGray
+        )
+
+        // 버튼들
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            // 수정하기 버튼
+            TextButton(
+                onClick = onEditClick,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp)
+                    .border(
+                        width = 1.dp,
+                        color = MainPurple,
+                        shape = RoundedCornerShape(8.dp)
+                    )
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.icon_edit_pencil),
+                    contentDescription = "수정",
+                    tint = MainPurple,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "수정하기",
+                    color = MainPurple,
+                    style = MaterialTheme.typography.titleMedium
+                )
+            }
+
+            // 삭제하기 버튼
+            TextButton(
+                onClick = onDeleteClick,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp)
+                    .border(
+                        width = 1.dp,
+                        color = Color.Red,
+                        shape = RoundedCornerShape(8.dp)
+                    )
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.icon_trash),
+                    contentDescription = "삭제",
+                    tint = Color.Red,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "삭제하기",
+                    color = Color.Red,
+                    style = MaterialTheme.typography.titleMedium
+                )
+            }
+        }
+
+        // 바텀시트 하단 여백
+        Spacer(modifier = Modifier.height(24.dp))
+    }
+}
+
+@Composable
+fun PlanInfoItem(
+    label: String,
+    value: String
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = textGray,
+            modifier = Modifier.weight(1f)
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Medium,
+            color = Color.Black,
+            textAlign = TextAlign.End,
+            modifier = Modifier.weight(1f)
         )
     }
 }

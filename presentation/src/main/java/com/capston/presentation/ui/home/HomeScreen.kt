@@ -16,6 +16,8 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import com.capston.presentation.ui.common.bgColor
+import com.capston.presentation.ui.common.borderColor
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
@@ -23,8 +25,10 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -77,7 +81,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Color.Companion.Transparent
 import androidx.compose.ui.graphics.Color.Companion.White
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -121,6 +124,7 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.capston.domain.model.DayAchievementDto
 import com.capston.domain.request.UpdateDDayRequest
@@ -131,11 +135,10 @@ import com.capston.domain.response.recommend.RecommendResponse
 import com.capston.presentation.theme.LightGray2
 import com.capston.presentation.theme.LightGray5
 import com.capston.presentation.theme.WarmPurple
+import com.capston.presentation.theme.dividerGray
 import com.capston.presentation.ui.common.CustomCheckBox
 import com.capston.presentation.ui.common.Screen
 import com.capston.presentation.ui.search.SearchActivity
-import com.capston.presentation.ui.search.bgColor
-import com.capston.presentation.ui.search.borderColor
 import com.capston.presentation.viewmodel.RecommendViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -263,7 +266,7 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel, recom
     var isWeeklyExpanded by remember { mutableStateOf(true) }
 
     Scaffold(
-        topBar = { HomeTopBar(hasUnreadNotifications = false) },
+        topBar = { HomeTopBar(hasUnreadNotifications = false, homeViewModel) },
         modifier = Modifier.fillMaxSize()
     ) { innerPadding ->
         Column(
@@ -286,7 +289,7 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel, recom
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp),
+                        .padding(start = 10.dp, end = 10.dp, bottom = 10.dp),
                     shape = RoundedCornerShape(10.dp),
                     colors = CardDefaults.cardColors(containerColor = White),
                     border = BorderStroke(1.dp, color = LightGray60)
@@ -323,14 +326,12 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel, recom
                 )
             }
 
-            Spacer(modifier = Modifier.height(5.dp))
-
             // 시험 디데이 및 인강사이트 영역
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    .padding(horizontal = 10.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 // 시험 디데이 카드
                 ExamDdayCard(
@@ -347,13 +348,13 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel, recom
                 )
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
             // 이번주 학습 성취율 섹션 추가
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
+                    .padding(start = 10.dp, end = 10.dp, bottom = 16.dp),
                 shape = RoundedCornerShape(10.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White),
                 border = BorderStroke(1.dp, color = LightGray60)
@@ -448,7 +449,7 @@ fun TodayLectureCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(start = 16.dp, end = 16.dp, bottom = 10.dp),
+            .padding(start = 10.dp, end = 10.dp, bottom = 10.dp),
         shape = RoundedCornerShape(10.dp),
         colors = CardDefaults.cardColors(containerColor = White),
         border = BorderStroke(1.dp, color = LightGray60)
@@ -456,10 +457,10 @@ fun TodayLectureCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(start = 16.dp, end = 16.dp, top = 16.dp)
         ) {
             // 카드 헤더 (제목 + 정보)
-            if (todayLessonList != null && todayLessonList.isNotEmpty()) {
+            if (!todayLessonList.isNullOrEmpty()) {
                 TodayLectureHeader(todayTotalLesson, todayTotalDuration)
             }
             else {
@@ -483,7 +484,10 @@ fun TodayLectureCard(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeTopBar(hasUnreadNotifications: Boolean) {
+fun HomeTopBar(
+    hasUnreadNotifications: Boolean,
+    homeViewModel: HomeViewModel
+) {
     Column {
         TopAppBar(
             title = {
@@ -506,7 +510,7 @@ fun HomeTopBar(hasUnreadNotifications: Boolean) {
             actions = {
                 // 읽지 않은 알람이 있을 경우 빨간색 배지 표시
                 if (hasUnreadNotifications) {
-                    IconButton(onClick = { /* 알람 클릭 */ }) {
+                    IconButton(onClick = { homeViewModel.sendDDayNotification() }) {
                         Icon(
                             imageVector = ImageVector.vectorResource(R.drawable.icon_notification_on),
                             contentDescription = "alarm icon"
@@ -515,7 +519,7 @@ fun HomeTopBar(hasUnreadNotifications: Boolean) {
                 }
 
                 else {
-                    IconButton(onClick = { /* 알람 클릭 */ }) {
+                    IconButton(onClick = { homeViewModel.sendDDayNotification() }) {
                         Icon(
                             imageVector = ImageVector.vectorResource(R.drawable.icon_notification_off),
                             contentDescription = "alarm icon"
@@ -561,8 +565,7 @@ fun WeeklyAchievementGraph(
         // 제목 행 (아이콘 추가)
         Row(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = if (isExpanded) 20.dp else 0.dp),
+                .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // 아이콘
@@ -609,9 +612,8 @@ fun WeeklyAchievementGraph(
             contentAlignment = Alignment.Center
         ) {
             Card(
-                modifier = Modifier
-                    .padding(10.dp),
-                shape = RoundedCornerShape(5.dp), // 둥근 모서리
+                modifier = Modifier.padding(vertical = 12.dp),
+                shape = RoundedCornerShape(6.dp), // 둥근 모서리
                 colors = CardDefaults.cardColors(
                     containerColor = Color.White // 흰색 배경
                 ),
@@ -638,8 +640,8 @@ fun WeeklyAchievementGraph(
         AnimatedVisibility(visible = isExpanded) {
             Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 10.dp),
+                    .fillMaxWidth(),
+//                    .padding(top = 10.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 // 요일별 체크 표시
@@ -739,8 +741,8 @@ fun LearningStatusCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(15.dp),
-        shape = RoundedCornerShape(12.dp),
+            .padding(10.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = WarmPurple_20),
         border = BorderStroke(1.dp, color = WarmPurple)
     ) {
@@ -748,9 +750,7 @@ fun LearningStatusCard(
             modifier = Modifier
                 .fillMaxWidth()
         ) {
-            Column(
-                modifier = Modifier.padding(horizontal = 10.dp)
-            ) {
+            Column {
                 // 헤더 행 (아이콘 + 제목 + 편집 버튼)
                 LearningStatusHeader(onEditClick = onEditClick)
 
@@ -774,12 +774,12 @@ fun LearningStatusHeader(onEditClick: () -> Unit) {
         horizontalArrangement = Arrangement.SpaceBetween,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(end = 16.dp)
+            .padding(horizontal = 10.dp)
     ) {
         // 아이콘 + 제목
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(vertical = 16.dp)
+            modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
         ) {
             Icon(
                 painter = painterResource(id = R.drawable.screen_profile_study_time_iv),
@@ -787,15 +787,13 @@ fun LearningStatusHeader(onEditClick: () -> Unit) {
                 tint = Color.Unspecified,
                 modifier = Modifier
                     .size(32.dp)
-                    .padding(start = 12.dp)
+                    .padding(start = 8.dp)
             )
 
             Text(
                 text = stringResource(R.string.home_status),
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                style = MaterialTheme.typography.headlineMedium,
-                modifier = Modifier.padding(start = 5.dp)
+                style = MaterialTheme.typography.headlineSmall,
+                modifier = Modifier.padding(start = 4.dp)
             )
         }
 
@@ -815,7 +813,7 @@ fun EditButton(onClick: () -> Unit) {
         colors = CardDefaults.cardColors(containerColor = White)
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
@@ -833,10 +831,12 @@ fun LearningProgressGraphs(
     totalLessons: Int,
     lectureProgressList: List<LectureProgressResponse>,
     patchData: PatchPlanAliasResponse,
-    navController: NavController // NavController 추가
+    navController: NavController
 ) {
     LazyRow(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 8.dp),
     ) {
         item {
             CircleGraph(
@@ -851,8 +851,6 @@ fun LearningProgressGraphs(
         // lectureProgressList가 비어있지 않을 때만 항목 표시
         if (lectureProgressList.isNotEmpty()) {
             items(lectureProgressList) { item ->
-                Spacer(modifier = Modifier.width(10.dp)) // 그래프 간격 추가
-
                 // PATCH 요청 응답을 받아서 name 업데이트
                 val currentLectureName = if (item.planId == patchData.planId) {
                     patchData.lectureAlias
@@ -920,7 +918,7 @@ fun CircleGraph(
     ) {
         // 나머지 Canvas 그래픽 코드는 동일하게 유지
         val sizeArc = size / 1.3F
-        val arcStrokeWidth = 30f
+        val arcStrokeWidth = 24f
 
         // 내부 색 채우기
         drawCircle(
@@ -965,7 +963,7 @@ fun CircleGraph(
             android.graphics.Paint().apply {
                 color = android.graphics.Color.BLACK
                 textAlign = android.graphics.Paint.Align.CENTER
-                textSize = 50f
+                textSize = 46f
             }
         )
 
@@ -976,7 +974,7 @@ fun CircleGraph(
             android.graphics.Paint().apply {
                 color = android.graphics.Color.BLACK
                 textAlign = android.graphics.Paint.Align.CENTER
-                textSize = 50f
+                textSize = 46f
             }
         )
 
@@ -1013,7 +1011,6 @@ fun ModifiedLessonList(
 ) {
     Column(
         modifier = Modifier
-            .padding(start = 10.dp)
             .fillMaxWidth()
             .heightIn(max = maxHeight.dp)
             .verticalScroll(rememberScrollState())
@@ -1030,10 +1027,10 @@ fun ModifiedLessonList(
             }
 
             Row(
-                verticalAlignment = Alignment.CenterVertically,
+                verticalAlignment = Alignment.Top,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 10.dp, horizontal = 4.dp)
+                    .padding(start = 8.dp, bottom = 12.dp)
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
@@ -1055,8 +1052,8 @@ fun ModifiedLessonList(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
+                        .padding(top = 8.dp),
+                    verticalAlignment = Alignment.Top,
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     Column(
@@ -1065,35 +1062,30 @@ fun ModifiedLessonList(
                         Text(
                             text = lesson.lessonTitle,
                             textDecoration = if (isChecked) TextDecoration.LineThrough else TextDecoration.None,
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontSize = 16.sp
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.padding(bottom = 4.dp)
                         )
                         Text(
                             text = lesson.lectureName,
                             textDecoration = if (isChecked) TextDecoration.LineThrough else TextDecoration.None,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = LightGray60,
-                            fontSize = 14.sp
+                            style = MaterialTheme.typography.labelMedium,
+                            color = textGray,
                         )
                     }
 
-                    Box(
+                    Text(
+                        text = "${lesson.adjustedDuration}분",
+                        fontSize = 12.sp,
+                        color = MainPurple,
                         modifier = Modifier
-                            .padding(end = 10.dp)
+                            .padding(start = 4.dp)
                             .border(
                                 width = 1.dp,
                                 color = MainPurple,
                                 shape = RoundedCornerShape(8.dp)
                             )
-                            .background(color = Transparent, shape = RoundedCornerShape(12.dp))
-                            .padding(horizontal = 10.dp, vertical = 4.dp)
-                    ) {
-                        Text(
-                            text = "${lesson.adjustedDuration}분",
-                            fontSize = 12.sp,
-                            color = MainPurple
-                        )
-                    }
+                            .padding(horizontal = 6.dp, vertical = 4.dp)
+                    )
                 }
             }
         }
@@ -1125,15 +1117,15 @@ fun TodayLectureHeader(todayTotalLesson: Int, todayTotalDuration: Int) {
                 // 강의 수 아이콘 + 텍스트
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
-                        painter = painterResource(id = R.drawable.home_screen_total_count_iv),
+                        painter = painterResource(id = R.drawable.icon_check_circle),
                         contentDescription = "총 강의 수",
                         modifier = Modifier.size(16.dp),
-                        tint = Color.Unspecified
+                        tint = MainPurple
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
                         text = "총 ${todayTotalLesson}강",
-                        fontSize = 14.sp,
+                        style = MaterialTheme.typography.labelMedium,
                         color = textGray
                     )
                 }
@@ -1143,15 +1135,15 @@ fun TodayLectureHeader(todayTotalLesson: Int, todayTotalDuration: Int) {
                 // 시간 아이콘 + 텍스트
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
-                        painter = painterResource(id = R.drawable.home_screen_total_duration_iv),
+                        painter = painterResource(id = R.drawable.icon_clock),
                         contentDescription = "총 시간",
                         modifier = Modifier.size(16.dp),
-                        tint = Color.Unspecified
+                        tint = MainPurple
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
                         text = "약 ${todayTotalDuration}분",
-                        fontSize = 14.sp,
+                        style = MaterialTheme.typography.labelMedium,
                         color = textGray
                     )
                 }
@@ -1535,77 +1527,50 @@ fun CustomBottomSheetDialog(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(White) // 전체 배경
-            .navigationBarsPadding() // 소프트 키패드 영역까지 패딩 적용
-            .imePadding() // 키보드 올라올 때 고려
+            .background(White)
+            .navigationBarsPadding()
+            .imePadding()
     ) {
-        // 커스텀 drag handle
+        // 커스텀 drag handle - 여백 줄임
         Box(
             modifier = Modifier
-                .padding(top = 20.dp, bottom = 8.dp)
+                .padding(top = 12.dp, bottom = 8.dp) // 기존: top=20.dp, bottom=20.dp
                 .size(width = 36.dp, height = 4.dp)
                 .background(materialGray, RoundedCornerShape(2.dp))
                 .align(Alignment.CenterHorizontally)
         )
 
-        // 컨텐츠 영역
+        // 컨텐츠 영역 - 여백 조절
         Column(
             modifier = Modifier
-                .padding(horizontal = 16.dp)
+                .padding(horizontal = 20.dp) // 기존: 24.dp
                 .fillMaxWidth()
                 .wrapContentHeight()
-                .padding(bottom = 24.dp),
+                .padding(bottom = 16.dp), // 기존: 24.dp
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // 상단 제목 박스
-            Box(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(
-                    text = title,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.align(Alignment.Center),
-                    style = MaterialTheme.typography.titleLarge.copy(
-                        color = Color.Black,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                )
+            // 제목 (강의 목록)
+            Text(
+                text = title,
+                textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.padding(bottom = 6.dp) // 기존: 8.dp
+            )
 
-                Row(
-                    modifier = Modifier
-                        .align(Alignment.CenterEnd)
-                        .clickable {
-                            scope.launch {
-                                modalBottomSheetState.hide()
-                            }.invokeOnCompletion {
-                                onDismiss()
-                            }
-                        },
-                    verticalAlignment = Alignment.CenterVertically
-                ) {}
-            }
-
-            Spacer(modifier = Modifier.height(10.dp))
-
+            // 설명 (강의 별칭을 작성해 주세요)
             Text(
                 text = description,
                 textAlign = TextAlign.Center,
-                style = MaterialTheme.typography.bodyMedium.copy(
-                    color = Color.Gray,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Normal
-                )
+                style = MaterialTheme.typography.bodySmall,
+                color = textGray,
+                modifier = Modifier.padding(bottom = 20.dp) // 기존: 16.dp
             )
-
-            Spacer(modifier = Modifier.height(10.dp))
 
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .heightIn(min = 50.dp, max = 450.dp)
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 10.dp),
+                    .heightIn(min = 50.dp, max = 400.dp) // 최대 높이 줄임
+                    .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 LectureList(
@@ -1624,14 +1589,15 @@ fun LectureList(
 ) {
     Column {
         lectureProgressList.forEachIndexed { index, lecture ->
-            var isEditing by remember { mutableStateOf(false) } // 수정 모드 여부
-            var showError by remember { mutableStateOf(false) }  // 오류 메시지를 표시할지 여부
-            var aliasState by remember { mutableStateOf(lecture.lectureAlias) } // 강의 별칭 상태
+            var isEditing by remember { mutableStateOf(false) }
+            var showError by remember { mutableStateOf(false) }
+            var aliasState by remember { mutableStateOf(lecture.lectureAlias) }
 
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .fillMaxWidth()
+                    .padding(vertical = 16.dp) // 상하 여백 추가
             ) {
                 if (isEditing) {
                     Column(
@@ -1640,19 +1606,19 @@ fun LectureList(
                             .fillMaxWidth()
                     ) {
                         Row(
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             OutlinedTextField(
                                 value = aliasState,
                                 onValueChange = { newValue ->
                                     if (newValue.length <= 8 || lecture.lectureName == lecture.lectureAlias) {
-                                        // 글자수가 8자 이하 or 초기 계획 생성 시
-                                        showError = false // 오류 숨기기
+                                        showError = false
                                         aliasState = newValue
-
                                     } else {
-                                        showError = true // 오류 표시
+                                        showError = true
                                     }
                                 },
                                 colors = TextFieldDefaults.outlinedTextFieldColors(
@@ -1663,7 +1629,7 @@ fun LectureList(
                                 textStyle = MaterialTheme.typography.bodySmall,
                                 modifier = Modifier
                                     .weight(1f)
-                                    .padding(end = 8.dp)
+                                    .padding(end = 12.dp) // 기존: 8.dp
                             )
 
                             Button(
@@ -1680,9 +1646,16 @@ fun LectureList(
                                     contentColor = White
                                 ),
                                 shape = RoundedCornerShape(12.dp),
+                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp), // 패딩 조절
                                 modifier = Modifier
+                                    .wrapContentSize()
+                                    .defaultMinSize(minWidth = 1.dp, minHeight = 1.dp)
                             ) {
-                                Text(text = "완료", fontSize = 14.sp)
+                                Text(
+                                    text = "완료",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = White,
+                                )
                             }
                         }
 
@@ -1694,43 +1667,57 @@ fun LectureList(
                             Text(
                                 text = "${aliasState.length} / 8(자)",
                                 color = if (aliasState.length == 8) Color.Red else textGray,
-                                fontSize = 12.sp,
-                                modifier = Modifier.padding(start = 10.dp)
+                                style = MaterialTheme.typography.labelSmall,
+                                modifier = Modifier.padding(top = 8.dp)
                             )
 
                             // 강의명 표시
                             Text(
                                 text = lecture.lectureName,
-                                color = LightGray60,
-                                fontSize = 12.sp,
-                                modifier = Modifier.padding(start = 10.dp)
+                                color = textGray,
+                                style = MaterialTheme.typography.labelSmall,
+                                modifier = Modifier.padding(top = 8.dp) // 기존: 4.dp
                             )
                         }
                     }
                 } else {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(text = aliasState)
+                        // 현재 별칭
+                        Text(
+                            text = aliasState,
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+
+                        // 강의명 표시
                         Text(
                             text = lecture.lectureName,
-                            fontSize = 12.sp,
-                            color = LightGray60,
-                            style = MaterialTheme.typography.bodyMedium
+                            color = textGray,
+                            style = MaterialTheme.typography.labelSmall,
+                            modifier = Modifier.padding(top = 8.dp) // 기존: 4.dp
                         )
                     }
 
                     // 수정 버튼
                     IconButton(
                         onClick = {
-                            isEditing = true // 수정 모드로 전환
+                            isEditing = true
                         },
-                        modifier = Modifier.padding(start = 16.dp)
+                        modifier = Modifier.padding(start = 4.dp) // 기존: 8.dp
                     ) {
                         Image(
-                            painter = painterResource(id = R.drawable.home_screen_edit_iv),
+                            painter = painterResource(id = R.drawable.icon_edit_pencil),
                             contentDescription = "Edit Mode"
                         )
                     }
                 }
+            }
+
+            // 구분선 - 마지막 항목이 아닐 때만 표시
+            if (index < lectureProgressList.size - 1) {
+                HorizontalDivider(
+                    color = dividerGray,
+                    modifier = Modifier.padding(vertical = 4.dp) // 구분선 여백 추가
+                )
             }
         }
     }
