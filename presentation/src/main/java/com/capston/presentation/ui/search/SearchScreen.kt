@@ -101,6 +101,7 @@ import com.capston.presentation.theme.materialGray
 import com.capston.presentation.theme.textGray
 import com.capston.domain.model.LectureItemDto
 import com.capston.presentation.theme.LightGray4_40
+import com.capston.presentation.theme.Typography
 import com.capston.presentation.ui.MainActivity
 import com.capston.presentation.ui.common.Screen
 import com.capston.presentation.viewmodel.LectureViewModel
@@ -542,7 +543,7 @@ fun LectureFilterBarDropdown(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp),
+            .padding(start = 16.dp, end = 16.dp, bottom = 4.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         // 왼쪽: 강의 사이트 필터
@@ -908,106 +909,88 @@ fun SearchLectureItem(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 10.dp, horizontal = 16.dp)
+            .padding(bottom = 16.dp)
             .clickable { onClick() }
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column() {
+            Column {
                 // platform + totalLessons Row
                 Row(
                     modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .padding(end = 5.dp)
-                            .border(
-                                width = 1.dp,
-                                color = MainPurple,
-                                shape = RoundedCornerShape(8.dp)
-                            )
-                            .background(color = Transparent, shape = RoundedCornerShape(12.dp))
-                            .padding(horizontal = 10.dp, vertical = 4.dp)
-                    ) {
+                    Row {
                         Text(
                             text = lectureItem.platform.label,
-                            fontSize = 12.sp,
-                            color = MainPurple
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MainPurple,
+                            modifier = Modifier
+                                .padding(end = 4.dp)
+                                .border(
+                                    width = 1.dp,
+                                    color = MainPurple,
+                                    shape = RoundedCornerShape(8.dp)
+                                )
+                                .padding(horizontal = 6.dp, vertical = 4.dp)
                         )
-                    }
 
-                    Box(
-                        modifier = Modifier
-                            .padding(end = 5.dp)
-                            .border(
-                                width = 1.dp,
-                                color = lectureItem.subject.borderColor,
-                                shape = RoundedCornerShape(8.dp)
-                            )
-                            .background(color = lectureItem.subject.bgColor, shape = RoundedCornerShape(12.dp))
-                            .padding(horizontal = 5.dp, vertical = 4.dp)
-                    ) {
                         Text(
                             text = lectureItem.subject.label,
-                            fontSize = 12.sp,
-                            color = lectureItem.subject.borderColor
+                            style = MaterialTheme.typography.labelSmall,
+                            color = lectureItem.subject.borderColor,
+                            modifier = Modifier
+                                .padding(end = 5.dp)
+                                .border(
+                                    width = 1.dp,
+                                    color = lectureItem.subject.borderColor,
+                                    shape = RoundedCornerShape(8.dp)
+                                )
+                                .background(color = lectureItem.subject.bgColor, shape = RoundedCornerShape(8.dp))
+                                .padding(horizontal = 6.dp, vertical = 4.dp)
                         )
-                    }
-                }
 
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 4.dp),
-                    verticalAlignment = Alignment.Top
-                ) {
-                    Text(
-                        text = highlightedTitle,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(end = 8.dp)
-                    )
-
-                    Box(
-                        modifier = Modifier
-                            .border(
-                                width = 1.dp,
-                                color = materialGray,
-                                shape = RoundedCornerShape(8.dp)
-                            )
-                            .background(color = Transparent, shape = RoundedCornerShape(12.dp))
-                            .padding(horizontal = 6.dp, vertical = 4.dp)
-                    ) {
                         Text(
                             text = "${lectureItem.totalLessons}강",
-                            color = materialGray,
-                            fontSize = 12.sp
+                            color = textGray,
+                            style = MaterialTheme.typography.labelSmall,
+                            modifier = Modifier
+                                .border(
+                                    width = 1.dp,
+                                    color = materialGray,
+                                    shape = RoundedCornerShape(8.dp)
+                                )
+                                .padding(horizontal = 6.dp, vertical = 4.dp)
                         )
                     }
                 }
+
+                Text(
+                    text = highlightedTitle,
+                    style = MaterialTheme.typography.titleSmall,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
 
                 FlowRow(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 2.dp),
+                        .padding(top = 8.dp),
                 ) {
                     // 여기서 선생님 이름에 하이라이트 적용
                     Text(
                         text = highlightedTeacher,
                         color = textGray,
-                        fontSize = 14.sp
+                        style = MaterialTheme.typography.labelMedium,
                     )
 
                     Text(
                         text = " · [${lectureItem.tag}]",
                         color = textGray,
-                        fontSize = 14.sp
+                        style = MaterialTheme.typography.labelMedium,
                     )
                 }
             }
