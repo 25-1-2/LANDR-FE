@@ -42,7 +42,7 @@ import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.rememberLottieComposition
-import com.capston.domain.response.plan.GetPlanDetailResponse
+import com.capston.domain.response.plan.PlanDetailResponse
 import com.capston.domain.response.plan.PlanDetailLessonSchedule
 import com.capston.presentation.theme.LightGray2
 import com.capston.presentation.theme.MainPurple
@@ -50,6 +50,7 @@ import com.capston.presentation.theme.dividerGray
 import com.capston.presentation.theme.materialGray
 import com.capston.presentation.theme.textGray
 import com.capston.presentation.ui.common.CustomCheckBox
+import com.capston.presentation.ui.common.Screen
 import com.capston.presentation.ui.common.formatDateYMDE
 import com.capston.presentation.viewmodel.SinglePlanViewModel
 import kotlinx.coroutines.CoroutineScope
@@ -72,7 +73,7 @@ fun SinglePlanScreen(
     var showGroupCodeDialog by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
 
-    val planDetailResponse by singlePlanViewModel.getPlanDetailResponse.collectAsState()
+    val planDetailResponse by singlePlanViewModel.planDetailResponse.collectAsState()
     val studyGroupResponse by singlePlanViewModel.postNewStudyGroupResponse.collectAsState()
 
     LaunchedEffect(planId) {
@@ -92,7 +93,15 @@ fun SinglePlanScreen(
                     showMenu = showDeleteDropdown,
                     onMenuClick = { showDeleteDropdown = !showDeleteDropdown },
                     onMenuDismiss = { showDeleteDropdown = false },
-                    onDeleteClick = { showDeleteConfirmDialog = true }
+                    onDeleteClick = { showDeleteConfirmDialog = true },
+                    onEditClick = {
+                        val editRoute = when (planDetailResponse.planType) {
+                            "PERIOD" -> "${Screen.PeriodPlanEdit.title}/${planId}"
+                            "TIME" -> "${Screen.TimePlanEdit.title}/${planId}"
+                            else -> "${Screen.PeriodPlanEdit.title}/${planId}" // 기본값
+                        }
+                        navController.navigate(editRoute)
+                    }
                 )
             }
         ) { innerPadding ->
@@ -283,7 +292,8 @@ fun SinglePlanTopBar(
     showMenu: Boolean,
     onMenuClick: () -> Unit,
     onMenuDismiss: () -> Unit,
-    onDeleteClick: () -> Unit
+    onDeleteClick: () -> Unit,
+    onEditClick: () -> Unit
 ) {
     Column {
         TopAppBar(
@@ -329,7 +339,7 @@ fun SinglePlanTopBar(
                         },
                         onClick = {
                             onMenuDismiss()
-//                            onDeleteClick()
+                            onEditClick()
                         }
                     )
 
@@ -363,7 +373,7 @@ fun SinglePlanTopBar(
 fun SinglePlanTitleSection(
     planId: Int,
     singlePlanViewModel: SinglePlanViewModel,
-    planDetailResponse: GetPlanDetailResponse,
+    planDetailResponse: PlanDetailResponse,
     coroutineScope: CoroutineScope,
     onLoadingChange: (Boolean) -> Unit,
     onGroupClick: () -> Unit

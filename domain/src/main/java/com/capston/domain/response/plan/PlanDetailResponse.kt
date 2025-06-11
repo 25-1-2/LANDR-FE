@@ -1,10 +1,16 @@
 package com.capston.domain.response.plan
 
-data class GetPlanDetailResponse (
+data class PlanDetailResponse (
     val planId: Int = 0,
+    val lectureId: Int = 0,
     val lectureTitle: String = "",
     val teacher: String = "",
     val platform: String = "",
+    val planType: String = "",
+    val startDate: String = "",
+    val endDate: String = "",
+    val dailyTime: Int = 0,
+    val playbackSpeed: Double = 0.0,
     val dailySchedules: List<PlanDetailDailySchedule> = emptyList(),
 )
 

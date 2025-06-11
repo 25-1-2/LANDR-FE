@@ -25,7 +25,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -38,7 +37,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -93,7 +91,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.capston.domain.request.PatchPlanDto
+import com.capston.domain.request.PatchPlanAliasDto
 import com.capston.domain.response.home.LectureProgressResponse
 import com.capston.domain.response.home.LessonScheduleResponse
 import com.capston.presentation.R
@@ -118,6 +116,8 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
@@ -126,7 +126,7 @@ import com.capston.domain.model.DayAchievementDto
 import com.capston.domain.request.UpdateDDayRequest
 import com.capston.domain.response.enum_class.DayOfWeek
 import com.capston.domain.response.home.DistinctHomeIdResponse
-import com.capston.domain.response.plan.LectureAliasResponse
+import com.capston.domain.response.plan.PatchPlanAliasResponse
 import com.capston.domain.response.recommend.RecommendResponse
 import com.capston.presentation.theme.LightGray2
 import com.capston.presentation.theme.LightGray5
@@ -263,7 +263,7 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel, recom
     var isWeeklyExpanded by remember { mutableStateOf(true) }
 
     Scaffold(
-        topBar = { HomeTopBar(hasUnreadNotifications = true) },
+        topBar = { HomeTopBar(hasUnreadNotifications = false) },
         modifier = Modifier.fillMaxSize()
     ) { innerPadding ->
         Column(
@@ -507,18 +507,18 @@ fun HomeTopBar(hasUnreadNotifications: Boolean) {
                 // 읽지 않은 알람이 있을 경우 빨간색 배지 표시
                 if (hasUnreadNotifications) {
                     IconButton(onClick = { /* 알람 클릭 */ }) {
-                        Image(
-                            painter = painterResource(R.drawable.icon_notification_on),
-                            contentDescription = "alarm icon",
+                        Icon(
+                            imageVector = ImageVector.vectorResource(R.drawable.icon_notification_on),
+                            contentDescription = "alarm icon"
                         )
                     }
                 }
 
                 else {
                     IconButton(onClick = { /* 알람 클릭 */ }) {
-                        Image(
-                            painter = painterResource(R.drawable.home_screen_notification_iv),
-                            contentDescription = "alarm icon",
+                        Icon(
+                            imageVector = ImageVector.vectorResource(R.drawable.icon_notification_off),
+                            contentDescription = "alarm icon"
                         )
                     }
                 }
@@ -732,7 +732,7 @@ fun LearningStatusCard(
     totalCompletedLessons: Int,
     totalLessons: Int,
     lectureProgressList: List<LectureProgressResponse>,
-    patchData: LectureAliasResponse,
+    patchData: PatchPlanAliasResponse,
     onEditClick: () -> Unit,
     navController: NavController // NavController 추가
 ) {
@@ -832,7 +832,7 @@ fun LearningProgressGraphs(
     totalCompletedLessons: Int,
     totalLessons: Int,
     lectureProgressList: List<LectureProgressResponse>,
-    patchData: LectureAliasResponse,
+    patchData: PatchPlanAliasResponse,
     navController: NavController // NavController 추가
 ) {
     LazyRow(
@@ -1666,7 +1666,7 @@ fun LectureList(
                                     isEditing = false
                                     planViewModel.patchPlanName(
                                         lecture.planId,
-                                        PatchPlanDto(lectureAlias = aliasState)
+                                        PatchPlanAliasDto(lectureAlias = aliasState)
                                     )
                                     lecture.lectureAlias = aliasState
                                 },

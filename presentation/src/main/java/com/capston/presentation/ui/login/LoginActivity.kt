@@ -95,7 +95,7 @@ class LoginActivity : ComponentActivity() {
         val googleIdOption = GetGoogleIdOption.Builder()
             .setServerClientId(getString(R.string.google_client_id))
             .setFilterByAuthorizedAccounts(false) // 이미 false로 되어 있음
-            .setAutoSelectEnabled(true) // true로 변경해서 자동 선택 활성화
+            .setAutoSelectEnabled(false) // false로 변경해서 자동 선택 비활성화
             .build()
 
         // 2) CredentialRequest 생성

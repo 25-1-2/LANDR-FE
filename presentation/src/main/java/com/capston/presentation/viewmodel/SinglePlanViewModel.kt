@@ -6,7 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.capston.domain.manager.LoadingStateManager
 import com.capston.domain.response.CheckResponse
 import com.capston.domain.response.MessageResponse
-import com.capston.domain.response.plan.GetPlanDetailResponse
+import com.capston.domain.response.plan.PlanDetailResponse
 import com.capston.domain.response.study_group.NewStudyGroupResponse
 import com.capston.domain.usecase.home.PatchLessonSchedulesCheckToggleUseCase
 import com.capston.domain.usecase.plan.DeleteOnePlanUseCase
@@ -31,8 +31,8 @@ class SinglePlanViewModel @Inject constructor(
     private val loadingStateManager: LoadingStateManager
 ) : ViewModel() {
 
-    private val _getPlanDetailResponse = MutableStateFlow(GetPlanDetailResponse())
-    val getPlanDetailResponse: StateFlow<GetPlanDetailResponse> = _getPlanDetailResponse.asStateFlow()
+    private val _planDetailResponse = MutableStateFlow(PlanDetailResponse())
+    val planDetailResponse: StateFlow<PlanDetailResponse> = _planDetailResponse.asStateFlow()
 
     private val _postPlanRescheduleResponse = MutableStateFlow(MessageResponse())
     val postPlanRescheduleResponse: StateFlow<MessageResponse> = _postPlanRescheduleResponse.asStateFlow()
@@ -56,7 +56,7 @@ class SinglePlanViewModel @Inject constructor(
                     Log.e("LectureRoomViewModel", "getPlanDetail 에러: ${e.message}")
                 }
                 .collect { response ->
-                    _getPlanDetailResponse.value = response
+                    _planDetailResponse.value = response
                     Log.d("LectureRoomViewModel", "getPlanDetail 업데이트됨: $response")
                 }
         }
@@ -98,7 +98,7 @@ class SinglePlanViewModel @Inject constructor(
                     Log.d("LectureRoomViewModel", "체크 토글 완료: $response")
 
                     // 현재 보고 있는 계획 세부 정보 새로고침
-                    val currentPlanId = _getPlanDetailResponse.value.planId
+                    val currentPlanId = _planDetailResponse.value.planId
                     if (currentPlanId > 0) {
                         getPlanDetail(currentPlanId)
                     }

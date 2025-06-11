@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
@@ -34,27 +35,16 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
-import androidx.compose.animation.ExperimentalAnimationApi
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.EaseOutQuart
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideIn
-import androidx.compose.animation.slideOut
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.animateIntOffsetAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.filled.AccountBox
-import androidx.compose.material.icons.filled.AddCircle
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
@@ -82,7 +72,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.capston.domain.manager.LoadingStateManager
 import com.capston.domain.request.JoinStudyGroupDto
-import com.capston.domain.response.plan.GetPlanDetailResponse
+import com.capston.domain.response.plan.PlanDetailResponse
 import com.capston.domain.response.plan.GetPlanLectureRoomResponse
 import com.capston.presentation.R
 import com.capston.presentation.theme.CapstonTheme
@@ -102,6 +92,8 @@ import com.capston.presentation.ui.home.LectureRoomScreen
 import com.capston.presentation.ui.home.NotificationScreen
 import com.capston.presentation.ui.home.ProfileScreen
 import com.capston.presentation.ui.home.SinglePlanScreen
+import com.capston.presentation.ui.home.PeriodPlanEditScreen
+import com.capston.presentation.ui.home.TimePlanEditScreen
 import com.capston.presentation.ui.search.SearchActivity
 import com.capston.presentation.viewmodel.DailyScheduleViewModel
 import com.capston.presentation.viewmodel.GroupPlanViewModel
@@ -109,6 +101,7 @@ import com.capston.presentation.viewmodel.HomeViewModel
 import com.capston.presentation.viewmodel.LectureRoomViewModel
 import com.capston.presentation.viewmodel.LoginViewModel
 import com.capston.presentation.viewmodel.MyPageViewModel
+import com.capston.presentation.viewmodel.PlanEditViewModel
 import com.capston.presentation.viewmodel.PlanViewModel
 import com.capston.presentation.viewmodel.RecommendViewModel
 import com.capston.presentation.viewmodel.SinglePlanViewModel
@@ -124,8 +117,9 @@ class MainActivity : ComponentActivity() {
     val planViewModel: PlanViewModel by viewModels()
     val dailyScheduleViewModel: DailyScheduleViewModel by viewModels()
     val lectureRoomViewModel: LectureRoomViewModel by viewModels()
-    val singlePlanViewModel: SinglePlanViewModel by viewModels()  // 추가
+    val singlePlanViewModel: SinglePlanViewModel by viewModels()
     val groupPlanViewModel: GroupPlanViewModel by viewModels()
+    val planEditViewModel: PlanEditViewModel by viewModels()
     val myPageViewModel: MyPageViewModel by viewModels()
     val recommendViewModel: RecommendViewModel by viewModels()
 
@@ -196,6 +190,7 @@ class MainActivity : ComponentActivity() {
                             lectureRoomViewModel = lectureRoomViewModel,
                             singlePlanViewModel = singlePlanViewModel,
                             groupPlanViewModel = groupPlanViewModel,
+                            planEditViewModel = planEditViewModel,
                             loginViewModel = loginViewModel,
                             myPageViewModel = myPageViewModel,
                             recommendViewModel = recommendViewModel,
@@ -363,6 +358,7 @@ fun MainBottomBar(
     lectureRoomViewModel: LectureRoomViewModel,
     singlePlanViewModel: SinglePlanViewModel,
     groupPlanViewModel: GroupPlanViewModel,
+    planEditViewModel: PlanEditViewModel,
     loginViewModel: LoginViewModel,
     myPageViewModel: MyPageViewModel,
     recommendViewModel: RecommendViewModel,
@@ -387,10 +383,10 @@ fun MainBottomBar(
                 mainActivity.finish()
             } else {
                 mainActivity.backPressedTime = currentTime
-                android.widget.Toast.makeText(
+                Toast.makeText(
                     context,
                     "한 번 더 뒤로가기를 누르면 앱이 종료됩니다",
-                    android.widget.Toast.LENGTH_SHORT
+                    Toast.LENGTH_SHORT
                 ).show()
             }
         } else {
@@ -437,8 +433,14 @@ fun MainBottomBar(
                         bottom = 60.dp // FAB를 고려한 적절한 하단 패딩 (80dp 바텀바 - 40dp FAB offset)
                     )
             ) {
-                composable(Screen.Home.title) { HomeScreen(homeViewModel, planViewModel, recommendViewModel, navController) }
-                composable(Screen.Calender.title) { CalenderScreen(homeViewModel, dailyScheduleViewModel) }
+                composable(Screen.Home.title) {
+                    HomeScreen(homeViewModel, planViewModel, recommendViewModel, navController)
+                }
+
+                composable(Screen.Calender.title) {
+                    CalenderScreen(homeViewModel, dailyScheduleViewModel)
+
+                }
                 composable(Screen.LectureRoom.title) {
                     LectureRoomScreen(
                         lectureRoomViewModel = lectureRoomViewModel,
@@ -451,18 +453,20 @@ fun MainBottomBar(
                         onNotificationClick = { navController.navigate("notification") }
                     )
                 }
+
                 composable(
                     route = "${Screen.SinglePlan.title}/{planId}",
                     arguments = listOf(navArgument("planId") { type = NavType.IntType })
                 ) { backStackEntry ->
                     val planId = backStackEntry.arguments?.getInt("planId") ?: 0
-                    val planDetailResponse = GetPlanDetailResponse()
+                    val planDetailResponse = PlanDetailResponse()
                     SinglePlanScreen(
                         planId = planId,
                         singlePlanViewModel = singlePlanViewModel,
                         navController = navController,
                     )
                 }
+
                 composable(
                     route = "${Screen.GroupPlan.title}/{studyGroupId}/{planId}",
                     arguments = listOf(
@@ -479,12 +483,40 @@ fun MainBottomBar(
                         navController = navController,
                     )
                 }
+
+                composable(
+                    route = "${Screen.PeriodPlanEdit.title}/{planId}",
+                    arguments = listOf(navArgument("planId") { type = NavType.IntType })
+                ) { backStackEntry ->
+                    val planId = backStackEntry.arguments?.getInt("planId") ?: 0
+                    PeriodPlanEditScreen(
+                        planId = planId,
+                        planEditViewModel = planEditViewModel,
+                        navController = navController,
+                        loadingStateManager = loadingStateManager
+                    )
+                }
+
+                composable(
+                    route = "${Screen.TimePlanEdit.title}/{planId}",
+                    arguments = listOf(navArgument("planId") { type = NavType.IntType })
+                ) { backStackEntry ->
+                    val planId = backStackEntry.arguments?.getInt("planId") ?: 0
+                    TimePlanEditScreen(
+                        planId = TODO(),
+                        planEditViewModel = planEditViewModel,
+                        navController = navController,
+                        loadingStateManager = loadingStateManager,
+                    )
+                }
+
                 composable(Screen.Profile.title) {
                     ProfileScreen(
                         loginViewModel = loginViewModel,
                         myPageViewModel = myPageViewModel
                     )
                 }
+
                 composable(Screen.Notification.title) { NotificationScreen() }
             }
         }
