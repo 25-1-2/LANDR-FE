@@ -119,6 +119,7 @@ class HomeViewModelTest {
 
         coEvery { postDDayUseCase(request) } returns flowOf(expectedResponse)
         coEvery { getDistinctHomeUseCase() } returns flowOf(homeResponse)
+        coEvery { getDDayUseCase(1) } returns flowOf(expectedResponse)
 
         // When
         viewModel.postDDay(request)
@@ -126,11 +127,12 @@ class HomeViewModelTest {
 
         // Then
         assertThat(viewModel.dDay.value).isEqualTo(expectedResponse)
-        assertThat(viewModel.dDay.value?.title).isEqualTo("수능")
 
         verify { loadingStateManager.show() }
         verify { loadingStateManager.hide() }
         coVerify(exactly = 1) { postDDayUseCase(request) }
+        coVerify(atLeast = 1) { getDistinctHomeUseCase() } // refreshInBackground에서도 호출됨
+        coVerify(exactly = 1) { getDDayUseCase(1) } // refreshInBackground에서 호출
     }
 
     @Test
@@ -141,15 +143,18 @@ class HomeViewModelTest {
 
         coEvery { deleteDDayUseCase(ddayId) } returns Unit
         coEvery { getDistinctHomeUseCase() } returns flowOf(homeResponse)
+        // refreshInBackground에서 getDDayUseCase 호출 시 null 반환 (삭제된 상태)
+        coEvery { getDDayUseCase(ddayId) } returns flowOf(DDayResponse())
 
         // When
         viewModel.deleteDDay(ddayId)
         advanceUntilIdle()
 
         // Then
-        assertThat(viewModel.dDay.value).isNull()
+        assertThat(viewModel.dDay.value).isEqualTo(DDayResponse())
 
         coVerify(exactly = 1) { deleteDDayUseCase(ddayId) }
-        coVerify(exactly = 1) { getDistinctHomeUseCase() }
+        coVerify(atLeast = 1) { getDistinctHomeUseCase() } // refreshInBackground에서도 호출
+        coVerify(exactly = 1) { getDDayUseCase(ddayId) }
     }
 }
