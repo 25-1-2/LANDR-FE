@@ -120,6 +120,7 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.capston.domain.model.DayAchievementDto
 import com.capston.domain.request.UpdateDDayRequest
@@ -262,7 +263,7 @@ fun HomeScreen(homeViewModel: HomeViewModel, planViewModel: PlanViewModel, recom
     var isWeeklyExpanded by remember { mutableStateOf(true) }
 
     Scaffold(
-        topBar = { HomeTopBar(hasUnreadNotifications = false) },
+        topBar = { HomeTopBar(hasUnreadNotifications = false, homeViewModel) },
         modifier = Modifier.fillMaxSize()
     ) { innerPadding ->
         Column(
@@ -480,7 +481,7 @@ fun TodayLectureCard(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeTopBar(hasUnreadNotifications: Boolean) {
+fun HomeTopBar(hasUnreadNotifications: Boolean, homeViewModel: HomeViewModel) {
     Column {
         TopAppBar(
             title = {
@@ -503,7 +504,7 @@ fun HomeTopBar(hasUnreadNotifications: Boolean) {
             actions = {
                 // 읽지 않은 알람이 있을 경우 빨간색 배지 표시
                 if (hasUnreadNotifications) {
-                    IconButton(onClick = { /* 알람 클릭 */ }) {
+                    IconButton(onClick = { homeViewModel.sendDDayNotification() }) {
                         Icon(
                             imageVector = ImageVector.vectorResource(R.drawable.icon_notification_on),
                             contentDescription = "alarm icon"
@@ -512,7 +513,7 @@ fun HomeTopBar(hasUnreadNotifications: Boolean) {
                 }
 
                 else {
-                    IconButton(onClick = { /* 알람 클릭 */ }) {
+                    IconButton(onClick = { homeViewModel.sendDDayNotification() }) {
                         Icon(
                             imageVector = ImageVector.vectorResource(R.drawable.icon_notification_off),
                             contentDescription = "alarm icon"

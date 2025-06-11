@@ -1,4 +1,4 @@
-package com.capston.data.repository.remote.repositoryImpl
+package com.capston.domain.usecase
 
 import com.capston.domain.repository.NotificationRepository
 import com.capston.domain.response.MessageResponse

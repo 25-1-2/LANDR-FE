@@ -1,6 +1,6 @@
-package com.capston.domain.repository
+package com.capston.data.repository.remote.repositoryImpl
 
-import com.capston.data.repository.remote.datasource.NotificationDataSource
+import com.capston.domain.datasource.NotificationDataSource
 import com.capston.domain.repository.NotificationRepository
 import com.capston.domain.response.MessageResponse
 import javax.inject.Inject

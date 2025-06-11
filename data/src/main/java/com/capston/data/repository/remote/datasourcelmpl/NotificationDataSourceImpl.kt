@@ -1,7 +1,7 @@
-package com.capston.domain.datasource
+package com.capston.data.repository.remote.datasourcelmpl
 
 import com.capston.data.repository.remote.api.NotificationApi
-import com.capston.data.repository.remote.datasource.NotificationDataSource
+import com.capston.domain.datasource.NotificationDataSource
 import com.capston.domain.response.MessageResponse
 import javax.inject.Inject
 

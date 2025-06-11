@@ -1,4 +1,4 @@
-package com.capston.data.repository.remote.api
+package com.capston.domain.datasource
 
 import com.capston.domain.response.MessageResponse
 
