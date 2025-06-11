@@ -96,9 +96,9 @@ fun SinglePlanScreen(
                     onDeleteClick = { showDeleteConfirmDialog = true },
                     onEditClick = {
                         val editRoute = when (planDetailResponse.planType) {
-                            "PERIOD" -> "${Screen.PeriodPlanEdit.title}/$planId"
-                            "TIME" -> "${Screen.TimePlanEdit.title}/$planId"
-                            else -> "${Screen.PeriodPlanEdit.title}/$planId" // 기본값
+                            "PERIOD" -> "${Screen.PeriodPlanEdit.title}/${planId}"
+                            "TIME" -> "${Screen.TimePlanEdit.title}/${planId}"
+                            else -> "${Screen.PeriodPlanEdit.title}/${planId}" // 기본값
                         }
                         navController.navigate(editRoute)
                     }
