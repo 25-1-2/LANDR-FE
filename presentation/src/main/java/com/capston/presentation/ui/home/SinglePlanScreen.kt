@@ -42,7 +42,7 @@ import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.rememberLottieComposition
-import com.capston.domain.response.plan.GetPlanDetailResponse
+import com.capston.domain.response.plan.PlanDetailResponse
 import com.capston.domain.response.plan.PlanDetailLessonSchedule
 import com.capston.presentation.theme.LightGray2
 import com.capston.presentation.theme.MainPurple
@@ -72,7 +72,7 @@ fun SinglePlanScreen(
     var showGroupCodeDialog by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
 
-    val planDetailResponse by singlePlanViewModel.getPlanDetailResponse.collectAsState()
+    val planDetailResponse by singlePlanViewModel.planDetailResponse.collectAsState()
     val studyGroupResponse by singlePlanViewModel.postNewStudyGroupResponse.collectAsState()
 
     LaunchedEffect(planId) {
@@ -363,7 +363,7 @@ fun SinglePlanTopBar(
 fun SinglePlanTitleSection(
     planId: Int,
     singlePlanViewModel: SinglePlanViewModel,
-    planDetailResponse: GetPlanDetailResponse,
+    planDetailResponse: PlanDetailResponse,
     coroutineScope: CoroutineScope,
     onLoadingChange: (Boolean) -> Unit,
     onGroupClick: () -> Unit

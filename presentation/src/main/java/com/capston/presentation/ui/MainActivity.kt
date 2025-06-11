@@ -34,27 +34,16 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
-import androidx.compose.animation.ExperimentalAnimationApi
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.EaseOutQuart
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideIn
-import androidx.compose.animation.slideOut
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.animateIntOffsetAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.filled.AccountBox
-import androidx.compose.material.icons.filled.AddCircle
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
@@ -82,7 +71,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.capston.domain.manager.LoadingStateManager
 import com.capston.domain.request.JoinStudyGroupDto
-import com.capston.domain.response.plan.GetPlanDetailResponse
+import com.capston.domain.response.plan.PlanDetailResponse
 import com.capston.domain.response.plan.GetPlanLectureRoomResponse
 import com.capston.presentation.R
 import com.capston.presentation.theme.CapstonTheme
@@ -456,7 +445,7 @@ fun MainBottomBar(
                     arguments = listOf(navArgument("planId") { type = NavType.IntType })
                 ) { backStackEntry ->
                     val planId = backStackEntry.arguments?.getInt("planId") ?: 0
-                    val planDetailResponse = GetPlanDetailResponse()
+                    val planDetailResponse = PlanDetailResponse()
                     SinglePlanScreen(
                         planId = planId,
                         singlePlanViewModel = singlePlanViewModel,

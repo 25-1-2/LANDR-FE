@@ -4,7 +4,7 @@ import com.capston.domain.response.plan.GetPlanLectureRoomResponse
 import com.capston.domain.request.PatchPlanDto
 import com.capston.domain.request.PostNewPlanDto
 import com.capston.domain.response.MessageResponse
-import com.capston.domain.response.plan.GetPlanDetailResponse
+import com.capston.domain.response.plan.PlanDetailResponse
 import com.capston.domain.response.plan.LectureAliasResponse
 
 interface PlanRepository {
@@ -25,7 +25,7 @@ interface PlanRepository {
     // 상세 계획 조회
     suspend fun getPlanDetail(
         planId: Int
-    ): GetPlanDetailResponse
+    ): PlanDetailResponse
 
     // 재스케줄링
     suspend fun postPlanReschedule(
