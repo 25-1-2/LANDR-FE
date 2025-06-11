@@ -10,6 +10,7 @@ import com.capston.domain.response.mypage.GetMyPageStatisticsResponse
 import com.capston.domain.usecase.mypage.GetDistinctMyPageUseCase
 import com.capston.domain.usecase.mypage.GetMonthlyStatisticsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -32,30 +33,36 @@ class MyPageViewModel @Inject constructor(
     fun getDistinctMyPage() {
         viewModelScope.launch {
             loadingStateManager.show()
-            getDistinctMyPageUseCase()
-                .catch { e ->
-                    Log.e("MyPageViewModel", "MyPageViewModel 에러: ${e.message}")
-                }
-                .collect { response ->  // 값 저장
-                    _getDistinctMyPage.value = response // 공백 제거 후 저장
-                    Log.d("MyPageViewModel", "MyPageViewModel 업데이트됨: $response")
-                }
-            loadingStateManager.hide()
+            try {
+                getDistinctMyPageUseCase()
+                    .catch { e ->
+                        Log.e("MyPageViewModel", "MyPageViewModel 에러: ${e.message}")
+                    }
+                    .collect { response ->  // 값 저장
+                        _getDistinctMyPage.value = response // 공백 제거 후 저장
+                        Log.d("MyPageViewModel", "MyPageViewModel 업데이트됨: $response")
+                    }
+            } finally {
+                loadingStateManager.hide()
+            }
         }
     }
 
     fun getMonthlyStatistics(date: String) {
         viewModelScope.launch {
             loadingStateManager.show()
-            getMonthlyStatisticsUseCase(date)
-                .catch { e ->
-                    Log.e("MyPageViewModel", "MyPageViewModel 에러: ${e.message}")
-                }
-                .collect { response ->  // 값 저장
-                    _getMyPageStatistics.value = response // 공백 제거 후 저장
-                    Log.d("MyPageViewModel", "MyPageViewModel 업데이트됨: $response")
-                }
-            loadingStateManager.hide()
+            try {
+                getMonthlyStatisticsUseCase(date)
+                    .catch { e ->
+                        Log.e("MyPageViewModel", "MyPageViewModel 에러: ${e.message}")
+                    }
+                    .collect { response ->  // 값 저장
+                        _getMyPageStatistics.value = response // 공백 제거 후 저장
+                        Log.d("MyPageViewModel", "MyPageViewModel 업데이트됨: $response")
+                    }
+            } finally {
+                loadingStateManager.hide()
+            }
         }
     }
 }
