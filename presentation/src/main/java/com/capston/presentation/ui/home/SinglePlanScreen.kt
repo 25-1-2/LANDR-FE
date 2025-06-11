@@ -30,6 +30,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Color.Companion.White
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -559,6 +560,7 @@ fun PlanDetailBottomSheet(
     Column(
         modifier = Modifier
             .fillMaxWidth()
+            .background(White)
             .padding(horizontal = 20.dp, vertical = 24.dp)
     ) {
         // 바텀시트 제목

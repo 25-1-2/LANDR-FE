@@ -25,8 +25,10 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -133,6 +135,7 @@ import com.capston.domain.response.recommend.RecommendResponse
 import com.capston.presentation.theme.LightGray2
 import com.capston.presentation.theme.LightGray5
 import com.capston.presentation.theme.WarmPurple
+import com.capston.presentation.theme.dividerGray
 import com.capston.presentation.ui.common.CustomCheckBox
 import com.capston.presentation.ui.common.Screen
 import com.capston.presentation.ui.search.SearchActivity
@@ -1521,77 +1524,50 @@ fun CustomBottomSheetDialog(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(White) // 전체 배경
-            .navigationBarsPadding() // 소프트 키패드 영역까지 패딩 적용
-            .imePadding() // 키보드 올라올 때 고려
+            .background(White)
+            .navigationBarsPadding()
+            .imePadding()
     ) {
-        // 커스텀 drag handle
+        // 커스텀 drag handle - 여백 줄임
         Box(
             modifier = Modifier
-                .padding(top = 20.dp, bottom = 8.dp)
+                .padding(top = 12.dp, bottom = 8.dp) // 기존: top=20.dp, bottom=20.dp
                 .size(width = 36.dp, height = 4.dp)
                 .background(materialGray, RoundedCornerShape(2.dp))
                 .align(Alignment.CenterHorizontally)
         )
 
-        // 컨텐츠 영역
+        // 컨텐츠 영역 - 여백 조절
         Column(
             modifier = Modifier
-                .padding(horizontal = 16.dp)
+                .padding(horizontal = 20.dp) // 기존: 24.dp
                 .fillMaxWidth()
                 .wrapContentHeight()
-                .padding(bottom = 24.dp),
+                .padding(bottom = 16.dp), // 기존: 24.dp
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // 상단 제목 박스
-            Box(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(
-                    text = title,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.align(Alignment.Center),
-                    style = MaterialTheme.typography.titleLarge.copy(
-                        color = Color.Black,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                )
+            // 제목 (강의 목록)
+            Text(
+                text = title,
+                textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.padding(bottom = 6.dp) // 기존: 8.dp
+            )
 
-                Row(
-                    modifier = Modifier
-                        .align(Alignment.CenterEnd)
-                        .clickable {
-                            scope.launch {
-                                modalBottomSheetState.hide()
-                            }.invokeOnCompletion {
-                                onDismiss()
-                            }
-                        },
-                    verticalAlignment = Alignment.CenterVertically
-                ) {}
-            }
-
-            Spacer(modifier = Modifier.height(10.dp))
-
+            // 설명 (강의 별칭을 작성해 주세요)
             Text(
                 text = description,
                 textAlign = TextAlign.Center,
-                style = MaterialTheme.typography.bodyMedium.copy(
-                    color = Color.Gray,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Normal
-                )
+                style = MaterialTheme.typography.bodySmall,
+                color = textGray,
+                modifier = Modifier.padding(bottom = 20.dp) // 기존: 16.dp
             )
-
-            Spacer(modifier = Modifier.height(10.dp))
 
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .heightIn(min = 50.dp, max = 450.dp)
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 10.dp),
+                    .heightIn(min = 50.dp, max = 400.dp) // 최대 높이 줄임
+                    .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 LectureList(
@@ -1610,14 +1586,15 @@ fun LectureList(
 ) {
     Column {
         lectureProgressList.forEachIndexed { index, lecture ->
-            var isEditing by remember { mutableStateOf(false) } // 수정 모드 여부
-            var showError by remember { mutableStateOf(false) }  // 오류 메시지를 표시할지 여부
-            var aliasState by remember { mutableStateOf(lecture.lectureAlias) } // 강의 별칭 상태
+            var isEditing by remember { mutableStateOf(false) }
+            var showError by remember { mutableStateOf(false) }
+            var aliasState by remember { mutableStateOf(lecture.lectureAlias) }
 
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .fillMaxWidth()
+                    .padding(vertical = 16.dp) // 상하 여백 추가
             ) {
                 if (isEditing) {
                     Column(
@@ -1626,19 +1603,19 @@ fun LectureList(
                             .fillMaxWidth()
                     ) {
                         Row(
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             OutlinedTextField(
                                 value = aliasState,
                                 onValueChange = { newValue ->
                                     if (newValue.length <= 8 || lecture.lectureName == lecture.lectureAlias) {
-                                        // 글자수가 8자 이하 or 초기 계획 생성 시
-                                        showError = false // 오류 숨기기
+                                        showError = false
                                         aliasState = newValue
-
                                     } else {
-                                        showError = true // 오류 표시
+                                        showError = true
                                     }
                                 },
                                 colors = TextFieldDefaults.outlinedTextFieldColors(
@@ -1649,7 +1626,7 @@ fun LectureList(
                                 textStyle = MaterialTheme.typography.bodySmall,
                                 modifier = Modifier
                                     .weight(1f)
-                                    .padding(end = 8.dp)
+                                    .padding(end = 12.dp) // 기존: 8.dp
                             )
 
                             Button(
@@ -1666,9 +1643,16 @@ fun LectureList(
                                     contentColor = White
                                 ),
                                 shape = RoundedCornerShape(12.dp),
+                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp), // 패딩 조절
                                 modifier = Modifier
+                                    .wrapContentSize()
+                                    .defaultMinSize(minWidth = 1.dp, minHeight = 1.dp)
                             ) {
-                                Text(text = "완료", fontSize = 14.sp)
+                                Text(
+                                    text = "완료",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = White,
+                                )
                             }
                         }
 
@@ -1680,43 +1664,57 @@ fun LectureList(
                             Text(
                                 text = "${aliasState.length} / 8(자)",
                                 color = if (aliasState.length == 8) Color.Red else textGray,
-                                fontSize = 12.sp,
-                                modifier = Modifier.padding(start = 10.dp)
+                                style = MaterialTheme.typography.labelSmall,
+                                modifier = Modifier.padding(top = 8.dp)
                             )
 
                             // 강의명 표시
                             Text(
                                 text = lecture.lectureName,
-                                color = LightGray60,
-                                fontSize = 12.sp,
-                                modifier = Modifier.padding(start = 10.dp)
+                                color = textGray,
+                                style = MaterialTheme.typography.labelSmall,
+                                modifier = Modifier.padding(top = 8.dp) // 기존: 4.dp
                             )
                         }
                     }
                 } else {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(text = aliasState)
+                        // 현재 별칭
+                        Text(
+                            text = aliasState,
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+
+                        // 강의명 표시
                         Text(
                             text = lecture.lectureName,
-                            fontSize = 12.sp,
-                            color = LightGray60,
-                            style = MaterialTheme.typography.bodyMedium
+                            color = textGray,
+                            style = MaterialTheme.typography.labelSmall,
+                            modifier = Modifier.padding(top = 8.dp) // 기존: 4.dp
                         )
                     }
 
                     // 수정 버튼
                     IconButton(
                         onClick = {
-                            isEditing = true // 수정 모드로 전환
+                            isEditing = true
                         },
-                        modifier = Modifier.padding(start = 16.dp)
+                        modifier = Modifier.padding(start = 4.dp) // 기존: 8.dp
                     ) {
                         Image(
-                            painter = painterResource(id = R.drawable.home_screen_edit_iv),
+                            painter = painterResource(id = R.drawable.icon_edit_pencil),
                             contentDescription = "Edit Mode"
                         )
                     }
                 }
+            }
+
+            // 구분선 - 마지막 항목이 아닐 때만 표시
+            if (index < lectureProgressList.size - 1) {
+                HorizontalDivider(
+                    color = dividerGray,
+                    modifier = Modifier.padding(vertical = 4.dp) // 구분선 여백 추가
+                )
             }
         }
     }
