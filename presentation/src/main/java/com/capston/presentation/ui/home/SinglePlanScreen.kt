@@ -14,6 +14,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -51,6 +52,8 @@ import com.capston.presentation.theme.materialGray
 import com.capston.presentation.theme.textGray
 import com.capston.presentation.ui.common.CustomCheckBox
 import com.capston.presentation.ui.common.Screen
+import com.capston.presentation.ui.common.bgColor
+import com.capston.presentation.ui.common.borderColor
 import com.capston.presentation.ui.common.formatDateYMDE
 import com.capston.presentation.viewmodel.SinglePlanViewModel
 import kotlinx.coroutines.CoroutineScope
@@ -103,6 +106,39 @@ fun SinglePlanScreen(
                         navController.navigate(editRoute)
                     }
                 )
+            },
+            // 재스케줄링 FAB 추가
+            floatingActionButton = {
+                if (!isLoading) { // 로딩 중이 아닐 때만 표시
+                    ExtendedFloatingActionButton(
+                        onClick = {
+                            coroutineScope.launch {
+                                isLoading = true
+                                try {
+                                    // 재스케줄링을 시작하고 완료될 때까지 기다립니다
+                                    val rescheduleJob = singlePlanViewModel.postPlanReschedule(planId)
+                                    rescheduleJob.join()
+
+                                    // 이제 업데이트된 데이터 가져오기
+                                    singlePlanViewModel.getPlanDetail(planId)
+
+                                    delay(1000)
+                                } finally {
+                                    isLoading = false
+                                }
+                            }
+                        },
+                        containerColor = MainPurple,
+                        contentColor = Color.White
+                    ) {
+                        Icon(
+                            imageVector = ImageVector.vectorResource(R.drawable.icon_reschedule),
+                            contentDescription = "재스케줄링",
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("재스케줄링")
+                    }
+                }
             }
         ) { innerPadding ->
             Column(
@@ -112,12 +148,9 @@ fun SinglePlanScreen(
                     .padding(horizontal = 20.dp)
                     .verticalScroll(rememberScrollState())
             ) {
+                // 재스케줄링 버튼을 제거한 SinglePlanTitleSection
                 SinglePlanTitleSection(
-                    planId = planId,
-                    singlePlanViewModel = singlePlanViewModel,
                     planDetailResponse = planDetailResponse,
-                    coroutineScope = coroutineScope,
-                    onLoadingChange = { isLoading = it },
                     onGroupClick = { showGroupConfirmDialog = true }
                 )
 
@@ -131,7 +164,7 @@ fun SinglePlanScreen(
                 }
             }
 
-            // 삭제 확인 다이얼로그
+            // 기존 다이얼로그들...
             if (showDeleteConfirmDialog) {
                 AlertDialog(
                     containerColor = Color.White,
@@ -145,7 +178,6 @@ fun SinglePlanScreen(
                     confirmButton = {
                         TextButton(
                             onClick = {
-                                // 삭제 로직 실행
                                 singlePlanViewModel.deleteOnePlan(planId)
                                 navController.popBackStack()
                                 showDeleteConfirmDialog = false
@@ -162,7 +194,6 @@ fun SinglePlanScreen(
                 )
             }
 
-            // 그룹 전환 확인 다이얼로그
             if (showGroupConfirmDialog) {
                 AlertDialog(
                     containerColor = Color.White,
@@ -194,7 +225,6 @@ fun SinglePlanScreen(
                 )
             }
 
-            // 그룹 코드 표시 다이얼로그
             if (showGroupCodeDialog) {
                 AlertDialog(
                     containerColor = Color.White,
@@ -371,62 +401,39 @@ fun SinglePlanTopBar(
 
 @Composable
 fun SinglePlanTitleSection(
-    planId: Int,
-    singlePlanViewModel: SinglePlanViewModel,
     planDetailResponse: PlanDetailResponse,
-    coroutineScope: CoroutineScope,
-    onLoadingChange: (Boolean) -> Unit,
     onGroupClick: () -> Unit
 ) {
-    Row(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 24.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.Top
+            .padding(vertical = 24.dp)
     ) {
+        // 플랫폼 태그
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Text(
+                text = planDetailResponse.platform,
+                style = MaterialTheme.typography.labelMedium,
+                color = MainPurple,
+                modifier = Modifier
+                    .padding(bottom = 6.dp)
+                    .border(
+                        width = 1.dp,
+                        color = MainPurple,
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                    .padding(horizontal = 6.dp, vertical = 4.dp)
+            )
+        }
+
+        // 강의 제목
         Text(
             text = planDetailResponse.lectureTitle,
             style = MaterialTheme.typography.headlineSmall,
-            modifier = Modifier
-                .padding(end = 8.dp)
-                .weight(10f),
+            modifier = Modifier.padding(top = 8.dp)
         )
-
-        // 재스케줄링 버튼
-        IconButton(
-            onClick = {
-                coroutineScope.launch {
-                    onLoadingChange(true)
-                    try {
-                        // 재스케줄링을 시작하고 완료될 때까지 기다립니다
-                        val rescheduleJob = singlePlanViewModel.postPlanReschedule(planId)
-                        rescheduleJob.join()
-
-                        // 이제 업데이트된 데이터 가져오기
-                        singlePlanViewModel.getPlanDetail(planId)
-
-                        delay(1000)
-                    } finally {
-                        onLoadingChange(false)
-                    }
-                }
-            },
-            modifier = Modifier
-                .size(40.dp)
-                .border(
-                    width = 1.dp,
-                    color = MainPurple,
-                    shape = CircleShape
-                )
-        ) {
-            Icon(
-                imageVector = ImageVector.vectorResource(R.drawable.icon_reschedule),
-                contentDescription = "재스케줄링",
-                tint = MainPurple,
-                modifier = Modifier.padding(8.dp)
-            )
-        }
     }
 }
 

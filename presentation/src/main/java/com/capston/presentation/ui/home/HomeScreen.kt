@@ -16,6 +16,8 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import com.capston.presentation.ui.common.bgColor
+import com.capston.presentation.ui.common.borderColor
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
@@ -134,8 +136,6 @@ import com.capston.presentation.theme.WarmPurple
 import com.capston.presentation.ui.common.CustomCheckBox
 import com.capston.presentation.ui.common.Screen
 import com.capston.presentation.ui.search.SearchActivity
-import com.capston.presentation.ui.search.bgColor
-import com.capston.presentation.ui.search.borderColor
 import com.capston.presentation.viewmodel.RecommendViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
