@@ -41,8 +41,8 @@ class LectureViewModel @Inject constructor(
     private val _selectedLecture = MutableStateFlow<LectureItemDto?>(null)
     val selectedLecture: StateFlow<LectureItemDto?> = _selectedLecture.asStateFlow()
 
-    private val _lessonsByLectureId = MutableStateFlow<List<Lesson>>(emptyList())
-    val lessonsByLectureId: StateFlow<List<Lesson>> = _lessonsByLectureId
+    private val _lessonsByLectureId = MutableStateFlow<List<NewPlanLesson>>(emptyList())
+    val lessonsByLectureId: StateFlow<List<NewPlanLesson>> = _lessonsByLectureId
 
     // LectureDto를 직접 받는 함수
     fun getDistinctLecture(lectureDto: LectureDto) {
