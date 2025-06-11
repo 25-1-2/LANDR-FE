@@ -1083,7 +1083,9 @@ fun SearchFieldWithIcons(
             if (searchQuery.isNotEmpty()) {
                 IconButton(
                     onClick = { onQueryChanged("") },
-                    modifier = Modifier.size(20.dp)
+                    modifier = Modifier
+                        .size(24.dp)
+                        .padding(end = 4.dp)
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.icon_xmark),
