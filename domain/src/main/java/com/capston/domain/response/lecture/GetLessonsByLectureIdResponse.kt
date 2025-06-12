@@ -1,7 +1,10 @@
 package com.capston.domain.response.lecture
 
-import com.capston.domain.model.NewPlanLesson
-
 data class GetLessonsByLectureIdResponse(
-    val lessons: List<NewPlanLesson> = emptyList()
+    val lessons: List<LessonByLectureId> = emptyList()
+)
+
+data class LessonByLectureId (
+    val id: Int = 0,
+    val title: String = "",
 )

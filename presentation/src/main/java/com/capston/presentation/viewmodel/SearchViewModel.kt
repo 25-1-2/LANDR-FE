@@ -4,10 +4,10 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.capston.domain.manager.LoadingStateManager
-import com.capston.domain.model.NewPlanLesson
 import com.capston.domain.request.LectureDto
 import com.capston.domain.response.lecture.DistinctLectureResponse
 import com.capston.domain.response.lecture.LectureItemDto
+import com.capston.domain.response.lecture.LessonByLectureId
 import com.capston.domain.usecase.lecture.GetAllLectureUseCase
 import com.capston.domain.usecase.lecture.GetDistinctLectureUseCase
 import com.capston.domain.usecase.lecture.GetLessonsByLectureIdUseCase
@@ -36,11 +36,11 @@ class SearchViewModel @Inject constructor(
     private val _searchLectureItems = MutableStateFlow<List<LectureItemDto>>(emptyList())
     val searchLectureItems: StateFlow<List<LectureItemDto>> = _searchLectureItems
 
-    private val _selectedLecture = MutableStateFlow<LectureItemDto?>(null)
-    val selectedLecture: StateFlow<LectureItemDto?> = _selectedLecture.asStateFlow()
+    private val _selectedLecture = MutableStateFlow<LectureItemDto>(LectureItemDto())
+    val selectedLecture: StateFlow<LectureItemDto> = _selectedLecture.asStateFlow()
 
-    private val _lessonsByLectureId = MutableStateFlow<List<NewPlanLesson>>(emptyList())
-    val lessonsByLectureId: StateFlow<List<NewPlanLesson>> = _lessonsByLectureId
+    private val _lessonsByLectureId = MutableStateFlow<List<LessonByLectureId>>(emptyList())
+    val lessonsByLectureId: StateFlow<List<LessonByLectureId>> = _lessonsByLectureId
 
     // LectureDto를 직접 받는 함수
     fun getDistinctLecture(lectureDto: LectureDto) {

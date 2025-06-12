@@ -29,9 +29,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.capston.domain.manager.LoadingStateManager
-import com.capston.domain.model.Lecture
 import com.capston.domain.request.PostNewPlanDto
 import com.capston.domain.response.enum_class.DayOfWeek
+import com.capston.domain.response.lecture.LectureItemDto
 import com.capston.presentation.R
 import com.capston.presentation.theme.LightPurple
 import com.capston.presentation.theme.MainPurple
@@ -126,22 +126,6 @@ fun MakePlanScreen(
     // 기간으로 계획, 시간으로 계획
     val pagerState = rememberPagerState(pageCount = { 2 }) // 0: 기간, 1: 시간
 
-    // Convert LectureItemDto to Lecture model
-    val lecture = remember(selectedLecture) {
-        selectedLecture?.let {
-            Lecture(
-                id = it.id,
-                title = it.title,
-                teacher = it.teacher,
-                platform = it.platform.label,
-                subject = it.subject.label,
-                totalLessons = it.totalLessons,
-                totalDuration = 0, // Default since not available in DTO
-                tag = it.tag
-            )
-        } ?: Lecture() // Fallback to empty lecture if none selected
-    }
-
     // State for validation error messages
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var showErrorDialog by remember { mutableStateOf(false) }
@@ -182,9 +166,9 @@ fun MakePlanScreen(
     }
 
     // Load lessons when lecture is selected
-    LaunchedEffect(lecture.id) {
-        if (lecture.id != 0) {  // Check if a valid lecture is selected
-            searchViewModel.getLessonsByLectureId(lecture.id)
+    LaunchedEffect(selectedLecture.id) {
+        if (selectedLecture.id != 0) {  // Check if a valid lecture is selected
+            searchViewModel.getLessonsByLectureId(selectedLecture.id)
         }
     }
 
@@ -247,7 +231,7 @@ fun MakePlanScreen(
                 .verticalScroll(rememberScrollState())
         ) {
             HeaderSection(
-                lecture = lecture,
+                lecture = selectedLecture,
                 pagerState = pagerState,
                 coroutineScope = coroutineScope,
                 planType = planType
@@ -290,7 +274,7 @@ fun MakePlanScreen(
                             loadingStateManager.show()
 
                             val dto = PostNewPlanDto(
-                                lectureId = lecture.id,
+                                lectureId = selectedLecture.id,
                                 planType = planType.value,
                                 startLessonId = startLessonId.intValue,
                                 endLessonId = endLessonId.intValue,
@@ -376,7 +360,7 @@ fun MakePlanTopBar(navController: NavController) {
 
 @Composable
 fun HeaderSection(
-    lecture: Lecture,
+    lecture: LectureItemDto,
     pagerState: PagerState,
     coroutineScope: CoroutineScope,
     planType: MutableState<String>
@@ -389,7 +373,7 @@ fun HeaderSection(
     ) {
         // 인강 플랫폼
         Text(
-            text = lecture.platform,
+            text = lecture.platform.label,
             style = MaterialTheme.typography.labelLarge,
             color = MainPurple,
             modifier = Modifier.padding(bottom = 4.dp)

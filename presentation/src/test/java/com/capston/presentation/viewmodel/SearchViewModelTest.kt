@@ -2,7 +2,6 @@ package com.capston.presentation.viewmodel
 
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import com.capston.domain.manager.LoadingStateManager
-import com.capston.domain.model.NewPlanLesson
 import com.capston.domain.request.LectureDto
 import com.capston.domain.response.enum_class.Platform
 import com.capston.domain.response.enum_class.Subject
@@ -164,8 +163,8 @@ class SearchViewModelTest {
         // Given
         val lectureId = 1
         val lessons = listOf(
-            NewPlanLesson(id = 1, title = "1강. 기초 개념"),
-            NewPlanLesson(id = 2, title = "2강. 응용 문제")
+            LessonByLectureIdResponse(id = 1, title = "1강. 기초 개념"),
+            LessonByLectureIdResponse(id = 2, title = "2강. 응용 문제")
         )
         val expectedResponse = GetLessonsByLectureIdResponse(lessons = lessons)
 

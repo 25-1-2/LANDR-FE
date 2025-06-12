@@ -1,6 +1,5 @@
 package com.capston.domain.usecase.lecture
 
-import com.capston.domain.model.NewPlanLesson
 import com.capston.domain.repository.LectureRepository
 import com.capston.domain.response.lecture.GetLessonsByLectureIdResponse
 import kotlinx.coroutines.flow.Flow
