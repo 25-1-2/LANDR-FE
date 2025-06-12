@@ -225,14 +225,17 @@ class MainActivity : ComponentActivity() {
         }
 
         // 여기에 추가 ↓
-        singlePlanViewModel.onDataChanged = {
-            lectureRoomViewModel.getPlanLectureRoom() // 강의실 목록 새로고침
+        singlePlanViewModel.onHomeDataChanged = {
             homeViewModel.forceRefresh()
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                dailyScheduleViewModel.getDailySchedule(
+                dailyScheduleViewModel.forceRefresh(
                     LocalDate.now().format(DateTimeFormatter.ISO_DATE)
                 )
             }
+        }
+
+        singlePlanViewModel.onLectureRoomDataChanged = {
+            lectureRoomViewModel.getPlanLectureRoom() // 강의실 목록 새로고침
         }
 
         groupPlanViewModel.onDataChanged = {

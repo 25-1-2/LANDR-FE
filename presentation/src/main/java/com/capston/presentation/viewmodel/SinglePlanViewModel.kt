@@ -47,7 +47,8 @@ class SinglePlanViewModel @Inject constructor(
     val postNewStudyGroupResponse: StateFlow<NewStudyGroupResponse> = _postNewStudyGroupResponse.asStateFlow()
 
     // HomeViewModel과의 동기화를 위한 콜백
-    var onDataChanged: (() -> Unit)? = null
+    var onHomeDataChanged: (() -> Unit)? = null
+    var onLectureRoomDataChanged: (() -> Unit)? = null
 
     fun getPlanDetail(planId: Int) {
         viewModelScope.launch {
@@ -84,7 +85,7 @@ class SinglePlanViewModel @Inject constructor(
                     Log.d("LectureRoomViewModel", "deleteOnePlan 업데이트됨: $response")
 
                     // HomeViewModel 동기화
-                    onDataChanged?.invoke()
+                    onLectureRoomDataChanged?.invoke()
                 }
         }
     }
@@ -97,14 +98,8 @@ class SinglePlanViewModel @Inject constructor(
 
                     Log.d("LectureRoomViewModel", "체크 토글 완료: $response")
 
-                    // 현재 보고 있는 계획 세부 정보 새로고침
-                    val currentPlanId = _planDetailResponse.value.planId
-                    if (currentPlanId > 0) {
-                        getPlanDetail(currentPlanId)
-                    }
-
                     // HomeViewModel과 다른 ViewModel들과 동기화
-                    onDataChanged?.invoke()
+                    onHomeDataChanged?.invoke()
                 }
             } catch (e: Exception) {
                 Log.e("LectureRoomViewModel", "체크 토글 오류: ${e.message}", e)
@@ -120,7 +115,7 @@ class SinglePlanViewModel @Inject constructor(
                     Log.d("LectureRoomViewModel", "스터디그룹 생성 완료: $response")
 
                     // HomeViewModel 동기화
-                    onDataChanged?.invoke()
+                    onLectureRoomDataChanged?.invoke()
                 }
             } catch (e: Exception) {
                 Log.e("LectureRoomViewModel", "스터디그룹 생성 오류: ${e.message}", e)

@@ -24,8 +24,15 @@ class DailyScheduleViewModel @Inject constructor(
     // HomeViewModel과의 동기화를 위한 콜백
     var onDataChanged: (() -> Unit)? = null
 
-    fun getDailySchedule(date: String) {
-        loadingStateManager.show()
+    fun getDailySchedule(
+        date: String,
+        forceRefresh: Boolean = false
+    ) {
+        // forceRefresh가 아닐 때만 로딩 인디케이터 표시
+        if (!forceRefresh) {
+            loadingStateManager.show()
+        }
+
         viewModelScope.launch {
             try {
                 getDailyScheduleUseCase(date).collect{ response ->
@@ -42,6 +49,9 @@ class DailyScheduleViewModel @Inject constructor(
 
     // 강제 새로고침 함수 (현재 선택된 날짜로 다시 로드)
     fun forceRefresh(currentDate: String) {
-        getDailySchedule(currentDate)
+        getDailySchedule(
+            date = currentDate,
+            forceRefresh = true
+        )
     }
 }
