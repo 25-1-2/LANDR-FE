@@ -8,7 +8,7 @@ import com.capston.domain.response.enum_class.Platform
 import com.capston.domain.response.enum_class.Subject
 import com.capston.domain.response.lecture.DistinctLectureResponse
 import com.capston.domain.response.lecture.GetLessonsByLectureIdResponse
-import com.capston.domain.response.lecture.LectureResponseDto
+import com.capston.domain.response.lecture.LectureItemDto
 import com.google.common.truth.Truth.assertThat
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -41,7 +41,7 @@ class 강의리포지토리Truth테스트 {
         )
 
         val 강의목록 = listOf(
-            LectureResponseDto(
+            LectureItemDto(
                 id = 1,
                 title = "기초 수학 완전 정복",
                 teacher = "김수학",
@@ -51,7 +51,7 @@ class 강의리포지토리Truth테스트 {
                 createdAt = "2024-01-15T09:00:00.000000",
                 totalLessons = 0
             ),
-            LectureResponseDto(
+            LectureItemDto(
                 id = 2,
                 title = "고등 수학 마스터",
                 teacher = "박수학",
@@ -111,7 +111,7 @@ class 강의리포지토리Truth테스트 {
         )
 
         val 강의목록 = listOf(
-            LectureResponseDto(
+            LectureItemDto(
                 id = 1,
                 title = "기초 수학 완전 정복",
                 teacher = "김수학",
@@ -121,7 +121,7 @@ class 강의리포지토리Truth테스트 {
                 createdAt = "2024-01-15T09:00:00.000000",
                 totalLessons = 0
             ),
-            LectureResponseDto(
+            LectureItemDto(
                 id = 2,
                 title = "고등 수학 마스터",
                 teacher = "박수학",
@@ -131,7 +131,7 @@ class 강의리포지토리Truth테스트 {
                 createdAt = "2024-01-10T10:00:00.000000",
                 totalLessons = 10
             ),
-            LectureResponseDto(
+            LectureItemDto(
                 id = 3,
                 title = "고등 국어 마스터",
                 teacher = "박국어",
@@ -289,7 +289,7 @@ class 강의리포지토리Truth테스트 {
         )
 
         val 강의목록 = listOf(
-            LectureResponseDto(
+            LectureItemDto(
                 id = 1,
                 title = "기초 수학 완전 정복",
                 teacher = "김수학",
@@ -299,7 +299,7 @@ class 강의리포지토리Truth테스트 {
                 createdAt = "2024-01-15T09:00:00.000000",
                 totalLessons = 0
             ),
-            LectureResponseDto(
+            LectureItemDto(
                 id = 2,
                 title = "고등 수학 마스터",
                 teacher = "박수학",
@@ -309,7 +309,7 @@ class 강의리포지토리Truth테스트 {
                 createdAt = "2024-01-10T10:00:00.000000",
                 totalLessons = 10
             ),
-            LectureResponseDto(
+            LectureItemDto(
                 id = 3,
                 title = "고등 수학 마스터",
                 teacher = "박소영",
@@ -369,7 +369,7 @@ class 강의리포지토리Truth테스트 {
         )
 
         val 강의목록 = listOf(
-            LectureResponseDto(
+            LectureItemDto(
                 id = 3,
                 title = "영어 독해 비법",
                 teacher = "이영어",
@@ -378,7 +378,7 @@ class 강의리포지토리Truth테스트 {
                 tag = "",
                 createdAt = "2024-01-05T11:00:00.000000"
             ),
-            LectureResponseDto(
+            LectureItemDto(
                 id = 6,
                 title = "과학과학",
                 teacher = "김과학",

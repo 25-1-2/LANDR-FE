@@ -10,9 +10,9 @@ import androidx.annotation.RequiresApi
 import androidx.compose.runtime.LaunchedEffect
 import androidx.navigation.compose.rememberNavController
 import com.capston.domain.manager.LoadingStateManager
-import com.capston.domain.model.LectureItemDto
 import com.capston.domain.response.enum_class.Platform
 import com.capston.domain.response.enum_class.Subject
+import com.capston.domain.response.lecture.LectureItemDto
 import com.capston.presentation.theme.CapstonTheme
 import com.capston.presentation.ui.common.LoadingIndicator
 import com.capston.presentation.ui.common.Screen

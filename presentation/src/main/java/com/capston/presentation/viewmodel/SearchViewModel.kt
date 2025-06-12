@@ -7,11 +7,10 @@ import com.capston.domain.manager.LoadingStateManager
 import com.capston.domain.model.NewPlanLesson
 import com.capston.domain.request.LectureDto
 import com.capston.domain.response.lecture.DistinctLectureResponse
-import com.capston.domain.response.lecture.LectureResponseDto
+import com.capston.domain.response.lecture.LectureItemDto
 import com.capston.domain.usecase.lecture.GetAllLectureUseCase
 import com.capston.domain.usecase.lecture.GetDistinctLectureUseCase
 import com.capston.domain.usecase.lecture.GetLessonsByLectureIdUseCase
-import com.capston.domain.model.LectureItemDto
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -31,8 +30,8 @@ class SearchViewModel @Inject constructor(
     private val _distinctLecture = MutableStateFlow(DistinctLectureResponse(data = emptyList()))
     val distinctLecture: StateFlow<DistinctLectureResponse> = _distinctLecture
 
-    private var _allLectureList = MutableStateFlow<List<LectureResponseDto>>(emptyList())
-    val allLectureList: StateFlow<List<LectureResponseDto>> = _allLectureList
+    private var _allLectureList = MutableStateFlow<List<LectureItemDto>>(emptyList())
+    val allLectureList: StateFlow<List<LectureItemDto>> = _allLectureList
 
     private val _searchLectureItems = MutableStateFlow<List<LectureItemDto>>(emptyList())
     val searchLectureItems: StateFlow<List<LectureItemDto>> = _searchLectureItems

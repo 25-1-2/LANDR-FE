@@ -117,7 +117,7 @@ fun MakePlanScreen(
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
-    val selectedLectureDto by searchViewModel.selectedLecture.collectAsState()
+    val selectedLecture by searchViewModel.selectedLecture.collectAsState()
 
     // 요청 상태 추적
     var requestSent by remember { mutableStateOf(false) }
@@ -126,9 +126,9 @@ fun MakePlanScreen(
     // 기간으로 계획, 시간으로 계획
     val pagerState = rememberPagerState(pageCount = { 2 }) // 0: 기간, 1: 시간
 
-    // Convert LectureResponseDto to Lecture model
-    val lecture = remember(selectedLectureDto) {
-        selectedLectureDto?.let {
+    // Convert LectureItemDto to Lecture model
+    val lecture = remember(selectedLecture) {
+        selectedLecture?.let {
             Lecture(
                 id = it.id,
                 title = it.title,

@@ -92,11 +92,11 @@ import com.capston.domain.manager.LoadingStateManager
 import com.capston.domain.request.LectureDto
 import com.capston.domain.response.enum_class.Platform
 import com.capston.domain.response.enum_class.Subject
+import com.capston.domain.response.lecture.LectureItemDto
 import com.capston.presentation.R
 import com.capston.presentation.theme.MainPurple
 import com.capston.presentation.theme.materialGray
 import com.capston.presentation.theme.textGray
-import com.capston.domain.model.LectureItemDto
 import com.capston.presentation.theme.LightGray4_40
 import com.capston.presentation.ui.common.bgColor
 import com.capston.presentation.ui.common.borderColor
