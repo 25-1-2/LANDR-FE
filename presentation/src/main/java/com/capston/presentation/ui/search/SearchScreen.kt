@@ -2,7 +2,6 @@ package com.capston.presentation.ui.search
 
 import android.annotation.SuppressLint
 import android.app.Activity
-import android.content.Intent
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
@@ -32,7 +31,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -65,7 +63,6 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Color.Companion.Transparent
 import androidx.compose.ui.graphics.Color.Companion.White
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
@@ -104,7 +101,7 @@ import com.capston.presentation.theme.LightGray4_40
 import com.capston.presentation.ui.common.bgColor
 import com.capston.presentation.ui.common.borderColor
 import com.capston.presentation.ui.common.Screen
-import com.capston.presentation.viewmodel.LectureViewModel
+import com.capston.presentation.viewmodel.SearchViewModel
 import com.capston.presentation.viewmodel.PlanViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -115,15 +112,15 @@ import java.text.SimpleDateFormat
 @Composable
 fun SearchScreen(
     navController: NavController,
-    lectureViewModel: LectureViewModel,
+    searchViewModel: SearchViewModel,
     initialQuery: String = "",
     loadingStateManager: LoadingStateManager
 ) {
     val context = LocalContext.current
     var searchQuery by remember { mutableStateOf(initialQuery) }
     val scope = rememberCoroutineScope()
-    val searchLectureResponse by lectureViewModel.distinctLecture.collectAsState()
-    val allLectureResponse by lectureViewModel.allLectureList.collectAsState()
+    val searchLectureResponse by searchViewModel.distinctLecture.collectAsState()
+    val allLectureResponse by searchViewModel.allLectureList.collectAsState()
 
     var shouldReloadData by rememberSaveable { mutableStateOf(true) }
 
@@ -176,9 +173,9 @@ fun SearchScreen(
 
         // Call appropriate API based on current search mode
         if (isSearching) {
-            lectureViewModel.getDistinctLecture(dto)
+            searchViewModel.getDistinctLecture(dto)
         } else {
-            lectureViewModel.getAllLecture(dto)
+            searchViewModel.getAllLecture(dto)
         }
     }
 
@@ -199,7 +196,7 @@ fun SearchScreen(
             Log.d("페이지 로드 전 시간: ", dataFormat4.format(currentTime))
 
             // 첫 번째 페이지 로드
-            lectureViewModel.getAllLecture(LectureDto(
+            searchViewModel.getAllLecture(LectureDto(
                 offset = offset,
                 cursorLectureId = "",
                 cursorCreatedAt = "",
@@ -265,7 +262,7 @@ fun SearchScreen(
                         platform = selectedPlatform,
                         subject = selectedSubject
                     )
-                    lectureViewModel.getDistinctLecture(dto)
+                    searchViewModel.getDistinctLecture(dto)
                 } else {
                     val dto = LectureDto(
                         search = "",
@@ -275,7 +272,7 @@ fun SearchScreen(
                         platform = selectedPlatform,
                         subject = selectedSubject
                     )
-                    lectureViewModel.getAllLecture(dto)
+                    searchViewModel.getAllLecture(dto)
                 }
             } catch (e: Exception) {
                 Log.e("SearchScreen", "API 호출 오류: ${e.message}", e)
@@ -414,7 +411,7 @@ fun SearchScreen(
             SearchTopBar(
                 searchQuery = searchQuery,
                 onQueryChanged = { searchQuery = it },
-                lectureViewModel = lectureViewModel,
+                searchViewModel = searchViewModel,
                 onSearchClick = {},
                 onBackClick = {
                     // 현재 컨텍스트가 Activity인지 확인하고 finish() 호출
@@ -439,7 +436,7 @@ fun SearchScreen(
                 // 무한 스크롤 리스트
                 SimplifiedInfiniteScrollList(
                     navController = navController,
-                    lectureViewModel = lectureViewModel,
+                    searchViewModel = searchViewModel,
                     lectureItems = allItems,
                     searchQuery = searchQuery,
                     hasMoreData = hasMoreData,
@@ -453,7 +450,7 @@ fun SearchScreen(
 
                                 loadFilteredLectures(
                                     isSearchMode = isSearching,
-                                    lectureViewModel = lectureViewModel,
+                                    searchViewModel = searchViewModel,
                                     selectedPlatform = selectedPlatform,
                                     selectedSubject = selectedSubject,
                                     searchQuery = if (isSearching) searchQuery else "",
@@ -692,7 +689,7 @@ fun <T> SingleSelectFilterDropdown(
 // 필터링된 강의 로드 함수 - 단일 플랫폼 및 단일 과목 지원
 fun loadFilteredLectures(
     isSearchMode: Boolean,
-    lectureViewModel: LectureViewModel,
+    searchViewModel: SearchViewModel,
     selectedPlatform: Platform?,
     selectedSubject: Subject?,
     searchQuery: String,
@@ -720,10 +717,10 @@ fun loadFilteredLectures(
         // Use search mode to determine API
         if (isSearchMode) {
             Log.d("SearchScreen", "검색 API 호출: '${dto.search}', 플랫폼=${dto.platform?.label ?: "없음"}, 과목=${dto.subject?.label ?: "없음"}")
-            lectureViewModel.getDistinctLecture(dto)
+            searchViewModel.getDistinctLecture(dto)
         } else {
             Log.d("SearchScreen", "전체 목록 API 호출: 플랫폼=${dto.platform?.label ?: "없음"}, 과목=${dto.subject?.label ?: "없음"}")
-            lectureViewModel.getAllLecture(dto)
+            searchViewModel.getAllLecture(dto)
         }
     } catch (e: Exception) {
         Log.e("SearchScreen", "API 호출 중 오류 발생: ${e.message}", e)
@@ -733,7 +730,7 @@ fun loadFilteredLectures(
 @Composable
 fun SimplifiedInfiniteScrollList(
     navController: NavController,
-    lectureViewModel: LectureViewModel,
+    searchViewModel: SearchViewModel,
     lectureItems: List<LectureItemDto>,
     searchQuery: String,
     hasMoreData: Boolean,
@@ -780,7 +777,7 @@ fun SimplifiedInfiniteScrollList(
                             lectureItem = item,
                             searchQuery = searchQuery,
                             onClick = {
-                                lectureViewModel.selectLecture(item)
+                                searchViewModel.selectLecture(item)
                                 navController.navigate("${Screen.Plan.title}/${item.id}")
                             }
                         )
@@ -841,7 +838,7 @@ fun SimplifiedInfiniteScrollList(
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun SearchNavHost(navController: NavHostController, planViewModel: PlanViewModel, lectureViewModel: LectureViewModel, loadingStateManager: LoadingStateManager) {
+fun SearchNavHost(navController: NavHostController, planViewModel: PlanViewModel, searchViewModel: SearchViewModel, loadingStateManager: LoadingStateManager) {
     NavHost(
         navController = navController,
         startDestination = "search"
@@ -849,7 +846,7 @@ fun SearchNavHost(navController: NavHostController, planViewModel: PlanViewModel
         composable("search") {
             SearchScreen(
                 navController = navController,
-                lectureViewModel = lectureViewModel,
+                searchViewModel = searchViewModel,
                 loadingStateManager = loadingStateManager
             )
         }
@@ -860,7 +857,7 @@ fun SearchNavHost(navController: NavHostController, planViewModel: PlanViewModel
             val lectureId = backStackEntry.arguments?.getInt("lectureId") ?: 0
             MakePlanScreen(
                 planViewModel = planViewModel,
-                lectureViewModel = lectureViewModel,
+                searchViewModel = searchViewModel,
                 navController = navController,
                 loadingStateManager = loadingStateManager
             )
@@ -1003,7 +1000,7 @@ fun SearchLectureItem(
 fun SearchTopBar(
     searchQuery: String,
     onQueryChanged: (String) -> Unit,
-    lectureViewModel: LectureViewModel,
+    searchViewModel: SearchViewModel,
     onBackClick: () -> Unit,
     onSearchClick: () -> Unit
 ) {

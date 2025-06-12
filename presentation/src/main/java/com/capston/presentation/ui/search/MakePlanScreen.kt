@@ -39,7 +39,7 @@ import com.capston.presentation.theme.backgroundGray
 import com.capston.presentation.theme.chipGray
 import com.capston.presentation.theme.dividerGray
 import com.capston.presentation.theme.textGray
-import com.capston.presentation.viewmodel.LectureViewModel
+import com.capston.presentation.viewmodel.SearchViewModel
 import com.capston.presentation.viewmodel.PlanViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
@@ -110,14 +110,14 @@ fun checkSelectedDaysExistInPeriod(
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun MakePlanScreen(
-    lectureViewModel: LectureViewModel,
+    searchViewModel: SearchViewModel,
     planViewModel: PlanViewModel,
     navController: NavController,
     loadingStateManager: LoadingStateManager
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
-    val selectedLectureDto by lectureViewModel.selectedLecture.collectAsState()
+    val selectedLectureDto by searchViewModel.selectedLecture.collectAsState()
 
     // 요청 상태 추적
     var requestSent by remember { mutableStateOf(false) }
@@ -184,7 +184,7 @@ fun MakePlanScreen(
     // Load lessons when lecture is selected
     LaunchedEffect(lecture.id) {
         if (lecture.id != 0) {  // Check if a valid lecture is selected
-            lectureViewModel.getLessonsByLectureId(lecture.id)
+            searchViewModel.getLessonsByLectureId(lecture.id)
         }
     }
 
@@ -266,7 +266,7 @@ fun MakePlanScreen(
                         startDate = startDate,
                         endDate = endDate,
                         playbackSpeed = playbackSpeed,
-                        lectureViewModel = lectureViewModel
+                        searchViewModel = searchViewModel
                     )
                     1 -> TimePlanPage(
                         startLessonId = startLessonId,
@@ -274,7 +274,7 @@ fun MakePlanScreen(
                         studyDayOfWeeks = studyDayOfWeeks,
                         dailyTime = dailyTime,
                         playbackSpeed = playbackSpeed,
-                        lectureViewModel = lectureViewModel
+                        searchViewModel = searchViewModel
                     )
                 }
             }
@@ -463,14 +463,14 @@ fun PeriodPlanPage(
     startDate: MutableState<String>,
     endDate: MutableState<String>,
     playbackSpeed: MutableState<Double>,
-    lectureViewModel: LectureViewModel
+    searchViewModel: SearchViewModel
 ) {
     Column(
         modifier = Modifier.padding(16.dp)
     ) {
         DurationSection(startDate, endDate)
         StudyDaysOfWeekSection(studyDayOfWeeks)
-        StartEndLectureSection(startLessonId, endLessonId, lectureViewModel)
+        StartEndLectureSection(startLessonId, endLessonId, searchViewModel)
         PlaybackSpeedSection(playbackSpeed)
     }
 }
@@ -482,14 +482,14 @@ fun TimePlanPage(
     studyDayOfWeeks: MutableState<List<String>>,
     dailyTime: MutableState<Int>,
     playbackSpeed: MutableState<Double>,
-    lectureViewModel: LectureViewModel
+    searchViewModel: SearchViewModel
 ) {
     Column(
         modifier = Modifier.padding(16.dp)
     ) {
         StudyTimeSection(dailyTime)
         StudyDaysOfWeekSection(studyDayOfWeeks)
-        StartEndLectureSection(startLessonId, endLessonId, lectureViewModel)
+        StartEndLectureSection(startLessonId, endLessonId, searchViewModel)
         PlaybackSpeedSection(playbackSpeed)
     }
 }
@@ -752,10 +752,10 @@ fun StudyDaysOfWeekSection(studyDayOfWeeks: MutableState<List<String>>) {
 fun StartEndLectureSection(
     startLessonId: MutableState<Int>,
     endLessonId: MutableState<Int>,
-    lectureViewModel: LectureViewModel
+    searchViewModel: SearchViewModel
 ) {
     // Collect lessons from viewModel
-    val lessons by lectureViewModel.lessonsByLectureId.collectAsState()
+    val lessons by searchViewModel.lessonsByLectureId.collectAsState()
 
     // States to store selected lesson titles
     var startLessonTitle by remember { mutableStateOf("강의 선택") }

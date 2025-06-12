@@ -3,7 +3,6 @@ package com.capston.presentation.viewmodel
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import com.capston.domain.manager.LoadingStateManager
 import com.capston.domain.model.LectureItemDto
-import com.capston.domain.model.Lesson
 import com.capston.domain.model.NewPlanLesson
 import com.capston.domain.request.LectureDto
 import com.capston.domain.response.enum_class.Platform
@@ -34,7 +33,7 @@ import org.junit.Rule
 import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class LectureViewModelTest {
+class SearchViewModelTest {
 
     @get:Rule
     val instantExecutorRule = InstantTaskExecutorRule()
@@ -46,7 +45,7 @@ class LectureViewModelTest {
     private val getLessonsByLectureIdUseCase: GetLessonsByLectureIdUseCase = mockk()
     private val loadingStateManager: LoadingStateManager = mockk(relaxed = true)
 
-    private lateinit var viewModel: LectureViewModel
+    private lateinit var viewModel: SearchViewModel
 
     @Before
     fun setUp() {
@@ -54,7 +53,7 @@ class LectureViewModelTest {
         every { loadingStateManager.show() } returns Unit
         every { loadingStateManager.hide() } returns Unit
 
-        viewModel = LectureViewModel(
+        viewModel = SearchViewModel(
             getDistinctLectureUseCase,
             getAllLectureUseCase,
             getLessonsByLectureIdUseCase,
