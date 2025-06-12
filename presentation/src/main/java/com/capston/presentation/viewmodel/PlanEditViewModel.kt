@@ -34,7 +34,7 @@ class PlanEditViewModel @Inject constructor(
     val planDetailResponse: StateFlow<PlanDetailResponse> = _planDetailResponse.asStateFlow()
 
     private val _lessonsByLectureId = MutableStateFlow<List<LessonByLectureId>>(emptyList())
-    val lessonsByLectureId: StateFlow<List<LessonByLectureId>> = _lessonsByLectureId
+    val lessonsByLectureId: StateFlow<List<LessonByLectureId>> = _lessonsByLectureId.asStateFlow()
 
     private val _patchPeriodPlanResponse = MutableStateFlow(MessageResponse())  // 기본값 ""
     val patchPeriodPlanResponse: StateFlow<MessageResponse> = _patchPeriodPlanResponse.asStateFlow()
@@ -62,11 +62,11 @@ class PlanEditViewModel @Inject constructor(
                 getLessonsByLectureIdUseCase(lectureId)
                     .catch { e ->
                         Log.e("LectureViewModel", "getLessonsByLectureId 에러: ${e.message}")
-                        _lessonsByLectureId.value = emptyList() // Set empty list on error
+                        _lessonsByLectureId.value = emptyList()
                     }
                     .collect { response ->
                         _lessonsByLectureId.value = response.lessons // Extract data field
-                        Log.d("LectureViewModel", "getLessonsByLectureId 업데이트됨: ${response.lessons.size ?: 0}개 항목")
+                        Log.d("LectureViewModel", "getLessonsByLectureId 업데이트됨: ${response.lessons.size}개 항목")
                     }
             } catch (e: Exception) {
                 Log.e("LectureViewModel", "getLessonsByLectureId 예외 발생: ${e.message}")
@@ -85,7 +85,7 @@ class PlanEditViewModel @Inject constructor(
                 }
                 .collect { response ->  // 값 저장
                     _patchPeriodPlanResponse.value = response // 공백 제거 후 저장
-                    Log.d("PlanEditViewModel", "postpatchPeriodPlanNewPlan 업데이트됨: $response")
+                    Log.d("PlanEditViewModel", "patchPeriodPlan 업데이트됨: $response")
                 }
         }
     }

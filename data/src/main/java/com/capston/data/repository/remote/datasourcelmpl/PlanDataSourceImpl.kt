@@ -6,7 +6,8 @@ import com.capston.domain.request.PatchPeriodPlanDto
 import com.capston.domain.response.plan.GetPlanLectureRoomResponse
 import com.capston.domain.request.PatchPlanAliasDto
 import com.capston.domain.request.PatchTimePlanDto
-import com.capston.domain.request.PostNewPlanDto
+import com.capston.domain.request.PostNewPeriodPlanDto
+import com.capston.domain.request.PostNewTimePlanDto
 import com.capston.domain.response.MessageResponse
 import com.capston.domain.response.plan.PlanDetailResponse
 import com.capston.domain.response.plan.PatchPlanAliasResponse
@@ -15,8 +16,12 @@ import javax.inject.Inject
 class PlanDataSourceImpl @Inject constructor(
     private val planApi: PlanApi
 ) : PlanDataSource {
-    override suspend fun postNewPlan(postNewPlanDto: PostNewPlanDto): MessageResponse {
-        return planApi.postNewPlan(postNewPlanDto)
+    override suspend fun postNewPeriodPlan(postNewPeriodPlanDto: PostNewPeriodPlanDto): MessageResponse {
+        return planApi.postNewPeriodPlan(postNewPeriodPlanDto)
+    }
+
+    override suspend fun postNewTimePlan(postNewTimePlanDto: PostNewTimePlanDto): MessageResponse {
+        return planApi.postNewTimePlan(postNewTimePlanDto)
     }
 
     override suspend fun patchPlanAlias(planId: Int, patchPlanAliasDto: PatchPlanAliasDto): PatchPlanAliasResponse {

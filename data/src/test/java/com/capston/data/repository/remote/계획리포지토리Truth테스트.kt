@@ -3,7 +3,7 @@ package com.capston.data.repository.remote
 import com.capston.data.repository.remote.repositoryImpl.PlanRepositoryImpl
 import com.capston.domain.datasource.PlanDataSource
 import com.capston.domain.request.PatchPlanDto
-import com.capston.domain.request.PostNewPlanDto
+import com.capston.domain.request.PostNewPeriodPlanDto
 import com.capston.domain.response.MessageResponse
 import com.capston.domain.response.plan.GetPlanDetailResponse
 import com.capston.domain.response.plan.GetPlanLectureRoomResponse
@@ -32,7 +32,7 @@ class 계획리포지토리Truth테스트 {
     @Test
     fun `Truth 라이브러리 사용 새 계획 생성 테스트`() = runTest {
         // Given - 주어진 조건
-        val 새계획요청 = PostNewPlanDto(
+        val 새계획요청 = PostNewPeriodPlanDto(
             lectureId = 1,
             planType = "PERIOD",
             startLessonId = 1,
@@ -45,10 +45,10 @@ class 계획리포지토리Truth테스트 {
         )
         val 예상응답 = MessageResponse(message = "계획이 성공적으로 생성되었습니다.")
 
-        coEvery { 계획데이터소스.postNewPlan(새계획요청) } returns 예상응답
+        coEvery { 계획데이터소스.postNewPeriodPlan(새계획요청) } returns 예상응답
 
         // When - 실행
-        val 결과 = 계획리포지토리.postNewPlan(새계획요청)
+        val 결과 = 계획리포지토리.postNewPeriodPlan(새계획요청)
 
         // Then - Truth 사용 검증
         assertThat(결과.message).isEqualTo("계획이 성공적으로 생성되었습니다.")
@@ -57,7 +57,7 @@ class 계획리포지토리Truth테스트 {
         assertThat(결과.message).isNotEmpty()
         assertThat(결과.message).endsWith("습니다.")
 
-        coVerify { 계획데이터소스.postNewPlan(새계획요청) }
+        coVerify { 계획데이터소스.postNewPeriodPlan(새계획요청) }
     }
 
     @Test
@@ -289,14 +289,14 @@ class 계획리포지토리Truth테스트 {
     @Test
     fun `Truth 라이브러리 사용 계획 생성 예외 테스트`() = runTest {
         // Given - 주어진 조건
-        val 새계획요청 = PostNewPlanDto(lectureId = 1)
+        val 새계획요청 = PostNewPeriodPlanDto(lectureId = 1)
         val 예외 = RuntimeException("계획 생성 실패")
 
-        coEvery { 계획데이터소스.postNewPlan(새계획요청) } throws 예외
+        coEvery { 계획데이터소스.postNewPeriodPlan(새계획요청) } throws 예외
 
         // When & Then - Truth 사용
         try {
-            계획리포지토리.postNewPlan(새계획요청)
+            계획리포지토리.postNewPeriodPlan(새계획요청)
             assertThat(true).isFalse() // 예외가 발생해야 하므로 여기 도달하면 안됨
         } catch (e: RuntimeException) {
             assertThat(e.message).isEqualTo("계획 생성 실패")
@@ -304,6 +304,6 @@ class 계획리포지토리Truth테스트 {
             assertThat(e).isInstanceOf(RuntimeException::class.java)
         }
 
-        coVerify { 계획데이터소스.postNewPlan(새계획요청) }
+        coVerify { 계획데이터소스.postNewPeriodPlan(새계획요청) }
     }
 }

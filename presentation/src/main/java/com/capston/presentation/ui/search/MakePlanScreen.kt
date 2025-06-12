@@ -33,15 +33,11 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.capston.domain.manager.LoadingStateManager
-import com.capston.domain.request.PostNewPlanDto
+import com.capston.domain.request.PostNewPeriodPlanDto
 import com.capston.domain.response.enum_class.DayOfWeek
 import com.capston.domain.response.lecture.LectureItemDto
 import com.capston.presentation.R
-import com.capston.presentation.theme.LightPurple
 import com.capston.presentation.theme.MainPurple
-import com.capston.presentation.theme.MutePurple
-import com.capston.presentation.theme.WarmPurple
-import com.capston.presentation.theme.WarmPurple_20
 import com.capston.presentation.theme.backgroundGray
 import com.capston.presentation.theme.chipGray
 import com.capston.presentation.theme.dividerGray
@@ -283,7 +279,7 @@ fun MakePlanScreen(
                             // 로딩 인디케이터 표시
                             loadingStateManager.show()
 
-                            val dto = PostNewPlanDto(
+                            val dto = PostNewPeriodPlanDto(
                                 lectureId = selectedLecture.id,
                                 planType = planType.value,
                                 startLessonId = startLessonId.intValue,

@@ -4,7 +4,8 @@ import com.capston.domain.request.PatchPeriodPlanDto
 import com.capston.domain.response.plan.GetPlanLectureRoomResponse
 import com.capston.domain.request.PatchPlanAliasDto
 import com.capston.domain.request.PatchTimePlanDto
-import com.capston.domain.request.PostNewPlanDto
+import com.capston.domain.request.PostNewPeriodPlanDto
+import com.capston.domain.request.PostNewTimePlanDto
 import com.capston.domain.response.MessageResponse
 import com.capston.domain.response.plan.PlanDetailResponse
 import com.capston.domain.response.plan.PatchPlanAliasResponse
@@ -16,10 +17,16 @@ import retrofit2.http.POST
 import retrofit2.http.Path
 
 interface PlanApi {
-    // 강의 생성
+    // 기간으로 강의 생성
     @POST("/v1/plans")
-    suspend fun postNewPlan(
-        @Body postNewPlanDto: PostNewPlanDto
+    suspend fun postNewPeriodPlan(
+        @Body postNewPeriodPlanDto: PostNewPeriodPlanDto
+    ): MessageResponse
+
+    // 기간으로 강의 생성
+    @POST("/v1/plans")
+    suspend fun postNewTimePlan(
+        @Body postNewTimePlanDto: PostNewTimePlanDto
     ): MessageResponse
 
     // 강의 별명 수정
