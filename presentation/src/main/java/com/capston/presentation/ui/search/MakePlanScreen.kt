@@ -6,6 +6,7 @@ import androidx.activity.ComponentActivity
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
@@ -13,12 +14,15 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -35,10 +39,16 @@ import com.capston.domain.response.lecture.LectureItemDto
 import com.capston.presentation.R
 import com.capston.presentation.theme.LightPurple
 import com.capston.presentation.theme.MainPurple
+import com.capston.presentation.theme.MutePurple
+import com.capston.presentation.theme.WarmPurple
+import com.capston.presentation.theme.WarmPurple_20
 import com.capston.presentation.theme.backgroundGray
 import com.capston.presentation.theme.chipGray
 import com.capston.presentation.theme.dividerGray
+import com.capston.presentation.theme.materialGray
 import com.capston.presentation.theme.textGray
+import com.capston.presentation.ui.common.bgColor
+import com.capston.presentation.ui.common.borderColor
 import com.capston.presentation.viewmodel.SearchViewModel
 import com.capston.presentation.viewmodel.PlanViewModel
 import kotlinx.coroutines.CoroutineScope
@@ -371,23 +381,65 @@ fun HeaderSection(
             .padding(16.dp)
 
     ) {
-        // 인강 플랫폼
-        Text(
-            text = lecture.platform.label,
-            style = MaterialTheme.typography.labelLarge,
-            color = MainPurple,
-            modifier = Modifier.padding(bottom = 4.dp)
-        )
+        Row(
+            modifier = Modifier.padding(bottom = 8.dp)
+        ) {
+            // 인강 플랫폼
+            Text(
+                text = lecture.platform.label,
+                style = MaterialTheme.typography.labelMedium,
+                color = MainPurple,
+                modifier = Modifier
+                    .padding(end = 4.dp)
+                    .border(
+                        width = 1.dp,
+                        color = MainPurple,
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                    .padding(horizontal = 6.dp, vertical = 4.dp)
+            )
+
+            // 과목 정보
+            Text(
+                text = lecture.subject.label,
+                style = MaterialTheme.typography.labelMedium,
+                color = lecture.subject.borderColor,
+                modifier = Modifier
+                    .padding(end = 5.dp)
+                    .border(
+                        width = 1.dp,
+                        color = lecture.subject.borderColor,
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                    .background(color = lecture.subject.bgColor, shape = RoundedCornerShape(8.dp))
+                    .padding(horizontal = 6.dp, vertical = 4.dp)
+            )
+
+            // 강의 개수
+            Text(
+                text = "${lecture.totalLessons}강",
+                color = textGray,
+                style = MaterialTheme.typography.labelMedium,
+                modifier = Modifier
+                    .border(
+                        width = 1.dp,
+                        color = materialGray,
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                    .padding(horizontal = 6.dp, vertical = 4.dp)
+            )
+        }
+
         // 제목
         Text(
             text = lecture.title,
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(bottom = 4.dp)
+            modifier = Modifier.padding(bottom = 8.dp)
         )
         // 세부정보
         Text(
-            text = "${lecture.teacher} · ${lecture.tag} · ${lecture.totalLessons}강",
+            text = "${lecture.teacher} · ${lecture.tag}",
             style = MaterialTheme.typography.bodyMedium,
             color = textGray,
             modifier = Modifier.padding(bottom = 16.dp)
@@ -664,19 +716,18 @@ fun StudyDaysOfWeekSection(studyDayOfWeeks: MutableState<List<String>>) {
             horizontalArrangement = Arrangement.SpaceBetween,
             modifier = Modifier
                 .fillMaxWidth()
-                .horizontalScroll(rememberScrollState()),
+                .horizontalScroll(rememberScrollState())
+                .padding(bottom = 8.dp),
         ) {
             Text(
                 text = "공부 일정",
                 style = MaterialTheme.typography.titleSmall,
-                modifier = Modifier.padding(bottom = 4.dp)
             )
 
             Text(
                 text = "모두 선택",
                 style = MaterialTheme.typography.labelMedium,
                 modifier = Modifier
-                    .padding(bottom = 4.dp)
                     .clickable {
                         val allDays = DayOfWeek.entries.map { it.name }
                         val isAllSelected = selectedDays.value.containsAll(allDays)
@@ -691,7 +742,6 @@ fun StudyDaysOfWeekSection(studyDayOfWeeks: MutableState<List<String>>) {
         Row(
             horizontalArrangement = Arrangement.SpaceBetween,
             modifier = Modifier
-                .padding(bottom = 4.dp)
                 .fillMaxWidth()
                 .horizontalScroll(rememberScrollState()),
         ) {
@@ -699,10 +749,20 @@ fun StudyDaysOfWeekSection(studyDayOfWeeks: MutableState<List<String>>) {
                 // 현재 요일이 선택되어 있는지 확인
                 val isSelected = selectedDays.value.contains(day.name)
 
-                CompositionLocalProvider(LocalMinimumInteractiveComponentEnforcement provides false) {
-                    FilterChip(
-                        selected = isSelected,
-                        onClick = {
+                Box(
+                    modifier = Modifier
+                        .size(48.dp) // 정사각형으로 만들어서 동그라미가 완벽하게 나오도록
+                        .clip(CircleShape) // 완전한 원형으로 클립
+                        .background(
+                            color = if (isSelected) chipGray else Color.White,
+                            shape = CircleShape
+                        )
+                        .border(
+                            width = 1.dp,
+                            color = if (isSelected) MainPurple else dividerGray,
+                            shape = CircleShape
+                        )
+                        .clickable {
                             // 선택/해제 토글
                             selectedDays.value = if (isSelected)
                                 selectedDays.value - day.name
@@ -713,18 +773,13 @@ fun StudyDaysOfWeekSection(studyDayOfWeeks: MutableState<List<String>>) {
                             // (예: ["MON", "WED", "FRI"])
                             studyDayOfWeeks.value = selectedDays.value.toList()
                         },
-                        label = { Text(day.label) }, // 표시는 한글 레이블 ("월", "화", ...)
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = LightPurple,
-                            containerColor = chipGray,
-                            selectedLabelColor = MainPurple,
-                            labelColor = Color.Black
-                        ),
-                        border = FilterChipDefaults.filterChipBorder(
-                            enabled = true,
-                            selected = isSelected,
-                            selectedBorderColor = MainPurple,
-                        )
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = day.label, // 표시는 한글 레이블 ("월", "화", ...)
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (isSelected) MainPurple else Color.Black,
+                        fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium
                     )
                 }
             }

@@ -69,7 +69,7 @@ class PlanEditViewModel @Inject constructor(
                         Log.d("LectureViewModel", "getLessonsByLectureId 업데이트됨: ${response.lessons.size ?: 0}개 항목")
                     }
             } catch (e: Exception) {
-                Log.e("LectureViewModel", "getLessonsByLectureId 예외 발생: ${e.message}", e)
+                Log.e("LectureViewModel", "getLessonsByLectureId 예외 발생: ${e.message}")
                 _lessonsByLectureId.value = emptyList()
             } finally {
                 loadingStateManager.hide()
