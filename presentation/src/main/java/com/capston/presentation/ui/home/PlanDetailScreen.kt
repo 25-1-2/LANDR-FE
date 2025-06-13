@@ -1,40 +1,43 @@
 package com.capston.presentation.ui.home
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.rememberScrollableState
-import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDefaults
+import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -47,12 +50,17 @@ import com.capston.domain.response.enum_class.Subject
 import com.capston.domain.response.plan.GetPlanLectureRoomResponse
 import com.capston.domain.response.plan.PlanDetailResponse
 import com.capston.presentation.R
+import com.capston.presentation.theme.MainPurple
 import com.capston.presentation.theme.dividerGray
 import com.capston.presentation.theme.materialGray
 import com.capston.presentation.theme.textGray
 import com.capston.presentation.viewmodel.GroupPlanViewModel
 import com.capston.presentation.viewmodel.SinglePlanViewModel
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
+@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlanDetailScreen(
@@ -65,6 +73,10 @@ fun PlanDetailScreen(
 
 ) {
     val groupId = if (studyGroupId == -1) null else studyGroupId
+
+    var showStartDateDialog by remember { mutableStateOf(false) }
+    var showEndDateDialog by remember { mutableStateOf(false) }
+
 
     // 기본값들 정의
     val defaultCurrentPlan = remember {
@@ -203,14 +215,12 @@ fun PlanDetailScreen(
                             PlanDetailSettingItem(
                                 title = "학습 시작일",
                                 value = planDetailResponse.value.startDate,
-                                onClick = { /* 기간 변경 */ },
-                            )
+                                onClick = { showStartDateDialog = true },                            )
 
                             PlanDetailSettingItem(
                                 title = "목표 완강일",
                                 value = planDetailResponse.value.endDate,
-                                onClick = { /* 기간 변경 */ },
-                            )
+                                onClick = { showEndDateDialog = true },                            )
                         } else {
                             PlanDetailSettingItem(
                                 title = "일일 학습 시간",
@@ -357,6 +367,28 @@ fun PlanDetailScreen(
                 }
             }
         }
+
+        if (showStartDateDialog) {
+            DateChangeDialog(
+                title = "시작일 변경",
+                onDateSelected = { selectedDate ->
+                    // TODO: 시작일 변경 API 호출
+                    println("선택된 시작일: $selectedDate")
+                },
+                onDismiss = { showStartDateDialog = false }
+            )
+        }
+
+        if (showEndDateDialog) {
+            DateChangeDialog(
+                title = "목표 완강일 변경",
+                onDateSelected = { selectedDate ->
+                    // TODO: 목표 완강일 변경 API 호출
+                    println("선택된 완강일: $selectedDate")
+                },
+                onDismiss = { showEndDateDialog = false }
+            )
+        }
     }
 }
 
@@ -420,5 +452,64 @@ fun PlanDetailSettingItem(
                 modifier = Modifier.padding(horizontal = 20.dp)
             )
         }
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DateChangeDialog(
+    title: String, // "시작일 변경" 또는 "목표 완강일 변경" (실제로는 DatePickerDialog 자체 타이틀에 사용되지 않음)
+    onDateSelected: (String) -> Unit, // 선택된 날짜를 String으로 전달
+    onDismiss: () -> Unit
+) {
+    val datePickerState = rememberDatePickerState(
+        initialSelectedDateMillis = System.currentTimeMillis()
+    )
+
+    DatePickerDialog(
+        colors = DatePickerDefaults.colors(
+            containerColor = Color.White,
+            selectedDayContainerColor = MainPurple,
+        ),
+        tonalElevation = 0.dp, // 이걸 추가해줘야 배경에 투명 레이어 없음
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = {
+                datePickerState.selectedDateMillis?.let { millis ->
+                    val selectedDate = formatDate(millis)
+                    onDateSelected(selectedDate)
+                }
+                onDismiss()
+            }) {
+                Text("확인", color = MainPurple)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("취소", color = Color.Black)
+            }
+        },
+    ) {
+        DatePicker(
+            title = null,
+            state = datePickerState,
+            colors = DatePickerDefaults.colors(
+                containerColor = Color.White
+            ),
+            modifier = Modifier
+                .background(Color.White)
+                .padding(top = 32.dp)
+        )
+    }
+}
+
+// formatDate 함수
+fun formatDate(millis: Long?): String {
+    return if (millis != null) {
+        val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+        sdf.format(Date(millis))
+    } else {
+        ""
     }
 }

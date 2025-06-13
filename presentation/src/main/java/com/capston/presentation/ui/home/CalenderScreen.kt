@@ -26,7 +26,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
@@ -242,7 +241,7 @@ fun CalenderScreen(homeViewModel: HomeViewModel, dailyScheduleViewModel: DailySc
 
             // DatePickerDialog
             if (showDatePickerDialog) {
-                DatePickerDialog(
+                CalendarDatePickerDialog(
                     year = currentYear,
                     month = currentMonth,
                     onDateSelected = { year, month ->
@@ -645,7 +644,7 @@ fun getWeekDaysFromMonday(date: LocalDate): List<LocalDate> {
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun DatePickerDialog(
+fun CalendarDatePickerDialog(
     year: Int,
     month: Int,
     onDateSelected: (Int, Int) -> Unit,
