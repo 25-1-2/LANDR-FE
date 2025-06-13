@@ -301,42 +301,20 @@ fun PlanDetailScreen(
                             )
 
                             PlanDetailSettingItem(
-                                title = "그룹 소개/규칙",
+                                title = "그룹원 관리",
                                 value = "A+를 향하여",
                                 onClick = { /* 그룹 소개/규칙 */ },
                                 showDivider = true
                             )
 
                             PlanDetailSettingItem(
-                                title = "카테고리 변경",
-                                value = "대학생",
-                                onClick = { /* 카테고리 변경 */ },
-                                showDivider = true
-                            )
-
-                            PlanDetailSettingItem(
-                                title = "일일 목표시간 변경",
-                                value = "1시간",
-                                onClick = { /* 목표시간 변경 */ },
-                                showDivider = true
-                            )
-
-                            PlanDetailSettingItem(
-                                title = "모집인원 변경",
-                                value = "2명",
-                                onClick = { /* 모집인원 변경 */ },
-                                showDivider = true
-                            )
-
-                            PlanDetailSettingItem(
-                                title = "비밀번호 변경",
+                                title = "초대코드 변경",
                                 value = "공개",
                                 onClick = { /* 비밀번호 변경 */ },
                                 showDivider = false
                             )
                         }
                     }
-
                 }
 
                 // 민감 그룹 메뉴
