@@ -56,6 +56,7 @@ import com.capston.presentation.theme.materialGray
 import com.capston.presentation.theme.textGray
 import com.capston.presentation.viewmodel.GroupPlanViewModel
 import com.capston.presentation.viewmodel.SinglePlanViewModel
+import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -371,6 +372,7 @@ fun PlanDetailScreen(
         if (showStartDateDialog) {
             DateChangeDialog(
                 title = "시작일 변경",
+                currentDate = planDetailResponse.value.startDate,
                 onDateSelected = { selectedDate ->
                     // TODO: 시작일 변경 API 호출
                     println("선택된 시작일: $selectedDate")
@@ -382,6 +384,7 @@ fun PlanDetailScreen(
         if (showEndDateDialog) {
             DateChangeDialog(
                 title = "목표 완강일 변경",
+                currentDate = planDetailResponse.value.endDate,
                 onDateSelected = { selectedDate ->
                     // TODO: 목표 완강일 변경 API 호출
                     println("선택된 완강일: $selectedDate")
@@ -460,9 +463,12 @@ fun PlanDetailSettingItem(
 @Composable
 fun DateChangeDialog(
     title: String, // "시작일 변경" 또는 "목표 완강일 변경" (실제로는 DatePickerDialog 자체 타이틀에 사용되지 않음)
-    onDateSelected: (String) -> Unit, // 선택된 날짜를 String으로 전달
+    currentDate: String,
+    onDateSelected: (String) -> Unit,
     onDismiss: () -> Unit
 ) {
+    val initialDateMillis = parseDate(currentDate) ?: System.currentTimeMillis()
+
     val datePickerState = rememberDatePickerState(
         initialSelectedDateMillis = System.currentTimeMillis()
     )
@@ -492,7 +498,25 @@ fun DateChangeDialog(
         },
     ) {
         DatePicker(
-            title = null,
+            title = {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(start = 32.dp)
+                )
+            },
+            headline = {
+                // 선택된 날짜를 작은 크기로 표시
+                val selectedDate = datePickerState.selectedDateMillis?.let {
+                    SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(Date(it))
+                } ?: ""
+
+                Text(
+                    text = selectedDate,
+                    style = MaterialTheme.typography.headlineMedium,
+                    modifier = Modifier.padding(start = 32.dp, bottom = 8.dp)
+                )
+            },
             state = datePickerState,
             colors = DatePickerDefaults.colors(
                 containerColor = Color.White
@@ -511,5 +535,19 @@ fun formatDate(millis: Long?): String {
         sdf.format(Date(millis))
     } else {
         ""
+    }
+}
+
+// 날짜 문자열을 Long으로 변환하는 함수
+fun parseDate(dateString: String): Long? {
+    return try {
+        if (dateString.isNotEmpty()) {
+            val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+            sdf.parse(dateString)?.time
+        } else {
+            null
+        }
+    } catch (e: ParseException) {
+        null
     }
 }
