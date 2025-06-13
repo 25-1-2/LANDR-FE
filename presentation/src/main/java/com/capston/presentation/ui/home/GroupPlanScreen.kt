@@ -58,6 +58,7 @@ import com.capston.presentation.theme.dividerGray
 import com.capston.presentation.theme.materialGray
 import com.capston.presentation.theme.textGray
 import com.capston.presentation.ui.common.CustomCheckBox
+import com.capston.presentation.ui.common.Screen
 import com.capston.presentation.ui.common.bgColor
 import com.capston.presentation.ui.common.borderColor
 import com.capston.presentation.ui.common.formatDateYMDE
@@ -111,21 +112,7 @@ fun GroupPlanScreen(
             topBar = {
                 GroupPlanTopBar(
                     navController = navController,
-                    isLeader = isLeader,
-                    showMenu = showDeleteDropdown,
-                    onMenuClick = { showDeleteDropdown = !showDeleteDropdown },
-                    onMenuDismiss = { showDeleteDropdown = false },
-                    onPlanDeleteClick = { showPlanDeleteConfirmDialog = true },
-                    onGroupDeleteClick = { showGroupDeleteConfirmDialog = true },
-                    // 수정: 계획 수정 콜백 추가
-                    onEditClick = {
-                        val editRoute = when (planDetailResponse.planType) {
-                            "PERIOD" -> "period_plan_edit"
-                            "TIME" -> "time_plan_edit"
-                            else -> "period_plan_edit" // 기본값
-                        }
-                        navController.navigate(editRoute)
-                    },
+                    planId = planId
                 )
             },
             // 재스케줄링 FAB 추가 (내 계획일 때만)
@@ -301,13 +288,7 @@ fun GroupPlanScreen(
 @Composable
 fun GroupPlanTopBar(
     navController: NavController,
-    isLeader: Boolean,
-    showMenu: Boolean,
-    onMenuClick: () -> Unit,
-    onMenuDismiss: () -> Unit,
-    onPlanDeleteClick: () -> Unit,
-    onGroupDeleteClick: () -> Unit,
-    onEditClick: () -> Unit
+    planId: Int
 ) {
     Column {
         TopAppBar(
@@ -323,115 +304,13 @@ fun GroupPlanTopBar(
                 }
             },
             actions = {
-                IconButton(onClick = onMenuClick) {
+                IconButton(onClick = {
+                    navController.navigate("${Screen.PlanDetail.title}/${planId}")
+                }) {
                     Image(
                         painter = painterResource(R.drawable.icon_more_horizontal),
-                        contentDescription = "alarm icon",
+                        contentDescription = "more",
                     )
-                }
-
-                DropdownMenu(
-                    expanded = showMenu,
-                    onDismissRequest = onMenuDismiss,
-                    modifier = Modifier
-                        .background(Color.White)
-                        .width(150.dp)
-                ) {
-                    if (isLeader) {
-                        // 방장일 경우 메뉴들
-                        DropdownMenuItem(
-                            text = {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(
-                                        painter = painterResource(id = R.drawable.icon_edit_pencil),
-                                        contentDescription = "수정",
-                                        tint = Color.Black,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text("계획 수정", color = Color.Black)
-                                }
-                            },
-                            onClick = {
-                                onMenuDismiss()
-                                onEditClick()
-                            }
-                        )
-
-                        DropdownMenuItem(
-                            text = {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(
-                                        painter = painterResource(id = R.drawable.icon_group),
-                                        contentDescription = "그룹원 관리",
-                                        tint = Color.Black,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text("그룹원 관리", color = Color.Black)
-                                }
-                            },
-                            onClick = { onMenuDismiss() }
-                        )
-
-                        DropdownMenuItem(
-                            text = {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(
-                                        painter = painterResource(id = R.drawable.icon_user_crown),
-                                        contentDescription = "그룹장 위임",
-                                        tint = Color.Black,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text("그룹장 위임", color = Color.Black)
-                                }
-                            },
-                            onClick = {
-                                onMenuDismiss()
-//                                onDeleteClick()
-                            }
-                        )
-
-                        DropdownMenuItem(
-                            text = {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(
-                                        painter = painterResource(id = R.drawable.icon_user_xmark),
-                                        contentDescription = "그룹 삭제",
-                                        tint = Color.Red,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text("그룹 삭제", color = Color.Red)
-                                }
-                            },
-                            onClick = {
-                                onMenuDismiss()
-                                onGroupDeleteClick()
-                            }
-                        )
-                    } else {
-                        // 그룹원일 경우 메뉴
-                        DropdownMenuItem(
-                            text = {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(
-                                        painter = painterResource(id = R.drawable.icon_user_xmark),
-                                        contentDescription = "그룹 나가기",
-                                        tint = Color.Red,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text("그룹 나가기", color = Color.Red)
-                                }
-                            },
-                            onClick = {
-                                onMenuDismiss()
-                                onPlanDeleteClick()
-                            }
-                        )
-                    }
                 }
             }
         )

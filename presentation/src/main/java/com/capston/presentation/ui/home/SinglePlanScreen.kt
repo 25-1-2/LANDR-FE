@@ -78,16 +78,12 @@ fun SinglePlanScreen(
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
-    var showEditBottomSheet by remember { mutableStateOf(false) }
-    var showDeleteDropdown by remember { mutableStateOf(false) }
-    var showDeleteConfirmDialog by remember { mutableStateOf(false) }
     var showTaskBottomSheet by remember { mutableStateOf(false) }
     var selectedTask by remember { mutableStateOf<PlanDetailLessonSchedule?>(null) }
     var isLoading by remember { mutableStateOf(false) }
 
     val currentPlan by singlePlanViewModel.currentPlan.collectAsState()
     val planDetailResponse by singlePlanViewModel.planDetailResponse.collectAsState()
-    val studyGroupResponse by singlePlanViewModel.postNewStudyGroupResponse.collectAsState()
 
     LaunchedEffect(planId) {
         singlePlanViewModel.getPlanDetail(planId)
@@ -166,60 +162,6 @@ fun SinglePlanScreen(
                         }
                     )
                 }
-            }
-
-            if (showEditBottomSheet) {
-                ModalBottomSheet(
-                    onDismissRequest = { showEditBottomSheet = false },
-                    sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-                    containerColor = Color.White
-                ) {
-                    PlanDetailBottomSheet(
-                        planDetailResponse = planDetailResponse,
-                        onEditClick = {
-                            showEditBottomSheet = false
-                            val editRoute = when (planDetailResponse.planType) {
-                                "PERIOD" -> "${Screen.PeriodPlanEdit.title}/${planId}"
-                                "TIME" -> "${Screen.TimePlanEdit.title}/${planId}"
-                                else -> "${Screen.PeriodPlanEdit.title}/${planId}" // 기본값
-                            }
-                            navController.navigate(editRoute)
-                        },
-                        onDeleteClick = {
-                            showEditBottomSheet = false
-                            showDeleteConfirmDialog = true
-                        }
-                    )
-                }
-            }
-
-            if (showDeleteConfirmDialog) {
-                AlertDialog(
-                    containerColor = Color.White,
-                    iconContentColor = Color.Black,
-                    titleContentColor = Color.Black,
-                    textContentColor = Color.Black,
-                    tonalElevation = 0.dp,
-                    onDismissRequest = { showDeleteConfirmDialog = false },
-                    title = { Text("계획 삭제") },
-                    text = { Text("이 계획을 삭제하시겠습니까?") },
-                    confirmButton = {
-                        TextButton(
-                            onClick = {
-                                singlePlanViewModel.deleteOnePlan(planId)
-                                navController.popBackStack()
-                                showDeleteConfirmDialog = false
-                            }
-                        ) {
-                            Text("삭제", color = Color.Red)
-                        }
-                    },
-                    dismissButton = {
-                        TextButton(onClick = { showDeleteConfirmDialog = false }) {
-                            Text("취소")
-                        }
-                    }
-                )
             }
 
             // TaskItem 바텀시트 추가 (기존 바텀시트들 다음에)
