@@ -376,6 +376,7 @@ fun MainBottomBar(
                             navController.navigate("${Screen.SinglePlan.title}/${plan.planId}")
                         },
                         onGroupPlanClick = { plan ->
+                            groupPlanViewModel.setPlanData(plan)
                             navController.navigate("${Screen.GroupPlan.title}/${plan.studyGroupId}/${plan.planId}")
                         },
                         onNotificationClick = { navController.navigate("notification") }

@@ -48,6 +48,7 @@ import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.rememberLottieComposition
+import com.capston.domain.response.plan.GetPlanLectureRoomResponse
 import com.capston.domain.response.plan.PlanDetailLessonSchedule
 import com.capston.domain.response.plan.PlanDetailResponse
 import com.capston.domain.response.study_group.OneStudyGroupResponse
@@ -86,6 +87,7 @@ fun GroupPlanScreen(
     // 선택된 멤버의 planId 상태
     var selectedPlanId by remember { mutableIntStateOf(planId) }
 
+    val currentPlan by groupPlanViewModel.currentPlan.collectAsState()
     val getOneStudyGroupResponse by groupPlanViewModel.getOneStudyGroupResponse.collectAsState()
     val planDetailResponse by groupPlanViewModel.planDetailResponse.collectAsState()
     val deleteOneStudyGroupResponse by groupPlanViewModel.deleteOneStudyGroupResponse.collectAsState()
@@ -159,6 +161,7 @@ fun GroupPlanScreen(
                 GroupPlanTitleSection(
                     planId = planId,
                     studyGroupId = studyGroupId,
+                    currentPlan = currentPlan,
                     groupPlanViewModel = groupPlanViewModel,
                     getOneStudyGroupResponse = getOneStudyGroupResponse,
                     coroutineScope = coroutineScope,
@@ -324,6 +327,7 @@ fun GroupPlanTopBar(
 fun GroupPlanTitleSection(
     planId: Int,
     studyGroupId: Int,
+    currentPlan: GetPlanLectureRoomResponse,
     groupPlanViewModel: GroupPlanViewModel,
     getOneStudyGroupResponse: OneStudyGroupResponse,
     coroutineScope: CoroutineScope,
@@ -343,18 +347,18 @@ fun GroupPlanTitleSection(
         modifier = Modifier
             .fillMaxWidth()
             .background(color = WarmPurple_20)
-            .padding(horizontal = 20.dp, vertical = 24.dp)
+            .padding(horizontal = 20.dp, vertical = 16.dp)
     ) {
         // 플랫폼 및 과목 태그
         Row(
+            modifier = Modifier.padding(bottom = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             Text(
-                text = "플랫폼"/*planDetailResponse.platform.label*/,
+                text = currentPlan.platform.label,
                 style = MaterialTheme.typography.labelMedium,
                 color = MainPurple,
                 modifier = Modifier
-                    .padding(bottom = 6.dp)
                     .border(
                         width = 1.dp,
                         color = MainPurple,
@@ -363,35 +367,48 @@ fun GroupPlanTitleSection(
                     .padding(horizontal = 6.dp, vertical = 4.dp)
             )
 
-//            Text(
-//                text = planDetailResponse.subject.label,
-//                style = MaterialTheme.typography.labelMedium,
-//                color = planDetailResponse.subject.borderColor,
-//                modifier = Modifier
-//                    .padding(bottom = 6.dp)
-//                    .background(
-//                        color = planDetailResponse.subject.bgColor,
-//                        shape = RoundedCornerShape(8.dp)
-//                    )
-//                    .border(
-//                        width = 1.dp,
-//                        color = planDetailResponse.subject.borderColor,
-//                        shape = RoundedCornerShape(8.dp)
-//                    )
-//                    .padding(horizontal = 6.dp, vertical = 4.dp)
-//            )
+            Text(
+                text = currentPlan.teacher,
+                style = MaterialTheme.typography.labelMedium,
+                color = MainPurple,
+                modifier = Modifier
+                    .border(
+                        width = 1.dp,
+                        color = MainPurple,
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                    .padding(horizontal = 6.dp, vertical = 4.dp)
+            )
+
+            Text(
+                text = currentPlan.subject.label,
+                style = MaterialTheme.typography.labelMedium,
+                color = currentPlan.subject.borderColor,
+                modifier = Modifier
+                    .background(
+                        color = currentPlan.subject.bgColor,
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                    .border(
+                        width = 1.dp,
+                        color = currentPlan.subject.borderColor,
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                    .padding(horizontal = 6.dp, vertical = 4.dp)
+            )
         }
 
         Text(
-            text = "${getOneStudyGroupResponse.name} (#${getOneStudyGroupResponse.inviteCode})",
+            text = getOneStudyGroupResponse.name,
             style = MaterialTheme.typography.headlineSmall,
             modifier = Modifier.padding(bottom = 8.dp)
         )
+
         Text(
-            text = "${getOneStudyGroupResponse.lectureName}",
+            text = getOneStudyGroupResponse.lectureName,
             style = MaterialTheme.typography.bodyMedium,
             color = textGray,
-            modifier = Modifier.padding(bottom = 8.dp)
+            modifier = Modifier.padding(bottom = 16.dp)
         )
 
         // 프로필 목록
