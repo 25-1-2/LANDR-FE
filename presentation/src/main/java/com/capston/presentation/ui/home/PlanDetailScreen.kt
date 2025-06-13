@@ -176,7 +176,7 @@ fun PlanDetailScreen(
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = 32.dp),
+                        .padding(bottom = 16.dp),
                     shape = RoundedCornerShape(12.dp),
                     colors = CardDefaults.cardColors(
                         containerColor = Color.White
@@ -243,73 +243,80 @@ fun PlanDetailScreen(
                 }
             }
 
-            // 그룹장 메뉴 섹션 (그룹이고 방장인 경우에만 표시)
-            if (screenType == "group" && isLeader && getOneStudyGroupResponse != null) {
+            // 그룹 메뉴 (그룹이고 방장인 경우에만 표시)
+            if (screenType == "group" && getOneStudyGroupResponse != null) {
                 Text(
-                    text = "그룹장 메뉴",
+                    text = "그룹 메뉴",
                     style = MaterialTheme.typography.titleSmall,
                     color = textGray,
-                    modifier = Modifier.padding(bottom = 8.dp)
+                    modifier = Modifier.padding(vertical = 8.dp)
                 )
 
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color.White
-                    ),
-                    elevation = CardDefaults.cardElevation(
-                        defaultElevation = 0.dp
-                    )
-                ) {
-                    Column {
-                        PlanDetailSettingItem(
-                            title = "그룹명 변경",
-                            onClick = { /* 그룹명 변경 */ },
-                            showDivider = true
+                // 그룹 설정
+                if (isLeader) {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 8.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color.White
+                        ),
+                        elevation = CardDefaults.cardElevation(
+                            defaultElevation = 0.dp
                         )
+                    ) {
+                        Column {
+                            PlanDetailSettingItem(
+                                title = "그룹명 변경",
+                                onClick = { /* 그룹명 변경 */ },
+                                showDivider = true
+                            )
 
-                        PlanDetailSettingItem(
-                            title = "그룹 소개/규칙",
-                            value = "A+를 향하여",
-                            onClick = { /* 그룹 소개/규칙 */ },
-                            showDivider = true
-                        )
+                            PlanDetailSettingItem(
+                                title = "그룹 소개/규칙",
+                                value = "A+를 향하여",
+                                onClick = { /* 그룹 소개/규칙 */ },
+                                showDivider = true
+                            )
 
-                        PlanDetailSettingItem(
-                            title = "카테고리 변경",
-                            value = "대학생",
-                            onClick = { /* 카테고리 변경 */ },
-                            showDivider = true
-                        )
+                            PlanDetailSettingItem(
+                                title = "카테고리 변경",
+                                value = "대학생",
+                                onClick = { /* 카테고리 변경 */ },
+                                showDivider = true
+                            )
 
-                        PlanDetailSettingItem(
-                            title = "일일 목표시간 변경",
-                            value = "1시간",
-                            onClick = { /* 목표시간 변경 */ },
-                            showDivider = true
-                        )
+                            PlanDetailSettingItem(
+                                title = "일일 목표시간 변경",
+                                value = "1시간",
+                                onClick = { /* 목표시간 변경 */ },
+                                showDivider = true
+                            )
 
-                        PlanDetailSettingItem(
-                            title = "모집인원 변경",
-                            value = "2명",
-                            onClick = { /* 모집인원 변경 */ },
-                            showDivider = true
-                        )
+                            PlanDetailSettingItem(
+                                title = "모집인원 변경",
+                                value = "2명",
+                                onClick = { /* 모집인원 변경 */ },
+                                showDivider = true
+                            )
 
-                        PlanDetailSettingItem(
-                            title = "비밀번호 변경",
-                            value = "공개",
-                            onClick = { /* 비밀번호 변경 */ },
-                            showDivider = false
-                        )
+                            PlanDetailSettingItem(
+                                title = "비밀번호 변경",
+                                value = "공개",
+                                onClick = { /* 비밀번호 변경 */ },
+                                showDivider = false
+                            )
+                        }
                     }
+
                 }
 
-                // 추가 그룹장 메뉴
-                Spacer(modifier = Modifier.height(8.dp))
+                // 민감 그룹 메뉴
                 Card(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 32.dp),
                     shape = RoundedCornerShape(12.dp),
                     colors = CardDefaults.cardColors(
                         containerColor = Color.White
@@ -319,23 +326,29 @@ fun PlanDetailScreen(
                     )
                 ) {
                     Column {
-                        PlanDetailSettingItem(
-                            title = "그룹 멤버 관리",
-                            onClick = { /* 그룹 멤버 관리 */ },
-                            showDivider = true
-                        )
+                        // 방장인 경우
+                        if (isLeader) {
+                            PlanDetailSettingItem(
+                                title = "그룹장 위임",
+                                onClick = { /* 그룹 멤버 관리 */ },
+                                showDivider = true
+                            )
 
-                        PlanDetailSettingItem(
-                            title = "한번에 깨우기",
-                            onClick = { /* 한번에 깨우기 */ },
-                            showDivider = false
-                        )
+                            PlanDetailSettingItem(
+                                title = "그룹 삭제",
+                                onClick = { /* 한번에 깨우기 */ },
+                                showDivider = false
+                            )
+                        } else {
+                            PlanDetailSettingItem(
+                                title = "그룹 나가기",
+                                onClick = { /* 한번에 깨우기 */ },
+                                showDivider = false
+                            )
+                        }
                     }
                 }
             }
-
-            // 하단 여백
-            Spacer(modifier = Modifier.height(32.dp))
         }
     }
 }
