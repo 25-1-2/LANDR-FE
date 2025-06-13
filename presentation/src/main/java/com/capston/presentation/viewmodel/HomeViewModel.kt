@@ -102,7 +102,11 @@ class HomeViewModel @Inject constructor(
                 return@launch
             }
 
-            loadingStateManager.show()
+            // forceRefresh가 아닐 때만 로딩 인디케이터 표시
+            if (!forceRefresh) {
+                loadingStateManager.show()
+            }
+
             try {
                 getDistinctHomeUseCase().catch { e ->
                     Log.e("getDistinctHome", "에러: ${e.message}", e)

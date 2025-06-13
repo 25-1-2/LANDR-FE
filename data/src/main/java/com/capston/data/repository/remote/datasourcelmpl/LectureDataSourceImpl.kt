@@ -3,12 +3,10 @@ package com.capston.data.repository.remote.datasourcelmpl
 import android.util.Log
 import com.capston.data.repository.remote.api.LectureApi
 import com.capston.domain.datasource.LectureDataSource
-import com.capston.domain.model.NewPlanLesson
 import com.capston.domain.request.LectureDto
 import com.capston.domain.response.lecture.DistinctLectureResponse
 import com.capston.domain.response.lecture.GetLessonsByLectureIdResponse
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 

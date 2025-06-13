@@ -45,6 +45,12 @@ sealed class Screen(
         unselectedIcon = R.drawable.activity_main_lecture_list_iv,
     )
 
+    data object PlanDetail: Screen(
+        title = "plan_detail",
+        selectedIcon = R.drawable.activity_main_lecture_list_iv_on,
+        unselectedIcon = R.drawable.activity_main_lecture_list_iv,
+    )
+
     data object PeriodPlanEdit: Screen(
         title = "single_plan_edit",
         selectedIcon = R.drawable.activity_main_lecture_list_iv_on,

@@ -4,15 +4,13 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.capston.domain.manager.LoadingStateManager
-import com.capston.domain.model.NewPlanLesson
 import com.capston.domain.request.LectureDto
 import com.capston.domain.response.lecture.DistinctLectureResponse
-import com.capston.domain.response.lecture.LectureResponseDto
+import com.capston.domain.response.lecture.LectureItemDto
+import com.capston.domain.response.lecture.LessonByLectureId
 import com.capston.domain.usecase.lecture.GetAllLectureUseCase
 import com.capston.domain.usecase.lecture.GetDistinctLectureUseCase
 import com.capston.domain.usecase.lecture.GetLessonsByLectureIdUseCase
-import com.capston.domain.model.LectureItemDto
-import com.capston.domain.model.Lesson
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -22,7 +20,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class LectureViewModel @Inject constructor(
+class SearchViewModel @Inject constructor(
     private val getDistinctLectureUseCase: GetDistinctLectureUseCase,
     private val getAllLectureUseCase: GetAllLectureUseCase,
     private val getLessonsByLectureIdUseCase: GetLessonsByLectureIdUseCase,
@@ -32,17 +30,17 @@ class LectureViewModel @Inject constructor(
     private val _distinctLecture = MutableStateFlow(DistinctLectureResponse(data = emptyList()))
     val distinctLecture: StateFlow<DistinctLectureResponse> = _distinctLecture
 
-    private var _allLectureList = MutableStateFlow<List<LectureResponseDto>>(emptyList())
-    val allLectureList: StateFlow<List<LectureResponseDto>> = _allLectureList
+    private var _allLectureList = MutableStateFlow<List<LectureItemDto>>(emptyList())
+    val allLectureList: StateFlow<List<LectureItemDto>> = _allLectureList
 
     private val _searchLectureItems = MutableStateFlow<List<LectureItemDto>>(emptyList())
     val searchLectureItems: StateFlow<List<LectureItemDto>> = _searchLectureItems
 
-    private val _selectedLecture = MutableStateFlow<LectureItemDto?>(null)
-    val selectedLecture: StateFlow<LectureItemDto?> = _selectedLecture.asStateFlow()
+    private val _selectedLecture = MutableStateFlow<LectureItemDto>(LectureItemDto())
+    val selectedLecture: StateFlow<LectureItemDto> = _selectedLecture.asStateFlow()
 
-    private val _lessonsByLectureId = MutableStateFlow<List<NewPlanLesson>>(emptyList())
-    val lessonsByLectureId: StateFlow<List<NewPlanLesson>> = _lessonsByLectureId
+    private val _lessonsByLectureId = MutableStateFlow<List<LessonByLectureId>>(emptyList())
+    val lessonsByLectureId: StateFlow<List<LessonByLectureId>> = _lessonsByLectureId
 
     // LectureDto를 직접 받는 함수
     fun getDistinctLecture(lectureDto: LectureDto) {

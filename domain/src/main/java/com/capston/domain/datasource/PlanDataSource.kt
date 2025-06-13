@@ -4,15 +4,21 @@ import com.capston.domain.request.PatchPeriodPlanDto
 import com.capston.domain.response.plan.GetPlanLectureRoomResponse
 import com.capston.domain.request.PatchPlanAliasDto
 import com.capston.domain.request.PatchTimePlanDto
-import com.capston.domain.request.PostNewPlanDto
+import com.capston.domain.request.PostNewPeriodPlanDto
+import com.capston.domain.request.PostNewTimePlanDto
 import com.capston.domain.response.MessageResponse
 import com.capston.domain.response.plan.PlanDetailResponse
 import com.capston.domain.response.plan.PatchPlanAliasResponse
 
 interface PlanDataSource {
-    // 강의 생성
-    suspend fun postNewPlan(
-        postNewPlanDto: PostNewPlanDto
+    // 기간으로 강의 생성
+    suspend fun postNewPeriodPlan(
+        postNewPeriodPlanDto: PostNewPeriodPlanDto
+    ): MessageResponse
+
+    // 시간으로 강의 생성
+    suspend fun postNewTimePlan(
+        postNewTimePlanDto: PostNewTimePlanDto
     ): MessageResponse
 
     // 강의 별명 수정

@@ -2,15 +2,12 @@ package com.capston.presentation.viewmodel
 
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import com.capston.domain.manager.LoadingStateManager
-import com.capston.domain.model.LectureItemDto
-import com.capston.domain.model.Lesson
-import com.capston.domain.model.NewPlanLesson
 import com.capston.domain.request.LectureDto
 import com.capston.domain.response.enum_class.Platform
 import com.capston.domain.response.enum_class.Subject
 import com.capston.domain.response.lecture.DistinctLectureResponse
 import com.capston.domain.response.lecture.GetLessonsByLectureIdResponse
-import com.capston.domain.response.lecture.LectureResponseDto
+import com.capston.domain.response.lecture.LectureItemDto
 import com.capston.domain.usecase.lecture.GetAllLectureUseCase
 import com.capston.domain.usecase.lecture.GetDistinctLectureUseCase
 import com.capston.domain.usecase.lecture.GetLessonsByLectureIdUseCase
@@ -46,7 +43,7 @@ class PlanViewModelTest {
     private val getLessonsByLectureIdUseCase: GetLessonsByLectureIdUseCase = mockk()
     private val loadingStateManager: LoadingStateManager = mockk(relaxed = true)
 
-    private lateinit var viewModel: LectureViewModel
+    private lateinit var viewModel: SearchViewModel
 
     @Before
     fun setUp() {
@@ -54,7 +51,7 @@ class PlanViewModelTest {
         every { loadingStateManager.show() } returns Unit
         every { loadingStateManager.hide() } returns Unit
 
-        viewModel = LectureViewModel(
+        viewModel = SearchViewModel(
             getDistinctLectureUseCase,
             getAllLectureUseCase,
             getLessonsByLectureIdUseCase,
@@ -76,7 +73,7 @@ class PlanViewModelTest {
             subject = Subject.MATH
         )
         val lectures = listOf(
-            LectureResponseDto(
+            LectureItemDto(
                 id = 1,
                 title = "수학 기초",
                 teacher = "김선생",
@@ -106,7 +103,7 @@ class PlanViewModelTest {
         // Given
         val lectureDto = LectureDto(offset = "10")
         val lectures = listOf(
-            LectureResponseDto(
+            LectureItemDto(
                 id = 1,
                 title = "국어 문법",
                 teacher = "이선생",
@@ -114,7 +111,7 @@ class PlanViewModelTest {
                 subject = Subject.KOR,
                 totalLessons = 25
             ),
-            LectureResponseDto(
+            LectureItemDto(
                 id = 2,
                 title = "영어 독해",
                 teacher = "박선생",
@@ -166,8 +163,8 @@ class PlanViewModelTest {
         // Given
         val lectureId = 1
         val lessons = listOf(
-            NewPlanLesson(id = 1, title = "1강. 기초 개념"),
-            NewPlanLesson(id = 2, title = "2강. 응용 문제")
+            LessonByLectureIdResponse(id = 1, title = "1강. 기초 개념"),
+            LessonByLectureIdResponse(id = 2, title = "2강. 응용 문제")
         )
         val expectedResponse = GetLessonsByLectureIdResponse(lessons = lessons)
 
@@ -254,7 +251,7 @@ class PlanViewModelTest {
             offset = "20"
         )
         val lectures = listOf(
-            LectureResponseDto(
+            LectureItemDto(
                 id = 1,
                 title = "영어 문법",
                 teacher = "김영어",
@@ -287,12 +284,12 @@ class PlanViewModelTest {
 
         val firstResponse = DistinctLectureResponse(
             data = listOf(
-                LectureResponseDto(id = 1, title = "수학 기초", teacher = "수학선생", platform = Platform.MEGA, subject = Subject.MATH)
+                LectureItemDto(id = 1, title = "수학 기초", teacher = "수학선생", platform = Platform.MEGA, subject = Subject.MATH)
             )
         )
         val secondResponse = DistinctLectureResponse(
             data = listOf(
-                LectureResponseDto(id = 2, title = "영어 기초", teacher = "영어선생", platform = Platform.ETOOS, subject = Subject.ENG)
+                LectureItemDto(id = 2, title = "영어 기초", teacher = "영어선생", platform = Platform.ETOOS, subject = Subject.ENG)
             )
         )
 

@@ -2,15 +2,18 @@ package com.capston.presentation.ui.home
 
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -30,7 +33,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Color.Companion.White
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -46,6 +48,7 @@ import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.rememberLottieComposition
+import com.capston.domain.response.plan.GetPlanLectureRoomResponse
 import com.capston.domain.response.plan.PlanDetailResponse
 import com.capston.domain.response.plan.PlanDetailLessonSchedule
 import com.capston.presentation.theme.LightGray2
@@ -74,15 +77,12 @@ fun SinglePlanScreen(
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
-    var showEditBottomSheet by remember { mutableStateOf(false) }
-    var showDeleteDropdown by remember { mutableStateOf(false) }
-    var showDeleteConfirmDialog by remember { mutableStateOf(false) }
-    var showGroupConfirmDialog by remember { mutableStateOf(false) }
-    var showGroupCodeDialog by remember { mutableStateOf(false) }
+    var showTaskBottomSheet by remember { mutableStateOf(false) }
+    var selectedTask by remember { mutableStateOf<PlanDetailLessonSchedule?>(null) }
     var isLoading by remember { mutableStateOf(false) }
 
+    val currentPlan by singlePlanViewModel.currentPlan.collectAsState()
     val planDetailResponse by singlePlanViewModel.planDetailResponse.collectAsState()
-    val studyGroupResponse by singlePlanViewModel.postNewStudyGroupResponse.collectAsState()
 
     LaunchedEffect(planId) {
         singlePlanViewModel.getPlanDetail(planId)
@@ -98,7 +98,9 @@ fun SinglePlanScreen(
             topBar = {
                 SinglePlanTopBar(
                     navController = navController,
-                    onMenuClick = { showEditBottomSheet = true }
+                    onMenuClick = {
+                        navController.navigate("${Screen.PlanDetail.title}/${planId}/single")
+                    }
                 )
             },
             // 재스케줄링 FAB 추가
@@ -144,8 +146,7 @@ fun SinglePlanScreen(
             ) {
                 // 재스케줄링 버튼을 제거한 SinglePlanTitleSection
                 SinglePlanTitleSection(
-                    planDetailResponse = planDetailResponse,
-                    onGroupClick = { showGroupConfirmDialog = true }
+                    currentPlan = currentPlan,
                 )
 
                 // 날짜별 섹션
@@ -153,146 +154,66 @@ fun SinglePlanScreen(
                     OneDaySection(
                         date = schedule.date,
                         planDetailLessonSchedules = schedule.lessonSchedules,
-                        singlePlanViewModel = singlePlanViewModel
+                        singlePlanViewModel = singlePlanViewModel,
+                        onTaskLongPress = { task ->
+                            selectedTask = task
+                            showTaskBottomSheet = true
+                        }
                     )
                 }
             }
 
-            if (showEditBottomSheet) {
+            if (showTaskBottomSheet && selectedTask != null) {
                 ModalBottomSheet(
-                    onDismissRequest = { showEditBottomSheet = false },
+                    onDismissRequest = {
+                        showTaskBottomSheet = false
+                        selectedTask = null
+                    },
                     sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-                    containerColor = Color.White
-                ) {
-                    PlanDetailBottomSheet(
-                        planDetailResponse = planDetailResponse,
-                        onEditClick = {
-                            showEditBottomSheet = false
-                            val editRoute = when (planDetailResponse.planType) {
-                                "PERIOD" -> "${Screen.PeriodPlanEdit.title}/${planId}"
-                                "TIME" -> "${Screen.TimePlanEdit.title}/${planId}"
-                                else -> "${Screen.PeriodPlanEdit.title}/${planId}" // 기본값
-                            }
-                            navController.navigate(editRoute)
-                        },
-                        onDeleteClick = {
-                            showEditBottomSheet = false
-                            showDeleteConfirmDialog = true
-                        }
-                    )
-                }
-            }
-
-            if (showDeleteConfirmDialog) {
-                AlertDialog(
                     containerColor = Color.White,
-                    iconContentColor = Color.Black,
-                    titleContentColor = Color.Black,
-                    textContentColor = Color.Black,
-                    tonalElevation = 0.dp,
-                    onDismissRequest = { showDeleteConfirmDialog = false },
-                    title = { Text("계획 삭제") },
-                    text = { Text("이 계획을 삭제하시겠습니까?") },
-                    confirmButton = {
-                        TextButton(
-                            onClick = {
-                                singlePlanViewModel.deleteOnePlan(planId)
-                                navController.popBackStack()
-                                showDeleteConfirmDialog = false
-                            }
-                        ) {
-                            Text("삭제", color = Color.Red)
-                        }
-                    },
-                    dismissButton = {
-                        TextButton(onClick = { showDeleteConfirmDialog = false }) {
-                            Text("취소")
-                        }
-                    }
-                )
-            }
-
-            if (showGroupConfirmDialog) {
-                AlertDialog(
-                    containerColor = Color.White,
-                    iconContentColor = Color.Black,
-                    titleContentColor = Color.Black,
-                    textContentColor = Color.Black,
-                    tonalElevation = 0.dp,
-                    onDismissRequest = { showGroupConfirmDialog = false },
-                    title = { Text("스터디 그룹 생성") },
-                    text = {
-                        Text("이 계획을 스터디 그룹으로 전환하시겠습니까?\n다른 사람들과 함께 공부할 수 있습니다.")
-                    },
-                    confirmButton = {
-                        TextButton(
-                            onClick = {
-                                showGroupConfirmDialog = false
-                                singlePlanViewModel.postNewStudyGroup(planId)
-                                showGroupCodeDialog = true
-                            }
-                        ) {
-                            Text("확인", color = MainPurple)
-                        }
-                    },
-                    dismissButton = {
-                        TextButton(onClick = { showGroupConfirmDialog = false }) {
-                            Text("취소")
-                        }
-                    }
-                )
-            }
-
-            if (showGroupCodeDialog) {
-                AlertDialog(
-                    containerColor = Color.White,
-                    iconContentColor = Color.Black,
-                    titleContentColor = Color.Black,
-                    textContentColor = Color.Black,
-                    tonalElevation = 0.dp,
-                    onDismissRequest = { },
-                    title = {
-                        Text(
-                            "스터디 그룹이 생성되었습니다!",
-                            textAlign = TextAlign.Center
-                        )
-                    },
-                    text = {
+                    dragHandle = {
+                        // 드래그 핸들 영역 전체를 흰색 배경으로
                         Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(Color.White) // 핸들 뒤쪽 배경을 흰색으로
+                                .padding(vertical = 16.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Text(
-                                "아래 코드를 친구들에게 공유하세요",
-                                style = MaterialTheme.typography.bodyMedium,
-                                textAlign = TextAlign.Center
-                            )
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Text(
-                                text = studyGroupResponse.inviteCode,
-                                style = MaterialTheme.typography.headlineMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MainPurple,
+                            Box(
                                 modifier = Modifier
+                                    .width(32.dp)
+                                    .height(4.dp)
                                     .background(
-                                        Color.Gray.copy(alpha = 0.1f),
-                                        RoundedCornerShape(8.dp)
+                                        color = Color.Gray.copy(alpha = 0.3f), // 핸들 자체는 회색
+                                        shape = RoundedCornerShape(2.dp)
                                     )
-                                    .padding(16.dp),
-                                textAlign = TextAlign.Center
                             )
-                        }
-                    },
-                    confirmButton = {
-                        TextButton(
-                            onClick = {
-                                showGroupCodeDialog = false
-                                navController.popBackStack()
-                            }
-                        ) {
-                            Text("확인", color = MainPurple)
                         }
                     }
-                )
+                ) {
+                    TaskActionBottomSheet(
+                        taskItem = selectedTask!!,
+                        onMoveToPreviousDay = {
+                            // 전날로 이동 로직
+//                            singlePlanViewModel.moveTaskToPreviousDay(selectedTask!!.id)
+//                            showTaskBottomSheet = false
+//                            selectedTask = null
+                        },
+                        onMoveToNextDay = {
+                            // 다음날로 이동 로직
+//                            singlePlanViewModel.moveTaskToNextDay(selectedTask!!.id)
+//                            showTaskBottomSheet = false
+//                            selectedTask = null
+                        },
+                        onDelete = {
+                            // 삭제 로직
+//                            singlePlanViewModel.deleteTask(selectedTask!!.id)
+//                            showTaskBottomSheet = false
+//                            selectedTask = null
+                        }
+                    )
+                }
             }
         }
 
@@ -367,13 +288,12 @@ fun SinglePlanTopBar(
 
 @Composable
 fun SinglePlanTitleSection(
-    planDetailResponse: PlanDetailResponse,
-    onGroupClick: () -> Unit
+    currentPlan: GetPlanLectureRoomResponse,
 ) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 24.dp)
+            .padding(top = 16.dp, bottom = 24.dp)
     ) {
         // 플랫폼 태그
         Row(
@@ -381,7 +301,7 @@ fun SinglePlanTitleSection(
             modifier = Modifier.padding(bottom = 8.dp)
         ) {
             Text(
-                text = planDetailResponse.platform.label,
+                text = currentPlan.platform.label,
                 style = MaterialTheme.typography.labelMedium,
                 color = MainPurple,
                 modifier = Modifier
@@ -392,18 +312,48 @@ fun SinglePlanTitleSection(
                     )
                     .padding(horizontal = 6.dp, vertical = 4.dp)
             )
+
+            Text(
+                text = currentPlan.subject.label,
+                style = MaterialTheme.typography.labelMedium,
+                color = currentPlan.subject.borderColor,
+                modifier = Modifier
+                    .background(
+                        color = currentPlan.subject.bgColor,
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                    .border(
+                        width = 1.dp,
+                        color = currentPlan.subject.borderColor,
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                    .padding(horizontal = 6.dp, vertical = 4.dp)
+            )
+
+            Text(
+                text = "${currentPlan.completedLessons}/${currentPlan.totalLessons}강",
+                style = MaterialTheme.typography.labelMedium,
+                color = textGray,
+                modifier = Modifier
+                    .border(
+                        width = 1.dp,
+                        color = textGray,
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                    .padding(horizontal = 6.dp, vertical = 4.dp)
+            )
         }
 
         // 강의 제목
         Text(
-            text = planDetailResponse.lectureTitle,
+            text = currentPlan.lectureTitle,
             style = MaterialTheme.typography.headlineSmall,
             modifier = Modifier.padding(bottom = 8.dp)
         )
 
         // 강의 제목
         Text(
-            text = "${planDetailResponse.teacher} ·",
+            text = "${currentPlan.teacher} · ${currentPlan.tag}",
             style = MaterialTheme.typography.labelMedium,
             color = textGray
         )
@@ -416,7 +366,8 @@ fun OneDaySection(
     date: String,
     planDetailLessonSchedules: List<PlanDetailLessonSchedule>,
     singlePlanViewModel: SinglePlanViewModel,
-    isReadOnly: Boolean = false
+    isReadOnly: Boolean = false,
+    onTaskLongPress: (PlanDetailLessonSchedule) -> Unit = {}
 ) {
     val totalMinutes = planDetailLessonSchedules.sumOf { it.adjustedDuration }
 
@@ -477,18 +428,21 @@ fun OneDaySection(
                 TaskItem(
                     planDetailLessonSchedule = lessonSchedule,
                     singlePlanViewModel = singlePlanViewModel,
-                    isReadOnly = isReadOnly
+                    isReadOnly = isReadOnly,
+                    onLongPress = onTaskLongPress
                 )
             }
         }
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun TaskItem(
     planDetailLessonSchedule: PlanDetailLessonSchedule,
     singlePlanViewModel: SinglePlanViewModel,
-    isReadOnly: Boolean = false
+    isReadOnly: Boolean = false,
+    onLongPress: (PlanDetailLessonSchedule) -> Unit = {}
 ) {
     // 각 체크박스의 상태를 remember로 관리하되, 초기값은 서버 데이터 사용
     var isChecked by remember(planDetailLessonSchedule.id, planDetailLessonSchedule.completed) {
@@ -506,6 +460,14 @@ fun TaskItem(
         modifier = Modifier
             .fillMaxWidth()
             .padding(top = 12.dp)
+            .combinedClickable(
+                onClick = { },
+                onLongClick = {
+                    if (!isReadOnly) {
+                        onLongPress(planDetailLessonSchedule)
+                    }
+                }
+            )
     ) {
         Row(
             verticalAlignment = Alignment.Top,
@@ -552,112 +514,67 @@ fun TaskItem(
 }
 
 @Composable
-fun PlanDetailBottomSheet(
-    planDetailResponse: PlanDetailResponse,
-    onEditClick: () -> Unit,
-    onDeleteClick: () -> Unit
+fun TaskActionBottomSheet(
+    taskItem: PlanDetailLessonSchedule,
+    onMoveToPreviousDay: () -> Unit,
+    onMoveToNextDay: () -> Unit,
+    onDelete: () -> Unit
 ) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(White)
+            .background(Color.White)
             .padding(horizontal = 20.dp, vertical = 24.dp)
     ) {
         // 바텀시트 제목
         Text(
-            text = "계획 상세 정보",
+            text = "강의 관리",
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+
+        // 선택된 강의 제목
+        Text(
+            text = taskItem.lessonTitle,
+            style = MaterialTheme.typography.bodyMedium,
+            color = textGray,
             modifier = Modifier.padding(bottom = 24.dp)
-        )
-
-        // 계획 정보 목록
-        PlanInfoItem(
-            label = "계획 유형",
-            value = when (planDetailResponse.planType) {
-                "PERIOD" -> "기간"
-                "TIME" -> "시간"
-                else -> planDetailResponse.planType
-            }
-        )
-
-        PlanInfoItem(
-            label = "시작일",
-            value = planDetailResponse.startDate
-        )
-
-        PlanInfoItem(
-            label = "종료일",
-            value = planDetailResponse.endDate ?: "설정되지 않음"
-        )
-
-        PlanInfoItem(
-            label = "배속",
-            value = "${planDetailResponse.playbackSpeed}배속"
         )
 
         // 구분선
         HorizontalDivider(
-            modifier = Modifier.padding(vertical = 24.dp),
-            color = dividerGray
+            color = dividerGray,
+            modifier = Modifier.padding(bottom = 16.dp)
         )
 
-        // 버튼들
+        // 액션 버튼들
         Column(
             modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            // 수정하기 버튼
-            TextButton(
-                onClick = onEditClick,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp)
-                    .border(
-                        width = 1.dp,
-                        color = MainPurple,
-                        shape = RoundedCornerShape(8.dp)
-                    )
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.icon_edit_pencil),
-                    contentDescription = "수정",
-                    tint = MainPurple,
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "수정하기",
-                    color = MainPurple,
-                    style = MaterialTheme.typography.titleMedium
-                )
-            }
+            // 전날로 이동
+            TaskActionItem(
+                icon = R.drawable.icon_arrow_back,
+                text = "전날로 이동",
+                onClick = onMoveToPreviousDay
+            )
 
-            // 삭제하기 버튼
-            TextButton(
-                onClick = onDeleteClick,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp)
-                    .border(
-                        width = 1.dp,
-                        color = Color.Red,
-                        shape = RoundedCornerShape(8.dp)
-                    )
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.icon_trash),
-                    contentDescription = "삭제",
-                    tint = Color.Red,
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "삭제하기",
-                    color = Color.Red,
-                    style = MaterialTheme.typography.titleMedium
-                )
-            }
+            // 다음날로 이동
+            TaskActionItem(
+                icon = R.drawable.icon_arrow_right, // 적절한 아이콘으로 변경
+                text = "다음날로 이동",
+                onClick = onMoveToNextDay
+            )
+
+            // 삭제
+            TaskActionItem(
+                icon = R.drawable.icon_trash,
+                text = "삭제",
+                textColor = Color.Red,
+                iconTint = Color.Red,
+                onClick = onDelete
+            )
         }
 
         // 바텀시트 하단 여백
@@ -666,30 +583,39 @@ fun PlanDetailBottomSheet(
 }
 
 @Composable
-fun PlanInfoItem(
-    label: String,
-    value: String
+fun TaskActionItem(
+    icon: Int,
+    text: String,
+    textColor: Color = Color.Black,
+    iconTint: Color = materialGray,
+    onClick: () -> Unit
 ) {
-    Row(
+    TextButton(
+        onClick = onClick,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+            .height(56.dp),
+        colors = ButtonDefaults.textButtonColors(
+            containerColor = Color.Transparent
+        )
     ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyMedium,
-            color = textGray,
-            modifier = Modifier.weight(1f)
-        )
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Medium,
-            color = Color.Black,
-            textAlign = TextAlign.End,
-            modifier = Modifier.weight(1f)
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Start
+        ) {
+            Icon(
+                painter = painterResource(id = icon),
+                contentDescription = text,
+                tint = iconTint,
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.width(16.dp))
+            Text(
+                text = text,
+                color = textColor,
+                style = MaterialTheme.typography.bodyLarge
+            )
+        }
     }
 }

@@ -6,6 +6,7 @@ import androidx.activity.ComponentActivity
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
@@ -13,12 +14,15 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -29,17 +33,19 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.capston.domain.manager.LoadingStateManager
-import com.capston.domain.model.Lecture
-import com.capston.domain.request.PostNewPlanDto
+import com.capston.domain.request.PostNewPeriodPlanDto
 import com.capston.domain.response.enum_class.DayOfWeek
+import com.capston.domain.response.lecture.LectureItemDto
 import com.capston.presentation.R
-import com.capston.presentation.theme.LightPurple
 import com.capston.presentation.theme.MainPurple
 import com.capston.presentation.theme.backgroundGray
 import com.capston.presentation.theme.chipGray
 import com.capston.presentation.theme.dividerGray
+import com.capston.presentation.theme.materialGray
 import com.capston.presentation.theme.textGray
-import com.capston.presentation.viewmodel.LectureViewModel
+import com.capston.presentation.ui.common.bgColor
+import com.capston.presentation.ui.common.borderColor
+import com.capston.presentation.viewmodel.SearchViewModel
 import com.capston.presentation.viewmodel.PlanViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
@@ -110,14 +116,14 @@ fun checkSelectedDaysExistInPeriod(
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun MakePlanScreen(
-    lectureViewModel: LectureViewModel,
+    searchViewModel: SearchViewModel,
     planViewModel: PlanViewModel,
     navController: NavController,
     loadingStateManager: LoadingStateManager
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
-    val selectedLectureDto by lectureViewModel.selectedLecture.collectAsState()
+    val selectedLecture by searchViewModel.selectedLecture.collectAsState()
 
     // 요청 상태 추적
     var requestSent by remember { mutableStateOf(false) }
@@ -125,22 +131,6 @@ fun MakePlanScreen(
 
     // 기간으로 계획, 시간으로 계획
     val pagerState = rememberPagerState(pageCount = { 2 }) // 0: 기간, 1: 시간
-
-    // Convert LectureResponseDto to Lecture model
-    val lecture = remember(selectedLectureDto) {
-        selectedLectureDto?.let {
-            Lecture(
-                id = it.id,
-                title = it.title,
-                teacher = it.teacher,
-                platform = it.platform.label,
-                subject = it.subject.label,
-                totalLessons = it.totalLessons,
-                totalDuration = 0, // Default since not available in DTO
-                tag = it.tag
-            )
-        } ?: Lecture() // Fallback to empty lecture if none selected
-    }
 
     // State for validation error messages
     var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -182,9 +172,9 @@ fun MakePlanScreen(
     }
 
     // Load lessons when lecture is selected
-    LaunchedEffect(lecture.id) {
-        if (lecture.id != 0) {  // Check if a valid lecture is selected
-            lectureViewModel.getLessonsByLectureId(lecture.id)
+    LaunchedEffect(selectedLecture.id) {
+        if (selectedLecture.id != 0) {  // Check if a valid lecture is selected
+            searchViewModel.getLessonsByLectureId(selectedLecture.id)
         }
     }
 
@@ -247,7 +237,7 @@ fun MakePlanScreen(
                 .verticalScroll(rememberScrollState())
         ) {
             HeaderSection(
-                lecture = lecture,
+                lecture = selectedLecture,
                 pagerState = pagerState,
                 coroutineScope = coroutineScope,
                 planType = planType
@@ -266,7 +256,7 @@ fun MakePlanScreen(
                         startDate = startDate,
                         endDate = endDate,
                         playbackSpeed = playbackSpeed,
-                        lectureViewModel = lectureViewModel
+                        searchViewModel = searchViewModel
                     )
                     1 -> TimePlanPage(
                         startLessonId = startLessonId,
@@ -274,7 +264,7 @@ fun MakePlanScreen(
                         studyDayOfWeeks = studyDayOfWeeks,
                         dailyTime = dailyTime,
                         playbackSpeed = playbackSpeed,
-                        lectureViewModel = lectureViewModel
+                        searchViewModel = searchViewModel
                     )
                 }
             }
@@ -289,8 +279,8 @@ fun MakePlanScreen(
                             // 로딩 인디케이터 표시
                             loadingStateManager.show()
 
-                            val dto = PostNewPlanDto(
-                                lectureId = lecture.id,
+                            val dto = PostNewPeriodPlanDto(
+                                lectureId = selectedLecture.id,
                                 planType = planType.value,
                                 startLessonId = startLessonId.intValue,
                                 endLessonId = endLessonId.intValue,
@@ -376,7 +366,7 @@ fun MakePlanTopBar(navController: NavController) {
 
 @Composable
 fun HeaderSection(
-    lecture: Lecture,
+    lecture: LectureItemDto,
     pagerState: PagerState,
     coroutineScope: CoroutineScope,
     planType: MutableState<String>
@@ -387,23 +377,65 @@ fun HeaderSection(
             .padding(16.dp)
 
     ) {
-        // 인강 플랫폼
-        Text(
-            text = lecture.platform,
-            style = MaterialTheme.typography.labelLarge,
-            color = MainPurple,
-            modifier = Modifier.padding(bottom = 4.dp)
-        )
+        Row(
+            modifier = Modifier.padding(bottom = 8.dp)
+        ) {
+            // 인강 플랫폼
+            Text(
+                text = lecture.platform.label,
+                style = MaterialTheme.typography.labelMedium,
+                color = MainPurple,
+                modifier = Modifier
+                    .padding(end = 4.dp)
+                    .border(
+                        width = 1.dp,
+                        color = MainPurple,
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                    .padding(horizontal = 6.dp, vertical = 4.dp)
+            )
+
+            // 과목 정보
+            Text(
+                text = lecture.subject.label,
+                style = MaterialTheme.typography.labelMedium,
+                color = lecture.subject.borderColor,
+                modifier = Modifier
+                    .padding(end = 5.dp)
+                    .border(
+                        width = 1.dp,
+                        color = lecture.subject.borderColor,
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                    .background(color = lecture.subject.bgColor, shape = RoundedCornerShape(8.dp))
+                    .padding(horizontal = 6.dp, vertical = 4.dp)
+            )
+
+            // 강의 개수
+            Text(
+                text = "${lecture.totalLessons}강",
+                color = textGray,
+                style = MaterialTheme.typography.labelMedium,
+                modifier = Modifier
+                    .border(
+                        width = 1.dp,
+                        color = materialGray,
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                    .padding(horizontal = 6.dp, vertical = 4.dp)
+            )
+        }
+
         // 제목
         Text(
             text = lecture.title,
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(bottom = 4.dp)
+            modifier = Modifier.padding(bottom = 8.dp)
         )
         // 세부정보
         Text(
-            text = "${lecture.teacher} · ${lecture.tag} · ${lecture.totalLessons}강",
+            text = "${lecture.teacher} · ${lecture.tag}",
             style = MaterialTheme.typography.bodyMedium,
             color = textGray,
             modifier = Modifier.padding(bottom = 16.dp)
@@ -463,14 +495,14 @@ fun PeriodPlanPage(
     startDate: MutableState<String>,
     endDate: MutableState<String>,
     playbackSpeed: MutableState<Double>,
-    lectureViewModel: LectureViewModel
+    searchViewModel: SearchViewModel
 ) {
     Column(
         modifier = Modifier.padding(16.dp)
     ) {
         DurationSection(startDate, endDate)
         StudyDaysOfWeekSection(studyDayOfWeeks)
-        StartEndLectureSection(startLessonId, endLessonId, lectureViewModel)
+        StartEndLectureSection(startLessonId, endLessonId, searchViewModel)
         PlaybackSpeedSection(playbackSpeed)
     }
 }
@@ -482,14 +514,14 @@ fun TimePlanPage(
     studyDayOfWeeks: MutableState<List<String>>,
     dailyTime: MutableState<Int>,
     playbackSpeed: MutableState<Double>,
-    lectureViewModel: LectureViewModel
+    searchViewModel: SearchViewModel
 ) {
     Column(
         modifier = Modifier.padding(16.dp)
     ) {
         StudyTimeSection(dailyTime)
         StudyDaysOfWeekSection(studyDayOfWeeks)
-        StartEndLectureSection(startLessonId, endLessonId, lectureViewModel)
+        StartEndLectureSection(startLessonId, endLessonId, searchViewModel)
         PlaybackSpeedSection(playbackSpeed)
     }
 }
@@ -680,19 +712,18 @@ fun StudyDaysOfWeekSection(studyDayOfWeeks: MutableState<List<String>>) {
             horizontalArrangement = Arrangement.SpaceBetween,
             modifier = Modifier
                 .fillMaxWidth()
-                .horizontalScroll(rememberScrollState()),
+                .horizontalScroll(rememberScrollState())
+                .padding(bottom = 8.dp),
         ) {
             Text(
                 text = "공부 일정",
                 style = MaterialTheme.typography.titleSmall,
-                modifier = Modifier.padding(bottom = 4.dp)
             )
 
             Text(
                 text = "모두 선택",
                 style = MaterialTheme.typography.labelMedium,
                 modifier = Modifier
-                    .padding(bottom = 4.dp)
                     .clickable {
                         val allDays = DayOfWeek.entries.map { it.name }
                         val isAllSelected = selectedDays.value.containsAll(allDays)
@@ -707,7 +738,6 @@ fun StudyDaysOfWeekSection(studyDayOfWeeks: MutableState<List<String>>) {
         Row(
             horizontalArrangement = Arrangement.SpaceBetween,
             modifier = Modifier
-                .padding(bottom = 4.dp)
                 .fillMaxWidth()
                 .horizontalScroll(rememberScrollState()),
         ) {
@@ -715,10 +745,20 @@ fun StudyDaysOfWeekSection(studyDayOfWeeks: MutableState<List<String>>) {
                 // 현재 요일이 선택되어 있는지 확인
                 val isSelected = selectedDays.value.contains(day.name)
 
-                CompositionLocalProvider(LocalMinimumInteractiveComponentEnforcement provides false) {
-                    FilterChip(
-                        selected = isSelected,
-                        onClick = {
+                Box(
+                    modifier = Modifier
+                        .size(48.dp) // 정사각형으로 만들어서 동그라미가 완벽하게 나오도록
+                        .clip(CircleShape) // 완전한 원형으로 클립
+                        .background(
+                            color = if (isSelected) chipGray else Color.White,
+                            shape = CircleShape
+                        )
+                        .border(
+                            width = 1.dp,
+                            color = if (isSelected) MainPurple else dividerGray,
+                            shape = CircleShape
+                        )
+                        .clickable {
                             // 선택/해제 토글
                             selectedDays.value = if (isSelected)
                                 selectedDays.value - day.name
@@ -729,18 +769,13 @@ fun StudyDaysOfWeekSection(studyDayOfWeeks: MutableState<List<String>>) {
                             // (예: ["MON", "WED", "FRI"])
                             studyDayOfWeeks.value = selectedDays.value.toList()
                         },
-                        label = { Text(day.label) }, // 표시는 한글 레이블 ("월", "화", ...)
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = LightPurple,
-                            containerColor = chipGray,
-                            selectedLabelColor = MainPurple,
-                            labelColor = Color.Black
-                        ),
-                        border = FilterChipDefaults.filterChipBorder(
-                            enabled = true,
-                            selected = isSelected,
-                            selectedBorderColor = MainPurple,
-                        )
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = day.label, // 표시는 한글 레이블 ("월", "화", ...)
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (isSelected) MainPurple else Color.Black,
+                        fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium
                     )
                 }
             }
@@ -752,10 +787,10 @@ fun StudyDaysOfWeekSection(studyDayOfWeeks: MutableState<List<String>>) {
 fun StartEndLectureSection(
     startLessonId: MutableState<Int>,
     endLessonId: MutableState<Int>,
-    lectureViewModel: LectureViewModel
+    searchViewModel: SearchViewModel
 ) {
     // Collect lessons from viewModel
-    val lessons by lectureViewModel.lessonsByLectureId.collectAsState()
+    val lessons by searchViewModel.lessonsByLectureId.collectAsState()
 
     // States to store selected lesson titles
     var startLessonTitle by remember { mutableStateOf("강의 선택") }

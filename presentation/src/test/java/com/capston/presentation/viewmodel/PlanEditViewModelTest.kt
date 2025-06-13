@@ -2,7 +2,6 @@ package com.capston.presentation.viewmodel
 
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import com.capston.domain.manager.LoadingStateManager
-import com.capston.domain.model.NewPlanLesson
 import com.capston.domain.request.PatchPeriodPlanDto
 import com.capston.domain.request.PatchTimePlanDto
 import com.capston.domain.response.MessageResponse
@@ -137,9 +136,9 @@ class PlanEditViewModelTest {
         // Given
         val lectureId = 456
         val lessons = listOf(
-            NewPlanLesson(id = 1, title = "1강. 기초 개념"),
-            NewPlanLesson(id = 2, title = "2강. 응용 문제"),
-            NewPlanLesson(id = 3, title = "3강. 심화 학습")
+            LessonByLectureIdResponse(id = 1, title = "1강. 기초 개념"),
+            LessonByLectureIdResponse(id = 2, title = "2강. 응용 문제"),
+            LessonByLectureIdResponse(id = 3, title = "3강. 심화 학습")
         )
 
         val expectedResponse = GetLessonsByLectureIdResponse(lessons = lessons)
@@ -364,7 +363,7 @@ class PlanEditViewModelTest {
         // Given
         val lectureId = 456
         val manyLessons = (1..50).map { index ->
-            NewPlanLesson(id = index, title = "${index}강. 레슨 $index")
+            LessonByLectureIdResponse(id = index, title = "${index}강. 레슨 $index")
         }
 
         val largeResponse = GetLessonsByLectureIdResponse(lessons = manyLessons)
@@ -443,7 +442,7 @@ class PlanEditViewModelTest {
         coEvery { getPlanDetailUseCase(planId) } returns flowOf(planDetail)
 
         // Lessons setup
-        val lessons = listOf(NewPlanLesson(id = 1, title = "테스트 레슨"))
+        val lessons = listOf(LessonByLectureIdResponse(id = 1, title = "테스트 레슨"))
         val lessonsResponse = GetLessonsByLectureIdResponse(lessons = lessons)
         coEvery { getLessonsByLectureIdUseCase(lectureId) } returns flowOf(lessonsResponse)
 

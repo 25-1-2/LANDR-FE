@@ -15,17 +15,11 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -54,7 +48,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -76,7 +69,6 @@ import com.capston.domain.response.plan.PlanDetailResponse
 import com.capston.domain.response.plan.GetPlanLectureRoomResponse
 import com.capston.presentation.R
 import com.capston.presentation.theme.CapstonTheme
-import com.capston.presentation.theme.LightGray4_40
 import com.capston.presentation.theme.LightGray60
 import com.capston.presentation.theme.MainPurple
 import com.capston.presentation.theme.chipGray
@@ -84,6 +76,8 @@ import com.capston.presentation.theme.dividerGray
 import com.capston.presentation.theme.textGray
 import com.capston.presentation.ui.common.LoadingIndicator
 import com.capston.presentation.ui.common.Screen
+import com.capston.presentation.ui.common.bgColor
+import com.capston.presentation.ui.common.borderColor
 import com.capston.presentation.ui.common.noRippleClickable
 import com.capston.presentation.ui.home.CalenderScreen
 import com.capston.presentation.ui.home.GroupPlanScreen
@@ -92,8 +86,7 @@ import com.capston.presentation.ui.home.LectureRoomScreen
 import com.capston.presentation.ui.home.NotificationScreen
 import com.capston.presentation.ui.home.ProfileScreen
 import com.capston.presentation.ui.home.SinglePlanScreen
-import com.capston.presentation.ui.home.PeriodPlanEditScreen
-import com.capston.presentation.ui.home.TimePlanEditScreen
+import com.capston.presentation.ui.home.PlanDetailScreen
 import com.capston.presentation.ui.search.SearchActivity
 import com.capston.presentation.viewmodel.DailyScheduleViewModel
 import com.capston.presentation.viewmodel.GroupPlanViewModel
@@ -101,7 +94,7 @@ import com.capston.presentation.viewmodel.HomeViewModel
 import com.capston.presentation.viewmodel.LectureRoomViewModel
 import com.capston.presentation.viewmodel.LoginViewModel
 import com.capston.presentation.viewmodel.MyPageViewModel
-import com.capston.presentation.viewmodel.PlanEditViewModel
+import com.capston.presentation.viewmodel.PlanDetailViewModel
 import com.capston.presentation.viewmodel.PlanViewModel
 import com.capston.presentation.viewmodel.RecommendViewModel
 import com.capston.presentation.viewmodel.SinglePlanViewModel
@@ -119,7 +112,7 @@ class MainActivity : ComponentActivity() {
     val lectureRoomViewModel: LectureRoomViewModel by viewModels()
     val singlePlanViewModel: SinglePlanViewModel by viewModels()
     val groupPlanViewModel: GroupPlanViewModel by viewModels()
-    val planEditViewModel: PlanEditViewModel by viewModels()
+    val planDetailViewModel: PlanDetailViewModel by viewModels()
     val myPageViewModel: MyPageViewModel by viewModels()
     val recommendViewModel: RecommendViewModel by viewModels()
 
@@ -190,7 +183,7 @@ class MainActivity : ComponentActivity() {
                             lectureRoomViewModel = lectureRoomViewModel,
                             singlePlanViewModel = singlePlanViewModel,
                             groupPlanViewModel = groupPlanViewModel,
-                            planEditViewModel = planEditViewModel,
+                            planDetailViewModel = planDetailViewModel,
                             loginViewModel = loginViewModel,
                             myPageViewModel = myPageViewModel,
                             recommendViewModel = recommendViewModel,
@@ -225,14 +218,17 @@ class MainActivity : ComponentActivity() {
         }
 
         // 여기에 추가 ↓
-        singlePlanViewModel.onDataChanged = {
-            lectureRoomViewModel.getPlanLectureRoom() // 강의실 목록 새로고침
+        singlePlanViewModel.onHomeDataChanged = {
             homeViewModel.forceRefresh()
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                dailyScheduleViewModel.getDailySchedule(
+                dailyScheduleViewModel.forceRefresh(
                     LocalDate.now().format(DateTimeFormatter.ISO_DATE)
                 )
             }
+        }
+
+        singlePlanViewModel.onLectureRoomDataChanged = {
+            lectureRoomViewModel.getPlanLectureRoom() // 강의실 목록 새로고침
         }
 
         groupPlanViewModel.onDataChanged = {
@@ -288,7 +284,7 @@ fun MainBottomBar(
     lectureRoomViewModel: LectureRoomViewModel,
     singlePlanViewModel: SinglePlanViewModel,
     groupPlanViewModel: GroupPlanViewModel,
-    planEditViewModel: PlanEditViewModel,
+    planDetailViewModel: PlanDetailViewModel,
     loginViewModel: LoginViewModel,
     myPageViewModel: MyPageViewModel,
     recommendViewModel: RecommendViewModel,
@@ -375,9 +371,12 @@ fun MainBottomBar(
                     LectureRoomScreen(
                         lectureRoomViewModel = lectureRoomViewModel,
                         onSinglePlanClick = { plan ->
+                            // ViewModel에 plan 객체 저장
+                            singlePlanViewModel.setPlanData(plan)
                             navController.navigate("${Screen.SinglePlan.title}/${plan.planId}")
                         },
                         onGroupPlanClick = { plan ->
+                            groupPlanViewModel.setPlanData(plan)
                             navController.navigate("${Screen.GroupPlan.title}/${plan.studyGroupId}/${plan.planId}")
                         },
                         onNotificationClick = { navController.navigate("notification") }
@@ -415,28 +414,28 @@ fun MainBottomBar(
                 }
 
                 composable(
-                    route = "${Screen.PeriodPlanEdit.title}/{planId}",
-                    arguments = listOf(navArgument("planId") { type = NavType.IntType })
-                ) { backStackEntry ->
-                    val planId = backStackEntry.arguments?.getInt("planId") ?: 0
-                    PeriodPlanEditScreen(
-                        planId = planId,
-                        planEditViewModel = planEditViewModel,
-                        navController = navController,
-                        loadingStateManager = loadingStateManager
+                    "${Screen.PlanDetail.title}/{planId}/{screenType}?studyGroupId={studyGroupId}",
+                    arguments = listOf(
+                        navArgument("planId") { type = NavType.IntType },
+                        navArgument("screenType") { type = NavType.StringType },
+                        navArgument("studyGroupId") {
+                            type = NavType.IntType
+                            defaultValue = -1
+                        }
                     )
-                }
-
-                composable(
-                    route = "${Screen.TimePlanEdit.title}/{planId}",
-                    arguments = listOf(navArgument("planId") { type = NavType.IntType })
                 ) { backStackEntry ->
                     val planId = backStackEntry.arguments?.getInt("planId") ?: 0
-                    TimePlanEditScreen(
-                        planId = TODO(),
-                        planEditViewModel = planEditViewModel,
+                    val screenType = backStackEntry.arguments?.getString("screenType") ?: "single"
+                    val studyGroupId = backStackEntry.arguments?.getInt("studyGroupId") ?: -1
+
+                    PlanDetailScreen(
+                        planId = planId,
+                        screenType = screenType,
+                        studyGroupId = studyGroupId,
                         navController = navController,
-                        loadingStateManager = loadingStateManager,
+                        planDetailViewModel = planDetailViewModel,
+                        singlePlanViewModel = if (screenType == "single") singlePlanViewModel else null,
+                        groupPlanViewModel = if (screenType == "group") groupPlanViewModel else null
                     )
                 }
 
@@ -735,7 +734,7 @@ fun GroupCreationBottomSheet(
     singlePlanViewModel: SinglePlanViewModel,
     onDismiss: () -> Unit
 ) {
-    var showConfirmDialog by remember { mutableStateOf(false) }
+    var showChangeToGroupDialog by remember { mutableStateOf(false) }
     var selectedPlan by remember { mutableStateOf<GetPlanLectureRoomResponse?>(null) }
 
     val lectures by lectureRoomViewModel.getPlanLectureRoomResponse.collectAsState()
@@ -748,18 +747,41 @@ fun GroupCreationBottomSheet(
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = Color.White
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        containerColor = Color.White,
+        dragHandle = {
+            // 드래그 핸들 영역 전체를 흰색 배경으로
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color.White) // 핸들 뒤쪽 배경을 흰색으로
+                    .padding(vertical = 16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Box(
+                    modifier = Modifier
+                        .width(32.dp)
+                        .height(4.dp)
+                        .background(
+                            color = Color.Gray.copy(alpha = 0.3f), // 핸들 자체는 회색
+                            shape = RoundedCornerShape(2.dp)
+                        )
+                )
+            }
+        }
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .background(Color.White)
+                .padding(horizontal = 20.dp)
+                .padding(top = 16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // 헤더
             Text(
                 text = "그룹으로 전환할 계획 선택",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.padding(bottom = 16.dp)
             )
 
@@ -786,7 +808,7 @@ fun GroupCreationBottomSheet(
                             plan = plan,
                             onSelectClick = {
                                 selectedPlan = plan
-                                showConfirmDialog = true
+                                showChangeToGroupDialog = true
                             }
                         )
                         if (plan != individualPlans.last()) {
@@ -801,30 +823,117 @@ fun GroupCreationBottomSheet(
     }
 
     // 확인 다이얼로그
-    if (showConfirmDialog && selectedPlan != null) {
-        AlertDialog(
-            onDismissRequest = { showConfirmDialog = false },
-            title = { Text("그룹 전환 확인") },
-            text = {
-                Text("'${selectedPlan!!.lectureTitle}' 계획을\n스터디 그룹으로 전환하시겠습니까?")
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        singlePlanViewModel.postNewStudyGroup(selectedPlan!!.planId)
-                        showConfirmDialog = false
-                        onDismiss()
-                    }
+    if (showChangeToGroupDialog && selectedPlan != null) {
+        Dialog(
+            onDismissRequest = onDismiss,
+            properties = DialogProperties(
+                dismissOnBackPress = true,
+                dismissOnClickOutside = true
+            )
+        ) {
+            Card(
+                modifier = Modifier
+                    .width(280.dp), // 삭제 다이얼로그는 조금 더 넓게
+                shape = RoundedCornerShape(10.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = Color.White
+                ),
+                elevation = CardDefaults.cardElevation(
+                    defaultElevation = 4.dp
+                )
+            ) {
+                Column(
+                    modifier = Modifier
+                        .background(Color.White)
+                        .padding(16.dp)
                 ) {
-                    Text("확인", color = MainPurple)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showConfirmDialog = false }) {
-                    Text("취소", color = textGray)
+                    // 헤더 부분
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 16.dp),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "그룹 전환",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    // 구분선
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(1.dp)
+                            .background(dividerGray)
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // 메시지
+                    Text(
+                        text = "\"${selectedPlan!!.lectureTitle}\" 계획을 스터디 그룹으로 전환하시겠습니까?",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = textGray,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 4.dp)
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // 확인/취소 버튼
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        // 취소 버튼
+                        FilterChip(
+                            selected = false,
+                            onClick = { showChangeToGroupDialog = false },
+                            label = {
+                                Text(
+                                    text = "취소",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            },
+                            colors = FilterChipDefaults.filterChipColors(
+                                containerColor = chipGray,
+                                labelColor = Color.Black
+                            ),
+                            border = null
+                        )
+
+                        Spacer(modifier = Modifier.width(10.dp))
+
+                        // 확인 버튼
+                        FilterChip(
+                            selected = false,
+                            onClick = {
+                                singlePlanViewModel.postNewStudyGroup(selectedPlan!!.planId)
+                                showChangeToGroupDialog = false
+                                onDismiss()
+                            },
+                            label = {
+                                Text(
+                                    text = "확인",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.SemiBold                            )
+                            },
+                            colors = FilterChipDefaults.filterChipColors(
+                                containerColor = MainPurple,
+                                labelColor = Color.White
+                            ),
+                            border = null
+                        )
+                    }
                 }
             }
-        )
+        }
     }
 }
 
@@ -836,7 +945,7 @@ fun PlanSelectionItem(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 12.dp),
+            .padding(vertical = 16.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -856,9 +965,9 @@ fun PlanSelectionItem(
                         .border(
                             width = 1.dp,
                             color = MainPurple,
-                            shape = RoundedCornerShape(6.dp)
+                            shape = RoundedCornerShape(8.dp)
                         )
-                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                        .padding(horizontal = 6.dp, vertical = 4.dp)
                 )
 
                 Text(
@@ -869,33 +978,51 @@ fun PlanSelectionItem(
                         .border(
                             width = 1.dp,
                             color = MainPurple,
-                            shape = RoundedCornerShape(6.dp)
+                            shape = RoundedCornerShape(8.dp)
                         )
-                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                        .padding(horizontal = 6.dp, vertical = 4.dp)
+                )
+
+                Text(
+                    text = plan.subject.label,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = plan.subject.borderColor,
+                    modifier = Modifier
+                        .background(
+                            color = plan.subject.bgColor,
+                            shape = RoundedCornerShape(8.dp)
+                        )
+                        .border(
+                            width = 1.dp,
+                            color = plan.subject.borderColor,
+                            shape = RoundedCornerShape(8.dp)
+                        )
+                        .padding(horizontal = 6.dp, vertical = 4.dp)
+                )
+
+                Text(
+                    text = "${plan.completedLessons}/${plan.totalLessons}강",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = textGray,
+                    modifier = Modifier
+                        .border(
+                            width = 1.dp,
+                            color = textGray,
+                            shape = RoundedCornerShape(8.dp)
+                        )
+                        .padding(horizontal = 6.dp, vertical = 4.dp)
                 )
             }
 
-            // 강의 제목과 진행률
-            Row(
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Bottom,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(
-                    text = plan.lectureTitle,
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Medium,
-                    modifier = Modifier.weight(1f)
-                )
-                Text(
-                    text = "${plan.completedLessons}/${plan.totalLessons}",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = textGray
-                )
-            }
+            // 강의 제목
+            Text(
+                text = plan.lectureTitle,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium,
+            )
         }
 
-        Spacer(modifier = Modifier.width(16.dp))
+        Spacer(modifier = Modifier.width(8.dp))
 
         // 선택 버튼
         TextButton(

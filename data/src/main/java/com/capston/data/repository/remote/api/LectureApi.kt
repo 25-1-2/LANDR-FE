@@ -1,6 +1,5 @@
 package com.capston.data.repository.remote.api
 
-import com.capston.domain.model.NewPlanLesson
 import com.capston.domain.response.enum_class.Platform
 import com.capston.domain.response.enum_class.Subject
 import com.capston.domain.response.lecture.DistinctLectureResponse

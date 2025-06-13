@@ -1,9 +1,6 @@
 package com.capston.domain.datasource
 
-import com.capston.domain.model.NewPlanLesson
 import com.capston.domain.request.LectureDto
-import com.capston.domain.response.CheckResponse
-import com.capston.domain.response.home.DistinctHomeIdResponse
 import com.capston.domain.response.lecture.DistinctLectureResponse
 import com.capston.domain.response.lecture.GetLessonsByLectureIdResponse
 import kotlinx.coroutines.flow.Flow

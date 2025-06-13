@@ -48,6 +48,7 @@ import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.rememberLottieComposition
+import com.capston.domain.response.plan.GetPlanLectureRoomResponse
 import com.capston.domain.response.plan.PlanDetailLessonSchedule
 import com.capston.domain.response.plan.PlanDetailResponse
 import com.capston.domain.response.study_group.OneStudyGroupResponse
@@ -58,6 +59,7 @@ import com.capston.presentation.theme.dividerGray
 import com.capston.presentation.theme.materialGray
 import com.capston.presentation.theme.textGray
 import com.capston.presentation.ui.common.CustomCheckBox
+import com.capston.presentation.ui.common.Screen
 import com.capston.presentation.ui.common.bgColor
 import com.capston.presentation.ui.common.borderColor
 import com.capston.presentation.ui.common.formatDateYMDE
@@ -85,6 +87,7 @@ fun GroupPlanScreen(
     // 선택된 멤버의 planId 상태
     var selectedPlanId by remember { mutableIntStateOf(planId) }
 
+    val currentPlan by groupPlanViewModel.currentPlan.collectAsState()
     val getOneStudyGroupResponse by groupPlanViewModel.getOneStudyGroupResponse.collectAsState()
     val planDetailResponse by groupPlanViewModel.planDetailResponse.collectAsState()
     val deleteOneStudyGroupResponse by groupPlanViewModel.deleteOneStudyGroupResponse.collectAsState()
@@ -111,21 +114,8 @@ fun GroupPlanScreen(
             topBar = {
                 GroupPlanTopBar(
                     navController = navController,
-                    isLeader = isLeader,
-                    showMenu = showDeleteDropdown,
-                    onMenuClick = { showDeleteDropdown = !showDeleteDropdown },
-                    onMenuDismiss = { showDeleteDropdown = false },
-                    onPlanDeleteClick = { showPlanDeleteConfirmDialog = true },
-                    onGroupDeleteClick = { showGroupDeleteConfirmDialog = true },
-                    // 수정: 계획 수정 콜백 추가
-                    onEditClick = {
-                        val editRoute = when (planDetailResponse.planType) {
-                            "PERIOD" -> "period_plan_edit"
-                            "TIME" -> "time_plan_edit"
-                            else -> "period_plan_edit" // 기본값
-                        }
-                        navController.navigate(editRoute)
-                    },
+                    planId = planId,
+                    studyGroupId = studyGroupId
                 )
             },
             // 재스케줄링 FAB 추가 (내 계획일 때만)
@@ -171,6 +161,7 @@ fun GroupPlanScreen(
                 GroupPlanTitleSection(
                     planId = planId,
                     studyGroupId = studyGroupId,
+                    currentPlan = currentPlan,
                     groupPlanViewModel = groupPlanViewModel,
                     getOneStudyGroupResponse = getOneStudyGroupResponse,
                     coroutineScope = coroutineScope,
@@ -301,13 +292,8 @@ fun GroupPlanScreen(
 @Composable
 fun GroupPlanTopBar(
     navController: NavController,
-    isLeader: Boolean,
-    showMenu: Boolean,
-    onMenuClick: () -> Unit,
-    onMenuDismiss: () -> Unit,
-    onPlanDeleteClick: () -> Unit,
-    onGroupDeleteClick: () -> Unit,
-    onEditClick: () -> Unit
+    planId: Int,
+    studyGroupId: Int
 ) {
     Column {
         TopAppBar(
@@ -323,115 +309,13 @@ fun GroupPlanTopBar(
                 }
             },
             actions = {
-                IconButton(onClick = onMenuClick) {
+                IconButton(onClick = {
+                    navController.navigate("${Screen.PlanDetail.title}/${planId}/group?studyGroupId=${studyGroupId}")
+                }) {
                     Image(
                         painter = painterResource(R.drawable.icon_more_horizontal),
-                        contentDescription = "alarm icon",
+                        contentDescription = "more",
                     )
-                }
-
-                DropdownMenu(
-                    expanded = showMenu,
-                    onDismissRequest = onMenuDismiss,
-                    modifier = Modifier
-                        .background(Color.White)
-                        .width(150.dp)
-                ) {
-                    if (isLeader) {
-                        // 방장일 경우 메뉴들
-                        DropdownMenuItem(
-                            text = {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(
-                                        painter = painterResource(id = R.drawable.icon_edit_pencil),
-                                        contentDescription = "수정",
-                                        tint = Color.Black,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text("계획 수정", color = Color.Black)
-                                }
-                            },
-                            onClick = {
-                                onMenuDismiss()
-                                onEditClick()
-                            }
-                        )
-
-                        DropdownMenuItem(
-                            text = {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(
-                                        painter = painterResource(id = R.drawable.icon_group),
-                                        contentDescription = "그룹원 관리",
-                                        tint = Color.Black,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text("그룹원 관리", color = Color.Black)
-                                }
-                            },
-                            onClick = { onMenuDismiss() }
-                        )
-
-                        DropdownMenuItem(
-                            text = {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(
-                                        painter = painterResource(id = R.drawable.icon_user_crown),
-                                        contentDescription = "그룹장 위임",
-                                        tint = Color.Black,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text("그룹장 위임", color = Color.Black)
-                                }
-                            },
-                            onClick = {
-                                onMenuDismiss()
-//                                onDeleteClick()
-                            }
-                        )
-
-                        DropdownMenuItem(
-                            text = {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(
-                                        painter = painterResource(id = R.drawable.icon_user_xmark),
-                                        contentDescription = "그룹 삭제",
-                                        tint = Color.Red,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text("그룹 삭제", color = Color.Red)
-                                }
-                            },
-                            onClick = {
-                                onMenuDismiss()
-                                onGroupDeleteClick()
-                            }
-                        )
-                    } else {
-                        // 그룹원일 경우 메뉴
-                        DropdownMenuItem(
-                            text = {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(
-                                        painter = painterResource(id = R.drawable.icon_user_xmark),
-                                        contentDescription = "그룹 나가기",
-                                        tint = Color.Red,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text("그룹 나가기", color = Color.Red)
-                                }
-                            },
-                            onClick = {
-                                onMenuDismiss()
-                                onPlanDeleteClick()
-                            }
-                        )
-                    }
                 }
             }
         )
@@ -443,6 +327,7 @@ fun GroupPlanTopBar(
 fun GroupPlanTitleSection(
     planId: Int,
     studyGroupId: Int,
+    currentPlan: GetPlanLectureRoomResponse,
     groupPlanViewModel: GroupPlanViewModel,
     getOneStudyGroupResponse: OneStudyGroupResponse,
     coroutineScope: CoroutineScope,
@@ -462,18 +347,18 @@ fun GroupPlanTitleSection(
         modifier = Modifier
             .fillMaxWidth()
             .background(color = WarmPurple_20)
-            .padding(horizontal = 20.dp, vertical = 24.dp)
+            .padding(horizontal = 20.dp, vertical = 16.dp)
     ) {
         // 플랫폼 및 과목 태그
         Row(
+            modifier = Modifier.padding(bottom = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             Text(
-                text = "플랫폼"/*planDetailResponse.platform.label*/,
+                text = currentPlan.platform.label,
                 style = MaterialTheme.typography.labelMedium,
                 color = MainPurple,
                 modifier = Modifier
-                    .padding(bottom = 6.dp)
                     .border(
                         width = 1.dp,
                         color = MainPurple,
@@ -482,35 +367,48 @@ fun GroupPlanTitleSection(
                     .padding(horizontal = 6.dp, vertical = 4.dp)
             )
 
-//            Text(
-//                text = planDetailResponse.subject.label,
-//                style = MaterialTheme.typography.labelMedium,
-//                color = planDetailResponse.subject.borderColor,
-//                modifier = Modifier
-//                    .padding(bottom = 6.dp)
-//                    .background(
-//                        color = planDetailResponse.subject.bgColor,
-//                        shape = RoundedCornerShape(8.dp)
-//                    )
-//                    .border(
-//                        width = 1.dp,
-//                        color = planDetailResponse.subject.borderColor,
-//                        shape = RoundedCornerShape(8.dp)
-//                    )
-//                    .padding(horizontal = 6.dp, vertical = 4.dp)
-//            )
+            Text(
+                text = currentPlan.teacher,
+                style = MaterialTheme.typography.labelMedium,
+                color = MainPurple,
+                modifier = Modifier
+                    .border(
+                        width = 1.dp,
+                        color = MainPurple,
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                    .padding(horizontal = 6.dp, vertical = 4.dp)
+            )
+
+            Text(
+                text = currentPlan.subject.label,
+                style = MaterialTheme.typography.labelMedium,
+                color = currentPlan.subject.borderColor,
+                modifier = Modifier
+                    .background(
+                        color = currentPlan.subject.bgColor,
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                    .border(
+                        width = 1.dp,
+                        color = currentPlan.subject.borderColor,
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                    .padding(horizontal = 6.dp, vertical = 4.dp)
+            )
         }
 
         Text(
-            text = "${getOneStudyGroupResponse.name} (#${getOneStudyGroupResponse.inviteCode})",
+            text = getOneStudyGroupResponse.name,
             style = MaterialTheme.typography.headlineSmall,
             modifier = Modifier.padding(bottom = 8.dp)
         )
+
         Text(
-            text = "${getOneStudyGroupResponse.lectureName}",
+            text = getOneStudyGroupResponse.lectureName,
             style = MaterialTheme.typography.bodyMedium,
             color = textGray,
-            modifier = Modifier.padding(bottom = 8.dp)
+            modifier = Modifier.padding(bottom = 16.dp)
         )
 
         // 프로필 목록
@@ -581,7 +479,7 @@ fun ProfileItem(
                     shape = RoundedCornerShape(16.dp)
                 )
                 .border(
-                    width = if (isSelected) 2.dp else 1.dp,  // 선택시 테두리 두께 변경
+                    width = if (isSelected) 1.5.dp else 1.dp,  // 선택시 테두리 두께 변경
                     color = if (isSelected) MainPurple else Color(0xFFD1E7F5),  // 선택시 MainPurple
                     shape = RoundedCornerShape(16.dp)
                 ),
@@ -603,7 +501,7 @@ fun ProfileItem(
         Text(
             text = if (isCrown) "👑$name" else name,
             style = MaterialTheme.typography.bodySmall,
-            color = if (isSelected) MainPurple else Color.Black,  // 선택시 색상 변경
+            color = Color.Black,
             fontWeight = if (isMe) FontWeight.Bold else FontWeight.Normal,
             maxLines = 1,
             modifier = Modifier.fillMaxWidth(),

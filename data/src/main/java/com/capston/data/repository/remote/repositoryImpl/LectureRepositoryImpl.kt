@@ -1,10 +1,8 @@
 package com.capston.data.repository.remote.repositoryImpl
 
 import com.capston.domain.datasource.LectureDataSource
-import com.capston.domain.model.NewPlanLesson
 import com.capston.domain.repository.LectureRepository
 import com.capston.domain.request.LectureDto
-import com.capston.domain.response.CheckResponse
 import com.capston.domain.response.lecture.DistinctLectureResponse
 import com.capston.domain.response.lecture.GetLessonsByLectureIdResponse
 import kotlinx.coroutines.flow.Flow

@@ -3,7 +3,7 @@ package com.capston.domain.response.lecture
 import com.capston.domain.response.enum_class.Platform
 import com.capston.domain.response.enum_class.Subject
 
-data class LectureResponseDto(
+data class LectureItemDto(
     val id: Int = 0,
     val title: String = "",
     val teacher: String = "",
