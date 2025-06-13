@@ -39,6 +39,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.capston.domain.response.enum_class.Platform
@@ -47,6 +48,7 @@ import com.capston.domain.response.plan.GetPlanLectureRoomResponse
 import com.capston.domain.response.plan.PlanDetailResponse
 import com.capston.presentation.R
 import com.capston.presentation.theme.dividerGray
+import com.capston.presentation.theme.materialGray
 import com.capston.presentation.theme.textGray
 import com.capston.presentation.viewmodel.GroupPlanViewModel
 import com.capston.presentation.viewmodel.SinglePlanViewModel
@@ -172,7 +174,7 @@ fun PlanDetailScreen(
                     modifier = Modifier.padding(vertical = 8.dp)
                 )
 
-                // 개인 설정 카드
+                // 계획 설정
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -193,7 +195,7 @@ fun PlanDetailScreen(
                                 "TIME" -> "시간"
                                 else -> planDetailResponse.value.planType
                             },
-                            onClick = { /* 계획 유형 변경 */ },
+                            onClick = {},
                             showArrow = false
                         )
 
@@ -225,11 +227,13 @@ fun PlanDetailScreen(
 
                         PlanDetailSettingItem(
                             title = "시작 강의",
+                            value = "OT - OT",
                             onClick = { /* 일정 설정 */ },
                         )
 
                         PlanDetailSettingItem(
                             title = "마지막 강의",
+                            value = "13강 - 6장 미분의 활용 (2)",
                             onClick = { /* 일정 설정 */ },
                         )
 
@@ -239,6 +243,29 @@ fun PlanDetailScreen(
                             onClick = { /* 일정 설정 */ },
                             showDivider = false
                         )
+                    }
+                }
+
+                // 민감 계획 설정
+                if (screenType == "single") {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color.White
+                        ),
+                        elevation = CardDefaults.cardElevation(
+                            defaultElevation = 0.dp
+                        )
+                    ) {
+                        Column {
+                            PlanDetailSettingItem(
+                                title = "계획 삭제",
+                                onClick = { /* 그룹 멤버 관리 */ },
+                                textColor = Color.Red,
+                                showDivider = false
+                            )
+                        }
                     }
                 }
             }
@@ -337,12 +364,14 @@ fun PlanDetailScreen(
                             PlanDetailSettingItem(
                                 title = "그룹 삭제",
                                 onClick = { /* 한번에 깨우기 */ },
+                                textColor = Color.Red,
                                 showDivider = false
                             )
                         } else {
                             PlanDetailSettingItem(
                                 title = "그룹 나가기",
                                 onClick = { /* 한번에 깨우기 */ },
+                                textColor = Color.Red,
                                 showDivider = false
                             )
                         }
@@ -358,6 +387,7 @@ fun PlanDetailSettingItem(
     title: String,
     value: String = "",
     onClick: () -> Unit,
+    textColor: Color = Color.Black,
     showArrow: Boolean = true,
     showDivider: Boolean = true
 ) {
@@ -373,7 +403,8 @@ fun PlanDetailSettingItem(
             Text(
                 text = title,
                 style = MaterialTheme.typography.bodyMedium,
-                color = Color.Black
+                color = textColor,
+                modifier = Modifier.padding(end = 16.dp)
             )
 
             Row(
@@ -383,7 +414,10 @@ fun PlanDetailSettingItem(
                     Text(
                         text = value,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = textGray
+                        color = textGray,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false) // 이 부분 추가
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                 }
@@ -392,7 +426,7 @@ fun PlanDetailSettingItem(
                     Icon(
                         painter = painterResource(id = R.drawable.icon_nav_arrow_right),
                         contentDescription = null,
-                        tint = textGray,
+                        tint = materialGray,
                         modifier = Modifier.size(16.dp)
                     )
                 } else {
