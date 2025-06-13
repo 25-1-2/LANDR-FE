@@ -378,6 +378,8 @@ fun MainBottomBar(
                     LectureRoomScreen(
                         lectureRoomViewModel = lectureRoomViewModel,
                         onSinglePlanClick = { plan ->
+                            // ViewModel에 plan 객체 저장
+                            singlePlanViewModel.setPlanData(plan)
                             navController.navigate("${Screen.SinglePlan.title}/${plan.planId}")
                         },
                         onGroupPlanClick = { plan ->

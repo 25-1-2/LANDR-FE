@@ -46,6 +46,7 @@ import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.rememberLottieComposition
+import com.capston.domain.response.plan.GetPlanLectureRoomResponse
 import com.capston.domain.response.plan.PlanDetailResponse
 import com.capston.domain.response.plan.PlanDetailLessonSchedule
 import com.capston.presentation.theme.LightGray2
@@ -81,6 +82,7 @@ fun SinglePlanScreen(
     var showGroupCodeDialog by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
 
+    val currentPlan by singlePlanViewModel.currentPlan.collectAsState()
     val planDetailResponse by singlePlanViewModel.planDetailResponse.collectAsState()
     val studyGroupResponse by singlePlanViewModel.postNewStudyGroupResponse.collectAsState()
 
@@ -144,6 +146,7 @@ fun SinglePlanScreen(
             ) {
                 // 재스케줄링 버튼을 제거한 SinglePlanTitleSection
                 SinglePlanTitleSection(
+                    currentPlan = currentPlan,
                     planDetailResponse = planDetailResponse,
                     onGroupClick = { showGroupConfirmDialog = true }
                 )
@@ -367,13 +370,14 @@ fun SinglePlanTopBar(
 
 @Composable
 fun SinglePlanTitleSection(
+    currentPlan: GetPlanLectureRoomResponse,
     planDetailResponse: PlanDetailResponse,
     onGroupClick: () -> Unit
 ) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 24.dp)
+            .padding(top = 16.dp, bottom = 24.dp)
     ) {
         // 플랫폼 태그
         Row(
@@ -381,7 +385,7 @@ fun SinglePlanTitleSection(
             modifier = Modifier.padding(bottom = 8.dp)
         ) {
             Text(
-                text = planDetailResponse.platform.label,
+                text = currentPlan.platform.label,
                 style = MaterialTheme.typography.labelMedium,
                 color = MainPurple,
                 modifier = Modifier
@@ -392,18 +396,48 @@ fun SinglePlanTitleSection(
                     )
                     .padding(horizontal = 6.dp, vertical = 4.dp)
             )
+
+            Text(
+                text = currentPlan.subject.label,
+                style = MaterialTheme.typography.labelMedium,
+                color = currentPlan.subject.borderColor,
+                modifier = Modifier
+                    .background(
+                        color = currentPlan.subject.bgColor,
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                    .border(
+                        width = 1.dp,
+                        color = currentPlan.subject.borderColor,
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                    .padding(horizontal = 6.dp, vertical = 4.dp)
+            )
+
+            Text(
+                text = "${currentPlan.completedLessons}/${currentPlan.totalLessons}강",
+                style = MaterialTheme.typography.labelMedium,
+                color = textGray,
+                modifier = Modifier
+                    .border(
+                        width = 1.dp,
+                        color = textGray,
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                    .padding(horizontal = 6.dp, vertical = 4.dp)
+            )
         }
 
         // 강의 제목
         Text(
-            text = planDetailResponse.lectureTitle,
+            text = currentPlan.lectureTitle,
             style = MaterialTheme.typography.headlineSmall,
             modifier = Modifier.padding(bottom = 8.dp)
         )
 
         // 강의 제목
         Text(
-            text = "${planDetailResponse.teacher} ·",
+            text = "${currentPlan.teacher} · ${currentPlan.tag}",
             style = MaterialTheme.typography.labelMedium,
             color = textGray
         )
