@@ -479,7 +479,7 @@ fun ProfileItem(
                     shape = RoundedCornerShape(16.dp)
                 )
                 .border(
-                    width = if (isSelected) 2.dp else 1.dp,  // 선택시 테두리 두께 변경
+                    width = if (isSelected) 1.5.dp else 1.dp,  // 선택시 테두리 두께 변경
                     color = if (isSelected) MainPurple else Color(0xFFD1E7F5),  // 선택시 MainPurple
                     shape = RoundedCornerShape(16.dp)
                 ),
@@ -501,7 +501,7 @@ fun ProfileItem(
         Text(
             text = if (isCrown) "👑$name" else name,
             style = MaterialTheme.typography.bodySmall,
-            color = if (isSelected) MainPurple else Color.Black,  // 선택시 색상 변경
+            color = Color.Black,
             fontWeight = if (isMe) FontWeight.Bold else FontWeight.Normal,
             maxLines = 1,
             modifier = Modifier.fillMaxWidth(),

@@ -255,13 +255,13 @@ fun PlanDetailScreen(
 
                         PlanDetailSettingItem(
                             title = "시작 강의",
-                            value = "OT - OT",
+                            value = "1강. 수열의 극한과 급수",
                             onClick = { /* 일정 설정 */ },
                         )
 
                         PlanDetailSettingItem(
                             title = "마지막 강의",
-                            value = "13강 - 6장 미분의 활용 (2)",
+                            value = "10강 보충강의 (완강)",
                             onClick = { /* 일정 설정 */ },
                         )
 
