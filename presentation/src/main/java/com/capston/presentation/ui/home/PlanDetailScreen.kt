@@ -296,20 +296,20 @@ fun PlanDetailScreen(
                         Column {
                             PlanDetailSettingItem(
                                 title = "그룹명 변경",
+                                value = getOneStudyGroupResponse.value.name,
                                 onClick = { /* 그룹명 변경 */ },
                                 showDivider = true
                             )
 
                             PlanDetailSettingItem(
                                 title = "그룹원 관리",
-                                value = "A+를 향하여",
                                 onClick = { /* 그룹 소개/규칙 */ },
                                 showDivider = true
                             )
 
                             PlanDetailSettingItem(
                                 title = "초대코드 변경",
-                                value = "공개",
+                                value = getOneStudyGroupResponse.value.inviteCode,
                                 onClick = { /* 비밀번호 변경 */ },
                                 showDivider = false
                             )
