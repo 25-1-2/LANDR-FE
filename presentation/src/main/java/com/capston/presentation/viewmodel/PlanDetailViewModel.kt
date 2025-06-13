@@ -10,6 +10,7 @@ import com.capston.domain.response.MessageResponse
 import com.capston.domain.response.lecture.LessonByLectureId
 import com.capston.domain.response.plan.PlanDetailResponse
 import com.capston.domain.usecase.lecture.GetLessonsByLectureIdUseCase
+import com.capston.domain.usecase.plan.DeleteOnePlanUseCase
 import com.capston.domain.usecase.plan.GetPlanDetailUseCase
 import com.capston.domain.usecase.plan.PatchPeriodPlanUseCase
 import com.capston.domain.usecase.plan.PatchTimePlanUseCase
@@ -28,6 +29,7 @@ class PlanDetailViewModel @Inject constructor(
     private val getLessonsByLectureIdUseCase: GetLessonsByLectureIdUseCase,
     private val patchPeriodPlanUseCase: PatchPeriodPlanUseCase,
     private val patchTimePlanUseCase: PatchTimePlanUseCase,
+    private val deleteOnePlanUseCase: DeleteOnePlanUseCase,
     private val loadingStateManager: LoadingStateManager
 ) : ViewModel() {
 
@@ -42,6 +44,11 @@ class PlanDetailViewModel @Inject constructor(
 
     private val _patchTimePlanResponse = MutableStateFlow(MessageResponse())  // 기본값 ""
     val patchTimePlanResponse: StateFlow<MessageResponse> = _patchTimePlanResponse.asStateFlow()
+
+    private val _deleteOnePlanResponse = MutableStateFlow(MessageResponse())
+    val deleteOnePlanResponse: StateFlow<MessageResponse> = _deleteOnePlanResponse.asStateFlow()
+
+    var onLectureRoomDataChanged: (() -> Unit)? = null
 
     fun getPlanDetail(planId: Int) {
         viewModelScope.launch {
@@ -87,6 +94,22 @@ class PlanDetailViewModel @Inject constructor(
                 .collect { response ->  // 값 저장
                     _patchPeriodPlanResponse.value = response // 공백 제거 후 저장
                     Log.d("PlanEditViewModel", "patchPeriodPlan 업데이트됨: $response")
+                }
+        }
+    }
+
+    fun deleteOnePlan(planId: Int) {
+        viewModelScope.launch {
+            deleteOnePlanUseCase(planId)
+                .catch { e ->
+                    Log.e("LectureRoomViewModel", "deleteOnePlan 에러: ${e.message}")
+                }
+                .collect { response ->
+                    _deleteOnePlanResponse.value = response
+                    Log.d("LectureRoomViewModel", "deleteOnePlan 업데이트됨: $response")
+
+                    // HomeViewModel 동기화
+                    onLectureRoomDataChanged?.invoke()
                 }
         }
     }

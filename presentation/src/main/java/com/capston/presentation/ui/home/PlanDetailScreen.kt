@@ -4,7 +4,9 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -17,12 +19,15 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -43,8 +48,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.navigation.NavController
 import com.capston.domain.request.PatchPeriodPlanDto
 import com.capston.domain.response.enum_class.Platform
@@ -53,6 +63,7 @@ import com.capston.domain.response.plan.GetPlanLectureRoomResponse
 import com.capston.domain.response.plan.PlanDetailResponse
 import com.capston.presentation.R
 import com.capston.presentation.theme.MainPurple
+import com.capston.presentation.theme.chipGray
 import com.capston.presentation.theme.dividerGray
 import com.capston.presentation.theme.materialGray
 import com.capston.presentation.theme.textGray
@@ -81,6 +92,7 @@ fun PlanDetailScreen(
 
     var showStartDateDialog by remember { mutableStateOf(false) }
     var showEndDateDialog by remember { mutableStateOf(false) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
 
 
     // 기본값들 정의
@@ -276,7 +288,7 @@ fun PlanDetailScreen(
                         Column {
                             PlanDetailSettingItem(
                                 title = "계획 삭제",
-                                onClick = { /* 그룹 멤버 관리 */ },
+                                onClick = { showDeleteDialog = true },
                                 textColor = Color.Red,
                                 showDivider = false
                             )
@@ -400,6 +412,19 @@ fun PlanDetailScreen(
                 onDismiss = { showEndDateDialog = false }
             )
         }
+    }
+
+    if (showDeleteDialog) {
+        DeleteConfirmDialog(
+            title = "계획 삭제",
+            message = "정말로 이 계획을 삭제하시겠습니까?\n삭제된 계획은 복구할 수 없습니다.",
+            onConfirm = {
+                planDetailViewModel?.deleteOnePlan(planId)
+                showDeleteDialog = false
+                navController.popBackStack() // 삭제 후 이전 화면으로
+            },
+            onDismiss = { showDeleteDialog = false }
+        )
     }
 }
 
@@ -525,6 +550,119 @@ fun DateChangeDialog(
             modifier = Modifier
                 .background(Color.White)
         )
+    }
+}
+
+@Composable
+fun DeleteConfirmDialog(
+    title: String,
+    message: String,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(
+            dismissOnBackPress = true,
+            dismissOnClickOutside = true
+        )
+    ) {
+        Card(
+            modifier = Modifier
+                .width(280.dp), // 삭제 다이얼로그는 조금 더 넓게
+            shape = RoundedCornerShape(10.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = Color.White
+            ),
+            elevation = CardDefaults.cardElevation(
+                defaultElevation = 4.dp
+            )
+        ) {
+            Column(
+                modifier = Modifier
+                    .background(Color.White)
+                    .padding(16.dp)
+            ) {
+                // 헤더 부분
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                // 구분선
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(1.dp)
+                        .background(dividerGray)
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // 메시지
+                Text(
+                    text = message,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = textGray,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // 확인/취소 버튼
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    // 취소 버튼
+                    FilterChip(
+                        selected = false,
+                        onClick = { onDismiss() },
+                        label = {
+                            Text(
+                                text = "취소",
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        },
+                        colors = FilterChipDefaults.filterChipColors(
+                            containerColor = chipGray,
+                            labelColor = Color.Black
+                        ),
+                        border = null
+                    )
+
+                    Spacer(modifier = Modifier.width(10.dp))
+
+                    // 삭제 버튼
+                    FilterChip(
+                        selected = false,
+                        onClick = { onConfirm() },
+                        label = {
+                            Text(
+                                text = "삭제",
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.SemiBold                            )
+                        },
+                        colors = FilterChipDefaults.filterChipColors(
+                            containerColor = Color(0xFFD32F2F),
+                            labelColor = Color.White
+                        ),
+                        border = null
+                    )
+                }
+            }
+        }
     }
 }
 
