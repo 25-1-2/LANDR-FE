@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.capston.domain.manager.LoadingStateManager
 import com.capston.domain.response.CheckResponse
 import com.capston.domain.response.MessageResponse
+import com.capston.domain.response.plan.GetPlanLectureRoomResponse
 import com.capston.domain.response.plan.PlanDetailResponse
 import com.capston.domain.response.study_group.OneStudyGroupResponse
 import com.capston.domain.usecase.home.PatchLessonSchedulesCheckToggleUseCase
@@ -33,6 +34,9 @@ class GroupPlanViewModel @Inject constructor(
     private val loadingStateManager: LoadingStateManager
 ) : ViewModel() {
 
+    private val _currentPlan = MutableStateFlow(GetPlanLectureRoomResponse())
+    val currentPlan = _currentPlan.asStateFlow()
+
     private val _PlanDetailResponse = MutableStateFlow(PlanDetailResponse())
     val planDetailResponse: StateFlow<PlanDetailResponse> = _PlanDetailResponse.asStateFlow()
 
@@ -53,6 +57,10 @@ class GroupPlanViewModel @Inject constructor(
 
     // HomeViewModel과의 동기화를 위한 콜백
     var onDataChanged: (() -> Unit)? = null
+
+    fun setPlanData(plan: GetPlanLectureRoomResponse) {
+        _currentPlan.value = plan
+    }
 
     fun getPlanDetail(planId: Int) {
         viewModelScope.launch {

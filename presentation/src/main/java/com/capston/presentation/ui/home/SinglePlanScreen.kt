@@ -100,7 +100,7 @@ fun SinglePlanScreen(
                 SinglePlanTopBar(
                     navController = navController,
                     onMenuClick = {
-                        navController.navigate("${Screen.PlanDetail.title}/${planId}")
+                        navController.navigate("${Screen.PlanDetail.title}/${planId}/single")
                     }
                 )
             },

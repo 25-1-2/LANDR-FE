@@ -420,15 +420,29 @@ fun MainBottomBar(
                     )
                 }
 
+                // 예시
                 composable(
-                    route = "${Screen.PlanDetail.title}/{planId}",
-                    arguments = listOf(navArgument("planId") { type = NavType.IntType })
+                    "${Screen.PlanDetail.title}/{planId}/{screenType}?studyGroupId={studyGroupId}",
+                    arguments = listOf(
+                        navArgument("planId") { type = NavType.IntType },
+                        navArgument("screenType") { type = NavType.StringType },
+                        navArgument("studyGroupId") {
+                            type = NavType.IntType
+                            defaultValue = -1
+                        }
+                    )
                 ) { backStackEntry ->
                     val planId = backStackEntry.arguments?.getInt("planId") ?: 0
+                    val screenType = backStackEntry.arguments?.getString("screenType") ?: "single"
+                    val studyGroupId = backStackEntry.arguments?.getInt("studyGroupId") ?: -1
+
                     PlanDetailScreen(
                         planId = planId,
+                        screenType = screenType,
+                        studyGroupId = studyGroupId,
                         navController = navController,
-                        singlePlanViewModel = singlePlanViewModel // 또는 적절한 ViewModel
+                        singlePlanViewModel = if (screenType == "single") singlePlanViewModel else null,
+                        groupPlanViewModel = if (screenType == "group") groupPlanViewModel else null
                     )
                 }
 
@@ -442,19 +456,6 @@ fun MainBottomBar(
                         planEditViewModel = planEditViewModel,
                         navController = navController,
                         loadingStateManager = loadingStateManager
-                    )
-                }
-
-                composable(
-                    route = "${Screen.TimePlanEdit.title}/{planId}",
-                    arguments = listOf(navArgument("planId") { type = NavType.IntType })
-                ) { backStackEntry ->
-                    val planId = backStackEntry.arguments?.getInt("planId") ?: 0
-                    TimePlanEditScreen(
-                        planId = TODO(),
-                        planEditViewModel = planEditViewModel,
-                        navController = navController,
-                        loadingStateManager = loadingStateManager,
                     )
                 }
 

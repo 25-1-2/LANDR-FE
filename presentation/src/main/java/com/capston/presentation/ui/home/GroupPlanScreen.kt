@@ -112,7 +112,8 @@ fun GroupPlanScreen(
             topBar = {
                 GroupPlanTopBar(
                     navController = navController,
-                    planId = planId
+                    planId = planId,
+                    studyGroupId = studyGroupId
                 )
             },
             // 재스케줄링 FAB 추가 (내 계획일 때만)
@@ -288,7 +289,8 @@ fun GroupPlanScreen(
 @Composable
 fun GroupPlanTopBar(
     navController: NavController,
-    planId: Int
+    planId: Int,
+    studyGroupId: Int
 ) {
     Column {
         TopAppBar(
@@ -305,7 +307,7 @@ fun GroupPlanTopBar(
             },
             actions = {
                 IconButton(onClick = {
-                    navController.navigate("${Screen.PlanDetail.title}/${planId}")
+                    navController.navigate("${Screen.PlanDetail.title}/${planId}/group?studyGroupId=${studyGroupId}")
                 }) {
                     Image(
                         painter = painterResource(R.drawable.icon_more_horizontal),

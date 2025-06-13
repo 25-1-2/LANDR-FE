@@ -33,26 +33,99 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.capston.domain.response.enum_class.Platform
+import com.capston.domain.response.enum_class.Subject
+import com.capston.domain.response.plan.GetPlanLectureRoomResponse
+import com.capston.domain.response.plan.PlanDetailResponse
 import com.capston.presentation.R
 import com.capston.presentation.theme.dividerGray
 import com.capston.presentation.theme.textGray
+import com.capston.presentation.viewmodel.GroupPlanViewModel
 import com.capston.presentation.viewmodel.SinglePlanViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlanDetailScreen(
     planId: Int,
+    screenType: String, // "single" 또는 "group"
+    studyGroupId: Int? = null,
     navController: NavController,
-    singlePlanViewModel: SinglePlanViewModel
+    singlePlanViewModel: SinglePlanViewModel? = null,
+    groupPlanViewModel: GroupPlanViewModel? = null
+
 ) {
-    val currentPlan by singlePlanViewModel.currentPlan.collectAsState()
-    val planDetailResponse by singlePlanViewModel.planDetailResponse.collectAsState()
+    val groupId = if (studyGroupId == -1) null else studyGroupId
+
+    // 기본값들 정의
+    val defaultCurrentPlan = remember {
+        GetPlanLectureRoomResponse(
+            planId = planId,
+            platform = Platform.MEGA,
+            subject = Subject.KOR,
+            lectureTitle = "",
+            teacher = "",
+            tag = "",
+            completedLessons = 0,
+            totalLessons = 0,
+            studyGroup = false
+        )
+    }
+
+    val defaultPlanDetailResponse = remember {
+        PlanDetailResponse(
+            planType = "PERIOD",
+            startDate = "",
+            endDate = "",
+            dailyTime = 0,
+            playbackSpeed = 1.0,
+            dailySchedules = emptyList()
+        )
+    }
+
+    // SinglePlan/GroupPlan 따라 다른 데이터 수집
+    val currentPlan = when (screenType) {
+        "single" -> {
+            singlePlanViewModel?.currentPlan?.collectAsState() ?: remember { mutableStateOf(defaultCurrentPlan) }
+        }
+        "group" -> {
+            groupPlanViewModel?.currentPlan?.collectAsState() ?: remember { mutableStateOf(defaultCurrentPlan) }
+        }
+        else -> remember { mutableStateOf(defaultCurrentPlan) }
+    }
+
+    val planDetailResponse = when (screenType) {
+        "single" -> {
+            singlePlanViewModel?.planDetailResponse?.collectAsState() ?: remember { mutableStateOf(defaultPlanDetailResponse) }
+        }
+        "group" -> {
+            groupPlanViewModel?.planDetailResponse?.collectAsState() ?: remember { mutableStateOf(defaultPlanDetailResponse) }
+        }
+        else -> remember { mutableStateOf(defaultPlanDetailResponse) }
+    }
+
+
+    // 그룹 정보 (그룹에서 온 경우에만)
+    val getOneStudyGroupResponse = if (screenType == "group" && groupPlanViewModel != null) {
+        groupPlanViewModel.getOneStudyGroupResponse.collectAsState()
+    } else {
+        null
+    }
+
+    // 방장 여부 확인 (그룹에서 온 경우에만)
+    val isLeader = if (screenType == "group" && getOneStudyGroupResponse != null) {
+        val myMember = getOneStudyGroupResponse.value.members.find { it.planId == planId }
+        myMember?.userId == getOneStudyGroupResponse.value.leaderId
+    } else {
+        true // 싱글 계획은 항상 본인이 관리
+    }
 
     // 배경색 정의
     val backgroundColor = Color(0xFFF3F2F7)
@@ -90,88 +163,91 @@ fun PlanDetailScreen(
                 .padding(innerPadding)
                 .padding(horizontal = 20.dp)
         ) {
-            Text(
-                text = "계획 설정",
-                style = MaterialTheme.typography.titleSmall,
-                color = textGray,
-                modifier = Modifier.padding(vertical = 8.dp)
-            )
-
-            // 개인 설정 카드
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 32.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = Color.White
-                ),
-                elevation = CardDefaults.cardElevation(
-                    defaultElevation = 0.dp
+            // 계획 설정은 방장일 때만 표시
+            if (isLeader) {
+                Text(
+                    text = "계획 설정",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = textGray,
+                    modifier = Modifier.padding(vertical = 8.dp)
                 )
-            ) {
-                Column {
-                    PlanDetailSettingItem(
-                        title = "계획 유형",
-                        value = when (planDetailResponse.planType) {
-                            "PERIOD" -> "기간"
-                            "TIME" -> "시간"
-                            else -> planDetailResponse.planType
-                        },
-                        onClick = { /* 계획 유형 변경 */ },
-                        showArrow = false
+
+                // 개인 설정 카드
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 32.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color.White
+                    ),
+                    elevation = CardDefaults.cardElevation(
+                        defaultElevation = 0.dp
                     )
-
-                    if (planDetailResponse.planType == "PERIOD") {
+                ) {
+                    Column {
                         PlanDetailSettingItem(
-                            title = "학습 시작일",
-                            value = planDetailResponse.startDate,
-                            onClick = { /* 기간 변경 */ },
+                            title = "계획 유형",
+                            value = when (planDetailResponse.value.planType) {
+                                "PERIOD" -> "기간"
+                                "TIME" -> "시간"
+                                else -> planDetailResponse.value.planType
+                            },
+                            onClick = { /* 계획 유형 변경 */ },
+                            showArrow = false
+                        )
+
+                        if (planDetailResponse.value.planType == "PERIOD") {
+                            PlanDetailSettingItem(
+                                title = "학습 시작일",
+                                value = planDetailResponse.value.startDate,
+                                onClick = { /* 기간 변경 */ },
+                            )
+
+                            PlanDetailSettingItem(
+                                title = "목표 완강일",
+                                value = planDetailResponse.value.endDate,
+                                onClick = { /* 기간 변경 */ },
+                            )
+                        } else {
+                            PlanDetailSettingItem(
+                                title = "일일 학습 시간",
+                                value = "${planDetailResponse.value.dailyTime}분",
+                                onClick = { /* 시간 변경 */ },
+                            )
+                        }
+
+                        PlanDetailSettingItem(
+                            title = "공부 일정",
+                            value = "월 화 수 토",
+                            onClick = { /* 스터디룸 설정 */ },
                         )
 
                         PlanDetailSettingItem(
-                            title = "목표 완강일",
-                            value = planDetailResponse.endDate,
-                            onClick = { /* 기간 변경 */ },
+                            title = "시작 강의",
+                            onClick = { /* 일정 설정 */ },
                         )
-                    } else {
+
                         PlanDetailSettingItem(
-                            title = "일일 학습 시간",
-                            value = "${planDetailResponse.dailyTime}분",
-                            onClick = { /* 시간 변경 */ },
+                            title = "마지막 강의",
+                            onClick = { /* 일정 설정 */ },
+                        )
+
+                        PlanDetailSettingItem(
+                            title = "배속",
+                            value = "${planDetailResponse.value.playbackSpeed}배",
+                            onClick = { /* 일정 설정 */ },
+                            showDivider = false
                         )
                     }
-
-                    PlanDetailSettingItem(
-                        title = "공부 일정",
-                        value = "월 화 수 토",
-                        onClick = { /* 스터디룸 설정 */ },
-                    )
-
-                    PlanDetailSettingItem(
-                        title = "시작 강의",
-                        onClick = { /* 일정 설정 */ },
-                    )
-
-                    PlanDetailSettingItem(
-                        title = "마지막 강의",
-                        onClick = { /* 일정 설정 */ },
-                    )
-
-                    PlanDetailSettingItem(
-                        title = "배속",
-                        value = "${planDetailResponse.playbackSpeed}배",
-                        onClick = { /* 일정 설정 */ },
-                        showDivider = false
-                    )
                 }
             }
 
-            // 그룹장 메뉴 섹션 (그룹인 경우에만 표시)
-            if (currentPlan.studyGroup) {
+            // 그룹장 메뉴 섹션 (그룹이고 방장인 경우에만 표시)
+            if (screenType == "group" && isLeader && getOneStudyGroupResponse != null) {
                 Text(
                     text = "그룹장 메뉴",
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.titleSmall,
                     color = textGray,
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
