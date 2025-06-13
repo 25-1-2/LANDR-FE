@@ -733,7 +733,7 @@ fun GroupCreationBottomSheet(
     singlePlanViewModel: SinglePlanViewModel,
     onDismiss: () -> Unit
 ) {
-    var showConfirmDialog by remember { mutableStateOf(false) }
+    var showChangeToGroupDialog by remember { mutableStateOf(false) }
     var selectedPlan by remember { mutableStateOf<GetPlanLectureRoomResponse?>(null) }
 
     val lectures by lectureRoomViewModel.getPlanLectureRoomResponse.collectAsState()
@@ -807,7 +807,7 @@ fun GroupCreationBottomSheet(
                             plan = plan,
                             onSelectClick = {
                                 selectedPlan = plan
-                                showConfirmDialog = true
+                                showChangeToGroupDialog = true
                             }
                         )
                         if (plan != individualPlans.last()) {
@@ -822,30 +822,117 @@ fun GroupCreationBottomSheet(
     }
 
     // 확인 다이얼로그
-    if (showConfirmDialog && selectedPlan != null) {
-        AlertDialog(
-            onDismissRequest = { showConfirmDialog = false },
-            title = { Text("그룹 전환 확인") },
-            text = {
-                Text("'${selectedPlan!!.lectureTitle}' 계획을\n스터디 그룹으로 전환하시겠습니까?")
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        singlePlanViewModel.postNewStudyGroup(selectedPlan!!.planId)
-                        showConfirmDialog = false
-                        onDismiss()
-                    }
+    if (showChangeToGroupDialog && selectedPlan != null) {
+        Dialog(
+            onDismissRequest = onDismiss,
+            properties = DialogProperties(
+                dismissOnBackPress = true,
+                dismissOnClickOutside = true
+            )
+        ) {
+            Card(
+                modifier = Modifier
+                    .width(280.dp), // 삭제 다이얼로그는 조금 더 넓게
+                shape = RoundedCornerShape(10.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = Color.White
+                ),
+                elevation = CardDefaults.cardElevation(
+                    defaultElevation = 4.dp
+                )
+            ) {
+                Column(
+                    modifier = Modifier
+                        .background(Color.White)
+                        .padding(16.dp)
                 ) {
-                    Text("확인", color = MainPurple)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showConfirmDialog = false }) {
-                    Text("취소", color = textGray)
+                    // 헤더 부분
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 16.dp),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "그룹 전환",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    // 구분선
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(1.dp)
+                            .background(dividerGray)
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // 메시지
+                    Text(
+                        text = "\"${selectedPlan!!.lectureTitle}\" 계획을 스터디 그룹으로 전환하시겠습니까?",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = textGray,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 4.dp)
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // 확인/취소 버튼
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        // 취소 버튼
+                        FilterChip(
+                            selected = false,
+                            onClick = { showChangeToGroupDialog = false },
+                            label = {
+                                Text(
+                                    text = "취소",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            },
+                            colors = FilterChipDefaults.filterChipColors(
+                                containerColor = chipGray,
+                                labelColor = Color.Black
+                            ),
+                            border = null
+                        )
+
+                        Spacer(modifier = Modifier.width(10.dp))
+
+                        // 확인 버튼
+                        FilterChip(
+                            selected = false,
+                            onClick = {
+                                singlePlanViewModel.postNewStudyGroup(selectedPlan!!.planId)
+                                showChangeToGroupDialog = false
+                                onDismiss()
+                            },
+                            label = {
+                                Text(
+                                    text = "확인",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.SemiBold                            )
+                            },
+                            colors = FilterChipDefaults.filterChipColors(
+                                containerColor = MainPurple,
+                                labelColor = Color.White
+                            ),
+                            border = null
+                        )
+                    }
                 }
             }
-        )
+        }
     }
 }
 
