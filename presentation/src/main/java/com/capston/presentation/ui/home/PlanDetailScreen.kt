@@ -88,7 +88,7 @@ fun PlanDetailScreen(
             // 개인 설정 섹션
             item {
                 Text(
-                    text = "개인 설정",
+                    text = "계획 설정",
                     style = MaterialTheme.typography.titleMedium,
                     color = textGray,
                     modifier = Modifier.padding(top = 24.dp, bottom = 16.dp)
@@ -119,16 +119,50 @@ fun PlanDetailScreen(
                             showDivider = true
                         )
 
+                        if (planDetailResponse.planType == "PERIOD") {
+                            PlanDetailSettingItem(
+                                title = "학습 시작일",
+                                value = planDetailResponse.startDate,
+                                onClick = { /* 기간 변경 */ },
+                                showDivider = true
+                            )
+
+                            PlanDetailSettingItem(
+                                title = "목표 완강일",
+                                value = planDetailResponse.endDate,
+                                onClick = { /* 기간 변경 */ },
+                                showDivider = true
+                            )
+                        } else {
+                            PlanDetailSettingItem(
+                                title = "일일 학습 시간",
+                                value = "${planDetailResponse.dailyTime}분",
+                                onClick = { /* 시간 변경 */ },
+                                showDivider = true
+                            )
+                        }
+
                         PlanDetailSettingItem(
-                            title = "스터디룸 설정",
+                            title = "공부 일정",
                             value = "그사징",
-                            valueColor = Color(0xFFFF6B9D), // 핑크색
                             onClick = { /* 스터디룸 설정 */ },
                             showDivider = true
                         )
 
                         PlanDetailSettingItem(
-                            title = "계획 일정 설정",
+                            title = "시작 강의",
+                            onClick = { /* 일정 설정 */ },
+                            showDivider = true
+                        )
+
+                        PlanDetailSettingItem(
+                            title = "마지막 강의",
+                            onClick = { /* 일정 설정 */ },
+                            showDivider = true
+                        )
+
+                        PlanDetailSettingItem(
+                            title = "배속",
                             onClick = { /* 일정 설정 */ },
                             showDivider = false
                         )
@@ -277,8 +311,6 @@ fun PlanDetailScreen(
 fun PlanDetailSettingItem(
     title: String,
     value: String = "",
-    textColor: Color = Color.Black,
-    valueColor: Color = textGray,
     onClick: () -> Unit,
     showDivider: Boolean = true
 ) {
@@ -293,8 +325,8 @@ fun PlanDetailSettingItem(
         ) {
             Text(
                 text = title,
-                style = MaterialTheme.typography.bodyLarge,
-                color = textColor
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.Black
             )
 
             Row(
@@ -304,12 +336,12 @@ fun PlanDetailSettingItem(
                     Text(
                         text = value,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = valueColor
+                        color = textGray
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                 }
                 Icon(
-                    painter = painterResource(id = R.drawable.icon_arrow_right),
+                    painter = painterResource(id = R.drawable.icon_nav_arrow_right),
                     contentDescription = null,
                     tint = textGray,
                     modifier = Modifier.size(16.dp)
@@ -319,7 +351,7 @@ fun PlanDetailSettingItem(
 
         if (showDivider) {
             HorizontalDivider(
-                thickness = 1.dp,
+                thickness = 0.5.dp,
                 color = dividerGray,
                 modifier = Modifier.padding(horizontal = 20.dp)
             )
