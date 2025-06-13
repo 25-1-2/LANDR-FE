@@ -22,7 +22,8 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class PlanEditViewModel @Inject constructor(
+
+class PlanDetailViewModel @Inject constructor(
     private val getPlanDetailUseCase: GetPlanDetailUseCase,
     private val getLessonsByLectureIdUseCase: GetLessonsByLectureIdUseCase,
     private val patchPeriodPlanUseCase: PatchPeriodPlanUseCase,

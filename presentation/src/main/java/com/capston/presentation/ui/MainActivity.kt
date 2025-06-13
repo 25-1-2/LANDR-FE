@@ -15,17 +15,11 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -54,7 +48,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -76,7 +69,6 @@ import com.capston.domain.response.plan.PlanDetailResponse
 import com.capston.domain.response.plan.GetPlanLectureRoomResponse
 import com.capston.presentation.R
 import com.capston.presentation.theme.CapstonTheme
-import com.capston.presentation.theme.LightGray4_40
 import com.capston.presentation.theme.LightGray60
 import com.capston.presentation.theme.MainPurple
 import com.capston.presentation.theme.chipGray
@@ -92,9 +84,7 @@ import com.capston.presentation.ui.home.LectureRoomScreen
 import com.capston.presentation.ui.home.NotificationScreen
 import com.capston.presentation.ui.home.ProfileScreen
 import com.capston.presentation.ui.home.SinglePlanScreen
-import com.capston.presentation.ui.home.PeriodPlanEditScreen
 import com.capston.presentation.ui.home.PlanDetailScreen
-import com.capston.presentation.ui.home.TimePlanEditScreen
 import com.capston.presentation.ui.search.SearchActivity
 import com.capston.presentation.viewmodel.DailyScheduleViewModel
 import com.capston.presentation.viewmodel.GroupPlanViewModel
@@ -102,7 +92,7 @@ import com.capston.presentation.viewmodel.HomeViewModel
 import com.capston.presentation.viewmodel.LectureRoomViewModel
 import com.capston.presentation.viewmodel.LoginViewModel
 import com.capston.presentation.viewmodel.MyPageViewModel
-import com.capston.presentation.viewmodel.PlanEditViewModel
+import com.capston.presentation.viewmodel.PlanDetailViewModel
 import com.capston.presentation.viewmodel.PlanViewModel
 import com.capston.presentation.viewmodel.RecommendViewModel
 import com.capston.presentation.viewmodel.SinglePlanViewModel
@@ -120,7 +110,7 @@ class MainActivity : ComponentActivity() {
     val lectureRoomViewModel: LectureRoomViewModel by viewModels()
     val singlePlanViewModel: SinglePlanViewModel by viewModels()
     val groupPlanViewModel: GroupPlanViewModel by viewModels()
-    val planEditViewModel: PlanEditViewModel by viewModels()
+    val planDetailViewModel: PlanDetailViewModel by viewModels()
     val myPageViewModel: MyPageViewModel by viewModels()
     val recommendViewModel: RecommendViewModel by viewModels()
 
@@ -191,7 +181,7 @@ class MainActivity : ComponentActivity() {
                             lectureRoomViewModel = lectureRoomViewModel,
                             singlePlanViewModel = singlePlanViewModel,
                             groupPlanViewModel = groupPlanViewModel,
-                            planEditViewModel = planEditViewModel,
+                            planDetailViewModel = planDetailViewModel,
                             loginViewModel = loginViewModel,
                             myPageViewModel = myPageViewModel,
                             recommendViewModel = recommendViewModel,
@@ -292,7 +282,7 @@ fun MainBottomBar(
     lectureRoomViewModel: LectureRoomViewModel,
     singlePlanViewModel: SinglePlanViewModel,
     groupPlanViewModel: GroupPlanViewModel,
-    planEditViewModel: PlanEditViewModel,
+    planDetailViewModel: PlanDetailViewModel,
     loginViewModel: LoginViewModel,
     myPageViewModel: MyPageViewModel,
     recommendViewModel: RecommendViewModel,
@@ -420,7 +410,6 @@ fun MainBottomBar(
                     )
                 }
 
-                // 예시
                 composable(
                     "${Screen.PlanDetail.title}/{planId}/{screenType}?studyGroupId={studyGroupId}",
                     arguments = listOf(
@@ -441,21 +430,9 @@ fun MainBottomBar(
                         screenType = screenType,
                         studyGroupId = studyGroupId,
                         navController = navController,
+                        planDetailViewModel = planDetailViewModel,
                         singlePlanViewModel = if (screenType == "single") singlePlanViewModel else null,
                         groupPlanViewModel = if (screenType == "group") groupPlanViewModel else null
-                    )
-                }
-
-                composable(
-                    route = "${Screen.PeriodPlanEdit.title}/{planId}",
-                    arguments = listOf(navArgument("planId") { type = NavType.IntType })
-                ) { backStackEntry ->
-                    val planId = backStackEntry.arguments?.getInt("planId") ?: 0
-                    PeriodPlanEditScreen(
-                        planId = planId,
-                        planEditViewModel = planEditViewModel,
-                        navController = navController,
-                        loadingStateManager = loadingStateManager
                     )
                 }
 

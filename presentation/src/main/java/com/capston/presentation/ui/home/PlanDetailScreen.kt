@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -45,6 +46,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.capston.domain.request.PatchPeriodPlanDto
 import com.capston.domain.response.enum_class.Platform
 import com.capston.domain.response.enum_class.Subject
 import com.capston.domain.response.plan.GetPlanLectureRoomResponse
@@ -55,6 +57,7 @@ import com.capston.presentation.theme.dividerGray
 import com.capston.presentation.theme.materialGray
 import com.capston.presentation.theme.textGray
 import com.capston.presentation.viewmodel.GroupPlanViewModel
+import com.capston.presentation.viewmodel.PlanDetailViewModel
 import com.capston.presentation.viewmodel.SinglePlanViewModel
 import java.text.ParseException
 import java.text.SimpleDateFormat
@@ -69,6 +72,7 @@ fun PlanDetailScreen(
     screenType: String, // "single" 또는 "group"
     studyGroupId: Int? = null,
     navController: NavController,
+    planDetailViewModel: PlanDetailViewModel,
     singlePlanViewModel: SinglePlanViewModel? = null,
     groupPlanViewModel: GroupPlanViewModel? = null
 
@@ -371,7 +375,6 @@ fun PlanDetailScreen(
 
         if (showStartDateDialog) {
             DateChangeDialog(
-                title = "시작일 변경",
                 currentDate = planDetailResponse.value.startDate,
                 onDateSelected = { selectedDate ->
                     // TODO: 시작일 변경 API 호출
@@ -383,11 +386,16 @@ fun PlanDetailScreen(
 
         if (showEndDateDialog) {
             DateChangeDialog(
-                title = "목표 완강일 변경",
                 currentDate = planDetailResponse.value.endDate,
                 onDateSelected = { selectedDate ->
-                    // TODO: 목표 완강일 변경 API 호출
-                    println("선택된 완강일: $selectedDate")
+                    // 완강일 변경 API 호출
+                    planDetailViewModel.patchPeriodPlan(
+                        planId = planId,
+                        patchPeriodPlanDto = PatchPeriodPlanDto(
+                            endDate = selectedDate,
+                            playbackSpeed = planDetailResponse.value.playbackSpeed
+                        )
+                    )
                 },
                 onDismiss = { showEndDateDialog = false }
             )
@@ -462,7 +470,6 @@ fun PlanDetailSettingItem(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DateChangeDialog(
-    title: String, // "시작일 변경" 또는 "목표 완강일 변경" (실제로는 DatePickerDialog 자체 타이틀에 사용되지 않음)
     currentDate: String,
     onDateSelected: (String) -> Unit,
     onDismiss: () -> Unit
@@ -470,7 +477,7 @@ fun DateChangeDialog(
     val initialDateMillis = parseDate(currentDate) ?: System.currentTimeMillis()
 
     val datePickerState = rememberDatePickerState(
-        initialSelectedDateMillis = System.currentTimeMillis()
+        initialSelectedDateMillis = initialDateMillis
     )
 
     DatePickerDialog(
@@ -498,13 +505,7 @@ fun DateChangeDialog(
         },
     ) {
         DatePicker(
-            title = {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(start = 32.dp)
-                )
-            },
+            title = { Text(text = "") },
             headline = {
                 // 선택된 날짜를 작은 크기로 표시
                 val selectedDate = datePickerState.selectedDateMillis?.let {
@@ -523,7 +524,6 @@ fun DateChangeDialog(
             ),
             modifier = Modifier
                 .background(Color.White)
-                .padding(top = 32.dp)
         )
     }
 }
