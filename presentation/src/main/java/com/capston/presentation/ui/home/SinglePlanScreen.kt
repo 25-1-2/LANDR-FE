@@ -33,7 +33,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Color.Companion.White
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -164,7 +163,6 @@ fun SinglePlanScreen(
                 }
             }
 
-            // TaskItem 바텀시트 추가 (기존 바텀시트들 다음에)
             if (showTaskBottomSheet && selectedTask != null) {
                 ModalBottomSheet(
                     onDismissRequest = {
@@ -511,149 +509,6 @@ fun TaskItem(
                     shape = RoundedCornerShape(8.dp)
                 )
                 .padding(horizontal = 6.dp, vertical = 4.dp)
-        )
-    }
-}
-
-@Composable
-fun PlanDetailBottomSheet(
-    planDetailResponse: PlanDetailResponse,
-    onEditClick: () -> Unit,
-    onDeleteClick: () -> Unit
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(White)
-            .padding(horizontal = 20.dp, vertical = 24.dp)
-    ) {
-        // 바텀시트 제목
-        Text(
-            text = "계획 상세 정보",
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(bottom = 24.dp)
-        )
-
-        // 계획 정보 목록
-        PlanInfoItem(
-            label = "계획 유형",
-            value = when (planDetailResponse.planType) {
-                "PERIOD" -> "기간"
-                "TIME" -> "시간"
-                else -> planDetailResponse.planType
-            }
-        )
-
-        PlanInfoItem(
-            label = "시작일",
-            value = planDetailResponse.startDate
-        )
-
-        PlanInfoItem(
-            label = "종료일",
-            value = planDetailResponse.endDate
-        )
-
-        PlanInfoItem(
-            label = "배속",
-            value = "${planDetailResponse.playbackSpeed}배속"
-        )
-
-        // 구분선
-        HorizontalDivider(
-            modifier = Modifier.padding(vertical = 24.dp),
-            color = dividerGray
-        )
-
-        // 버튼들
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            // 수정하기 버튼
-            TextButton(
-                onClick = onEditClick,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp)
-                    .border(
-                        width = 1.dp,
-                        color = MainPurple,
-                        shape = RoundedCornerShape(8.dp)
-                    )
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.icon_edit_pencil),
-                    contentDescription = "수정",
-                    tint = MainPurple,
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "수정하기",
-                    color = MainPurple,
-                    style = MaterialTheme.typography.titleMedium
-                )
-            }
-
-            // 삭제하기 버튼
-            TextButton(
-                onClick = onDeleteClick,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp)
-                    .border(
-                        width = 1.dp,
-                        color = Color.Red,
-                        shape = RoundedCornerShape(8.dp)
-                    )
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.icon_trash),
-                    contentDescription = "삭제",
-                    tint = Color.Red,
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "삭제하기",
-                    color = Color.Red,
-                    style = MaterialTheme.typography.titleMedium
-                )
-            }
-        }
-
-        // 바텀시트 하단 여백
-        Spacer(modifier = Modifier.height(24.dp))
-    }
-}
-
-@Composable
-fun PlanInfoItem(
-    label: String,
-    value: String
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyMedium,
-            color = textGray,
-            modifier = Modifier.weight(1f)
-        )
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Medium,
-            color = Color.Black,
-            textAlign = TextAlign.End,
-            modifier = Modifier.weight(1f)
         )
     }
 }

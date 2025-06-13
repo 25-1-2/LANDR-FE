@@ -76,6 +76,8 @@ import com.capston.presentation.theme.dividerGray
 import com.capston.presentation.theme.textGray
 import com.capston.presentation.ui.common.LoadingIndicator
 import com.capston.presentation.ui.common.Screen
+import com.capston.presentation.ui.common.bgColor
+import com.capston.presentation.ui.common.borderColor
 import com.capston.presentation.ui.common.noRippleClickable
 import com.capston.presentation.ui.home.CalenderScreen
 import com.capston.presentation.ui.home.GroupPlanScreen
@@ -744,18 +746,41 @@ fun GroupCreationBottomSheet(
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = Color.White
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        containerColor = Color.White,
+        dragHandle = {
+            // 드래그 핸들 영역 전체를 흰색 배경으로
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color.White) // 핸들 뒤쪽 배경을 흰색으로
+                    .padding(vertical = 16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Box(
+                    modifier = Modifier
+                        .width(32.dp)
+                        .height(4.dp)
+                        .background(
+                            color = Color.Gray.copy(alpha = 0.3f), // 핸들 자체는 회색
+                            shape = RoundedCornerShape(2.dp)
+                        )
+                )
+            }
+        }
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .background(Color.White)
+                .padding(horizontal = 20.dp)
+                .padding(top = 16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // 헤더
             Text(
                 text = "그룹으로 전환할 계획 선택",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.padding(bottom = 16.dp)
             )
 
@@ -832,7 +857,7 @@ fun PlanSelectionItem(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 12.dp),
+            .padding(vertical = 16.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -852,9 +877,9 @@ fun PlanSelectionItem(
                         .border(
                             width = 1.dp,
                             color = MainPurple,
-                            shape = RoundedCornerShape(6.dp)
+                            shape = RoundedCornerShape(8.dp)
                         )
-                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                        .padding(horizontal = 6.dp, vertical = 4.dp)
                 )
 
                 Text(
@@ -865,33 +890,51 @@ fun PlanSelectionItem(
                         .border(
                             width = 1.dp,
                             color = MainPurple,
-                            shape = RoundedCornerShape(6.dp)
+                            shape = RoundedCornerShape(8.dp)
                         )
-                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                        .padding(horizontal = 6.dp, vertical = 4.dp)
+                )
+
+                Text(
+                    text = plan.subject.label,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = plan.subject.borderColor,
+                    modifier = Modifier
+                        .background(
+                            color = plan.subject.bgColor,
+                            shape = RoundedCornerShape(8.dp)
+                        )
+                        .border(
+                            width = 1.dp,
+                            color = plan.subject.borderColor,
+                            shape = RoundedCornerShape(8.dp)
+                        )
+                        .padding(horizontal = 6.dp, vertical = 4.dp)
+                )
+
+                Text(
+                    text = "${plan.completedLessons}/${plan.totalLessons}강",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = textGray,
+                    modifier = Modifier
+                        .border(
+                            width = 1.dp,
+                            color = textGray,
+                            shape = RoundedCornerShape(8.dp)
+                        )
+                        .padding(horizontal = 6.dp, vertical = 4.dp)
                 )
             }
 
-            // 강의 제목과 진행률
-            Row(
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Bottom,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(
-                    text = plan.lectureTitle,
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Medium,
-                    modifier = Modifier.weight(1f)
-                )
-                Text(
-                    text = "${plan.completedLessons}/${plan.totalLessons}",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = textGray
-                )
-            }
+            // 강의 제목
+            Text(
+                text = plan.lectureTitle,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium,
+            )
         }
 
-        Spacer(modifier = Modifier.width(16.dp))
+        Spacer(modifier = Modifier.width(8.dp))
 
         // 선택 버튼
         TextButton(
