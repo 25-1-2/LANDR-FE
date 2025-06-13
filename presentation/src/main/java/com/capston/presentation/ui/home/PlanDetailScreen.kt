@@ -2,6 +2,8 @@ package com.capston.presentation.ui.home
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.rememberScrollableState
+import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -13,7 +15,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -78,25 +82,100 @@ fun PlanDetailScreen(
             )
         }
     ) { innerPadding ->
-        LazyColumn(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .background(backgroundColor)
+                .verticalScroll(rememberScrollState())
                 .padding(innerPadding)
                 .padding(horizontal = 20.dp)
         ) {
-            // 개인 설정 섹션
-            item {
-                Text(
-                    text = "계획 설정",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = textGray,
-                    modifier = Modifier.padding(top = 24.dp, bottom = 16.dp)
-                )
-            }
+            Text(
+                text = "계획 설정",
+                style = MaterialTheme.typography.titleSmall,
+                color = textGray,
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
 
             // 개인 설정 카드
-            item {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 32.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = Color.White
+                ),
+                elevation = CardDefaults.cardElevation(
+                    defaultElevation = 0.dp
+                )
+            ) {
+                Column {
+                    PlanDetailSettingItem(
+                        title = "계획 유형",
+                        value = when (planDetailResponse.planType) {
+                            "PERIOD" -> "기간"
+                            "TIME" -> "시간"
+                            else -> planDetailResponse.planType
+                        },
+                        onClick = { /* 계획 유형 변경 */ },
+                        showArrow = false
+                    )
+
+                    if (planDetailResponse.planType == "PERIOD") {
+                        PlanDetailSettingItem(
+                            title = "학습 시작일",
+                            value = planDetailResponse.startDate,
+                            onClick = { /* 기간 변경 */ },
+                        )
+
+                        PlanDetailSettingItem(
+                            title = "목표 완강일",
+                            value = planDetailResponse.endDate,
+                            onClick = { /* 기간 변경 */ },
+                        )
+                    } else {
+                        PlanDetailSettingItem(
+                            title = "일일 학습 시간",
+                            value = "${planDetailResponse.dailyTime}분",
+                            onClick = { /* 시간 변경 */ },
+                        )
+                    }
+
+                    PlanDetailSettingItem(
+                        title = "공부 일정",
+                        value = "월 화 수 토",
+                        onClick = { /* 스터디룸 설정 */ },
+                    )
+
+                    PlanDetailSettingItem(
+                        title = "시작 강의",
+                        onClick = { /* 일정 설정 */ },
+                    )
+
+                    PlanDetailSettingItem(
+                        title = "마지막 강의",
+                        onClick = { /* 일정 설정 */ },
+                    )
+
+                    PlanDetailSettingItem(
+                        title = "배속",
+                        value = "${planDetailResponse.playbackSpeed}배",
+                        onClick = { /* 일정 설정 */ },
+                        showDivider = false
+                    )
+                }
+            }
+
+            // 그룹장 메뉴 섹션 (그룹인 경우에만 표시)
+            if (currentPlan.studyGroup) {
+                Text(
+                    text = "그룹장 메뉴",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = textGray,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
@@ -109,79 +188,50 @@ fun PlanDetailScreen(
                 ) {
                     Column {
                         PlanDetailSettingItem(
-                            title = "계획 유형",
-                            value = when (planDetailResponse.planType) {
-                                "PERIOD" -> "기간"
-                                "TIME" -> "시간"
-                                else -> planDetailResponse.planType
-                            },
-                            onClick = { /* 계획 유형 변경 */ },
-                            showDivider = true
-                        )
-
-                        if (planDetailResponse.planType == "PERIOD") {
-                            PlanDetailSettingItem(
-                                title = "학습 시작일",
-                                value = planDetailResponse.startDate,
-                                onClick = { /* 기간 변경 */ },
-                                showDivider = true
-                            )
-
-                            PlanDetailSettingItem(
-                                title = "목표 완강일",
-                                value = planDetailResponse.endDate,
-                                onClick = { /* 기간 변경 */ },
-                                showDivider = true
-                            )
-                        } else {
-                            PlanDetailSettingItem(
-                                title = "일일 학습 시간",
-                                value = "${planDetailResponse.dailyTime}분",
-                                onClick = { /* 시간 변경 */ },
-                                showDivider = true
-                            )
-                        }
-
-                        PlanDetailSettingItem(
-                            title = "공부 일정",
-                            value = "그사징",
-                            onClick = { /* 스터디룸 설정 */ },
+                            title = "그룹명 변경",
+                            onClick = { /* 그룹명 변경 */ },
                             showDivider = true
                         )
 
                         PlanDetailSettingItem(
-                            title = "시작 강의",
-                            onClick = { /* 일정 설정 */ },
+                            title = "그룹 소개/규칙",
+                            value = "A+를 향하여",
+                            onClick = { /* 그룹 소개/규칙 */ },
                             showDivider = true
                         )
 
                         PlanDetailSettingItem(
-                            title = "마지막 강의",
-                            onClick = { /* 일정 설정 */ },
+                            title = "카테고리 변경",
+                            value = "대학생",
+                            onClick = { /* 카테고리 변경 */ },
                             showDivider = true
                         )
 
                         PlanDetailSettingItem(
-                            title = "배속",
-                            onClick = { /* 일정 설정 */ },
+                            title = "일일 목표시간 변경",
+                            value = "1시간",
+                            onClick = { /* 목표시간 변경 */ },
+                            showDivider = true
+                        )
+
+                        PlanDetailSettingItem(
+                            title = "모집인원 변경",
+                            value = "2명",
+                            onClick = { /* 모집인원 변경 */ },
+                            showDivider = true
+                        )
+
+                        PlanDetailSettingItem(
+                            title = "비밀번호 변경",
+                            value = "공개",
+                            onClick = { /* 비밀번호 변경 */ },
                             showDivider = false
                         )
                     }
                 }
-            }
 
-            // 계획 미션 섹션
-            item {
-                Spacer(modifier = Modifier.height(32.dp))
-                Text(
-                    text = "계획 미션",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = textGray,
-                    modifier = Modifier.padding(bottom = 16.dp)
-                )
-            }
-
-            item {
+                // 추가 그룹장 메뉴
+                Spacer(modifier = Modifier.height(8.dp))
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
@@ -192,117 +242,24 @@ fun PlanDetailScreen(
                         defaultElevation = 0.dp
                     )
                 ) {
-                    PlanDetailSettingItem(
-                        title = "계획 미션",
-                        value = "0",
-                        onClick = { /* 계획 미션 */ },
-                        showDivider = false
-                    )
-                }
-            }
-
-            // 그룹장 메뉴 섹션 (그룹인 경우에만 표시)
-            if (currentPlan.studyGroup) {
-                item {
-                    Spacer(modifier = Modifier.height(32.dp))
-                    Text(
-                        text = "그룹장 메뉴",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = textGray,
-                        modifier = Modifier.padding(bottom = 16.dp)
-                    )
-                }
-
-                item {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = Color.White
-                        ),
-                        elevation = CardDefaults.cardElevation(
-                            defaultElevation = 0.dp
+                    Column {
+                        PlanDetailSettingItem(
+                            title = "그룹 멤버 관리",
+                            onClick = { /* 그룹 멤버 관리 */ },
+                            showDivider = true
                         )
-                    ) {
-                        Column {
-                            PlanDetailSettingItem(
-                                title = "그룹명 변경",
-                                onClick = { /* 그룹명 변경 */ },
-                                showDivider = true
-                            )
 
-                            PlanDetailSettingItem(
-                                title = "그룹 소개/규칙",
-                                value = "A+를 향하여",
-                                onClick = { /* 그룹 소개/규칙 */ },
-                                showDivider = true
-                            )
-
-                            PlanDetailSettingItem(
-                                title = "카테고리 변경",
-                                value = "대학생",
-                                onClick = { /* 카테고리 변경 */ },
-                                showDivider = true
-                            )
-
-                            PlanDetailSettingItem(
-                                title = "일일 목표시간 변경",
-                                value = "1시간",
-                                onClick = { /* 목표시간 변경 */ },
-                                showDivider = true
-                            )
-
-                            PlanDetailSettingItem(
-                                title = "모집인원 변경",
-                                value = "2명",
-                                onClick = { /* 모집인원 변경 */ },
-                                showDivider = true
-                            )
-
-                            PlanDetailSettingItem(
-                                title = "비밀번호 변경",
-                                value = "공개",
-                                onClick = { /* 비밀번호 변경 */ },
-                                showDivider = false
-                            )
-                        }
-                    }
-                }
-
-                // 추가 그룹장 메뉴
-                item {
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = Color.White
-                        ),
-                        elevation = CardDefaults.cardElevation(
-                            defaultElevation = 0.dp
+                        PlanDetailSettingItem(
+                            title = "한번에 깨우기",
+                            onClick = { /* 한번에 깨우기 */ },
+                            showDivider = false
                         )
-                    ) {
-                        Column {
-                            PlanDetailSettingItem(
-                                title = "그룹 멤버 관리",
-                                onClick = { /* 그룹 멤버 관리 */ },
-                                showDivider = true
-                            )
-
-                            PlanDetailSettingItem(
-                                title = "한번에 깨우기",
-                                onClick = { /* 한번에 깨우기 */ },
-                                showDivider = false
-                            )
-                        }
                     }
                 }
             }
 
             // 하단 여백
-            item {
-                Spacer(modifier = Modifier.height(32.dp))
-            }
+            Spacer(modifier = Modifier.height(32.dp))
         }
     }
 }
@@ -312,6 +269,7 @@ fun PlanDetailSettingItem(
     title: String,
     value: String = "",
     onClick: () -> Unit,
+    showArrow: Boolean = true,
     showDivider: Boolean = true
 ) {
     Column {
@@ -340,12 +298,17 @@ fun PlanDetailSettingItem(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                 }
-                Icon(
-                    painter = painterResource(id = R.drawable.icon_nav_arrow_right),
-                    contentDescription = null,
-                    tint = textGray,
-                    modifier = Modifier.size(16.dp)
-                )
+
+                if (showArrow) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.icon_nav_arrow_right),
+                        contentDescription = null,
+                        tint = textGray,
+                        modifier = Modifier.size(16.dp)
+                    )
+                } else {
+                    Spacer(modifier = Modifier.size(16.dp))  // 화살표 공간만큼 여백 유지
+                }
             }
         }
 
