@@ -419,9 +419,10 @@ fun PlanDetailScreen(
             title = "계획 삭제",
             message = "정말로 이 계획을 삭제하시겠습니까?\n삭제된 계획은 복구할 수 없습니다.",
             onConfirm = {
-                planDetailViewModel?.deleteOnePlan(planId)
+                planDetailViewModel.deleteOnePlan(planId)
                 showDeleteDialog = false
-                navController.popBackStack() // 삭제 후 이전 화면으로
+                navController.popBackStack() // 이전 화면으로 돌아가면 이미 삭제된 강의임
+                navController.popBackStack() // 그 이전 화면인 나의 강의실로 돌아가야 함
             },
             onDismiss = { showDeleteDialog = false }
         )
