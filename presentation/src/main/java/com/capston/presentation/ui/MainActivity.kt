@@ -93,6 +93,7 @@ import com.capston.presentation.ui.home.NotificationScreen
 import com.capston.presentation.ui.home.ProfileScreen
 import com.capston.presentation.ui.home.SinglePlanScreen
 import com.capston.presentation.ui.home.PeriodPlanEditScreen
+import com.capston.presentation.ui.home.PlanDetailScreen
 import com.capston.presentation.ui.home.TimePlanEditScreen
 import com.capston.presentation.ui.search.SearchActivity
 import com.capston.presentation.viewmodel.DailyScheduleViewModel
@@ -416,6 +417,18 @@ fun MainBottomBar(
                         studyGroupId = studyGroupId,
                         groupPlanViewModel = groupPlanViewModel,
                         navController = navController,
+                    )
+                }
+
+                composable(
+                    route = "${Screen.PlanDetail.title}/{planId}",
+                    arguments = listOf(navArgument("planId") { type = NavType.IntType })
+                ) { backStackEntry ->
+                    val planId = backStackEntry.arguments?.getInt("planId") ?: 0
+                    PlanDetailScreen(
+                        planId = planId,
+                        navController = navController,
+                        singlePlanViewModel = singlePlanViewModel // 또는 적절한 ViewModel
                     )
                 }
 

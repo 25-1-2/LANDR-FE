@@ -103,7 +103,9 @@ fun SinglePlanScreen(
             topBar = {
                 SinglePlanTopBar(
                     navController = navController,
-                    onMenuClick = { showEditBottomSheet = true }
+                    onMenuClick = {
+                        navController.navigate("${Screen.PlanDetail.title}/${planId}")
+                    }
                 )
             },
             // 재스케줄링 FAB 추가
@@ -608,7 +610,7 @@ fun PlanDetailBottomSheet(
 
         PlanInfoItem(
             label = "종료일",
-            value = planDetailResponse.endDate ?: "설정되지 않음"
+            value = planDetailResponse.endDate
         )
 
         PlanInfoItem(
