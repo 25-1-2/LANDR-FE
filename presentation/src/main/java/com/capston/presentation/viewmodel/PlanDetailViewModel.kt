@@ -14,6 +14,7 @@ import com.capston.domain.usecase.plan.DeleteOnePlanUseCase
 import com.capston.domain.usecase.plan.GetPlanDetailUseCase
 import com.capston.domain.usecase.plan.PatchPeriodPlanUseCase
 import com.capston.domain.usecase.plan.PatchTimePlanUseCase
+import com.capston.domain.usecase.study_group.DeleteOneStudyGroupUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -30,6 +31,7 @@ class PlanDetailViewModel @Inject constructor(
     private val patchPeriodPlanUseCase: PatchPeriodPlanUseCase,
     private val patchTimePlanUseCase: PatchTimePlanUseCase,
     private val deleteOnePlanUseCase: DeleteOnePlanUseCase,
+    private val deleteOneStudyGroupUseCase: DeleteOneStudyGroupUseCase,
     private val loadingStateManager: LoadingStateManager
 ) : ViewModel() {
 
@@ -47,6 +49,9 @@ class PlanDetailViewModel @Inject constructor(
 
     private val _deleteOnePlanResponse = MutableStateFlow(MessageResponse())
     val deleteOnePlanResponse: StateFlow<MessageResponse> = _deleteOnePlanResponse.asStateFlow()
+
+    private val _deleteOneStudyGroupResponse = MutableStateFlow(MessageResponse())
+    val deleteOneStudyGroupResponse: StateFlow<MessageResponse> = _deleteOneStudyGroupResponse.asStateFlow()
 
     var onLectureRoomDataChanged: (() -> Unit)? = null
 
@@ -107,6 +112,22 @@ class PlanDetailViewModel @Inject constructor(
                 .collect { response ->
                     _deleteOnePlanResponse.value = response
                     Log.d("LectureRoomViewModel", "deleteOnePlan 업데이트됨: $response")
+
+                    // HomeViewModel 동기화
+                    onLectureRoomDataChanged?.invoke()
+                }
+        }
+    }
+
+    fun deleteOneStudyGroup(groupId: Int) {
+        viewModelScope.launch {
+            deleteOneStudyGroupUseCase(groupId)
+                .catch { e ->
+                    Log.e("GroupPlanViewModel", "deleteOneStudyGroup 에러: ${e.message}")
+                }
+                .collect { response ->
+                    _deleteOneStudyGroupResponse.value = response
+                    Log.d("GroupPlanViewModel", "deleteOneStudyGroup 업데이트됨: $response")
 
                     // HomeViewModel 동기화
                     onLectureRoomDataChanged?.invoke()

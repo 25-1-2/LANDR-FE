@@ -4,7 +4,6 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,7 +18,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DatePicker
@@ -52,7 +50,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.navigation.NavController
@@ -92,7 +89,11 @@ fun PlanDetailScreen(
 
     var showStartDateDialog by remember { mutableStateOf(false) }
     var showEndDateDialog by remember { mutableStateOf(false) }
-    var showDeleteDialog by remember { mutableStateOf(false) }
+    var showPlanDeleteDialog by remember { mutableStateOf(false) }
+    var showExitGroupDialog by remember { mutableStateOf(false) }
+    var showDeleteGroupDialog by remember { mutableStateOf(false) }
+
+
 
 
     // 기본값들 정의
@@ -288,7 +289,7 @@ fun PlanDetailScreen(
                         Column {
                             PlanDetailSettingItem(
                                 title = "계획 삭제",
-                                onClick = { showDeleteDialog = true },
+                                onClick = { showPlanDeleteDialog = true },
                                 textColor = Color.Red,
                                 showDivider = false
                             )
@@ -368,7 +369,7 @@ fun PlanDetailScreen(
 
                             PlanDetailSettingItem(
                                 title = "그룹 삭제",
-                                onClick = { /* 한번에 깨우기 */ },
+                                onClick = { showDeleteGroupDialog = true },
                                 textColor = Color.Red,
                                 showDivider = false
                             )
@@ -414,17 +415,45 @@ fun PlanDetailScreen(
         }
     }
 
-    if (showDeleteDialog) {
+    if (showPlanDeleteDialog) {
         DeleteConfirmDialog(
             title = "계획 삭제",
             message = "정말로 이 계획을 삭제하시겠습니까?\n삭제된 계획은 복구할 수 없습니다.",
             onConfirm = {
                 planDetailViewModel.deleteOnePlan(planId)
-                showDeleteDialog = false
+                showPlanDeleteDialog = false
                 navController.popBackStack() // 이전 화면으로 돌아가면 이미 삭제된 강의임
                 navController.popBackStack() // 그 이전 화면인 나의 강의실로 돌아가야 함
             },
-            onDismiss = { showDeleteDialog = false }
+            onDismiss = { showPlanDeleteDialog = false }
+        )
+    }
+
+    if (showExitGroupDialog) {
+        DeleteConfirmDialog(
+            title = "그룹 탈퇴",
+            message = "정말로 그룹을 탈퇴하시겠습니까?\n계획 정보는 유지됩니다.",
+            onConfirm = {
+//                planDetailViewModel.deleteOnePlan(planId)
+//                showPlanDeleteDialog = false
+//                navController.popBackStack() // 이전 화면으로 돌아가면 이미 삭제된 강의임
+//                navController.popBackStack() // 그 이전 화면인 나의 강의실로 돌아가야 함
+            },
+            onDismiss = { showPlanDeleteDialog = false }
+        )
+    }
+
+    if (showDeleteGroupDialog) {
+        DeleteConfirmDialog(
+            title = "계획 삭제",
+            message = "정말로 이 계획을 삭제하시겠습니까?\n삭제된 계획은 복구할 수 없습니다.",
+            onConfirm = {
+                planDetailViewModel.deleteOneStudyGroup(groupId?: 0)
+                showDeleteGroupDialog = false
+                navController.popBackStack() // 이전 화면으로 돌아가면 이미 삭제된 강의임
+                navController.popBackStack() // 그 이전 화면인 나의 강의실로 돌아가야 함
+            },
+            onDismiss = { showPlanDeleteDialog = false }
         )
     }
 }
