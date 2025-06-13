@@ -2,15 +2,18 @@ package com.capston.presentation.ui.home
 
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -78,8 +81,8 @@ fun SinglePlanScreen(
     var showEditBottomSheet by remember { mutableStateOf(false) }
     var showDeleteDropdown by remember { mutableStateOf(false) }
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
-    var showGroupConfirmDialog by remember { mutableStateOf(false) }
-    var showGroupCodeDialog by remember { mutableStateOf(false) }
+    var showTaskBottomSheet by remember { mutableStateOf(false) }
+    var selectedTask by remember { mutableStateOf<PlanDetailLessonSchedule?>(null) }
     var isLoading by remember { mutableStateOf(false) }
 
     val currentPlan by singlePlanViewModel.currentPlan.collectAsState()
@@ -147,8 +150,6 @@ fun SinglePlanScreen(
                 // 재스케줄링 버튼을 제거한 SinglePlanTitleSection
                 SinglePlanTitleSection(
                     currentPlan = currentPlan,
-                    planDetailResponse = planDetailResponse,
-                    onGroupClick = { showGroupConfirmDialog = true }
                 )
 
                 // 날짜별 섹션
@@ -156,7 +157,11 @@ fun SinglePlanScreen(
                     OneDaySection(
                         date = schedule.date,
                         planDetailLessonSchedules = schedule.lessonSchedules,
-                        singlePlanViewModel = singlePlanViewModel
+                        singlePlanViewModel = singlePlanViewModel,
+                        onTaskLongPress = { task ->
+                            selectedTask = task
+                            showTaskBottomSheet = true
+                        }
                     )
                 }
             }
@@ -215,87 +220,58 @@ fun SinglePlanScreen(
                 )
             }
 
-            if (showGroupConfirmDialog) {
-                AlertDialog(
+            // TaskItem 바텀시트 추가 (기존 바텀시트들 다음에)
+            if (showTaskBottomSheet && selectedTask != null) {
+                ModalBottomSheet(
+                    onDismissRequest = {
+                        showTaskBottomSheet = false
+                        selectedTask = null
+                    },
+                    sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
                     containerColor = Color.White,
-                    iconContentColor = Color.Black,
-                    titleContentColor = Color.Black,
-                    textContentColor = Color.Black,
-                    tonalElevation = 0.dp,
-                    onDismissRequest = { showGroupConfirmDialog = false },
-                    title = { Text("스터디 그룹 생성") },
-                    text = {
-                        Text("이 계획을 스터디 그룹으로 전환하시겠습니까?\n다른 사람들과 함께 공부할 수 있습니다.")
-                    },
-                    confirmButton = {
-                        TextButton(
-                            onClick = {
-                                showGroupConfirmDialog = false
-                                singlePlanViewModel.postNewStudyGroup(planId)
-                                showGroupCodeDialog = true
-                            }
-                        ) {
-                            Text("확인", color = MainPurple)
-                        }
-                    },
-                    dismissButton = {
-                        TextButton(onClick = { showGroupConfirmDialog = false }) {
-                            Text("취소")
-                        }
-                    }
-                )
-            }
-
-            if (showGroupCodeDialog) {
-                AlertDialog(
-                    containerColor = Color.White,
-                    iconContentColor = Color.Black,
-                    titleContentColor = Color.Black,
-                    textContentColor = Color.Black,
-                    tonalElevation = 0.dp,
-                    onDismissRequest = { },
-                    title = {
-                        Text(
-                            "스터디 그룹이 생성되었습니다!",
-                            textAlign = TextAlign.Center
-                        )
-                    },
-                    text = {
+                    dragHandle = {
+                        // 드래그 핸들 영역 전체를 흰색 배경으로
                         Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(Color.White) // 핸들 뒤쪽 배경을 흰색으로
+                                .padding(vertical = 16.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Text(
-                                "아래 코드를 친구들에게 공유하세요",
-                                style = MaterialTheme.typography.bodyMedium,
-                                textAlign = TextAlign.Center
-                            )
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Text(
-                                text = studyGroupResponse.inviteCode,
-                                style = MaterialTheme.typography.headlineMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MainPurple,
+                            Box(
                                 modifier = Modifier
+                                    .width(32.dp)
+                                    .height(4.dp)
                                     .background(
-                                        Color.Gray.copy(alpha = 0.1f),
-                                        RoundedCornerShape(8.dp)
+                                        color = Color.Gray.copy(alpha = 0.3f), // 핸들 자체는 회색
+                                        shape = RoundedCornerShape(2.dp)
                                     )
-                                    .padding(16.dp),
-                                textAlign = TextAlign.Center
                             )
-                        }
-                    },
-                    confirmButton = {
-                        TextButton(
-                            onClick = {
-                                showGroupCodeDialog = false
-                                navController.popBackStack()
-                            }
-                        ) {
-                            Text("확인", color = MainPurple)
                         }
                     }
-                )
+                ) {
+                    TaskActionBottomSheet(
+                        taskItem = selectedTask!!,
+                        onMoveToPreviousDay = {
+                            // 전날로 이동 로직
+//                            singlePlanViewModel.moveTaskToPreviousDay(selectedTask!!.id)
+//                            showTaskBottomSheet = false
+//                            selectedTask = null
+                        },
+                        onMoveToNextDay = {
+                            // 다음날로 이동 로직
+//                            singlePlanViewModel.moveTaskToNextDay(selectedTask!!.id)
+//                            showTaskBottomSheet = false
+//                            selectedTask = null
+                        },
+                        onDelete = {
+                            // 삭제 로직
+//                            singlePlanViewModel.deleteTask(selectedTask!!.id)
+//                            showTaskBottomSheet = false
+//                            selectedTask = null
+                        }
+                    )
+                }
             }
         }
 
@@ -371,8 +347,6 @@ fun SinglePlanTopBar(
 @Composable
 fun SinglePlanTitleSection(
     currentPlan: GetPlanLectureRoomResponse,
-    planDetailResponse: PlanDetailResponse,
-    onGroupClick: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -450,7 +424,8 @@ fun OneDaySection(
     date: String,
     planDetailLessonSchedules: List<PlanDetailLessonSchedule>,
     singlePlanViewModel: SinglePlanViewModel,
-    isReadOnly: Boolean = false
+    isReadOnly: Boolean = false,
+    onTaskLongPress: (PlanDetailLessonSchedule) -> Unit = {}
 ) {
     val totalMinutes = planDetailLessonSchedules.sumOf { it.adjustedDuration }
 
@@ -511,18 +486,21 @@ fun OneDaySection(
                 TaskItem(
                     planDetailLessonSchedule = lessonSchedule,
                     singlePlanViewModel = singlePlanViewModel,
-                    isReadOnly = isReadOnly
+                    isReadOnly = isReadOnly,
+                    onLongPress = onTaskLongPress
                 )
             }
         }
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun TaskItem(
     planDetailLessonSchedule: PlanDetailLessonSchedule,
     singlePlanViewModel: SinglePlanViewModel,
-    isReadOnly: Boolean = false
+    isReadOnly: Boolean = false,
+    onLongPress: (PlanDetailLessonSchedule) -> Unit = {}
 ) {
     // 각 체크박스의 상태를 remember로 관리하되, 초기값은 서버 데이터 사용
     var isChecked by remember(planDetailLessonSchedule.id, planDetailLessonSchedule.completed) {
@@ -540,6 +518,14 @@ fun TaskItem(
         modifier = Modifier
             .fillMaxWidth()
             .padding(top = 12.dp)
+            .combinedClickable(
+                onClick = { },
+                onLongClick = {
+                    if (!isReadOnly) {
+                        onLongPress(planDetailLessonSchedule)
+                    }
+                }
+            )
     ) {
         Row(
             verticalAlignment = Alignment.Top,
@@ -725,5 +711,112 @@ fun PlanInfoItem(
             textAlign = TextAlign.End,
             modifier = Modifier.weight(1f)
         )
+    }
+}
+
+@Composable
+fun TaskActionBottomSheet(
+    taskItem: PlanDetailLessonSchedule,
+    onMoveToPreviousDay: () -> Unit,
+    onMoveToNextDay: () -> Unit,
+    onDelete: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color.White)
+            .padding(horizontal = 20.dp, vertical = 24.dp)
+    ) {
+        // 바텀시트 제목
+        Text(
+            text = "강의 관리",
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+
+        // 선택된 강의 제목
+        Text(
+            text = taskItem.lessonTitle,
+            style = MaterialTheme.typography.bodyMedium,
+            color = textGray,
+            modifier = Modifier.padding(bottom = 24.dp)
+        )
+
+        // 구분선
+        HorizontalDivider(
+            color = dividerGray,
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
+
+        // 액션 버튼들
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            // 전날로 이동
+            TaskActionItem(
+                icon = R.drawable.icon_arrow_back,
+                text = "전날로 이동",
+                onClick = onMoveToPreviousDay
+            )
+
+            // 다음날로 이동
+            TaskActionItem(
+                icon = R.drawable.icon_arrow_right, // 적절한 아이콘으로 변경
+                text = "다음날로 이동",
+                onClick = onMoveToNextDay
+            )
+
+            // 삭제
+            TaskActionItem(
+                icon = R.drawable.icon_trash,
+                text = "삭제",
+                textColor = Color.Red,
+                iconTint = Color.Red,
+                onClick = onDelete
+            )
+        }
+
+        // 바텀시트 하단 여백
+        Spacer(modifier = Modifier.height(24.dp))
+    }
+}
+
+@Composable
+fun TaskActionItem(
+    icon: Int,
+    text: String,
+    textColor: Color = Color.Black,
+    iconTint: Color = materialGray,
+    onClick: () -> Unit
+) {
+    TextButton(
+        onClick = onClick,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(56.dp),
+        colors = ButtonDefaults.textButtonColors(
+            containerColor = Color.Transparent
+        )
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Start
+        ) {
+            Icon(
+                painter = painterResource(id = icon),
+                contentDescription = text,
+                tint = iconTint,
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.width(16.dp))
+            Text(
+                text = text,
+                color = textColor,
+                style = MaterialTheme.typography.bodyLarge
+            )
+        }
     }
 }
