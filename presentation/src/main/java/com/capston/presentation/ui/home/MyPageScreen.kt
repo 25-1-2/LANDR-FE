@@ -494,7 +494,12 @@ fun ProfileScreen(loginViewModel: LoginViewModel, myPageViewModel: MyPageViewMod
                         isExpanded = isStudyTimeExpanded,
                         onToggle = { isStudyTimeExpanded = it },
                         isPremium = false,
-                        statisticsResponse = myStatisticsState
+                        statisticsResponse = myStatisticsState,
+                        onUpgradeClick = {
+                            // 바로 결제 페이지로 이동
+                            val intent = Intent(context, PaymentActivity::class.java)
+                            context.startActivity(intent)
+                        }
                     )
                 }
 

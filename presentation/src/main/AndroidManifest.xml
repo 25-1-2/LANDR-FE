@@ -9,6 +9,9 @@
         <activity
             android:name=".ui.search.SearchActivity"
             android:exported="true" />
+        <activity
+            android:name=".ui.home.PaymentActivity"
+            android:exported="true" />
     </application>
 
     <!--실제 패키지 이름 문자열이 직접 들어가야 함-->
