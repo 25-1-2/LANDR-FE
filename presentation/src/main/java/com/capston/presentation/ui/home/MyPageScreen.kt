@@ -33,7 +33,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -130,10 +135,33 @@ import kotlin.math.ceil
 @Composable
 fun ProfileScreen(loginViewModel: LoginViewModel, myPageViewModel: MyPageViewModel) {
 
+    // 구독 상태 확인
+    // val subscriptionState by myPageViewModel.userSubscription.collectAsState()
+    var showPremiumDialog by remember { mutableStateOf(true) }
+
     // Explicitly load both data sources on initial composition
     LaunchedEffect(Unit) {
         myPageViewModel.getDistinctMyPage()
+        // myPageViewModel.checkSubscriptionStatus()
     }
+
+    // 프리미엄 업그레이드 다이얼로그
+    if (showPremiumDialog) {
+        Dialog(
+            onDismissRequest = { showPremiumDialog = false }
+        ) {
+            PremiumLockOverlay(
+                title = "프리미엄 통계 기능",
+                description = "상세한 학습 분석과 무제한 기록 보기를\n프리미엄에서 만나보세요!",
+                onUpgradeClick = {
+                    // 결제 화면으로 이동
+                    showPremiumDialog = false
+                    // 결제 액티비티 시작
+                }
+            )
+        }
+    }
+
 
     // Get the current context
     val context = LocalContext.current
@@ -465,6 +493,7 @@ fun ProfileScreen(loginViewModel: LoginViewModel, myPageViewModel: MyPageViewMod
                     SubjectDistributionGraph(
                         isExpanded = isStudyTimeExpanded,
                         onToggle = { isStudyTimeExpanded = it },
+                        isPremium = false,
                         statisticsResponse = myStatisticsState
                     )
                 }
@@ -1408,7 +1437,9 @@ private fun DrawScope.drawBubbleWithText(text: String, minutes: Int, maxHour: In
 fun SubjectDistributionGraph(
     isExpanded: Boolean,
     onToggle: (Boolean) -> Unit,
-    statisticsResponse: GetMyPageStatisticsResponse
+    statisticsResponse: GetMyPageStatisticsResponse,
+    isPremium: Boolean = true, // 프리미엄 상태 추가 (기본값 true로 설정)
+    onUpgradeClick: () -> Unit = {}
 ) {
 
     LaunchedEffect(statisticsResponse) {
@@ -1487,7 +1518,7 @@ fun SubjectDistributionGraph(
             .padding(horizontal = 20.dp, vertical = 16.dp),
         horizontalAlignment = Alignment.Start
     ) {
-        // 헤더 부분
+        // 헤더 부분 - 프리미엄 배지 추가
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -1510,6 +1541,36 @@ fun SubjectDistributionGraph(
                 color = Color.Black,
                 modifier = Modifier.padding(end = 5.dp)
             )
+
+            // 프리미엄 배지
+            if (!isPremium) {
+                Card(
+                    modifier = Modifier.padding(start = 8.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color(0xFFFFD700)
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Lock,
+                            contentDescription = "프리미엄",
+                            tint = Color.White,
+                            modifier = Modifier.size(12.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "PRO",
+                            color = Color.White,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
 
             // 토글 버튼
             IconButton(
@@ -1541,63 +1602,126 @@ fun SubjectDistributionGraph(
             )
         }
 
-        // 정보 박스
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 10.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Card(
-                modifier = Modifier.padding(10.dp),
-                shape = RoundedCornerShape(5.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                border = BorderStroke(1.dp, color = LightGray60)
+        // 프리미엄이 아닌 경우 잠금 오버레이 표시
+        if (!isPremium) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp)
+                    .background(
+                        Color.Gray.copy(alpha = 0.1f),
+                        RoundedCornerShape(12.dp)
+                    )
+                    .clickable { onUpgradeClick() },
+                contentAlignment = Alignment.Center
             ) {
-                Text(
-                    buildAnnotatedString {
-                        withStyle(style = SpanStyle(color = SubPurple)) {
-                            append(topSubjectsText)
-                        }
-                        append("에 ")
-                        if (maxHours >= 60) {
-                            withStyle(style = SpanStyle(color = SubPurple)) {
-                                append((maxHours / 60).toString() + "시간 " + (maxHours % 60).toString() + "분")
-                            }
-                        }
-                        else {
-                            withStyle(style = SpanStyle(color = SubPurple)) {
-                                append((maxHours).toString() + "분")
-                            }
-                        }
-                        append("으로 가장 많은 시간을 투자하고 있어요")
-                    },
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color.Black,
-                    fontSize = 14.sp,
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
-                )
-            }
-        }
-
-        // 확장 시 그래프와 범례 표시
-        AnimatedVisibility(visible = isExpanded) {
-            Column {
-                // 원형 그래프
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .size(240.dp)
-                        .padding(top = 40.dp)
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    SubjectPieChartWithBubbles(subjectDataList, angles)
+                    Icon(
+                        imageVector = Icons.Default.Lock,
+                        contentDescription = "잠김",
+                        tint = Color.Gray,
+                        modifier = Modifier.size(48.dp)
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = "프리미엄 기능",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = Color.Gray,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "상세한 공부 시간 분석을 확인하세요",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.Gray,
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Button(
+                        onClick = onUpgradeClick,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFFFFD700)
+                        ),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Lock,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "업그레이드",
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
+            }
+        } else {
+            // 프리미엄 사용자에게 기존 그래프 표시
 
-                Spacer(modifier = Modifier.height(40.dp))
+            // 정보 박스
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 10.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Card(
+                    modifier = Modifier.padding(10.dp),
+                    shape = RoundedCornerShape(5.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    border = BorderStroke(1.dp, color = LightGray60)
+                ) {
+                    Text(
+                        buildAnnotatedString {
+                            withStyle(style = SpanStyle(color = SubPurple)) {
+                                append(topSubjectsText)
+                            }
+                            append("에 ")
+                            if (maxHours >= 60) {
+                                withStyle(style = SpanStyle(color = SubPurple)) {
+                                    append((maxHours / 60).toString() + "시간 " + (maxHours % 60).toString() + "분")
+                                }
+                            }
+                            else {
+                                withStyle(style = SpanStyle(color = SubPurple)) {
+                                    append((maxHours).toString() + "분")
+                                }
+                            }
+                            append("으로 가장 많은 시간을 투자하고 있어요")
+                        },
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.Black,
+                        fontSize = 14.sp,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                    )
+                }
+            }
 
-                // 범례
-                SubjectLegendWithPercentage(subjectDataList, percentages)
+            // 확장 시 그래프와 범례 표시
+            AnimatedVisibility(visible = isExpanded) {
+                Column {
+                    // 원형 그래프
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .size(240.dp)
+                            .padding(top = 40.dp)
+                    ) {
+                        SubjectPieChartWithBubbles(subjectDataList, angles)
+                    }
+
+                    Spacer(modifier = Modifier.height(40.dp))
+
+                    // 범례
+                    SubjectLegendWithPercentage(subjectDataList, percentages)
+                }
             }
         }
     }
@@ -2543,6 +2667,99 @@ fun SubjectProgressItem(
                 color = Color.Gray,
                 fontSize = 12.sp
             )
+        }
+    }
+}
+
+@Composable
+fun PremiumLockOverlay(
+    title: String,
+    description: String,
+    onUpgradeClick: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.7f)),
+        contentAlignment = Alignment.Center
+    ) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White)
+        ) {
+            Column(
+                modifier = Modifier
+                    .padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // 프리미엄 아이콘
+                Icon(
+                    imageVector = Icons.Default.Lock,
+                    contentDescription = "프리미엄",
+                    tint = Color(0xFFFFD700), // 금색
+                    modifier = Modifier.size(48.dp)
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    text = description,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.Gray,
+                    textAlign = TextAlign.Center
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // 업그레이드 버튼
+                Button(
+                    onClick = onUpgradeClick,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFFFFD700)
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Lock,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier
+                            .size(20.dp)
+                            .padding(end = 8.dp)
+                    )
+                    Text(
+                        text = "프리미엄으로 업그레이드",
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                TextButton(
+                    onClick = { /* 나중에 하기 */ }
+                ) {
+                    Text(
+                        text = "나중에 하기",
+                        color = Color.Gray
+                    )
+                }
+            }
         }
     }
 }
